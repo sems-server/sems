@@ -1290,8 +1290,14 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     err = p_msg->send(flags);
     if(err < 0){
 	ERROR("Error from transport layer\n");
+
 	delete p_msg;
 	p_msg = NULL;
+
+	if(default_bl_ttl) {
+	    tr_blacklist::instance()->insert(&t->msg->remote_ip,
+					     default_bl_ttl,"503");
+	}
 	tt->_bucket->unlock();
 	goto try_next_dest;
     }
@@ -1813,8 +1819,10 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	if(reply_code >= 300){
 	
 	    if(reply_code == 503) {
-		tr_blacklist::instance()->insert(&t->msg->remote_ip,
-						 default_bl_ttl,"503");
+		if(default_bl_ttl) {
+		    tr_blacklist::instance()->insert(&t->msg->remote_ip,
+						     default_bl_ttl,"503");
+		}
 		if(!try_next_ip(bucket,t,false))
 		    goto end;
 	    }
@@ -1929,8 +1937,10 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     else { // non-INVITE transaction
 
 	if(reply_code == 503) {
-	    tr_blacklist::instance()->insert(&t->msg->remote_ip,
-					     default_bl_ttl,"503");
+	    if(default_bl_ttl) {
+		tr_blacklist::instance()->insert(&t->msg->remote_ip,
+						 default_bl_ttl,"503");
+	    }
 	    if(!try_next_ip(bucket,t,false))
 		goto end;
 	}
@@ -2434,9 +2444,11 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	tr->clear_timer(STIMER_BL);
 	if(!(tr->flags & TR_FLAG_DISABLE_BL)) {
 	    // insert destination to blacklist
-	    tr_blacklist::instance()->insert(&tr->msg->remote_ip,
-					     default_bl_ttl,
-					     "timeout");
+	    if(default_bl_ttl) {
+		tr_blacklist::instance()->insert(&tr->msg->remote_ip,
+						 default_bl_ttl,
+						 "timeout");
+	    }
 	}
 	bucket->remove(tr);
 	break;
@@ -2673,6 +2685,12 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
     // and re-send
     if(tr->msg->send(tr->flags) < 0) {
 	ERROR("Error from transport layer\n");
+
+	if(default_bl_ttl) {
+	    tr_blacklist::instance()->insert(&t->msg->remote_ip,
+					     default_bl_ttl,"503");
+	}
+
 	use_new_trans = false;
 	goto try_next_dest;
     }
