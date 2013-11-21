@@ -1101,10 +1101,14 @@ void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
     if (!processing_started) {
       // try to start it
       onSdpUpdate();
+      // FIXME: start processing if not started and streams in this leg are fully initialized ?
     }
   }
-  else ERROR("BUG: can't set %s leg's first stream input, no streams\n", a_leg ? "A": "B");
-  // FIXME: start processing if not started and streams in this leg are fully initialized ?
+  else {
+    if (in) {
+      ERROR("BUG: can't set %s leg's first stream input, no streams\n", a_leg ? "A": "B");
+    }
+  }
 }
 
 void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con)
