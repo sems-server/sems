@@ -423,11 +423,24 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
 
   if (mode == DSM_SBC_PARAM_ADDCALLEE_MODE_STR) {
     string hdrs;
+
+    VarMapT::iterator it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_TRANSPARENT_DLG_ID);
+    if (it != sc_sess->var.end()) {
+      sbc_call_leg->getCallProfile().transparent_dlg_id = it->second == DSM_TRUE;
+    } else {
+      // default to false
+      sbc_call_leg->getCallProfile().transparent_dlg_id = false;
+    }
+
+      DBG("Using %stransparent dialog IDs for new call leg\n",
+	  sbc_call_leg->getCallProfile().transparent_dlg_id ? "":"non-");
+
     SBCCallLeg* peer = new SBCCallLeg(sbc_call_leg);
+
     SBCCallProfile &p = peer->getCallProfile();
     AmB2BSession::RTPRelayMode rtp_mode = sbc_call_leg->getRtpRelayMode();
 
-    VarMapT::iterator it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_LOCAL_PARTY);
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_LOCAL_PARTY);
     if (it != sc_sess->var.end())
       peer->setLocalParty(it->second, it->second);
 

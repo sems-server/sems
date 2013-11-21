@@ -19,6 +19,7 @@
 #define DSM_SBC_PARAM_ADDCALLEE_HDRS           "hdrs"
 #define DSM_SBC_PARAM_ADDCALLEE_OUTBOUND_PROXY "outbound_proxy"
 #define DSM_SBC_PARAM_ADDCALLEE_RTP_MODE       "rtp_mode"
+#define DSM_SBC_PARAM_ADDCALLEE_TRANSPARENT_DLG_ID "transparent_dlg_id"
 
 #define DSM_SBC_PARAM_ADDCALLEE_LTAG           "ltag"
 
