@@ -535,8 +535,9 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
     // handle non-initial replies
 
     // reply not from our peer (might be one of the discarded ones)
-    if (getOtherId() != reply.from_tag) {
-      TRACE("ignoring reply from %s in %s state\n", reply.from_tag.c_str(), callStatus2str(call_status));
+    if (getOtherId() != ev->sender_ltag && getOtherId() != reply.from_tag) {
+      TRACE("ignoring reply from %s in %s state, other_id = '%s'\n",
+	    reply.from_tag.c_str(), callStatus2str(call_status), getOtherId().c_str());
       return;
     }
 

@@ -153,7 +153,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq,
     n_reply.cseq_method = method;
     n_reply.from_tag = dlg->getLocalTag();
     DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-    relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+    relayEvent(new B2BSipReplyEvent(n_reply, forward, method, getLocalTag()));
   }
 }
 
@@ -167,7 +167,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     n_reply.cseq_method = method;
     n_reply.from_tag = dlg->getLocalTag();
     DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
-    relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+    relayEvent(new B2BSipReplyEvent(n_reply, forward, method, getLocalTag()));
   }
 }
 
@@ -553,7 +553,7 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
     n_reply.cseq = t->second.cseq;
 
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-    relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method));
+    relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method, getLocalTag()));
 
     if(reply.code >= 200) {
       if ((reply.code < 300) && (t->second.method == SIP_METH_INVITE)) {
@@ -591,7 +591,7 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
       }
     }
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-    relayEvent(new B2BSipReplyEvent(n_reply, false, reply.cseq_method));
+    relayEvent(new B2BSipReplyEvent(n_reply, false, reply.cseq_method, getLocalTag()));
   }
 }
 
