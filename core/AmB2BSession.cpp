@@ -197,8 +197,18 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	if (req_ev->req.method == SIP_METH_INVITE &&
 	    dlg->getUACInvTransPending()) {
 	  // don't relay INVITE if INV trans pending
+	  DBG("not sip-relaying INVITE with pending INV transaction, "
+	      "b2b-relaying 491 pending\n");
           relayError(req_ev->req.method, req_ev->req.cseq,
 		     true, 491, SIP_REPLY_PENDING);
+	  return;
+	}
+
+	if (req_ev->req.method == SIP_METH_BYE &&
+	    dlg->getStatus() != AmBasicSipDialog::Connected) {
+	  DBG("not sip-relaying BYE in not connected dlg, b2b-relaying 200 OK\n");
+          relayError(req_ev->req.method, req_ev->req.cseq,
+		     true, 200, "OK");
 	  return;
 	}
 
