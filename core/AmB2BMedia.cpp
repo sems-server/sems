@@ -244,7 +244,7 @@ void AudioStreamData::resumeStreamProcessing()
 void AudioStreamData::setRelayStream(AmRtpStream *other)
 {
   if (!stream) {
-    ERROR("BUG: trying to set relay for NULL stream\n");
+    if (other) ERROR("BUG: trying to set relay for NULL stream\n");
     return;
   }
 
@@ -517,8 +517,14 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
       // needed to reinitialize relay streams because the streams could change
       // and they are in use already (FIXME: ugly here, needs explicit knowledge
       // what AudioStreamData::changeSesion does)
-      if (a) i->a.setRelayStream(i->b.getStream());
-      if (b) i->b.setRelayStream(i->a.getStream());
+      if (a) {
+        if (i->b.getInput()) i->a.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+        else i->a.setRelayStream(i->b.getStream());
+      }
+      if (b) {
+        if (i->a.getInput()) i->b.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+        else i->b.setRelayStream(i->a.getStream());
+      }
 
       // needed to reinitialize audio processing in case the stream itself has
       // changed (FIXME: ugly again - see above and local/remote SDP might
@@ -879,14 +885,16 @@ void AmB2BMedia::onSdpUpdate()
     if (have_a) {
       TRACE("initializing stream in A leg\n");
       i->a.setDtmfSink(b);
-      i->a.setRelayStream(i->b.getStream());
+      if (i->b.getInput()) i->a.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+      else i->a.setRelayStream(i->b.getStream());
       i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
     }
 
     if (have_b) {
       TRACE("initializing stream in B leg\n");
       i->b.setDtmfSink(a);
-      i->b.setRelayStream(i->a.getStream());
+      if (i->a.getInput()) i->b.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+      else i->b.setRelayStream(i->a.getStream());
       i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
     }
 
@@ -1098,10 +1106,17 @@ void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
     AudioStreamIterator i = audio.begin();
     if (a_leg) i->a.setInput(in);
     else i->b.setInput(in);
-    if (!processing_started) {
-      // try to start it
-      onSdpUpdate();
-      // FIXME: start processing if not started and streams in this leg are fully initialized ?
+    if (in) {
+      if (a_leg) i->b.setRelayStream(NULL);
+      else i->a.setRelayStream(NULL);
+      if (!processing_started) {
+        // try to start it
+        onSdpUpdate();
+        // FIXME: start processing if not started and streams in this leg are fully initialized ?
+      }
+    }
+    else {
+      // FIXME: try to stop processing & reenable relay & ...?
     }
   }
   else {
