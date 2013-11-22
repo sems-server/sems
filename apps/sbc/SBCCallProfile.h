@@ -347,7 +347,8 @@ struct SBCCallProfile
     log_rtp(false),
     log_sip(false),
     patch_ruri_next_hop(false),
-    next_hop_1st_req(false)
+    next_hop_1st_req(false),
+    next_hop_fixed(false)
   { }
 
   ~SBCCallProfile()

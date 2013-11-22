@@ -318,8 +318,12 @@ void SBCCallLeg::applyBProfile()
   }
 
   if (!call_profile.next_hop.empty()) {
+    DBG("set next hop to '%s' (1st_req=%s,fixed=%s)\n",
+	call_profile.next_hop.c_str(), call_profile.next_hop_1st_req?"true":"false",
+	call_profile.next_hop_fixed?"true":"false");
     dlg->setNextHop(call_profile.next_hop);
     dlg->setNextHop1stReq(call_profile.next_hop_1st_req);
+    dlg->setNextHopFixed(call_profile.next_hop_fixed);
   }
 
   DBG("patch_ruri_next_hop = %i",call_profile.patch_ruri_next_hop);
