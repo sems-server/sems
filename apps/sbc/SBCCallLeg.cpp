@@ -502,7 +502,8 @@ void SBCCallLeg::setOtherId(const AmSipReply& reply)
 
 void SBCCallLeg::onInitialReply(B2BSipReplyEvent *e)
 {
-  if (call_profile.transparent_dlg_id && !e->reply.to_tag.empty()) {
+  if (call_profile.transparent_dlg_id && !e->reply.to_tag.empty()
+      && dlg->getStatus() != AmBasicSipDialog::Connected) {
     dlg->setExtLocalTag(e->reply.to_tag);
   }
   CallLeg::onInitialReply(e);
