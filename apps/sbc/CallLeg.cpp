@@ -1484,7 +1484,7 @@ void CallLeg::adjustOffer(AmSdp &sdp)
 
 void CallLeg::updateLocalSdp(AmSdp &sdp)
 {
-  TRACE("%s: updateLocalSdp\n", getLocalTag().c_str());
+  TRACE("%s: updateLocalSdp (OA: %d)\n", getLocalTag().c_str(), oa.status);
   // handle the body based on current offer-answer status
   // (possibly update the body before sending to remote)
 
@@ -1516,7 +1516,7 @@ void CallLeg::updateLocalSdp(AmSdp &sdp)
 
 void CallLeg::updateRemoteSdp(AmSdp &sdp)
 {
-  TRACE("%s: updateRemoteSdp\n", getLocalTag().c_str());
+  TRACE("%s: updateRemoteSdp (OA: %d)\n", getLocalTag().c_str(), oa.status);
   switch (oa.status) {
     case OA::None:
       oa.status = OA::OfferReceived;
