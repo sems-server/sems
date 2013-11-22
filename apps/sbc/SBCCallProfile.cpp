@@ -922,7 +922,9 @@ int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
 
     string nh = ctx.replaceParameters(next_hop, "next_hop", req);
 
-    DBG("set next hop ip to '%s'\n", nh.c_str());
+    DBG("set next hop to '%s' (1st_req=%s,fixed=%s)\n",
+	nh.c_str(), next_hop_1st_req?"true":"false",
+	next_hop_fixed?"true":"false");
     dlg.setNextHop(nh);
     dlg.setNextHop1stReq(next_hop_1st_req);
     dlg.setNextHopFixed(next_hop_fixed);
