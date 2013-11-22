@@ -1254,3 +1254,27 @@ void AmRtpStream::setLogger(msg_logger* _logger)
   logger = _logger;
   if (logger) inc_ref(logger);
 }
+
+void AmRtpStream::debug()
+{
+#define BOOL_STR(b) ((b) ? "yes" : "no")
+
+  if(hasLocalSocket() > 0) {
+    DBG("\t<%i> <-> <%s:%i>", getLocalPort(),
+        getRHost().c_str(), getRPort());
+  } else {
+    DBG("\t<unbound> <-> <%s:%i>",
+        getRHost().c_str(), getLocalPort());
+  }
+
+  if (relay_stream) {
+    DBG("\tinternal relay to stream %p (local port %i)",
+      relay_stream, relay_stream->getLocalPort());
+  }
+  else DBG("\tno relay");
+
+  DBG("\tmute: %s, hold: %s, receiving: %s",
+      BOOL_STR(mute), BOOL_STR(hold), BOOL_STR(receiving));
+
+#undef BOOL_STR
+}
