@@ -472,7 +472,7 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
     setRemoteUri(reply.to_uri);
     if(!getNextHop().empty() && !next_hop_fixed) {
       DBG("updating next_hop from reply to %s:%u\n",
-	  reply.remote_ip, reply.remote_port);
+	  reply.remote_ip.c_str(), reply.remote_port);
       setNextHop(reply.remote_ip + ":"
 		 + int2str(reply.remote_port));
     }
