@@ -344,6 +344,8 @@ class CallLeg: public AmB2BSession
     void replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite);
     void replaceExistingLeg(const string &session_tag, const string &hdrs);
 
+    /** generate debug information into log with overall call leg status */
+    void debug();
 
   public:
     /** creates A leg */
