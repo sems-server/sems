@@ -824,6 +824,7 @@ void CallLeg::holdAccepted()
   on_hold = true;
   AmB2BMedia *ms = getMediaSession();
   if (ms) ms->mute(!a_leg); // mute the stream in other (!) leg
+  DBG("%s: hold accepted, muting media session %p(%s)\n", getLocalTag().c_str(), ms, !a_leg ? "A" : "B");
 }
 
 void CallLeg::holdRejected()
@@ -836,6 +837,7 @@ void CallLeg::resumeAccepted()
   on_hold = false;
   AmB2BMedia *ms = getMediaSession();
   if (ms) ms->unmute(!a_leg); // unmute the stream in other (!) leg
+  DBG("%s: resuming held, unmuting media session %p(%s)\n", getLocalTag().c_str(), ms, !a_leg ? "A" : "B");
 }
 
 // was for caller only
@@ -1573,5 +1575,18 @@ void CallLeg::createResumeRequest(AmSdp &sdp)
     throw string("not implemented");
   }
   // do not touch the sdp otherwise (use directly B2B SDP)
+}
+
+void CallLeg::debug()
+{
+  DBG("call leg: %s", getLocalTag().c_str());
+  DBG("\tstatus: %s\n", getOtherId().c_str());
+  DBG("\tother: %s\n", callStatus2str(getCallStatus()));
+  DBG("\tRTP relay mode: %d\n", rtp_relay_mode);
+  DBG("\ton hold: %s\n", on_hold ? "yes" : "no");
+  DBG("\toffer/answer status: %d, hold: %d\n", oa.status, oa.hold);
+
+  AmB2BMedia *ms = getMediaSession();
+  if (ms) ms->debug();
 }
 
