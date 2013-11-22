@@ -170,6 +170,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   next_hop = cfg.getParameter("next_hop");
   next_hop_1st_req = cfg.getParameter("next_hop_1st_req") == "yes";
   patch_ruri_next_hop = cfg.getParameter("patch_ruri_next_hop") == "yes";
+  next_hop_fixed = cfg.getParameter("next_hop_fixed") == "yes";
 
   aleg_next_hop = cfg.getParameter("aleg_next_hop");
 
@@ -421,8 +422,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      A leg outbound proxy = '%s'\n", aleg_outbound_proxy.c_str());
 
     if (!next_hop.empty()) {
-      INFO("SBC:      next hop = %s (%s)\n", next_hop.c_str(),
-	   next_hop_1st_req ? "1st req" : "all reqs");
+      INFO("SBC:      next hop = %s (%s, %s)\n", next_hop.c_str(),
+	   next_hop_1st_req ? "1st req" : "all reqs", next_hop_fixed?"fixed":"not fixed");
     }
 
     if (!aleg_next_hop.empty()) {
@@ -581,6 +582,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     aleg_force_outbound_proxy == rhs.aleg_force_outbound_proxy &&
     next_hop == rhs.next_hop &&
     next_hop_1st_req == rhs.next_hop_1st_req &&
+    next_hop_fixed == rhs.next_hop_fixed &&
     patch_ruri_next_hop == rhs.patch_ruri_next_hop &&
     aleg_next_hop == rhs.aleg_next_hop &&
     headerfilter == rhs.headerfilter &&
@@ -638,6 +640,7 @@ string SBCCallProfile::print() const {
   res += "aleg_force_outbound_proxy: " + string(aleg_force_outbound_proxy?"true":"false") + "\n";
   res += "next_hop:             " + next_hop + "\n";
   res += "next_hop_1st_req:     " + string(next_hop_1st_req ? "true":"false") + "\n";
+  res += "next_hop_fixed:       " + string(next_hop_fixed ? "true":"false") + "\n";
   res += "aleg_next_hop:        " + aleg_next_hop + "\n";
   // res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
   // res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
@@ -922,6 +925,7 @@ int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
     DBG("set next hop ip to '%s'\n", nh.c_str());
     dlg.setNextHop(nh);
     dlg.setNextHop1stReq(next_hop_1st_req);
+    dlg.setNextHopFixed(next_hop_fixed);
   }
 
   DBG("patch_ruri_next_hop = %i",patch_ruri_next_hop);
