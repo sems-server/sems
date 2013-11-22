@@ -499,6 +499,8 @@ public:
 
   /** set destination for logging all received/sent RTP and RTCP packets */
   void setLogger(msg_logger *_logger);
+
+  void debug();
 };
 
 #endif
