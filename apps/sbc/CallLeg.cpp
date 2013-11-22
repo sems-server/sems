@@ -1580,8 +1580,8 @@ void CallLeg::createResumeRequest(AmSdp &sdp)
 void CallLeg::debug()
 {
   DBG("call leg: %s", getLocalTag().c_str());
-  DBG("\tstatus: %s\n", getOtherId().c_str());
-  DBG("\tother: %s\n", callStatus2str(getCallStatus()));
+  DBG("\tother: %s\n", getOtherId().c_str());
+  DBG("\tstatus: %s\n", callStatus2str(getCallStatus()));
   DBG("\tRTP relay mode: %d\n", rtp_relay_mode);
   DBG("\ton hold: %s\n", on_hold ? "yes" : "no");
   DBG("\toffer/answer status: %d, hold: %d\n", oa.status, oa.hold);
