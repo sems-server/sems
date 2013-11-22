@@ -1186,14 +1186,9 @@ void AmB2BMedia::setRtpLogger(msg_logger* _logger)
 
 void AudioStreamData::debug()
 {
+  DBG("\tmuted: %s\n", muted ? "yes" : "no");
   if(stream) {
-    if(stream->hasLocalSocket() > 0)
-      DBG("\t<%i> <-> <%s:%i>", stream->getLocalPort(),
-	  stream->getRHost().c_str(), stream->getRPort());
-    else
-      DBG("\t<unbound> <-> <%s:%i>",
-	  stream->getRHost().c_str(),
-	  stream->getLocalPort());
+    stream->debug();
   }
   else
     DBG("\t<null> <-> <null>");
@@ -1204,33 +1199,22 @@ void AmB2BMedia::debug()
 {
   // walk through all the streams
   DBG("B2B media session ('%s' <-> '%s'):",
-      a->getLocalTag().c_str(),
-      b->getLocalTag().c_str());
+      a ? a->getLocalTag().c_str() : "?",
+      b ? b->getLocalTag().c_str() : "?");
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
-    DBG("relay stream:\n");
+    DBG(" - audio stream (A):\n");
     i->a.debug();
+    DBG(" - audio stream (B):\n");
     i->b.debug();
   }
 
   for (RelayStreamIterator j = relay_streams.begin(); 
        j != relay_streams.end(); ++j) {
 
-    DBG("relay stream:\n");
-    if((*j)->a.hasLocalSocket() > 0)
-      DBG("\t<%i> <-> <%s:%i>", (*j)->a.getLocalPort(),
-	  (*j)->a.getRHost().c_str(), (*j)->a.getRPort());
-    else
-      DBG("\t<unbound> <-> <%s:%i>",
-	  (*j)->a.getRHost().c_str(),
-	  (*j)->a.getRPort());
-
-    if((*j)->b.hasLocalSocket() > 0)
-      DBG("\t<%i> <-> <%s:%i>", (*j)->b.getLocalPort(),
-	  (*j)->b.getRHost().c_str(), (*j)->b.getRPort());
-    else
-      DBG("\t<unbound> <-> <%s:%i>",
-	  (*j)->b.getRHost().c_str(),
-	  (*j)->b.getRPort());
+    DBG(" - relay stream (A):\n");
+    (*j)->a.debug();
+    DBG(" - relay stream (B):\n");
+    (*j)->b.debug();
   }
 }
