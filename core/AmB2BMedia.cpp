@@ -1198,9 +1198,15 @@ void AudioStreamData::debug()
 void AmB2BMedia::debug()
 {
   // walk through all the streams
-  DBG("B2B media session ('%s' <-> '%s'):",
+  DBG("B2B media session %p ('%s' <-> '%s'):",
+      this,
       a ? a->getLocalTag().c_str() : "?",
       b ? b->getLocalTag().c_str() : "?");
+  DBG("\tOA status: %c%c / %c%c",
+      have_a_leg_local_sdp ? 'X' : '-',
+      have_a_leg_remote_sdp ? 'X' : '-',
+      have_b_leg_local_sdp ? 'X' : '-',
+      have_b_leg_remote_sdp ? 'X' : '-');
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     DBG(" - audio stream (A):\n");
