@@ -458,6 +458,11 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 
     err = local_socket->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){
+	ERROR("could not send to %s:%i <%.*s...>\n",
+	      get_addr_str(&remote_ip).c_str(),
+	      ntohs(((sockaddr_in*)&remote_ip)->sin_port),
+	      50 /* preview - instead of p_msg->len */,reply_buf);
+
 	delete [] reply_buf;
 	// set timer to capture retransmissions
 	// and delete transaction afterwards
