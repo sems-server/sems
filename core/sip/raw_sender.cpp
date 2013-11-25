@@ -43,10 +43,10 @@ int raw_sender::send(const char* buf, unsigned int len, int sys_if_idx,
     return ret;
   }
 
-  if((unsigned int)ret < len) {
-    ERROR("incomplete udp send (%i instead of %i)",ret,len);
-    return -1;
-  }
+  // if((unsigned int)ret < len) {
+  //   ERROR("incomplete udp send (%i instead of %i)",ret,len);
+  //   return -1;
+  // }
 
   return 0;
 }
