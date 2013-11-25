@@ -246,6 +246,9 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
 	  DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->getLocalTag().c_str());
 	  AmAppTimer::instance()->setTimer(&timer_expires,(double)sub_expires);
 	  expires = sub_expires + AmAppTimer::instance()->unix_clock.get();
+
+	  DBG("removeTimer(%s,RFC6665_TIMER_N)\n",dlg()->getLocalTag().c_str());
+	  AmAppTimer::instance()->removeTimer(&timer_n);
 	}
 	else {
 	  // we do not care too much, as timer N is set

@@ -51,6 +51,13 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("dlg.getRequestBody", DLGGetRequestBodyAction)
   DEF_CMD("dlg.getReplyBody", DLGGetReplyBodyAction)
+
+  DEF_CMD("dlg.getOtherId", DLGGetOtherIdAction)
+  DEF_CMD("dlg.getRtpRelayMode", DLGGetRtpRelayModeAction)
+
+  DEF_CMD("dlg.refer", DLGReferAction);
+  DEF_CMD("dlg.relayError", DLGB2BRelayErrorAction);
+
 } MOD_ACTIONEXPORT_END;
 
 //MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
@@ -418,4 +425,102 @@ EXEC_ACTION_START(DLGGetReplyBodyAction) {
     sc_sess->var[dstvar] = string((const char*)msg_body->getPayload());
     DBG("set $%s='%s'\n", dstvar.c_str(), sc_sess->var[dstvar].c_str());
   }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(DLGGetOtherIdAction) {
+  string varname = arg;
+  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
+  if (NULL == b2b_sess) {
+    DBG("script writer error: dlg.getOtherId used without B2B session object.\n");
+    EXEC_ACTION_STOP;
+  }
+
+  if (varname.size() && varname[0] == '$')
+    varname.erase(0, 1);
+  sc_sess->var[varname] = b2b_sess->getOtherId();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(DLGGetRtpRelayModeAction) {
+  string varname = arg;
+  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
+  if (NULL == b2b_sess) {
+    DBG("script writer error: dlg.getOtherId used without B2B session object.\n");
+    EXEC_ACTION_STOP;
+  }
+
+  if (varname.size() && varname[0] == '$')
+    varname.erase(0, 1);
+  switch (b2b_sess->getRtpRelayMode()) {
+  case AmB2BSession::RTP_Direct: sc_sess->var[varname] = "RTP_Direct"; break;
+  case AmB2BSession::RTP_Relay: sc_sess->var[varname] = "RTP_Relay"; break;
+  case AmB2BSession::RTP_Transcoding: sc_sess->var[varname] = "RTP_Transcoding"; break;
+  default: sc_sess->var[varname] = "Unknown"; break;
+  }
+
+  DBG("get RTP relay mode: %s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(DLGReferAction, ',', true);
+EXEC_ACTION_START(DLGReferAction) {
+
+  AmSession* b2b_sess = dynamic_cast<AmSession*>(sess);
+  if (NULL == b2b_sess) {
+    throw DSMException("sbc", "type", "param", "cause",
+		       "dlg.refer used on non-session");
+  }
+
+  string refer_to = resolveVars(par1, sess, sc_sess, event_params);
+  string expires_s = resolveVars(par2, sess, sc_sess, event_params);
+
+  int expires = -1;
+  if (!expires_s.empty()) {
+    if (!str2int(expires_s, expires)) {
+      throw DSMException("sbc", "type", "param", "cause",
+			 "expires "+expires_s+" not valid");
+    }
+  }
+
+  if (NULL == b2b_sess->dlg) {
+      throw DSMException("sbc", "type", "param", "cause",
+			 "call doesn't have SIP dialog (OOPS!)");
+  }
+
+  if (b2b_sess->dlg->refer(refer_to, expires)) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_DLG);
+    sc_sess->SET_STRERROR("sending REFER failed");
+  } else {
+    sc_sess->CLR_ERRNO;
+  }
+} EXEC_ACTION_END;
+
+
+#define GET_B2B_SESSION(action)						\
+  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);		\
+  if (NULL == b2b_sess) {						\
+    throw DSMException("sbc", "type", "param", "cause",			\
+		       #action " used on non-b2b-session");		\
+  }
+
+CONST_ACTION_2P(DLGB2BRelayErrorAction, ',', false);
+EXEC_ACTION_START(DLGB2BRelayErrorAction) {
+  DSMSipRequest* sip_req;
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REQUEST);
+  if (it == sc_sess->avar.end() ||
+      !isArgAObject(it->second) || 
+      !(sip_req = dynamic_cast<DSMSipRequest*>(it->second.asObject()))) {
+    throw DSMException("dlg", "cause", "no request");
+  }
+  GET_B2B_SESSION(dlg.refer);
+
+  string code = resolveVars(par1, sess, sc_sess, event_params);
+  string reason = resolveVars(par2, sess, sc_sess, event_params);
+  unsigned int code_i;
+  if (str2i(code, code_i)) {
+    ERROR("decoding reply code '%s'\n", code.c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    EXEC_ACTION_STOP;
+  }
+
+  b2b_sess->relayError(sip_req->req->method, sip_req->req->cseq, true, code_i, reason.c_str());
 } EXEC_ACTION_END;

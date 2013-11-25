@@ -32,6 +32,7 @@
 
 #include "udp_trsp.h"
 #include "ip_util.h"
+#include "raw_sender.h"
 #include "sip_parser.h"
 #include "trans_layer.h"
 #include "log.h"
@@ -254,9 +255,12 @@ int udp_trsp_socket::send(const sockaddr_storage* sa,
 	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
     }
 
+    if(socket_options & use_raw_sockets)
+	return raw_sender::send(msg,msg_len,sys_if_idx,&addr,sa);
+
     if(socket_options & force_outbound_if)
-	return sendmsg(sa,msg,msg_len);
-    
+    	return sendmsg(sa,msg,msg_len);
+
     return sendto(sa,msg,msg_len);
 }
 
@@ -309,6 +313,7 @@ void udp_trsp::run()
 
 	buf_len = recvmsg(sock->get_sd(),&msg,0);
 	if(buf_len <= 0){
+	    if(!buf_len) continue;
 	    ERROR("recvfrom returned %d: %s\n",buf_len,strerror(errno));
 	    switch(errno){
 	    case EBADF:

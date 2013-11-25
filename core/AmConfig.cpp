@@ -45,6 +45,7 @@
 #include "sip/transport.h"
 #include "sip/ip_util.h"
 #include "sip/sip_timers.h"
+#include "sip/raw_sender.h"
 
 #include <cctype>
 #include <algorithm>
@@ -65,7 +66,7 @@ vector<AmConfig::RTP_interface> AmConfig::RTP_Ifs;
 map<string,unsigned short>      AmConfig::SIP_If_names;
 map<string,unsigned short>      AmConfig::RTP_If_names;
 map<string,unsigned short>      AmConfig::LocalSIPIP2If;
-list<AmConfig::SysIntf>         AmConfig::SysIfs;
+vector<AmConfig::SysIntf>         AmConfig::SysIfs;
 
 #ifndef DISABLE_DAEMON_MODE
 bool         AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
@@ -88,6 +89,7 @@ bool         AmConfig::ProxyStickyAuth         = false;
 bool         AmConfig::ForceOutboundIf         = false;
 bool         AmConfig::ForceSymmetricRtp       = false;
 bool         AmConfig::SipNATHandling          = false;
+bool         AmConfig::UseRawSockets           = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
@@ -307,6 +309,14 @@ int AmConfig::readConfiguration()
   // take values from global configuration file
   // they will be overwritten by command line args
 
+  // log_level
+  if(cfg.hasParameter("loglevel")){
+    if(!setLogLevel(cfg.getParameter("loglevel"))){
+      ERROR("invalid log level specified\n");
+      ret = -1;
+    }
+  }
+
   // stderr 
   if(cfg.hasParameter("stderr")){
     if(!setLogStderr(cfg.getParameter("stderr"), true)){
@@ -356,6 +366,13 @@ int AmConfig::readConfiguration()
     ForceOutboundIf = (cfg.getParameter("force_outbound_if") == "yes");
   }
 
+  if(cfg.hasParameter("use_raw_sockets")) {
+    UseRawSockets = (cfg.getParameter("use_raw_sockets") == "yes");
+    if(UseRawSockets && (raw_sender::init() < 0)) {
+      UseRawSockets = false;
+    }
+  }
+
   if(cfg.hasParameter("ignore_notify_lower_cseq")) {
     IgnoreNotifyLowerCSeq = (cfg.getParameter("ignore_notify_lower_cseq") == "yes");
   }
@@ -379,13 +396,13 @@ int AmConfig::readConfiguration()
     if(cfg.hasParameter(timer_cfg)) {
 
       sip_timers[t] = cfg.getParameterInt(timer_cfg, sip_timers[t]);
-      DBG("Set SIP Timer '%s' to %u ms\n", timer_name(t), sip_timers[t]);
+      INFO("Set SIP Timer '%s' to %u ms\n", timer_name(t), sip_timers[t]);
     }
   }
 
   if (cfg.hasParameter("sip_timer_t2")) {
     sip_timer_t2 = cfg.getParameterInt("sip_timer_t2", DEFAULT_T2_TIMER);
-    DBG("Set SIP Timer T2 to %u ms\n", sip_timer_t2);
+    INFO("Set SIP Timer T2 to %u ms\n", sip_timer_t2);
   }
 
   // plugin_path
@@ -428,14 +445,6 @@ int AmConfig::readConfiguration()
       else {
 	  MaxForwards = mf;
       }
-  }
-
-  // log_level
-  if(cfg.hasParameter("loglevel")){
-    if(!setLogLevel(cfg.getParameter("loglevel"))){
-      ERROR("invalid log level specified\n");
-      ret = -1;
-    }
   }
 
   if(cfg.hasParameter("log_sessions"))
@@ -897,6 +906,13 @@ static int readInterfaces(AmConfigReader& cfg)
 static bool fillSysIntfList()
 {
   struct ifaddrs *ifap = NULL;
+
+  // socket to grab MTU
+  int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if(fd < 0) {
+    ERROR("socket() failed: %s",strerror(errno));
+    return false;
+  }
   
   if(getifaddrs(&ifap) < 0){
     ERROR("getifaddrs() failed: %s",strerror(errno));
@@ -932,12 +948,13 @@ static bool fillSysIntfList()
     if (am_inet_ntop((const sockaddr_storage*)p_if->ifa_addr,
 		     host, NI_MAXHOST) == NULL) {
       ERROR("am_inet_ntop() failed\n");
-      freeifaddrs(ifap);
-      return false;
+      continue;
+      // freeifaddrs(ifap);
+      // return false;
     }
 
     string iface_name(p_if->ifa_name);
-    list<AmConfig::SysIntf>::iterator intf_it;
+    vector<AmConfig::SysIntf>::iterator intf_it;
     for(intf_it = AmConfig::SysIfs.begin();
 	intf_it != AmConfig::SysIfs.end(); ++intf_it) {
 
@@ -946,10 +963,25 @@ static bool fillSysIntfList()
     }
 
     if(intf_it == AmConfig::SysIfs.end()){
-      intf_it = AmConfig::SysIfs.insert(AmConfig::SysIfs.end(),
-					AmConfig::SysIntf());
+      unsigned int sys_if_idx = if_nametoindex(iface_name.c_str());
+      if(AmConfig::SysIfs.size() < sys_if_idx+1)
+	AmConfig::SysIfs.resize(sys_if_idx+1);
+
+      intf_it = AmConfig::SysIfs.begin() + sys_if_idx;
       intf_it->name  = iface_name;
       intf_it->flags = p_if->ifa_flags;
+
+      struct ifreq ifr;
+      strncpy(ifr.ifr_name,p_if->ifa_name,IFNAMSIZ);
+
+      if (ioctl(fd, SIOCGIFMTU, &ifr) < 0 ) {
+	ERROR("ioctl: %s",strerror(errno));
+	ERROR("setting MTU for this interface to default (1500)");
+	intf_it->mtu = 1500;
+      }
+      else {
+	intf_it->mtu = ifr.ifr_mtu;
+      }
     }
 
     DBG("iface='%s';ip='%s';flags=0x%x\n",p_if->ifa_name,host,p_if->ifa_flags);
@@ -957,11 +989,12 @@ static bool fillSysIntfList()
   }
 
   freeifaddrs(ifap);
+  close(fd);
 
   // add addresses from SysIntfList, if not present
   for(unsigned int idx = 0; idx < AmConfig::SIP_Ifs.size(); idx++) {
 
-    list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
+    vector<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
     for(;intf_it != AmConfig::SysIfs.end(); ++intf_it) {
 
       list<AmConfig::IPAddr>::iterator addr_it = intf_it->addrs.begin();
@@ -1000,7 +1033,7 @@ string fixIface2IP(const string& dev_name, bool v6_for_sip)
       return dev_name;
   }
 
-  for(list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
+  for(vector<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
       intf_it != AmConfig::SysIfs.end(); ++intf_it) {
       
     if(intf_it->name != dev_name)
@@ -1021,7 +1054,7 @@ string fixIface2IP(const string& dev_name, bool v6_for_sip)
 /** Get IP addrese from first non-loopback interface */
 static string getDefaultIP()
 {
-  for(list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
+  for(vector<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
       intf_it != AmConfig::SysIfs.end(); ++intf_it) {
       
     if(intf_it->flags & IFF_LOOPBACK)
@@ -1039,14 +1072,13 @@ static string getDefaultIP()
 
 static int setNetInterface(AmConfig::IP_interface* ip_if)
 {
-  for(list<AmConfig::SysIntf>::iterator sys_it = AmConfig::SysIfs.begin();
-      sys_it != AmConfig::SysIfs.end(); sys_it++) {
+  for(unsigned int i=0; i < AmConfig::SysIfs.size(); i++) {
     
-    list<AmConfig::IPAddr>::iterator addr_it = sys_it->addrs.begin();
-    while(addr_it != sys_it->addrs.end()) {
+    list<AmConfig::IPAddr>::iterator addr_it = AmConfig::SysIfs[i].addrs.begin();
+    while(addr_it != AmConfig::SysIfs[i].addrs.end()) {
       if(ip_if->LocalIP == addr_it->addr) {
-	ip_if->NetIf = sys_it->name;
-	ip_if->NetIfIdx = if_nametoindex(sys_it->name.c_str());
+	ip_if->NetIf = AmConfig::SysIfs[i].name;
+	ip_if->NetIfIdx = i;
 	return 0;
       }
       addr_it++;

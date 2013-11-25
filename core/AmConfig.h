@@ -154,9 +154,10 @@ struct AmConfig
     list<IPAddr> addrs;
     // identical to those returned by SIOCGIFFLAGS
     unsigned int flags;
+    unsigned int mtu;
   };
 
-  static list<SysIntf> SysIfs;
+  static vector<SysIntf> SysIfs;
 
   static int insert_SIP_interface(const SIP_interface& intf);
   static int insert_RTP_interface(const RTP_interface& intf);
@@ -188,6 +189,8 @@ struct AmConfig
   static bool ForceSymmetricRtp;
   /** turn on SIP NAT handling (remote signaling address learning) */
   static bool SipNATHandling;
+  /** use raw socket to send UDP packets (root permission required) */
+  static bool UseRawSockets;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
   /** skip DNS SRV lookup for resolving destination address*/

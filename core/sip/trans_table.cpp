@@ -441,6 +441,10 @@ sip_trans* trans_bucket::add_trans(sip_msg* msg, unsigned int ttype)
     return t;
 }
 
+void trans_bucket::append(sip_trans* t)
+{
+    elmts.push_back(t);
+}
 
 unsigned int hash(const cstring& ci, const cstring& cs)
 {

@@ -1099,6 +1099,28 @@ void DSMFactory::loadDSMWithPaths(const AmArg& args, AmArg& ret) {
   ScriptConfigs_mut.unlock();
 }
 
+bool DSMFactory::addScriptDiagsToEngine(const string& config_set,
+					DSMStateEngine* engine,
+					map<string,string>& config_vars,
+					bool& SetParamVariables) {
+  bool res = false;
+  ScriptConfigs_mut.lock();
+  try {
+    map<string, DSMScriptConfig>::iterator it=Name2ScriptConfig.find(config_set);
+    if (it!=Name2ScriptConfig.end()) {
+      res = true;
+      it->second.diags->addToEngine(engine);
+      config_vars = it->second.config_vars;
+      SetParamVariables = it->second.SetParamVariables;
+    }
+  } catch(...) {
+    ScriptConfigs_mut.unlock();
+    throw;
+  }
+  ScriptConfigs_mut.unlock();
+  return res;
+}
+
 void DSMFactory::invoke(const string& method, const AmArg& args, 
 				AmArg& ret)
 {

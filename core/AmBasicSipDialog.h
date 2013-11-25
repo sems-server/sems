@@ -43,6 +43,8 @@ using std::string;
 
 #define SIP_FLAGS_NOTAG        1<<3 // don't add to-tag in reply
 
+#define SIP_FLAGS_NOBL         1<<4 // do not use destination blacklist
+
 /** \brief SIP transaction representation */
 struct AmSipTransaction
 {
@@ -113,6 +115,7 @@ protected:
   string next_hop;
   bool next_hop_1st_req;
   bool patch_ruri_next_hop;
+  bool next_hop_fixed;
 
   int outbound_interface;
 
@@ -298,6 +301,10 @@ public:
   bool getPatchRURINextHop() const { return patch_ruri_next_hop; }
   virtual void setPatchRURINextHop(bool patch_nh)
   { patch_ruri_next_hop = patch_nh; }
+
+  bool getNextHopFixed() const { return next_hop_fixed; }
+  virtual void setNextHopFixed(bool nh_fixed)
+  { next_hop_fixed = nh_fixed; }
 
   /**
    * Compute the Contact-HF for the next request

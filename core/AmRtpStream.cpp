@@ -41,6 +41,7 @@
 
 #include "sip/resolver.h"
 #include "sip/ip_util.h"
+#include "sip/raw_sender.h"
 #include "sip/msg_logger.h"
 
 #include "log.h"
@@ -238,7 +239,7 @@ int AmRtpStream::ping()
   rp.compile((unsigned char*)ping_chr,2);
 
   rp.setAddr(&r_saddr);
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx,&l_saddr) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
   }
@@ -287,7 +288,7 @@ int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int t
   }
 #endif
 
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
   }
@@ -326,7 +327,7 @@ int AmRtpStream::send_raw( char* packet, unsigned int length )
   rp.compile_raw((unsigned char*)packet, length);
   rp.setAddr(&r_saddr);
 
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
     ERROR("while sending raw RTP packet.\n");
     return -1;
   }
@@ -366,11 +367,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 
   if (rp->payload == getLocalTelephoneEventPT())
     {
-      dtmf_payload_t* dpl = (dtmf_payload_t*)rp->getData();
-
-      DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
-	  dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),rp->timestamp);
-      if (session) session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), rp->timestamp));
+      recvDtmfPacket(rp);
       mem.freePacket(rp);
       return RTP_DTMF;
     }
@@ -412,7 +409,8 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     relay_raw(false),
     sdp_media_index(-1),
     relay_transparent_ssrc(true),
-    relay_transparent_seqno(true)
+    relay_transparent_seqno(true),
+    relay_filter_dtmf(false)
 {
 
   memset(&r_saddr,0,sizeof(struct sockaddr_storage));
@@ -420,7 +418,7 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
 
   l_ssrc = get_random();
   sequence = get_random();
-  gettimeofday(&last_recv_time,NULL);
+  clearRTPTimeout();
 
   // by default the system codecs
   payload_provider = AmPlugIn::instance();
@@ -725,8 +723,7 @@ int AmRtpStream::init(const AmSdp& local,
 
   if(local_media.recv) {
     resume();
-  }
-  else {
+  } else {
     pause();
   }
 
@@ -738,8 +735,7 @@ int AmRtpStream::init(const AmSdp& local,
 	  && (!IN6_IS_ADDR_UNSPECIFIED(&SAv6(&r_saddr)->sin6_addr))))
      ) {
     mute = false;
-  }
-  else {
+  } else {
     mute = true;
   }
 
@@ -769,9 +765,11 @@ void AmRtpStream::pause()
 
 void AmRtpStream::resume()
 {
-  gettimeofday(&last_recv_time,NULL);
+  clearRTPTimeout();
+  receive_mut.lock();
   mem.clear();
   receive_buf.clear();
+  receive_mut.unlock();
   receiving = true;
 }
 
@@ -783,31 +781,44 @@ bool AmRtpStream::getOnHold() {
   return hold;
 }
 
+void AmRtpStream::recvDtmfPacket(AmRtpPacket* p) {
+  if (p->payload == getLocalTelephoneEventPT()) {
+    dtmf_payload_t* dpl = (dtmf_payload_t*)p->getData();
+
+    DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u session = [%p]\n",
+	dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),p->timestamp, session);
+    if (session) 
+      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), p->timestamp));
+  }
+}
+
 void AmRtpStream::bufferPacket(AmRtpPacket* p)
 {
-  memcpy(&last_recv_time, &p->recv_time, sizeof(struct timeval));
+  clearRTPTimeout(&p->recv_time);
 
   if (!receiving && !passive) {
-    if (force_receive_dtmf &&
-        p->payload == getLocalTelephoneEventPT())
-    {
-      dtmf_payload_t* dpl = (dtmf_payload_t*)p->getData();
 
-      DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
-          dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),p->timestamp);
-      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), p->timestamp));
+    if (force_receive_dtmf) {
+      recvDtmfPacket(p);
     }
+
     mem.freePacket(p);
     return;
   }
 
   if (relay_enabled) {
+    if (force_receive_dtmf) {
+      recvDtmfPacket(p);
+    }
+
     // Relay DTMF packets if current audio payload
     // is also relayed.
     // Else, check whether or not we should relay this payload
-    if (relay_raw ||
-        (p->payload == getLocalTelephoneEventPT() && !active) ||
-        relay_payloads.get(p->payload)) {
+
+    bool is_dtmf_packet = (p->payload == getLocalTelephoneEventPT()); 
+
+      if (relay_raw || (is_dtmf_packet && !active) ||
+	  relay_payloads.get(p->payload)) {
 
       if(active){
 	DBG("switching to relay-mode\t(ts=%u;stream=%p)\n",
@@ -816,9 +827,11 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
       }
       handleSymmetricRtp(&p->addr,false);
 
-      if (NULL != relay_stream) {
+      if (NULL != relay_stream &&
+	  (!(relay_filter_dtmf && is_dtmf_packet))) {
         relay_stream->relay(p);
       }
+
       mem.freePacket(p);
       return;
     }
@@ -993,7 +1006,8 @@ void AmRtpStream::recvPacket(int fd)
   AmRtpPacket* p = mem.newPacket();
   if (!p) p = reuseBufferedPacket();
   if (!p) {
-    DBG("out of buffers for RTP packets, dropping\n");
+    DBG("out of buffers for RTP packets, dropping (stream [%p])\n",
+	this);
     // drop received data
     AmRtpPacket dummy;
     dummy.recv(l_sd);
@@ -1039,6 +1053,8 @@ void AmRtpStream::recvRtcpPacket()
     }
     return;
   }
+  else
+    if(!recved_bytes) return;
 
   static const cstring empty;
   if (logger)
@@ -1062,11 +1078,20 @@ void AmRtpStream::recvRtcpPacket()
   memcpy(&rtcp_raddr,&relay_stream->r_saddr,sizeof(rtcp_raddr));
   am_set_port(&rtcp_raddr, relay_stream->r_rtcp_port);
 
-  int err = sendto(relay_stream->l_rtcp_sd,buffer,recved_bytes,0,
-		   (const struct sockaddr *)&rtcp_raddr,
-		   SA_len(&rtcp_raddr));
+  int err;
+  if(AmConfig::UseRawSockets) {
+    err = raw_sender::send((char*)buffer,recved_bytes,
+			   AmConfig::RTP_Ifs[l_if].NetIfIdx,
+			   &relay_stream->l_saddr,
+			   &rtcp_raddr);
+  }
+  else {
+    err = sendto(relay_stream->l_rtcp_sd,buffer,recved_bytes,0,
+		 (const struct sockaddr *)&rtcp_raddr,
+		 SA_len(&rtcp_raddr));
+  }
   
-  if(err == -1){
+  if(err < 0){
     ERROR("could not relay RTCP packet: %s\n",strerror(errno));
     return;
   }
@@ -1093,7 +1118,7 @@ void AmRtpStream::relay(AmRtpPacket* p)
     hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
-  if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
     ERROR("while sending RTP packet to '%s':%i\n",
 	  get_addr_str(&r_saddr).c_str(),am_get_port(&r_saddr));
   }
@@ -1132,6 +1157,11 @@ void AmRtpStream::setRelayStream(AmRtpStream* stream) {
       stream, this);
 }
 
+void AmRtpStream::setRelayPayloads(const PayloadMask &_relay_payloads)
+{
+  relay_payloads = _relay_payloads;
+}
+
 void AmRtpStream::enableRtpRelay() {
   DBG("enabled RTP relay for RTP stream instance [%p]\n", this);
   relay_enabled = true;
@@ -1140,13 +1170,6 @@ void AmRtpStream::enableRtpRelay() {
 void AmRtpStream::disableRtpRelay() {
   DBG("disabled RTP relay for RTP stream instance [%p]\n", this);
   relay_enabled = false;
-}
-  
-void AmRtpStream::enableRtpRelay(const PayloadMask &_relay_payloads, AmRtpStream *_relay_stream)
-{
-  relay_payloads = _relay_payloads;
-  relay_stream = _relay_stream;
-  relay_enabled = true;
 }
 
 void AmRtpStream::enableRawRelay()
@@ -1173,6 +1196,12 @@ void AmRtpStream::setRtpRelayTransparentSSRC(bool transparent) {
   relay_transparent_ssrc = transparent;
 }
 
+void AmRtpStream::setRtpRelayFilterRtpDtmf(bool filter) {
+  DBG("%sabled RTP relay filtering of RTP DTMF (2833 / 3744) for RTP stream instance [%p]\n",
+      filter ? "en":"dis", this);
+  relay_filter_dtmf = filter;
+}
+
 void AmRtpStream::stopReceiving()
 {
   if (hasLocalSocket()){
@@ -1185,7 +1214,7 @@ void AmRtpStream::stopReceiving()
 void AmRtpStream::resumeReceiving()
 {
   if (hasLocalSocket()){
-    DBG("resume stream [%p] into RTP receiver\n",this);
+    DBG("add/resume stream [%p] into RTP receiver\n",this);
     AmRtpReceiver::instance()->addStream(getLocalSocket(), this);
     if (l_rtcp_sd > 0) AmRtpReceiver::instance()->addStream(l_rtcp_sd, this);
   }

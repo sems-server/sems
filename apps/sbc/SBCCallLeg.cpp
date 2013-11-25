@@ -146,6 +146,7 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   if (call_profile.transparent_dlg_id && caller) {
     dlg->setCallid(caller->dlg->getCallid());
     dlg->setExtLocalTag(caller->dlg->getRemoteTag());
+    dlg->cseq = caller->dlg->r_cseq;
   }
 
   // copy RTP rate limit from caller leg
@@ -160,7 +161,10 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCExtModules();
+  if (!initCCExtModules()) {
+    ERROR("initializing extended call control modules\n");
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+  }
 
   setLogger(caller->getLogger());
 }
@@ -213,6 +217,8 @@ void SBCCallLeg::applyAProfile()
 
     setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+    setEnableDtmfRtpFiltering(call_profile.rtprelay_dtmf_filtering);
+    setEnableDtmfRtpDetection(call_profile.rtprelay_dtmf_detection);
 
     if(call_profile.transcoder.isActive()) {
       setRtpRelayMode(RTP_Transcoding);
@@ -312,8 +318,12 @@ void SBCCallLeg::applyBProfile()
   }
 
   if (!call_profile.next_hop.empty()) {
+    DBG("set next hop to '%s' (1st_req=%s,fixed=%s)\n",
+	call_profile.next_hop.c_str(), call_profile.next_hop_1st_req?"true":"false",
+	call_profile.next_hop_fixed?"true":"false");
     dlg->setNextHop(call_profile.next_hop);
     dlg->setNextHop1stReq(call_profile.next_hop_1st_req);
+    dlg->setNextHopFixed(call_profile.next_hop_fixed);
   }
 
   DBG("patch_ruri_next_hop = %i",call_profile.patch_ruri_next_hop);
@@ -496,7 +506,8 @@ void SBCCallLeg::setOtherId(const AmSipReply& reply)
 
 void SBCCallLeg::onInitialReply(B2BSipReplyEvent *e)
 {
-  if (call_profile.transparent_dlg_id && !e->reply.to_tag.empty()) {
+  if (call_profile.transparent_dlg_id && !e->reply.to_tag.empty()
+      && dlg->getStatus() != AmBasicSipDialog::Connected) {
     dlg->setExtLocalTag(e->reply.to_tag);
   }
   CallLeg::onInitialReply(e);
@@ -588,10 +599,16 @@ void SBCCallLeg::onOtherBye(const AmSipRequest& req)
 
 void SBCCallLeg::onDtmf(int event, int duration)
 {
+  DBG("received DTMF on %c-leg (%i;%i)\n", a_leg ? 'A': 'B', event, duration);
+
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->onDtmf(this, event, duration)  == StopProcessing)
+      return;
+  }
+
   AmB2BMedia *ms = getMediaSession();
   if(ms) {
-    DBG("received DTMF on %c-leg (%i;%i)\n",
-	a_leg ? 'A': 'B', event, duration);
+    DBG("sending DTMF (%i;%i)\n", event, duration);
     ms->sendDtmf(!a_leg,event,duration);
   }
 }
@@ -774,7 +791,10 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCExtModules();
+  if (!initCCExtModules()) {
+    ERROR("initializing extended call control modules\n");
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);    
+  }
 
   string ruri, to, from;
   AmSipRequest uac_req(req);
@@ -1502,7 +1522,7 @@ bool SBCCallLeg::reinvite(const AmSdp &sdp, unsigned &request_cseq)
   return true;
 }
 
-void SBCCallLeg::initCCExtModules()
+bool SBCCallLeg::initCCExtModules()
 {
   // init extended call control modules
   vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin();
@@ -1519,19 +1539,28 @@ void SBCCallLeg::initCCExtModules()
       ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
       if (iface) {
         DBG("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
-        cc_ext.push_back(iface);
-
         // module initialization
-        iface->init(this, cc_if.cc_values);
+        if (!iface->init(this, cc_if.cc_values)) {
+	  ERROR("initializing extended call control interface\n");
+	  return false;
+	}
+
+        cc_ext.push_back(iface);
       }
       else WARN("BUG: returned invalid extended CC interface by cc_module '%s'\n", cc_module.c_str());
     }
+    catch (const string& s) {
+      DBG("initialization error '%s' or extended CC interface "
+	  "not supported by cc_module '%s'\n", s.c_str(), cc_module.c_str());
+    }
     catch (...) {
-      DBG("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
+      DBG("initialization error or extended CC interface not "
+	  "supported by cc_module '%s'\n", cc_module.c_str());
     }
 
     ++cc_mod;
   }
+  return true; // success
 }
 
 #define CALL_EXT_CC_MODULES(method) \

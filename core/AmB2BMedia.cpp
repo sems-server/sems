@@ -167,6 +167,9 @@ void AudioStreamData::initialize(AmB2BSession *session)
   stream = new AmRtpAudio(session, session->getRtpInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
   stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
+  stream->setRtpRelayFilterRtpDtmf(session->getEnableDtmfRtpFiltering());
+  if (session->getEnableDtmfRtpDetection())
+    stream->force_receive_dtmf = true;
   force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
   enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
   session->getLowFiPLs(lowfi_payloads);
@@ -181,7 +184,7 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   incoming_payload(UNDEFINED_PAYLOAD),
   force_symmetric_rtp(false),
   enable_dtmf_transcoding(false),
-  muted(false)
+  muted(false), relay_paused(false)
 {
   if (session) initialize(session);
   else stream = NULL; // not initialized yet
@@ -261,12 +264,41 @@ void AudioStreamData::setRelayStream(AmRtpStream *other)
   }
 
   if (relay_enabled && other) {
-    stream->enableRtpRelay(relay_mask, other);
+    stream->setRelayStream(other);
+    stream->setRelayPayloads(relay_mask);
+    if (!relay_paused)
+      stream->enableRtpRelay();
+
     stream->setRAddr(relay_address, relay_port, relay_port+1);
   }
   else {
     // nothing to relay or other stream not set
     stream->disableRtpRelay();
+  }
+}
+
+void AudioStreamData::setRelayPayloads(const SdpMedia &m, RelayController *ctrl) {
+  ctrl->computeRelayMask(m, relay_enabled, relay_mask);
+}
+
+void AudioStreamData::setRelayDestination(const string& connection_address, int port) {
+  relay_address = connection_address; relay_port = port;
+}
+
+void AudioStreamData::setRelayPaused(bool paused) {
+  if (paused == relay_paused) {
+    DBG("relay already paused for stream [%p], ignoring\n", stream);
+    return;
+  }
+
+  relay_paused = paused;
+  DBG("relay %spaused, stream [%p]\n", relay_paused?"":"not ", stream);
+
+  if (NULL != stream) {
+    if (relay_paused)
+      stream->disableRtpRelay();
+    else 
+      stream->enableRtpRelay();
   }
 }
 
@@ -474,6 +506,7 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
   playout_type(ADAPTIVE_PLAYOUT),
   //playout_type(SIMPLE_PLAYOUT),
   a_leg_muted(false), b_leg_muted(false),
+  relay_paused(false),
   logger(NULL)
 { 
 }
@@ -481,6 +514,33 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
 AmB2BMedia::~AmB2BMedia()
 {
   if (logger) dec_ref(logger);
+}
+
+void AmB2BMedia::addToMediaProcessor() {
+  addReference(); // AmMediaProcessor's reference
+  AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmB2BMedia::addToMediaProcessorUnsafe() {
+  ref_cnt++; // AmMediaProcessor's reference
+  AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmB2BMedia::addReference() {
+  mutex.lock();
+  ref_cnt++;
+  mutex.unlock();
+}
+
+bool AmB2BMedia::releaseReference() {
+  mutex.lock();
+  int r = --ref_cnt;
+  mutex.unlock();
+  if (r==0) {
+    DBG("last reference to AmB2BMedia [%p] cleared, destroying\n", this);
+    delete this;
+  }
+  return (r == 0); 
 }
 
 void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
@@ -579,8 +639,7 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
 
   if (needs_processing) {
     if (!isProcessingMedia()) {
-      ref_cnt++; // add reference (hold by AmMediaProcessor)
-      AmMediaProcessor::instance()->addSession(this, callgroup);
+      addToMediaProcessorUnsafe();
     }
   }
   else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
@@ -909,17 +968,15 @@ void AmB2BMedia::onSdpUpdate()
   // the media, right?
   if (needs_processing) {
     if (!isProcessingMedia()) {
-      ref_cnt++; // add reference (hold by AmMediaProcessor)
-      AmMediaProcessor::instance()->addSession(this, callgroup);
+      addToMediaProcessorUnsafe();
     }
   }
   else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
 }
 
-static void updateRelayStream(AmRtpStream *stream,
-    AmB2BSession *session,
-    const string& connection_address,
-    const SdpMedia &m, AmRtpStream *relay_to)
+void AmB2BMedia::updateRelayStream(AmRtpStream *stream, AmB2BSession *session,
+				   const string& connection_address,
+				   const SdpMedia &m, AmRtpStream *relay_to)
 {
   static const PayloadMask true_mask(true);
 
@@ -932,7 +989,10 @@ static void updateRelayStream(AmRtpStream *stream,
       stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
       // if (!stream->hasLocalSocket()) stream->setLocalIP(session->advertisedIP());
     }
-    stream->enableRtpRelay(true_mask,relay_to);
+    stream->setRelayStream(relay_to);
+    stream->setRelayPayloads(true_mask);
+    if (!relay_paused)
+      stream->enableRtpRelay();
     stream->setRAddr(connection_address,m.port,m.port+1);
     if((m.transport != TP_RTPAVP) && (m.transport != TP_RTPSAVP))
       stream->enableRawRelay();
@@ -1044,9 +1104,7 @@ void AmB2BMedia::onMediaProcessingTerminated()
   processing_started = false;
 
   // release reference held by AmMediaProcessor
-  if (releaseReference()) { 
-    delete this; // this should really work :-D
-  }
+  releaseReference();
 }
 
 bool AmB2BMedia::replaceOffer(AmSdp &sdp, bool a_leg)
@@ -1180,6 +1238,85 @@ void AmB2BMedia::setRtpLogger(msg_logger* _logger)
   // walk through all the streams and use logger for them
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) i->setLogger(logger);
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) (*j)->setLogger(logger);
+}
+
+void AmB2BMedia::setRelayDTMFReceiving(bool enabled) {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", &(*j)->a);
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", &(*j)->b);
+    (*j)->a.force_receive_dtmf = enabled;
+    (*j)->b.force_receive_dtmf = enabled;
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", j->a.getStream());
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", j->b.getStream());
+    if (NULL != j->a.getStream())
+      j->a.getStream()->force_receive_dtmf = enabled;
+    
+    if (NULL != j->b.getStream())
+      j->b.getStream()->force_receive_dtmf = enabled;
+  }
+}
+
+#define ALL_STREAMS_OP(op_name, op_action)				\
+  void AmB2BMedia::op_name(bool pause_a, bool pause_b) {		\
+    DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size()); \
+    for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) { \
+      if (pause_a) {							\
+	DBG(#op_name " A relay stream [%p]\n", &(*j)->a);		\
+	(*j)->a.op_action;						\
+      }									\
+      if (pause_b) {							\
+	DBG(#op_name " B relay stream [%p]\n", &(*j)->b);		\
+	(*j)->b.op_action;						\
+      }									\
+    }									\
+									\
+    for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) { \
+      if (pause_a && NULL != j->a.getStream()) {			\
+	DBG(#op_name " A audio stream [%p]\n", j->a.getStream());	\
+	j->a.getStream()->op_action;					\
+      }									\
+      if (pause_b && NULL != j->b.getStream()) {			\
+	DBG(#op_name " B audio stream [%p]\n", j->b.getStream());	\
+	j->b.getStream()->op_action;					\
+      }									\
+    }									\
+  }
+
+ALL_STREAMS_OP(pauseStreams, pause());
+ALL_STREAMS_OP(resumeStreams, resume());
+ALL_STREAMS_OP(muteStreams, mute=true);
+ALL_STREAMS_OP(unmuteStreams, mute=false);
+
+void AmB2BMedia::pauseRelay() {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  relay_paused = true;
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    (*j)->a.disableRawRelay();
+    (*j)->b.disableRawRelay();
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    j->a.setRelayPaused(true);
+    j->b.setRelayPaused(true);
+  }
+}
+
+void AmB2BMedia::restartRelay() {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  relay_paused = false;
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    (*j)->a.enableRawRelay();
+    (*j)->b.enableRawRelay();
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    j->a.setRelayPaused(false);
+    j->b.setRelayPaused(false);
+  }
 }
 
 void AudioStreamData::debug()

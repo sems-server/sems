@@ -86,8 +86,26 @@ int MOD_CLS_NAME::add_regex(const string& r_name, const string& r_reg) {
 CONST_CONDITION_2P(SCExecRegexCondition, ',', false);
 MATCH_CONDITION_START(SCExecRegexCondition) {
   DBG("checking condition '%s' '%s'\n", par1.c_str(), par2.c_str());
-  return true;
-} MATCH_CONDITION_END;
+
+  string rname = resolveVars(par1, sess, sc_sess, event_params);
+  string val = resolveVars(par2, sess, sc_sess, event_params);
+
+  DBG("matching '%s' on regex '%s'\n", val.c_str(), rname.c_str());
+  map<string, TsRegex>::iterator it=MOD_CLS_NAME::regexes.find(rname);
+  if (it == MOD_CLS_NAME::regexes.end()) {
+    ERROR("regex '%s' not found for matching '%s'\n", rname.c_str(), val.c_str());
+    return false;
+  }
+
+  int res = it->second.regexec(val.c_str(), 1, NULL, 0);
+  // res==0 -> match
+  DBG("regex did %smatch\n", res==0?"":"not ");
+  if (inv) {
+    return res != 0;
+  } else {
+    return res == 0;
+  }
+ } MATCH_CONDITION_END;
 
 
 CONST_ACTION_2P(SCCompileRegexAction, ',', false);

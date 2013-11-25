@@ -121,6 +121,14 @@ sip_msg::~sip_msg()
 	dec_ref(local_socket);
 }
 
+void sip_msg::release()
+{
+    buf = NULL;
+    hdrs.clear();
+    u.request = NULL;
+    local_socket = NULL;
+}
+
 int sip_msg::send()
 {
     assert(local_socket);

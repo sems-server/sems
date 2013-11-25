@@ -47,6 +47,9 @@
 
 #include "wheeltimer.h"
 #include "sip_timers.h"
+#include "tr_blacklist.h"
+
+#define DEFAULT_BL_TTL 60000 /* 60s */
 
 #include "log.h"
 
@@ -64,6 +67,7 @@
 #include <algorithm>
 
 bool _trans_layer::accept_fr_without_totag = false;
+unsigned int _trans_layer::default_bl_ttl = DEFAULT_BL_TTL;
 
 _trans_layer::_trans_layer()
     : ua(NULL),
@@ -771,7 +775,8 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 }
 
 
-int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port)
+int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop,
+				     unsigned short next_port)
 {
 
     string nh = c2stlstr(*next_hop);
@@ -873,7 +878,14 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     translate_hdr(&msg,msg.callid, req,req->callid);
 
     string dialog_id(t->dialog_id.s,t->dialog_id.len);
-    bucket->remove(t);
+
+    if(t->flags & TR_FLAG_DISABLE_BL) {
+	bucket->remove(t);
+    }
+    else {
+	// set blacklist timer
+	t->reset_timer(STIMER_BL,BL_TIMER,bucket->get_id());
+    }
     bucket->unlock();
 
     ua->handle_sip_reply(dialog_id,&msg);
@@ -1048,7 +1060,8 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    inc_ref(e);
 	    //TODO: avoid to loose the transport from the next-hop-list
 	    e->next_ip(&msg->h_dns,&msg->remote_ip);
-	    DBG("destination set to <%s>\n",get_addr_str(&msg->remote_ip).c_str());
+	    DBG("destination set to <%s>\n",
+		get_addr_str(&msg->remote_ip).c_str());
 	}
     }
     else {
@@ -1067,6 +1080,55 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    DBG("set_destination_ip failed\n");
 	    return res;
 	}
+    }
+
+    if(!(flags & TR_FLAG_DISABLE_BL) &&
+       tr_blacklist::instance()->exist(&msg->remote_ip)) {
+
+	sockaddr_storage sa;
+	do {
+	    memset(&sa,0,sizeof(sockaddr_storage));
+
+	    // get the next ip
+	    if(msg->h_dns.next_ip(&sa) < 0){
+		DBG("next_ip(): no more destinations! reply 500");
+		sip_msg err;
+		err.type = SIP_REPLY;
+		err.u.reply = new sip_reply();
+		err.u.reply->code = 500;
+		err.u.reply->reason = cstring("All destinations blacklisted");
+
+		// pre-parse error message
+		err.from = msg->from;
+		err.from->p = new sip_from_to();
+		parse_from_to((sip_from_to*)err.from->p,
+			      err.from->value.s,err.from->value.len);
+
+		err.to = msg->to;
+		err.to->p = new sip_from_to();
+		parse_from_to((sip_from_to*)err.to->p,
+			      err.to->value.s,err.to->value.len);
+
+		err.cseq = msg->cseq;
+		err.cseq->p = new sip_cseq();
+		parse_cseq((sip_cseq*)err.cseq->p,
+			   err.cseq->value.s,err.cseq->value.len);
+
+		err.callid = msg->callid;
+
+		ua->handle_sip_reply(c2stlstr(dialog_id),&err);
+		return 0;
+	    }
+    
+	    //If a SRV record is involved, the port number
+	    // should have been set by h_dns.next_ip(...).
+	    if(!am_get_port(&sa)){
+		//Else, we copy the old port number
+		am_set_port(&sa,am_get_port(&msg->remote_ip));
+	    }
+	} while(tr_blacklist::instance()->exist(&sa));
+	
+	memcpy(&msg->remote_ip,&sa,sizeof(sockaddr_storage));
     }
 
     // rco: should we overwrite the socket from the request in all cases???
@@ -1102,7 +1164,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     }
 
     string ruri; // buffer needs to be @ function scope
-    if((flags & SEND_REQUEST_FLAG_NEXT_HOP_RURI) &&
+    if((flags & TR_FLAG_NEXT_HOP_RURI) &&
        (patch_ruri_with_remote_ip(ruri,msg) < 0)) {
  	return -1;
     }
@@ -1225,6 +1287,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
 	return -1;
 	
     case TS_PROCEEDING:
+    case TS_ABANDONED:
 	// continue with CANCEL request
 	break;
 
@@ -1368,22 +1431,8 @@ void _trans_layer::received_msg(sip_msg* msg)
     }
     
     assert(msg->callid && get_cseq(msg));
-#if 0
-    unsigned int  h;
-    if (msg->rack) { /* it's a PRACK */
-        h = hash(msg->callid->value, get_rack(msg)->cseq_str);
-        DBG("### RACK: <%.*s> <%.*s>\n", 
-            msg->callid->value.len, msg->callid->value.s,
-            get_rack(msg)->cseq_str.len, get_rack(msg)->cseq_str.s);
-    } else {
-        h = hash(msg->callid->value, get_cseq(msg)->num_str);
-        DBG("### XXXX: <%.*s> <%.*s>\n", 
-            msg->callid->value.len, msg->callid->value.s,
-            get_cseq(msg)->num_str.len, get_cseq(msg)->num_str.s);
-    }
-#else
     unsigned int h = hash(msg->callid->value, get_cseq(msg)->num_str);
-#endif
+
     trans_bucket* bucket = get_trans_bucket(h);
     sip_trans* t = NULL;
 
@@ -1555,7 +1604,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     cstring to_tag;
     int     reply_code = msg->u.reply->code;
 
-    DBG("update_uac_reply(reply code = %i, trans=%p)\n",msg->u.reply->code, t);
+    DBG("update_uac_reply(reply code = %i, trans=%p)\n",reply_code, t);
 
     if(reply_code < 200){
 
@@ -1563,9 +1612,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	switch(t->state){
 
 	case TS_CALLING:
-	    t->clear_timer(STIMER_A);
-	    t->clear_timer(STIMER_M);
-	    t->clear_timer(STIMER_B);
+	    t->reset_all_timers();
 	    // fall through trap
 
 	case TS_TRYING:
@@ -1581,6 +1628,32 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    }
 	    else
 		goto end;
+
+	case TS_ABANDONED:
+	    // disable blacklisting: remote UA did reply
+	    INFO("disable blacklisting: remote UA (%s/%i) did reply",
+		 am_inet_ntop(&msg->remote_ip).c_str(),
+		 am_get_port(&msg->remote_ip));
+	    t->flags |= TR_FLAG_DISABLE_BL;
+	    bucket->unlock();
+	    {
+		// send CANCEL
+		trans_ticket tt(t,bucket);
+		cancel(&tt,cstring());
+	    
+		// Now remove the transaction
+		bucket->lock();
+		//bucket->remove(t);
+	    }
+	    goto end;
+
+	case TS_TERMINATED:
+	    // disable blacklisting: remote UA did reply
+	    INFO("disable blacklisting: remote UA (%s/%i) did reply",
+		 am_inet_ntop(&msg->remote_ip).c_str(),
+		 am_get_port(&msg->remote_ip));
+	    t->flags |= TR_FLAG_DISABLE_BL;
+	    goto end;
 
 	case TS_COMPLETED:
 	default:
@@ -1605,7 +1678,9 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	if(reply_code >= 300){
 	
 	    if(reply_code == 503) {
-		if(!try_next_ip(bucket,t))
+		tr_blacklist::instance()->insert(&t->msg->remote_ip,
+						 default_bl_ttl,"503");
+		if(!try_next_ip(bucket,t,false))
 		    goto end;
 	    }
     
@@ -1614,9 +1689,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		
 	    case TS_CALLING:
 
-		t->clear_timer(STIMER_A);
-		t->clear_timer(STIMER_M);
-		t->clear_timer(STIMER_B);
+		t->reset_all_timers();
 
 	    case TS_PROCEEDING:
 	
@@ -1628,6 +1701,16 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		
 		goto pass_reply;
 		
+	    case TS_ABANDONED:
+	    case TS_TERMINATED:
+		// disable blacklisting: remote UA did reply
+		INFO("disable blacklisting: remote UA (%s/%i) did reply",
+		     am_inet_ntop(&msg->remote_ip).c_str(),
+		     am_get_port(&msg->remote_ip));
+
+		t->flags |= TR_FLAG_DISABLE_BL;
+		// fall through trap
+
 	    case TS_COMPLETED:
 		// generate a new non-200 ACK
 		send_non_200_ack(msg,t);
@@ -1657,13 +1740,11 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		//        - re-transmit ACK.
 
 		t->state  = TS_TERMINATED_200;
-		t->clear_timer(STIMER_A);
-		t->clear_timer(STIMER_M);
-		t->clear_timer(STIMER_B);
+		t->reset_all_timers();
 
 		// Timer B & C share the same slot,
 		// so it would pretty useless to clear
-		// the same timer slote another time ;-)
+		// the same timer slot another time ;-)
 		//t->clear_timer(STIMER_C);
 
 		t->reset_timer(STIMER_L, L_TIMER, bucket->get_id());
@@ -1696,6 +1777,15 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		t->retransmit();
 		goto end;
 
+	    case TS_ABANDONED:
+	    case TS_TERMINATED:
+		//TODO: send ACK+BYE
+		INFO("disable blacklisting: remote UA (%s/%i) did reply",
+		     am_inet_ntop(&msg->remote_ip).c_str(),
+		     am_get_port(&msg->remote_ip));
+		t->flags |= TR_FLAG_DISABLE_BL;
+		goto end;
+
 	    default:
 		goto end;
 	    }
@@ -1704,7 +1794,9 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     else { // non-INVITE transaction
 
 	if(reply_code == 503) {
-	    if(!try_next_ip(bucket,t))
+	    tr_blacklist::instance()->insert(&t->msg->remote_ip,
+					     default_bl_ttl,"503");
+	    if(!try_next_ip(bucket,t,false))
 		goto end;
 	}
 
@@ -1731,6 +1823,14 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    // Absorb reply retransmission (only if UDP)
 	    goto end;
 	    
+	case TS_ABANDONED:
+	case TS_TERMINATED:
+	    INFO("disable blacklisting: remote UA (%s/%i) did reply",
+		 am_inet_ntop(&msg->remote_ip).c_str(),
+		 am_get_port(&msg->remote_ip));
+	    t->flags |= TR_FLAG_DISABLE_BL;
+	    goto end;
+
 	default:
 	    goto end;
 	}
@@ -2001,8 +2101,19 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	    timeout(bucket,tr);
 	    return;
 	}
+	else if(tr->state == TS_ABANDONED) {
+	    if(tr->flags & TR_FLAG_DISABLE_BL) {
+		bucket->remove(tr);
+	    }
+	    else {
+		// set blacklist timer
+		tr->reset_timer(STIMER_BL,BL_TIMER,bucket->get_id());
+	    }
+	}
 	else {
-	    DBG("Transaction timeout timer hit while state=0x%x",tr->state);
+	    DBG("Transaction timeout timer hit while state=%s (0x%x)",
+		tr->state_str(), tr->state);
+	    bucket->remove(tr);
 	}
 	break;
 
@@ -2011,8 +2122,8 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	// Note: remember well, we first set timer C
 	//       after the first provisional reply.
 	tr->clear_timer(STIMER_C);
-	if(tr->state != TS_PROCEEDING)
-	    break; // shouldn't happen
+	//if(tr->state != TS_PROCEEDING)
+	//  break; // shouldn't happen
 
 	bucket->unlock();
 
@@ -2043,6 +2154,19 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	    // unlocks the bucket
 	    timeout(bucket,tr);
 	    return;
+	case TS_ABANDONED:
+	    if(tr->flags & TR_FLAG_DISABLE_BL) {
+		bucket->remove(tr);
+	    }
+	    else {
+		// set blacklist timer
+		tr->reset_timer(STIMER_BL,BL_TIMER,bucket->get_id());
+	    }
+	    break;
+	default:
+	    DBG("Transaction timeout timer hit while state=%s (0x%x)",
+		tr->state_str(), tr->state);
+	    bucket->remove(tr);
 	}
 	break;
 
@@ -2133,8 +2257,19 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	}
     } break;
 
-    case STIMER_M:
-	try_next_ip(bucket,tr);
+    case STIMER_M: {
+	try_next_ip(bucket,tr,true);
+    } break;
+
+    case STIMER_BL:
+	tr->clear_timer(STIMER_BL);
+	if(!(tr->flags & TR_FLAG_DISABLE_BL)) {
+	    // insert destination to blacklist
+	    tr_blacklist::instance()->insert(&tr->msg->remote_ip,
+					     default_bl_ttl,
+					     "timeout");
+	}
+	bucket->remove(tr);
 	break;
 
     default:
@@ -2197,18 +2332,21 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
   if(tsock != NULL)
       return tsock;
 
+  {
   // try with alternative address
-  char local_ip[NI_MAXHOST];
-  if(am_inet_ntop(&from,local_ip,NI_MAXHOST) != NULL) {
-      map<string,unsigned short>::iterator if_it = AmConfig::LocalSIPIP2If.find(local_ip);
+  string local_ip = am_inet_ntop(&from);
+  if(!local_ip.empty()) {
+      map<string,unsigned short>::iterator if_it =
+	  AmConfig::LocalSIPIP2If.find(local_ip);
       if(if_it == AmConfig::LocalSIPIP2If.end()){
 	  ERROR("Could not find a local interface for "
 		"resolved local IP (local_ip='%s')",
-		local_ip);
+		local_ip.c_str());
       }
       else {
 	  tsock = transports[if_it->second];
       }
+  }
   }
 
   return tsock;
@@ -2218,40 +2356,133 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
   return NULL;
 }
 
-int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
+sip_trans* _trans_layer::copy_uac_trans(sip_trans* tr)
 {
-    sockaddr_storage sa;
-    memset(&sa,0,sizeof(sockaddr_storage));
+    assert(tr && (tr->type == TT_UAC));
+    sip_trans* n_tr = new sip_trans();
     
-    // get the next ip
-    if(tr->msg->h_dns.next_ip(&sa) < 0){
-	tr->clear_timer(STIMER_M);
-	return -1;
-    }
-    
-    //If a SRV record is involved, the port number
-    // should have been set by h_dns.next_ip(...).
-    if(!((sockaddr_in*)&sa)->sin_port){
-	//Else, we copy the old port number
-	((sockaddr_in*)&sa)->sin_port = ((sockaddr_in*)&tr->msg->remote_ip)->sin_port;
-    }
-    
-    // copy the new address back
-    memcpy(&tr->msg->remote_ip,&sa,sizeof(sockaddr_storage));
-    
-    // create new branch tag
-    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
-		   tr->msg->callid->value,tr->msg->cseq->value);
+    n_tr->type  = tr->type;
+    n_tr->flags = tr->flags;
 
-    if(tr->flags & SEND_REQUEST_FLAG_NEXT_HOP_RURI) {
+    if(tr->dialog_id.len) {
+	n_tr->dialog_id.s = new char[tr->dialog_id.len];
+	n_tr->dialog_id.len = tr->dialog_id.len;
+	memcpy((void*)n_tr->dialog_id.s,tr->dialog_id.s,n_tr->dialog_id.len);
+    }
+
+    if(tr->logger) {
+	n_tr->logger = tr->logger;
+	inc_ref(n_tr->logger);
+    }
+
+    return n_tr;
+}
+
+int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
+			      bool use_new_trans)
+{
+    tr->clear_timer(STIMER_M);
+    sockaddr_storage sa;
+    do {
+	memset(&sa,0,sizeof(sockaddr_storage));
+    
+	// get the next ip
+	if(tr->msg->h_dns.next_ip(&sa) < 0){
+	    DBG("no more destinations!");
+	    return -1;
+	}
+    
+	//If a SRV record is involved, the port number
+	// should have been set by h_dns.next_ip(...).
+	if(!am_get_port(&sa)){
+	    //Else, we copy the old port number
+	    am_set_port(&sa,am_get_port(&tr->msg->remote_ip));
+	}
+    } while(!(tr->flags & TR_FLAG_DISABLE_BL) &&
+	    tr_blacklist::instance()->exist(&sa));
+
+
+    if(use_new_trans) {
 	string   n_uri;
+	cstring  old_uri;
+	auto_ptr<sip_trans> n_tr(copy_uac_trans(tr));
+
+	// Warning: no deep copy!!!
+	//  -> do not forget to release() before it's too late!
+	sip_msg tmp_msg(*tr->msg);
+
+	// remove last Via-HF
+	tmp_msg.vias.pop_front();
+
+	// copy the new address back
+	memcpy(&tmp_msg.remote_ip,&sa,sizeof(sockaddr_storage));
+
+	// backup R-URI before possible update
+	old_uri = tr->msg->u.request->ruri_str;
+
+	if(n_tr->flags & TR_FLAG_NEXT_HOP_RURI) {
+	    // patch R-URI, generate& parse new message
+	    if(patch_ruri_with_remote_ip(n_uri, &tmp_msg)) {
+		// TODO: error handling!
+		ERROR("could not patch R-URI with new destination");
+		tmp_msg.release();
+		return -1;
+	    }
+	}
+
 	sip_msg* p_msg=NULL;
-	if(!patch_ruri_with_remote_ip(n_uri, tr->msg) &&
-	   !generate_and_parse_new_msg(tr->msg,p_msg)) {
+	if(generate_and_parse_new_msg(&tmp_msg,p_msg)) {
+	    // TODO: error handling!
+	    ERROR("could not generate&parse new message");
+	    tmp_msg.release();
+	    return -1;
+	}
+
+	tmp_msg.release();
+	n_tr->msg = p_msg;
+
+	// Abandon old transaction
+	tr->clear_timer(STIMER_A);
+	tr->state = TS_ABANDONED;
+
+	// restore old R-URI
+	tr->msg->u.request->ruri_str = old_uri;
+
+	trans_timer* t_bf = tr->get_timer(STIMER_B);
+	tr = n_tr.release();
+
+	// keep old timer B/F
+	if(t_bf) {
+	    t_bf = new trans_timer(*t_bf,bucket->get_id(),tr);
+	    tr->reset_timer(t_bf,t_bf->type);
+	}
+
+	bucket->append(tr);
+	
+    }
+    else {
+	// copy the new address back
+	memcpy(&tr->msg->remote_ip,&sa,sizeof(sockaddr_storage));
+
+	if(tr->flags & TR_FLAG_NEXT_HOP_RURI) {
+	    string   n_uri;
+	    sip_msg* p_msg=NULL;
+
+	    // patch R-URI, generate& parse new message
+	    if(patch_ruri_with_remote_ip(n_uri, tr->msg) ||
+	       generate_and_parse_new_msg(tr->msg,p_msg)) {
+		ERROR("could not patch R-URI with new destination");
+		return -1;
+	    }
 
 	    delete tr->msg;
 	    tr->msg = p_msg;
-	}		
+	}
+	else {
+	    // only create new branch tag
+	    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
+			   tr->msg->callid->value,tr->msg->cseq->value);
+	}
     }
    
     stats.inc_sent_requests();
@@ -2273,26 +2504,21 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
 	    tr->reset_timer(STIMER_A,A_TIMER,bucket->get_id());
 	}
 	if(!tr->get_timer(STIMER_B)) {
-	    // Timer B has been cleared by 1xx
 	    tr->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
 	}
     }
     else {
-	// no need to reset state here:
-	// transaction layer does not make a difference
-	// between TS_TRYING or TS_PROCEEDING on timeout
+	tr->state = TS_TRYING;
 	if(!tr->msg->local_socket->is_reliable()) {
 	    tr->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
 	}
-	// Timer F is not cleared by 1xx,
-	// as provisional replies should not be sent
-	// for non-INVITE transactions
+	if(!tr->get_timer(STIMER_F)) {
+	    tr->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
+	}
     }
     
     if(!tr->msg->h_dns.eoip())
 	tr->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
-    else
-	tr->clear_timer(STIMER_M);
 
     return 0;
 }

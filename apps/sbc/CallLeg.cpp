@@ -535,8 +535,9 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
     // handle non-initial replies
 
     // reply not from our peer (might be one of the discarded ones)
-    if (getOtherId() != reply.from_tag) {
-      TRACE("ignoring reply from %s in %s state\n", reply.from_tag.c_str(), callStatus2str(call_status));
+    if (getOtherId() != ev->sender_ltag && getOtherId() != reply.from_tag) {
+      TRACE("ignoring reply from %s in %s state, other_id = '%s'\n",
+	    reply.from_tag.c_str(), callStatus2str(call_status), getOtherId().c_str());
       return;
     }
 
@@ -654,13 +655,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   if (invite) {
     // there is pending INVITE, replied just above but we need to wait for ACK
     // before sending re-INVITE with real body
-    PendingReinvite p;
-    p.hdrs = ev->hdrs;
-    p.body = ev->body;
-    p.relayed_invite = ev->relayed_invite;
-    p.r_cseq = ev->r_cseq;
-    p.establishing = true;
-    pending_reinvites.push(p);
+    queueReinvite(ev->hdrs, ev->body, /* establishing = */ true, ev->relayed_invite, ev->r_cseq);  
   }
   else reinvite(ev->hdrs, ev->body, ev->relayed_invite, ev->r_cseq, true);
 }
@@ -779,7 +774,11 @@ void CallLeg::putOnHold()
 
   AmMimeBody body;
   sdp2body(sdp, body);
-  if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+  if (dlg->getUACInvTransPending()) {
+    // there is pending INVITE, add reinvite to waiting requests
+    DBG("INVITE pending, queueing hold Re-Invite\n");
+    queueReinvite("", body);
+  } else if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
     offerRejected();
   }
@@ -807,7 +806,11 @@ void CallLeg::resumeHeld(/*bool send_reinvite*/)
 
     AmMimeBody body(established_body);
     sdp2body(sdp, body);
-    if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+    if (dlg->getUACInvTransPending()) {
+      // there is a pending INVITE, add reinvite to waiting requests
+      DBG("INVITE pending, queueing un-hold Re-Invite\n");
+      queueReinvite("", body);
+    } else if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
       ERROR("re-INVITE failed\n");
       offerRejected();
     }
@@ -820,11 +823,14 @@ void CallLeg::resumeHeld(/*bool send_reinvite*/)
 
 void CallLeg::holdAccepted()
 {
+  DBG("hold accepted on %c leg\n", a_leg?'B':'A');
   if (call_status == Disconnecting) updateCallStatus(Disconnected);
   on_hold = true;
   AmB2BMedia *ms = getMediaSession();
-  if (ms) ms->mute(!a_leg); // mute the stream in other (!) leg
-  DBG("%s: hold accepted, muting media session %p(%s)\n", getLocalTag().c_str(), ms, !a_leg ? "A" : "B");
+  if (ms) {
+    DBG("holdAccepted - mute %c leg\n", a_leg?'B':'A');
+    ms->mute(!a_leg); // mute the stream in other (!) leg
+  }
 }
 
 void CallLeg::holdRejected()
@@ -1045,6 +1051,22 @@ void CallLeg::onSessionTimeout()
   updateCallStatus(Disconnected, StatusChangeCause::SessionTimeout);
   AmB2BSession::onSessionTimeout();
 }
+// AmMediaSession interface from AmMediaProcessor
+int CallLeg::readStreams(unsigned long long ts, unsigned char *buffer) {
+  // skip RTP processing if in Relay mode
+  // (but we want to process DTMF thus we may be in media processor)
+  if (getRtpRelayMode()==RTP_Relay)
+    return 0;
+  return AmB2BSession::readStreams(ts, buffer);
+}
+
+int CallLeg::writeStreams(unsigned long long ts, unsigned char *buffer) {
+  // skip RTP processing if in Relay mode
+  // (but we want to process DTMF thus we may be in media processor)
+  if (getRtpRelayMode()==RTP_Relay)
+    return 0;
+  return AmB2BSession::writeStreams(ts, buffer);
+}
 
 void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e,
 			   AmB2BSession::RTPRelayMode mode)
@@ -1099,6 +1121,17 @@ void CallLeg::setCallStatus(CallStatus new_status)
   call_status = new_status;
 }
 
+const char* CallLeg::getCallStatusStr() {
+  switch(getCallStatus()) {
+  case Disconnected : return "Disconnected";
+  case NoReply : return "NoReply";
+  case Ringing : return "Ringing";
+  case Connected : return "Connected";
+  case Disconnecting : return "Disconnecting";
+  default: return "Unknown";
+  };
+}
+
 void CallLeg::updateCallStatus(CallStatus new_status, const StatusChangeCause &cause)
 {
   if (new_status == Connected)
@@ -1140,7 +1173,10 @@ void CallLeg::addExistingCallee(const string &session_tag, ReconnectLegEvent *ev
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
     INFO("the B leg to connect to (%s) doesn't exist\n", session_tag.c_str());
-    if (b.media_session) delete b.media_session;
+    if (b.media_session) {
+      b.media_session->releaseReference();
+      b.media_session = NULL; // ptr may not be valid any more
+    }
     return;
   }
 
@@ -1187,7 +1223,10 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
     INFO("the call leg to be replaced (%s) doesn't exist\n", session_tag.c_str());
-    if (b.media_session) delete b.media_session;
+    if (b.media_session) {
+      b.media_session->releaseReference();
+      b.media_session = NULL;
+    }
     return;
   }
 
@@ -1215,12 +1254,26 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
     INFO("the call leg to be replaced (%s) doesn't exist\n", session_tag.c_str());
-    if (b.media_session) delete b.media_session;
+    if (b.media_session) {
+      b.media_session->releaseReference();
+      b.media_session = NULL;
+    }
     return;
   }
 
   other_legs.push_back(b);
   if (call_status == Disconnected) updateCallStatus(NoReply); // we are something like connected to another leg
+}
+
+void CallLeg::queueReinvite(const string& hdrs, const AmMimeBody& body, bool establishing,
+			    bool relayed_invite, unsigned int r_cseq) {
+  PendingReinvite p;
+  p.hdrs = hdrs;
+  p.body = body;
+  p.relayed_invite = relayed_invite;
+  p.r_cseq = r_cseq;
+  p.establishing = establishing;
+  pending_reinvites.push(p);
 }
 
 void CallLeg::clear_other()

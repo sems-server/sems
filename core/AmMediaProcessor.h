@@ -226,6 +226,8 @@ public:
   void removeSession(AmMediaSession* s);
   /** Remove session s from processor and clear its audio */
   void clearSession(AmMediaSession* s);
+  /** Remove session s from processor but don't signal that to the session */
+  void softRemoveSession(AmMediaSession* s);
   /** Change the callgroup of a session (use with caution) */
   void changeCallgroup(AmMediaSession* s, 
 		       const string& new_callgroup);
