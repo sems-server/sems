@@ -237,7 +237,7 @@ int udp_trsp_socket::sendmsg(const sockaddr_storage* sa,
   // bytes_sent = ;
   if(::sendmsg(sd, &hdr, 0) < 0) {
       char host[NI_MAXHOST] = "";
-      ERROR("sendto(%i;%s:%i): %s\n", sd,
+      ERROR("sendmsg(%i;%s:%i): %s\n", sd,
 	    am_inet_ntop_sip(sa,host,NI_MAXHOST),
 	    am_get_port(sa),strerror(errno));
       return -1;
