@@ -859,17 +859,19 @@ void AmB2BMedia::onSdpUpdate()
   bool have_b = have_b_leg_local_sdp && have_b_leg_remote_sdp;
 
   if (!(
-      (have_a && have_b) ||
-      (have_a && !audio.empty() && audio[0].a.getInput() && (!b)) ||
-      (have_b && !audio.empty() && audio[0].b.getInput() && (!a))
+      (have_a || have_b)
       )) return;
 
   // clear all the stored flags (re-INVITEs or UPDATEs will negotiate new remote
   // & local SDPs so the current ones are not interesting later)
-  have_a_leg_local_sdp = false;
-  have_a_leg_remote_sdp = false;
-  have_b_leg_local_sdp = false;
-  have_b_leg_remote_sdp = false;
+  if (have_a) {
+    have_a_leg_local_sdp = false;
+    have_a_leg_remote_sdp = false;
+  }
+  if (have_b) {
+    have_b_leg_local_sdp = false;
+    have_b_leg_remote_sdp = false;
+  }
 
   processing_started = true;
 
@@ -882,21 +884,17 @@ void AmB2BMedia::onSdpUpdate()
     i->a.stopStreamProcessing();
     i->b.stopStreamProcessing();
 
-    if (have_a) {
-      TRACE("initializing stream in A leg\n");
-      i->a.setDtmfSink(b);
-      if (i->b.getInput()) i->a.setRelayStream(NULL); // don't mix relayed RTP into the other's input
-      else i->a.setRelayStream(i->b.getStream());
-      i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
-    }
+    TRACE("initializing stream in A leg\n");
+    i->a.setDtmfSink(b);
+    if (i->b.getInput()) i->a.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+    else i->a.setRelayStream(i->b.getStream());
+    if (have_a) i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
 
-    if (have_b) {
-      TRACE("initializing stream in B leg\n");
-      i->b.setDtmfSink(a);
-      if (i->a.getInput()) i->b.setRelayStream(NULL); // don't mix relayed RTP into the other's input
-      else i->b.setRelayStream(i->a.getStream());
-      i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
-    }
+    TRACE("initializing stream in B leg\n");
+    i->b.setDtmfSink(a);
+    if (i->a.getInput()) i->b.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+    else i->b.setRelayStream(i->a.getStream());
+    if (have_b) i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
 
     if (i->requiresProcessing()) needs_processing = true;
 
