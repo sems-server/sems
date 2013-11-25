@@ -76,6 +76,13 @@ const char* am_inet_ntop(const sockaddr_storage* addr, char* str, size_t size)
   return str;
 }
 
+string am_inet_ntop(const sockaddr_storage* addr)
+{
+  char host[NI_MAXHOST] = "";
+  am_inet_ntop(addr,host,NI_MAXHOST);
+  return host;
+}
+
 const char* am_inet_ntop_sip(const sockaddr_storage* addr, char* str, size_t size)
 {
   struct sockaddr_in *sin = (struct sockaddr_in *)addr;

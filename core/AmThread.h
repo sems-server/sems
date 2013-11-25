@@ -250,6 +250,33 @@ public:
   void add(AmThread*);
 };
 
+template<class T>
+class AmThreadLocalStorage
+{
+  pthread_key_t key;
+  
+  static void __del_tls_obj(void* obj) {
+    delete static_cast<T*>(obj);
+  }
+
+public:
+  AmThreadLocalStorage() {
+    pthread_key_create(&key,__del_tls_obj);
+  }
+
+  ~AmThreadLocalStorage() {
+    pthread_key_delete(key);
+  }
+
+  T* get() {
+    return static_cast<T*>(pthread_getspecific(key));
+  }
+
+  void set(T* p) {
+    pthread_setspecific(key,(void*)p);
+  }
+};
+
 #endif
 
 // Local Variables:

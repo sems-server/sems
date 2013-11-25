@@ -82,8 +82,6 @@ class AmRtpReceiverThread: public AmThread {
 
 class _AmRtpReceiver
 {
-  // static AmRtpReceiver* _instance;
-
   AmRtpReceiverThread* receivers;
   unsigned int         n_receivers;
 
@@ -96,10 +94,6 @@ protected:
   void dispose();
 
 public:
-  // static AmRtpReceiver* instance();
-  // static bool haveInstance();
-  // static void dispose();
-
   void start();
 
   void addStream(int sd, AmRtpStream* stream);

@@ -526,7 +526,8 @@ struct dns_entry_h
     long     now;
 };
 
-int rr_to_dns_entry(dns_record* rr, dns_section_type t, u_char* begin, u_char* end, void* data)
+int rr_to_dns_entry(dns_record* rr, dns_section_type t,
+		    u_char* begin, u_char* end, void* data)
 {
     dns_entry* dns_e = ((dns_entry_h*)data)->e;
     long     now = ((dns_entry_h*)data)->now;
@@ -544,6 +545,11 @@ int rr_to_dns_entry(dns_record* rr, dns_section_type t, u_char* begin, u_char* e
 dns_handle::dns_handle() 
   : srv_e(0), srv_n(0), ip_e(0), ip_n(0) 
 {}
+
+dns_handle::dns_handle(const dns_handle& h)
+{
+    *this = h;
+}
 
 dns_handle::~dns_handle() 
 { 

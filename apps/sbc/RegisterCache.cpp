@@ -305,7 +305,7 @@ void ContactBucket::insert(const string& contact_uri, const string& remote_ip,
 			   unsigned short remote_port, const string& alias)
 {
   string k = contact_uri + "/" + remote_ip + ":" + int2str(remote_port);
-  elmts.insert(value_map::value_type(k,new string(alias)));
+  insert(k,new string(alias));
 }
 
 bool _RegisterCache::getAlias(const string& canon_aor, const string& uri,
@@ -409,7 +409,7 @@ void _RegisterCache::update(const string& alias, long int reg_expires,
       binding = binding_it->second;
     }
   }
-  
+
   if(!binding) {
     // insert one if none exist
     binding = new RegBinding();
@@ -417,6 +417,9 @@ void _RegisterCache::update(const string& alias, long int reg_expires,
     aor_e->insert(AorEntry::value_type(uri + "/" + public_ip,binding));
     DBG("inserted new binding: '%s' -> '%s'",
 	uri.c_str(), alias.c_str());
+
+    // inc stats
+    active_regs.inc();
 
     ContactBucket* ct_bucket = getContactBucket(uri,alias_update.source_ip,
 						alias_update.source_port);
@@ -536,6 +539,9 @@ void _RegisterCache::update(long int reg_expires, const AliasEntry& alias_update
     binding = new RegBinding();
     binding->alias = _RegisterCache::
       compute_alias_hash(canon_aor,uri,public_ip);
+
+    // inc stats
+    active_regs.inc();
 
     string idx = uri + "/" + public_ip;
     aor_e->insert(AorEntry::value_type(idx, binding));
@@ -714,6 +720,9 @@ void _RegisterCache::removeAlias(const string& alias, bool generate_event)
     ct_bucket->lock();
     ct_bucket->remove(ae->contact_uri,ae->source_ip,ae->source_port);
     ct_bucket->unlock();
+
+    // dec stats
+    active_regs.dec();
 
     storage_handler->onDelete(ae->aor,
 			      ae->contact_uri,

@@ -55,7 +55,9 @@ class sip_ua;
 class msg_logger;
 
 // replace the RURI-host with next-hop IP / port
-#define SEND_REQUEST_FLAG_NEXT_HOP_RURI 1
+#define TR_FLAG_NEXT_HOP_RURI 1
+// disable blacklist
+#define TR_FLAG_DISABLE_BL    2
 
 /* Each counter has a method for incrementing to allow changing implementation
  * of the stats class later without touching the code using it. (One possible
@@ -117,6 +119,11 @@ public:
      * create a dialog.
      */
     static bool accept_fr_without_totag;
+
+    /**
+     * Config option: default blacklist time-to-live
+     */
+    static unsigned int default_bl_ttl;
 
     /**
      * Register a SIP UA.
@@ -237,13 +244,15 @@ protected:
      */
     int set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port);    
 
+    sip_trans* copy_uac_trans(sip_trans* tr);
+
     /**
      * If the destination has multiple IPs (SRV records),
      * try the next destination IP.
      * @return 0 if the message has been re-sent.
      *        -1 if no additional destination has been found.
      */
-    int try_next_ip(trans_bucket* bucket, sip_trans* tr);
+    int try_next_ip(trans_bucket* bucket, sip_trans* tr, bool use_new_trans);
 
     /**
      * Implements the state changes for the UAC state machine

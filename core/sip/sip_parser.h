@@ -139,6 +139,13 @@ struct sip_msg
     ~sip_msg();
 
     int send();
+
+    /**
+     * Releases pointers otherwise deleted by the destructor
+     * This is useful to abandon the memory pointed at if this
+     * message is a copy of another which do own the memory.
+     */
+    void release();
 };
 
 int parse_method(int* method, const char* beg, int len);

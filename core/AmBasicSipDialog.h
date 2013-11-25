@@ -43,6 +43,8 @@ using std::string;
 
 #define SIP_FLAGS_NOTAG        1<<3 // don't add to-tag in reply
 
+#define SIP_FLAGS_NOBL         1<<4 // do not use destination blacklist
+
 /** \brief SIP transaction representation */
 struct AmSipTransaction
 {

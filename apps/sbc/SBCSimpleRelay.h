@@ -43,8 +43,7 @@ class SimpleRelayDialog
   : public AmBasicSipDialog,
     public AmBasicSipEventHandler,
     public AmEventQueue,
-    public AmEventHandler,
-    public atomic_ref_cnt
+    public AmEventHandler
 {
   atomic_ref_cnt*     parent_obj;
   string              other_dlg;

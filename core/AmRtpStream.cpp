@@ -41,6 +41,7 @@
 
 #include "sip/resolver.h"
 #include "sip/ip_util.h"
+#include "sip/raw_sender.h"
 #include "sip/msg_logger.h"
 
 #include "log.h"
@@ -238,7 +239,7 @@ int AmRtpStream::ping()
   rp.compile((unsigned char*)ping_chr,2);
 
   rp.setAddr(&r_saddr);
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx,&l_saddr) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
   }
@@ -287,7 +288,7 @@ int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int t
   }
 #endif
 
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
   }
@@ -326,7 +327,7 @@ int AmRtpStream::send_raw( char* packet, unsigned int length )
   rp.compile_raw((unsigned char*)packet, length);
   rp.setAddr(&r_saddr);
 
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
     ERROR("while sending raw RTP packet.\n");
     return -1;
   }
@@ -1039,6 +1040,8 @@ void AmRtpStream::recvRtcpPacket()
     }
     return;
   }
+  else
+    if(!recved_bytes) return;
 
   static const cstring empty;
   if (logger)
@@ -1062,11 +1065,20 @@ void AmRtpStream::recvRtcpPacket()
   memcpy(&rtcp_raddr,&relay_stream->r_saddr,sizeof(rtcp_raddr));
   am_set_port(&rtcp_raddr, relay_stream->r_rtcp_port);
 
-  int err = sendto(relay_stream->l_rtcp_sd,buffer,recved_bytes,0,
-		   (const struct sockaddr *)&rtcp_raddr,
-		   SA_len(&rtcp_raddr));
+  int err;
+  if(AmConfig::UseRawSockets) {
+    err = raw_sender::send((char*)buffer,recved_bytes,
+			   AmConfig::RTP_Ifs[l_if].NetIfIdx,
+			   &relay_stream->l_saddr,
+			   &rtcp_raddr);
+  }
+  else {
+    err = sendto(relay_stream->l_rtcp_sd,buffer,recved_bytes,0,
+		 (const struct sockaddr *)&rtcp_raddr,
+		 SA_len(&rtcp_raddr));
+  }
   
-  if(err == -1){
+  if(err < 0){
     ERROR("could not relay RTCP packet: %s\n",strerror(errno));
     return;
   }
@@ -1093,7 +1105,7 @@ void AmRtpStream::relay(AmRtpPacket* p)
     hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
-  if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
+  if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
     ERROR("while sending RTP packet to '%s':%i\n",
 	  get_addr_str(&r_saddr).c_str(),am_get_port(&r_saddr));
   }

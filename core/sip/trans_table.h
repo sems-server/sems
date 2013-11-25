@@ -33,7 +33,11 @@ public:
     // in this bucket
     sip_trans* match_reply(sip_msg* msg);
 
+    // Add a new transaction using provided message and type
     sip_trans* add_trans(sip_msg* msg, unsigned int ttype);
+
+    // Append the provided transaction to this bucket
+    void append(sip_trans* t);
 
 private:
     sip_trans* match_200_ack(sip_trans* t,sip_msg* msg);

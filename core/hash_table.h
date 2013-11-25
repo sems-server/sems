@@ -38,6 +38,7 @@
 #include <map>
 using std::list;
 using std::map;
+using std::less;
 
 
 template<class Value>
@@ -147,11 +148,14 @@ public:
     }
 };
 
-template<class Key, class Value, class ElmtAlloc = ht_delete<Value> >
+template<class Key, class Value, 
+	 class ElmtAlloc = ht_delete<Value>,
+	 class ElmtCompare = less<Key> >
 class ht_map_bucket: public AmMutex
 {
 public:
-    typedef map<Key,Value*> value_map;
+    typedef map<Key,Value*,ElmtCompare> value_map;
+    typedef ElmtAlloc                   allocator;
 
     ht_map_bucket(unsigned long id) : id(id) {}
     virtual ~ht_map_bucket() {}
@@ -177,7 +181,9 @@ public:
      */
     virtual bool insert(const Key& k, Value* v) {
 	v = ElmtAlloc().new_elmt(v);
-	return elmts.insert(typename value_map::value_type(k,v)).second;
+	bool res = elmts.insert(typename value_map::value_type(k,v)).second;
+	if(!res) ElmtAlloc().dispose(v);
+	return res;
     }
 
     /**

@@ -31,6 +31,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <string>
+using std::string;
+
 #define SAv4(addr) \
             ((struct sockaddr_in*)addr)
 
@@ -58,6 +61,13 @@ int am_inet_pton(const char* src, struct sockaddr_storage* dst);
  * @return NULL if failed, result string otherwise.
  */
 const char* am_inet_ntop(const sockaddr_storage* addr, char* str, size_t size);
+
+/**
+ * Print a string representation of the IP address in 'addr'.
+ *
+ * @return empty string if failed, result string otherwise.
+ */
+string am_inet_ntop(const sockaddr_storage* addr);
 
 /**
  * Print a string representation of the IP address in 'addr'.

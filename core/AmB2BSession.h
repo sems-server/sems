@@ -113,7 +113,7 @@ struct B2BConnectEvent: public B2BEvent
  * It has two legs as independent sessions:
  * Callee- and caller-leg.
  */
-class AmB2BSession: public AmSession, private RelayController
+class AmB2BSession: public AmSession, protected RelayController
 {
  public:
 

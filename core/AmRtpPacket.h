@@ -69,7 +69,7 @@ public:
   // returns -1 if error, else 0
   int compile_raw(unsigned char* data_buf, unsigned int size);
 
-  int send(int sd, unsigned int sys_if_idx=0);
+  int send(int sd, unsigned int sys_if_idx, sockaddr_storage* l_saddr);
   int recv(int sd);
 
   int parse();
