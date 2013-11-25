@@ -36,3 +36,8 @@ uri.getHeader(<header>, <dst>)
     	uri.getHeader(P-Asserted-Identity, PAI);
 
  
+uri.encode($dstvar=text)  - encode special characters into dstvar
+   e.g. uri.encode($replaces_hdr=$replaces_hdr);
+
+uri.decode($dstvar=text)  - decode special characters into dstvar
+   e.g. uri.encode($replaces=$replaces_hdr);

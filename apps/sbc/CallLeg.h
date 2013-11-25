@@ -110,8 +110,7 @@ class CallLeg: public AmB2BSession
 
       void releaseMediaSession() {
 	if (media_session) {
-	  if (media_session->releaseReference())
-	    delete media_session;
+	  media_session->releaseReference();
 	  media_session = NULL;
 	}
       }
@@ -231,6 +230,9 @@ class CallLeg: public AmB2BSession
     virtual void setCallStatus(CallStatus new_status);
     CallStatus getCallStatus() { return call_status; }
 
+    void queueReinvite(const string& hdrs, const AmMimeBody& body, bool establishing = false,
+		       bool relayed_invite=false, unsigned int r_cseq = 0);
+
     // @see AmSession
     virtual void onInvite(const AmSipRequest& req);
     virtual void onInvite2xx(const AmSipReply& reply);
@@ -344,6 +346,11 @@ class CallLeg: public AmB2BSession
     void replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite);
     void replaceExistingLeg(const string &session_tag, const string &hdrs);
 
+    const char* getCallStatusStr();
+
+    // AmMediaSession interface from AmMediaProcessor
+    int readStreams(unsigned long long ts, unsigned char *buffer);
+    int writeStreams(unsigned long long ts, unsigned char *buffer);
 
   public:
     /** creates A leg */

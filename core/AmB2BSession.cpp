@@ -73,6 +73,8 @@ AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* p_dlg,
     rtp_relay_mode(RTP_Direct),
     rtp_relay_force_symmetric_rtp(false),
     enable_dtmf_transcoding(false),
+    enable_dtmf_rtp_filtering(false),
+    enable_dtmf_rtp_detection(false),
     rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
     est_invite_cseq(0),est_invite_other_cseq(0),
     media_session(NULL)
@@ -151,7 +153,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq,
     n_reply.cseq_method = method;
     n_reply.from_tag = dlg->getLocalTag();
     DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-    relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+    relayEvent(new B2BSipReplyEvent(n_reply, forward, method, getLocalTag()));
   }
 }
 
@@ -165,7 +167,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     n_reply.cseq_method = method;
     n_reply.from_tag = dlg->getLocalTag();
     DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
-    relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+    relayEvent(new B2BSipReplyEvent(n_reply, forward, method, getLocalTag()));
   }
 }
 
@@ -195,8 +197,18 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	if (req_ev->req.method == SIP_METH_INVITE &&
 	    dlg->getUACInvTransPending()) {
 	  // don't relay INVITE if INV trans pending
+	  DBG("not sip-relaying INVITE with pending INV transaction, "
+	      "b2b-relaying 491 pending\n");
           relayError(req_ev->req.method, req_ev->req.cseq,
 		     true, 491, SIP_REPLY_PENDING);
+	  return;
+	}
+
+	if (req_ev->req.method == SIP_METH_BYE &&
+	    dlg->getStatus() != AmBasicSipDialog::Connected) {
+	  DBG("not sip-relaying BYE in not connected dlg, b2b-relaying 200 OK\n");
+          relayError(req_ev->req.method, req_ev->req.cseq,
+		     true, 200, "OK");
 	  return;
 	}
 
@@ -541,7 +553,7 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
     n_reply.cseq = t->second.cseq;
 
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-    relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method));
+    relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method, getLocalTag()));
 
     if(reply.code >= 200) {
       if ((reply.code < 300) && (t->second.method == SIP_METH_INVITE)) {
@@ -579,7 +591,7 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
       }
     }
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-    relayEvent(new B2BSipReplyEvent(n_reply, false, reply.cseq_method));
+    relayEvent(new B2BSipReplyEvent(n_reply, false, reply.cseq_method, getLocalTag()));
   }
 }
 
@@ -955,6 +967,14 @@ void AmB2BSession::setEnableDtmfTranscoding(bool enable) {
   enable_dtmf_transcoding = enable;
 }
 
+void AmB2BSession::setEnableDtmfRtpFiltering(bool enable) {
+  enable_dtmf_rtp_filtering = enable;
+}
+
+void AmB2BSession::setEnableDtmfRtpDetection(bool enable) {
+  enable_dtmf_rtp_detection = enable;
+}
+
 void AmB2BSession::getLowFiPLs(vector<SdpPayload>& lowfi_payloads) const {
   lowfi_payloads = this->lowfi_payloads;
 }
@@ -970,7 +990,7 @@ void AmB2BSession::clearRtpReceiverRelay() {
     case RTP_Transcoding:
       if (media_session) { 
         media_session->stop(a_leg);
-        if (media_session->releaseReference()) delete media_session;
+        media_session->releaseReference();
         media_session = NULL;
       }
       break;
@@ -1278,7 +1298,8 @@ void AmB2BSession::setMediaSession(AmB2BMedia *new_session)
   // FIXME: ignore old media_session? can it be already set here?
   if (media_session) ERROR("BUG: non-empty media session overwritten\n");
   media_session = new_session; 
-  if (media_session) media_session->addReference(); // new reference for me
+  if (media_session)
+    media_session->addReference(); // new reference for me
 }
 
 void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) {
@@ -1286,6 +1307,8 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
   
   callee_session->setRtpRelayMode(rtp_relay_mode);
   callee_session->setEnableDtmfTranscoding(enable_dtmf_transcoding);
+  callee_session->setEnableDtmfRtpFiltering(enable_dtmf_rtp_filtering);
+  callee_session->setEnableDtmfRtpDetection(enable_dtmf_rtp_detection);
   callee_session->setLowFiPLs(lowfi_payloads);
 
   if ((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) {

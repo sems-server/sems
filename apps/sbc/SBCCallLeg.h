@@ -127,7 +127,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
-  void initCCExtModules();
+  bool initCCExtModules();
 
   /** save call timer; only effective before call is connected */
   void saveCallTimer(int timer, double timeout);

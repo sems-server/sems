@@ -67,6 +67,12 @@ class AudioStreamData {
     /** Enables inband dtmf detection */
     bool enable_dtmf_transcoding;
 
+    /** Enables RTP DTMF (2833/4733) filtering */
+    bool enable_dtmf_rtp_filtering;
+
+    /** Enables DTMF detection with RTP DTMF (2833/4733) */
+    bool enable_dtmf_rtp_detection;
+
     /** Low fidelity payloads for which inband DTMF transcoding should be used */
     vector<SdpPayload> lowfi_payloads;
   
@@ -84,6 +90,10 @@ class AudioStreamData {
     bool relay_enabled;
     std::string relay_address;
     int relay_port;
+
+    /** RTP relay (temporarily) paused?
+     * relay stream may still be set up and updated */
+    bool relay_paused;
 
     bool muted;
 
@@ -139,9 +149,12 @@ class AudioStreamData {
     /** computes and stores payloads that can be relayed based on the
      * corresponding 'peer session' remote media line (i.e. what accepts the
      * other remote end directly) */
-    void setRelayPayloads(const SdpMedia &m, RelayController *ctrl) { ctrl->computeRelayMask(m, relay_enabled, relay_mask); }
+    void setRelayPayloads(const SdpMedia &m, RelayController *ctrl);
 
-    void setRelayDestination(const string& connection_address, int port) { relay_address = connection_address; relay_port = port; }
+    void setRelayDestination(const string& connection_address, int port);
+
+    /** set relay temporarily to paused (stream relation may still be up) */
+    void setRelayPaused(bool paused);
 
     /** initialize given stream for transcoding & regular audio processing
      *
@@ -325,39 +338,67 @@ class AmB2BMedia: public AmMediaSession
      */
     PlayoutType playout_type;
 
+    /** audio relay/processing streams */
     std::vector<AudioStreamPair>  audio;
+    /** raw relay streams */
     std::vector<RelayStreamPair*> relay_streams;
 
     bool a_leg_muted, b_leg_muted;
 
+    bool relay_paused;
+
     void createStreams(const AmSdp &sdp);
     void onSdpUpdate();
+    void updateRelayStream(AmRtpStream *stream, AmB2BSession *session,
+			   const string& connection_address,
+			   const SdpMedia &m, AmRtpStream *relay_to);
 
     void setMuteFlag(bool a_leg, bool set);
     void changeSessionUnsafe(bool a_leg, AmB2BSession *new_session);
 
     msg_logger* logger; // log RTP traffic
 
+    virtual ~AmB2BMedia();
+
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
-    virtual ~AmB2BMedia();
+
+    /**
+     * To add a AmB2BMedia session to the media processor, *this method
+     * MUST be used* as it increases the refcnt.
+     */
+    void addToMediaProcessor();
+    /**
+     * unsafe version (no locking of mutex)
+     *
+     * To add a AmB2BMedia session to the media processor, *this method
+     * MUST be used* as it increases the refcnt.
+     */
+    void addToMediaProcessorUnsafe();
 
     void changeSession(bool a_leg, AmB2BSession *new_session);
 
     //void updateRelayPayloads(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp);
 
-    /** Adds a reference.
+    /**
+     * Adds a reference.
+     *
+     * Both AmB2BSessions and AmMediaProcessor uses refcnt to this class; B2BSession
+     * in case of RTP relay, AmMediaProcessor in case of local media processing.
      *
      * Instance of this object is created with reference counter set to zero.
      * Thus if somebody wants to hold a reference it must call addReference()
-     * explicitly after construction! */
-    void addReference() { mutex.lock(); ref_cnt++; mutex.unlock(); }
+     * explicitly after construction!
+     */
+    void addReference();
 
     /** Releases reference.
      *
-     * Returns true if this was the last reference and the object should be
-     * destroyed (call "delete this" here?) */
-    bool releaseReference() { mutex.lock(); int r = --ref_cnt; mutex.unlock(); return (r == 0); }
+     * Returns true if this was the last reference, in that case the pointer
+     * to that object is now *invalid*
+     * Must be last operation in member method!
+     */
+    bool releaseReference();
 
     // ----------------- SDP manipulation & updates -------------------
 
@@ -435,6 +476,27 @@ class AmB2BMedia: public AmMediaSession
     void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
 
     void setRtpLogger(msg_logger* _logger);
+
+    /** enable or disable DTMF receiving on relay streams */
+    void setRelayDTMFReceiving(bool enabled);
+
+    /** pause relaying on streams */
+    void pauseRelay();
+
+    /** restart relaying on streams */
+    void restartRelay();
+
+    /** set RTP/relay streams to 'paused' (= not receiving, drop incoming packets) */
+    void pauseStreams(bool pause_a, bool pause_b);
+
+    /** resume RTP/relay streams from 'paused' (= receiving) */
+    void resumeStreams(bool resume_a, bool resume_b);
+
+    /** set RTP/relay streams to muted (don't send RTP packets) */
+    void muteStreams(bool mute_a, bool mute_b);
+
+    /** set RTP/relay streams to unmuted (do send RTP packets) */
+    void unmuteStreams(bool unmute_a, bool unmute_b);
 
     // print debug info
     void debug();

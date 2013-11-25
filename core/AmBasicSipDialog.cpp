@@ -30,6 +30,7 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
     next_hop(AmConfig::NextHop),
     next_hop_1st_req(AmConfig::NextHop1stReq),
     patch_ruri_next_hop(false),
+    next_hop_fixed(false),
     outbound_interface(-1),
     nat_handling(AmConfig::SipNATHandling),
     usages(0)
@@ -469,7 +470,9 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
        (reply.cseq_method == SIP_METH_SUBSCRIBE)) ) {
     
     setRemoteUri(reply.to_uri);
-    if(!getNextHop().empty()) {
+    if(!getNextHop().empty() && !next_hop_fixed) {
+      DBG("updating next_hop from reply to %s:%u\n",
+	  reply.remote_ip.c_str(), reply.remote_port);
       setNextHop(reply.remote_ip + ":"
 		 + int2str(reply.remote_port));
     }

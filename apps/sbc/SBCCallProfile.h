@@ -143,6 +143,7 @@ struct SBCCallProfile
   string next_hop;
   bool next_hop_1st_req;
   bool patch_ruri_next_hop;
+  bool next_hop_fixed;
 
   string aleg_next_hop;
 
@@ -187,6 +188,8 @@ struct SBCCallProfile
   bool msgflags_symmetric_rtp;
   bool rtprelay_transparent_seqno;
   bool rtprelay_transparent_ssrc;
+  bool rtprelay_dtmf_filtering;
+  bool rtprelay_dtmf_detection;
 
   string rtprelay_interface;
   int rtprelay_interface_value;
@@ -344,7 +347,8 @@ struct SBCCallProfile
     log_rtp(false),
     log_sip(false),
     patch_ruri_next_hop(false),
-    next_hop_1st_req(false)
+    next_hop_1st_req(false),
+    next_hop_fixed(false)
   { }
 
   ~SBCCallProfile()

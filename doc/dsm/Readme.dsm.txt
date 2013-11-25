@@ -141,7 +141,7 @@ registerApplication(string diag_name, [string config])
   if config empty or not given, DSM is assumed to be in main config
 
 loadConfig(string conf_file_name, string conf_name)
-  (re)load application configuration and script 
+  (re)load application bundle ("app bundle"), configuration and scripts
   like a file in conf_dir
 
 createSystemDSM(string conf_name, string start_diag)
