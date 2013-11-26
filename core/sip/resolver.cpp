@@ -305,14 +305,16 @@ dns_entry::~dns_entry()
     }
 }
 
-dns_entry* dns_entry::make_entry(ns_type t)
+dns_entry* dns_entry::make_entry(dns_rr_type t)
 {
     switch(t){
-    case ns_t_srv:
+    case dns_r_srv:
 	return new dns_srv_entry();
-    case ns_t_a:
-    //case ns_t_aaaa:
+    case dns_r_a:
+    //case dns_r_aaaa:
 	return new dns_ip_entry();
+    case dns_r_naptr:
+	return new dns_naptr_entry();
     default:
 	return NULL;
     }
@@ -596,6 +598,78 @@ const dns_handle& dns_handle::operator = (const dns_handle& rh)
     return *this;
 }
 
+static bool naptr_less(const dns_base_entry* le, const dns_base_entry* re)
+{
+    const naptr_record* l_naptr = (const naptr_record*)le;
+    const naptr_record* r_naptr = (const naptr_record*)re;
+
+    if(l_naptr->order != r_naptr->order)
+	return l_naptr->order < r_naptr->order;
+    else
+	return l_naptr->pref < r_naptr->pref;
+}
+
+void dns_naptr_entry::init()
+{
+    stable_sort(ip_vec.begin(),ip_vec.end(),naptr_less);
+}
+
+dns_base_entry* dns_naptr_entry::get_rr(dns_record* rr, u_char* begin, u_char* end)
+{
+    enum NAPTR_FieldIndex {
+	NAPTR_Flags       = 0,
+	NAPTR_Services    = 1,
+	NAPTR_Regexp      = 2,
+	NAPTR_Replacement = 3,
+	NAPTR_Fields
+    };
+
+    if(rr->type != dns_r_naptr)
+	return NULL;
+
+    const u_char * rdata = ns_rr_rdata(*rr);
+
+    unsigned short order = dns_get_16(rdata);
+    rdata += 2;
+
+    unsigned short pref = dns_get_16(rdata);
+    rdata += 2;
+
+    cstring fields[NAPTR_Fields];
+
+    for(int i=0; i < NAPTR_Fields; i++) {
+
+	if(rdata > end) {
+	    ERROR("corrupted NAPTR record!!\n");
+	    return NULL;
+	}
+
+	fields[i].len = *(rdata++);
+	fields[i].s = (const char*)rdata;
+
+	rdata += fields[i].len;
+    }
+
+    printf("ENUM: TTL=%i P=<%i> W=<%i>"
+	   " FL=<%.*s> S=<%.*s>"
+	   " REG=<%.*s> REPL=<%.*s>\n",
+	   ns_rr_ttl(*rr),
+	   order, pref,
+	   fields[NAPTR_Flags].len,       fields[NAPTR_Flags].s,
+	   fields[NAPTR_Services].len,    fields[NAPTR_Services].s,
+	   fields[NAPTR_Regexp].len,      fields[NAPTR_Regexp].s,
+	   fields[NAPTR_Replacement].len, fields[NAPTR_Replacement].s);
+
+    naptr_record* naptr_r = new naptr_record();
+    naptr_r->order = order;
+    naptr_r->pref  = pref;
+    naptr_r->flags = c2stlstr(fields[NAPTR_Flags]);
+    naptr_r->services = c2stlstr(fields[NAPTR_Services]);
+    naptr_r->regexp = c2stlstr(fields[NAPTR_Regexp]);
+    naptr_r->replace = c2stlstr(fields[NAPTR_Replacement]);
+
+    return naptr_r;
+}
 
 _resolver::_resolver()
     : cache(DNS_CACHE_SIZE)
@@ -608,16 +682,15 @@ _resolver::~_resolver()
     
 }
 
-int _resolver::query_dns(const char* name, dns_entry** e, long now)
+int _resolver::query_dns(const char* name, dns_entry** e, long now, dns_rr_type t)
 {
     u_char dns_res[NS_PACKETSZ];
 
     if(!name) return -1;
 
-    ns_type t = (name[0] == '_') ? ns_t_srv : ns_t_a;
-    
     //TODO: add AAAA record support
-    int dns_res_len = res_search(name,ns_c_in,t,dns_res,NS_PACKETSZ);
+    int dns_res_len = res_search(name,ns_c_in,(ns_type)t,
+				 dns_res,NS_PACKETSZ);
     if(dns_res_len < 0){
 	dns_error(h_errno,name);
 	return -1;
@@ -656,7 +729,8 @@ int _resolver::query_dns(const char* name, dns_entry** e, long now)
 int _resolver::resolve_name(const char* name,
 			    dns_handle* h,
 			    sockaddr_storage* sa,
-			    const address_type types)
+			    const address_type types,
+			    dns_rr_type t)
 {
     int ret;
 
@@ -666,12 +740,16 @@ int _resolver::resolve_name(const char* name,
 	return h->next_ip(sa);
     }
 
-    // first try to detect if 'name' is already an IP address
-    ret = am_inet_pton(name,sa);
-    if(ret == 1) {
-	h->ip_n = -1; // flag end of IP list
-	h->srv_n = -1;
-	return 0; // 'name' is an IP address
+    if(t != dns_r_srv &&
+       t != dns_r_naptr) {
+
+	// first try to detect if 'name' is already an IP address
+	ret = am_inet_pton(name,sa);
+	if(ret == 1) {
+	    h->ip_n = -1; // flag end of IP list
+	    h->srv_n = -1;
+	    return 0; // 'name' is an IP address
+	}
     }
     
     // name is NOT an IP address -> try a cache look up
@@ -688,7 +766,7 @@ int _resolver::resolve_name(const char* name,
     gettimeofday(&tv_now,NULL);
 
     // no valid IP, query the DNS
-    if(query_dns(name,&e,tv_now.tv_sec) < 0) {
+    if(query_dns(name,&e,tv_now.tv_sec,t) < 0) {
 	return -1;
     }
 

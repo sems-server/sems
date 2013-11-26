@@ -803,7 +803,8 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop,
 
 		if(!resolver::instance()->resolve_name(srv_name.c_str(),
 						       &(msg->h_dns),
-						       &(msg->remote_ip),IPv4)){
+						       &(msg->remote_ip),IPv4,
+						       dns_r_srv)){
 		    return 0;
 		}
 

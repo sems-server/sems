@@ -79,7 +79,7 @@ class dns_entry
 public:
     vector<dns_base_entry*> ip_vec;
 
-    static dns_entry* make_entry(ns_type t);
+    static dns_entry* make_entry(dns_rr_type t);
 
     dns_entry();
     virtual ~dns_entry();
@@ -168,6 +168,33 @@ private:
     int            ip_n;
 };
 
+struct naptr_record
+    : public dns_base_entry
+{
+    unsigned short order;
+    unsigned short pref;
+
+    string flags;
+    string services;
+    string regexp;
+    string replace;
+};
+
+class dns_naptr_entry
+    : public dns_entry
+{
+public:
+    dns_naptr_entry()
+	: dns_entry()
+    {}
+
+    void init();
+    dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end);
+
+    // not needed
+    int next_ip(dns_handle* h, sockaddr_storage* sa) { return -1; }
+};
+
 class _resolver
     : AmThread
 {
@@ -175,19 +202,20 @@ public:
     int resolve_name(const char* name, 
 		     dns_handle* h,
 		     sockaddr_storage* sa,
-		     const address_type types);
+		     const address_type types,
+		     dns_rr_type t = dns_r_a);
 
     int str2ip(const char* name,
 	       sockaddr_storage* sa,
 	       const address_type types);
 
+    int query_dns(const char* name,
+		  dns_entry** e, long now,
+		  dns_rr_type t);
+
 protected:
     _resolver();
     ~_resolver();
-
-    int query_dns(const char* name,
-		  dns_entry** e,
-		  long now);
 
     void run();
     void on_stop() {}
