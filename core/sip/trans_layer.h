@@ -33,17 +33,27 @@
 #include "singleton.h"
 #include "atomic_types.h"
 
+#include "parse_next_hop.h"
+
 #include <list>
 using std::list;
 
 #include <vector>
 using std::vector;
 
+#include <string>
+using std::string;
+
+#include <map>
+using std::map;
+
 struct sip_msg;
 struct sip_uri;
-class sip_trans;
+class  sip_trans;
 struct sip_header;
 struct sockaddr_storage;
+struct dns_handle;
+struct sip_target_set;
 
 class trans_ticket;
 class trans_bucket;
@@ -110,6 +120,10 @@ class _trans_layer
 {
 private:
     trans_stats stats;
+    sip_ua*     ua;
+
+    typedef map<string,trsp_socket*> prot_collection;
+    vector<prot_collection> transports;
 
 public:
 
@@ -135,7 +149,7 @@ public:
      * Register a transport instance.
      * This method MUST be called at least once.
      */
-    void register_transport(trsp_socket* trsp);
+    int register_transport(trsp_socket* trsp);
 
     /**
      * Clears all registered transport instances.
@@ -148,11 +162,8 @@ public:
      * include a well-formed 'Content-Type', but no
      * 'Content-Length' header.
      */
-    int send_reply(const trans_ticket* tt, const cstring& dialog_id,
-		   int reply_code, const cstring& reason,
-		   const cstring& to_tag, const cstring& hdrs, 
-		   const cstring& body,
-		   msg_logger* logger=NULL);
+    int send_reply(sip_msg* msg, const trans_ticket* tt, const cstring& dialog_id,
+		   const cstring& to_tag, msg_logger* logger=NULL);
 
     /**
      * Sends a UAC request.
@@ -185,14 +196,11 @@ public:
      */
     void timer_expired(trans_timer* t, trans_bucket* bucket, sip_trans* tr);
 
-    sip_ua*              ua;
-    vector<trsp_socket*> transports;
-
     /**
-     * Tries to find a registered transport socket
-     * suitable for sending to the destination supplied.
+     * Tries to find an interface suitable for
+     * sending to the destination supplied.
      */
-    trsp_socket* find_transport(sockaddr_storage* remote_ip);
+    int find_outbound_if(sockaddr_storage* remote_ip);
 
     /**
      * Send ACK coresponding to error replies
@@ -219,7 +227,13 @@ public:
 			    int reply_code, const cstring& reason, 
 			    const cstring& hdrs = cstring(),
 			    const cstring& body = cstring());
-    
+
+    /**
+     * Allows the transport layer to signal 
+     * an asynchronous error while sending out
+     * a SIP message.
+     */
+    void transport_error(sip_msg* msg);
 
     /**
      * Transaction timeout
@@ -234,15 +248,16 @@ protected:
      * Fills the address structure passed and modifies 
      * R-URI and Route headers as needed.
      */
-    int set_next_hop(sip_msg* msg,
-		     cstring* next_hop,
-		     unsigned short* next_port,
-		     cstring* next_trsp);
+    int set_next_hop(sip_msg* msg, cstring* next_hop,
+		     unsigned short* next_port, cstring* next_trsp);
 
     /**
-     * Fills msg->remote_ip according to next_hop and next_port.
+     * Fills the local_socket attribute using the given
+     * transport and interface. If out_interface == -1,
+     * we will try hard to find an interface based on msg->remote_ip.
      */
-    int set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port);    
+    int set_trsp_socket(sip_msg* msg, const cstring& next_trsp,
+			int out_interface);
 
     sip_trans* copy_uac_trans(sip_trans* tr);
 
@@ -266,12 +281,16 @@ protected:
      * Implements the state changes for the UAS state machine
      */
     int update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
-    void update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
+    int update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
 
     /** Avoid external instantiation. @see singleton. */
     _trans_layer();
     ~_trans_layer();
-    
+
+    /**
+     * Processes a parsed SIP message
+     */
+    void process_rcvd_msg(sip_msg* msg);
 };
 
 typedef singleton<_trans_layer> trans_layer;

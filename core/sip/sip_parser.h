@@ -91,6 +91,10 @@ struct sip_reply
     sip_reply()
 	: code(0)
     {}
+
+    sip_reply(int code, const cstring& reason)
+	: code(code), reason(reason)
+    {}
 };
 
 
@@ -132,13 +136,12 @@ struct sip_msg
     trsp_socket*       local_socket;
 
     sockaddr_storage   remote_ip;
-    dns_handle         h_dns;
-    
+
     sip_msg();
     sip_msg(const char* msg_buf, int msg_len);
     ~sip_msg();
 
-    int send();
+    int send(unsigned flags);
 
     /**
      * Releases pointers otherwise deleted by the destructor

@@ -113,8 +113,7 @@ using std::list;
 enum {
     ST_CR=100,
     ST_LF,
-    ST_CRLF,
-    ST_EoL_WSP // [CR] LF WSP
+    ST_CRLF
 };
 
 #define case_CR_LF \
@@ -182,6 +181,11 @@ inline int lower_cmp_n(const char* l, int llen, const char* r, int rlen)
 	return 1;
 
     return lower_cmp(l,r,rlen);
+}
+
+inline int lower_cmp_n(const cstring& l, const cstring& r)
+{
+    return lower_cmp_n(l.s,l.len,r.s,r.len);
 }
 
 int parse_sip_version(const char* beg, int len);

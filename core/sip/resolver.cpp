@@ -31,7 +31,10 @@
 #include "hash.h"
 
 #include "parse_dns.h"
+#include "parse_common.h"
 #include "ip_util.h"
+#include "trans_layer.h"
+#include "tr_blacklist.h"
 
 #include <sys/socket.h> 
 #include <netdb.h>
@@ -95,7 +98,8 @@ int dns_ip_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     }
     
     int& index = h->ip_n;
-    if(index >= (int)ip_vec.size()) return -1;
+    if((index < 0) || (index >= (int)ip_vec.size()))
+	return -1;
     
     //copy address
     ((ip_entry*)ip_vec[index++])->to_sa(sa);
@@ -176,8 +180,6 @@ public:
     int next_ip(dns_handle* h, sockaddr_storage* sa)
     {
 	int& index = h->srv_n;
-	if(index >= (int)ip_vec.size()) return -1;
-	
 	if(h->srv_e != this){
 	    if(h->srv_e) dec_ref(h->srv_e);
 	    h->srv_e = this;
@@ -186,15 +188,17 @@ public:
 	}
 	else if(h->ip_n != -1){
 	    if(h->port) {
-		DBG("setting port to %i",ntohs(h->port));
 		((sockaddr_in*)sa)->sin_port = h->port;
 	    }
 	    else {
-		DBG("setting port to 5060");
 		((sockaddr_in*)sa)->sin_port = htons(5060);
 	    }
 	    return h->ip_e->next_ip(h,sa);
 	}
+
+	if((index < 0) ||
+	   (index >= (int)ip_vec.size()))
+	    return -1;
 	
 	// reset IP record
 	if(h->ip_e){
@@ -269,24 +273,20 @@ public:
 	//TODO: find a solution for IPv6
 	h->port = htons(e->port);
 	if(h->port) {
-	    DBG("setting port to %i",e->port);
 	    ((sockaddr_in*)sa)->sin_port = h->port;
 	}
 	else {
-	    DBG("setting port to 5060");
 	    ((sockaddr_in*)sa)->sin_port = htons(5060);
 	}
 
 	// check if name is an IP address
 	if(am_inet_pton(e->target.c_str(),sa) == 1) {
-	    DBG("target is an IP address !!! (%i)",
-		ntohs(((sockaddr_in*)sa)->sin_port));
+	    // target is an IP address
 	    h->ip_n = -1; // flag end of IP list
 	    return 0;
 	}
 
-	DBG("target must be resolved first !!! (%i)",
-	    ntohs(((sockaddr_in*)sa)->sin_port));
+	// target must be resolved first
 	return resolver::instance()->resolve_name(e->target.c_str(),h,sa,IPv4);
     }
 };
@@ -417,7 +417,6 @@ static void dns_error(int error, const char* domain)
 
 void ip_entry::to_sa(sockaddr_storage* sa)
 {
-    DBG("copying ip_entry...");
     switch(type){
     case IPv4:
 	{
@@ -438,7 +437,6 @@ void ip_entry::to_sa(sockaddr_storage* sa)
 
 void ip_port_entry::to_sa(sockaddr_storage* sa)
 {
-    DBG("copying ip_port_entry...");
     switch(type){
     case IPv4:
 	{
@@ -596,6 +594,84 @@ const dns_handle& dns_handle::operator = (const dns_handle& rh)
     return *this;
 }
 
+sip_target::sip_target() {}
+
+sip_target::sip_target(const sip_target& target)
+{
+    *this = target;
+}
+
+const sip_target& sip_target::operator = (const sip_target& target)
+{
+    memcpy(&ss,&target.ss,sizeof(sockaddr_storage));
+    memcpy(trsp,target.trsp,SIP_TRSP_SIZE_MAX+1);
+    return target;
+}
+
+void sip_target::clear()
+{
+    memset(&ss,0,sizeof(sockaddr_storage));
+    memset(trsp,'\0',SIP_TRSP_SIZE_MAX+1);
+}
+
+sip_target_set::sip_target_set()
+    : dest_list(),
+      dest_list_it(dest_list.begin())
+{}
+
+void sip_target_set::reset_iterator()
+{
+    dest_list_it = dest_list.begin();
+}
+
+bool sip_target_set::has_next()
+{
+    return dest_list_it != dest_list.end();
+}
+
+int sip_target_set::get_next(sockaddr_storage* ss, cstring& next_trsp,
+			     unsigned int flags)
+{
+    do {
+	if(!has_next())
+	    return -1;
+
+	sip_target& t = *dest_list_it;
+	memcpy(ss,&t.ss,sizeof(sockaddr_storage));
+	next_trsp = cstring(t.trsp);
+
+	next();
+
+	// set default transport to UDP
+	if(!next_trsp.len)
+	    next_trsp = cstring("udp");
+
+    } while(!(flags & TR_FLAG_DISABLE_BL) &&
+	    tr_blacklist::instance()->exist(ss));
+
+    return 0;
+}
+
+bool sip_target_set::next()
+{
+    dest_list_it++;
+    return has_next();
+}
+
+void sip_target_set::debug()
+{
+    DBG("target list:");
+
+    for(list<sip_target>::iterator it = dest_list.begin();
+	it != dest_list.end(); it++) {
+
+	DBG("\t%s:%u/%s to target list",
+	    am_inet_ntop(&it->ss).c_str(),
+	    am_get_port(&it->ss),it->trsp);
+    }
+}
+
+bool _resolver::disable_srv = false;
 
 _resolver::_resolver()
     : cache(DNS_CACHE_SIZE)
@@ -719,7 +795,8 @@ int _resolver::str2ip(const char* name,
 	    return 1;
 	}
 	else if(ret < 0) {
-	    ERROR("while trying to detect an IPv4 address '%s': %s",name,strerror(errno));
+	    ERROR("while trying to detect an IPv4 address '%s': %s",
+		  name,strerror(errno));
 	    return ret;
 	}
     }
@@ -731,9 +808,117 @@ int _resolver::str2ip(const char* name,
 	    return 1;
 	}
 	else if(ret < 0) {
-	    ERROR("while trying to detect an IPv6 address '%s': %s",name,strerror(errno));
+	    ERROR("while trying to detect an IPv6 address '%s': %s",
+		  name,strerror(errno));
 	    return ret;
 	}
+    }
+
+    return 0;
+}
+
+int _resolver::set_destination_ip(const cstring& next_hop,
+				  unsigned short next_port,
+				  const cstring& next_trsp,
+				  sockaddr_storage* remote_ip,
+				  dns_handle* h_dns)
+{
+
+    string nh = c2stlstr(next_hop);
+
+    DBG("checking whether '%s' is IP address...\n", nh.c_str());
+    if (am_inet_pton(nh.c_str(), remote_ip) != 1) {
+
+	// nh does NOT contain a valid IP address
+    
+	if(!next_port) {
+	    // no explicit port specified,
+	    // try SRV first
+	    if (disable_srv) {
+		DBG("no port specified, but DNS SRV disabled (skipping).\n");
+	    } else {
+		string srv_name = "_sip._";
+		if(!next_trsp.len || !lower_cmp_n(next_trsp,"udp")){
+		    srv_name += "udp";
+		}
+		else if(!lower_cmp_n(next_trsp,"tcp")) {
+		    srv_name += "tcp";
+		}
+		else {
+		    DBG("unsupported transport: skip SRV lookup");
+		    goto no_SRV;
+		}
+
+		srv_name += "." + nh;
+
+		DBG("no port specified, looking up SRV '%s'...\n",
+		    srv_name.c_str());
+
+		if(!resolver::instance()->resolve_name(srv_name.c_str(),
+						       h_dns,remote_ip,
+						       IPv4)){
+		    return 0;
+		}
+
+		DBG("no SRV record for %s",srv_name.c_str());
+	    }
+	}
+
+    no_SRV:
+	memset(remote_ip,0,sizeof(sockaddr_storage));
+	int err = resolver::instance()->resolve_name(nh.c_str(),
+						     h_dns,remote_ip,
+						     IPv4);
+	if(err < 0){
+	    ERROR("Unresolvable Request URI domain\n");
+	    return -478;
+	}
+    }
+    else {
+	am_set_port(remote_ip,next_port);
+    }
+
+    if(!am_get_port(remote_ip)) {
+	if(!next_port) next_port = 5060;
+	am_set_port(remote_ip,next_port);
+    }
+
+    DBG("set destination to %s:%u\n",
+	nh.c_str(), am_get_port(remote_ip));
+    
+    return 0;
+}
+
+int _resolver::resolve_targets(const list<sip_destination>& dest_list,
+			       sip_target_set* targets)
+{
+    for(list<sip_destination>::const_iterator it = dest_list.begin();
+	it != dest_list.end(); it++) {
+	
+	sip_target t;
+	dns_handle h_dns;
+
+	DBG("sip_destination: %.*s:%u/%.*s",
+	    it->host.len,it->host.s,
+	    it->port,
+	    it->trsp.len,it->trsp.s);
+
+	if(set_destination_ip(it->host,it->port,it->trsp,&t.ss,&h_dns) != 0) {
+	    ERROR("Unresolvable destination");
+	    return -478;
+	}
+	if(it->trsp.len && (it->trsp.len <= SIP_TRSP_SIZE_MAX)) {
+	    memcpy(t.trsp,it->trsp.s,it->trsp.len);
+	    t.trsp[it->trsp.len] = '\0';
+	}
+	else {
+	    t.trsp[0] = '\0';
+	}
+
+	do {
+	    targets->dest_list.push_back(t);
+
+	} while(h_dns.next_ip(&t.ss) == 0);
     }
 
     return 0;
