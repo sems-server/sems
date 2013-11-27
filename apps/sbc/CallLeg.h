@@ -127,20 +127,10 @@ class CallLeg: public AmB2BSession
 
     bool on_hold; // remote is on hold
     AmSdp non_hold_sdp;
+    enum { HoldRequested, ResumeRequested, PreserveHoldStatus } hold;
 
     std::queue<PendingReinvite> pending_reinvites;
 
-    // offer-answer related stuff
-    struct OA {
-      enum { None, OfferSent, OfferReceived } status;
-      enum { HoldRequested, ResumeRequested, PreserveHoldStatus } hold;
-      OA(): status(None), hold(PreserveHoldStatus) { }
-      void clear() { status = None; hold = PreserveHoldStatus; remote_sdp.clear(); }
-
-      /* SDP of remote end. Needed because of the possibility of RTP relay mode
-       * change during offer-answer exchange. */
-      AmSdp remote_sdp;
-    } oa;
 
     // generate re-INVITE with given parameters (establishing means that the
     // INVITE is establishing a connection between two legs)
@@ -216,7 +206,6 @@ class CallLeg: public AmB2BSession
 
     // offer-answer handling
     void adjustOffer(AmSdp &sdp);
-    void oaCompleted(); // offer-answer exchange completed, both SDPs are handled
 
      /* offer was rejected (called just for negative replies to an request
       * carying offer (not always correct?), answer with disabled streams
@@ -293,7 +282,7 @@ class CallLeg: public AmB2BSession
     void changeRtpMode(RTPRelayMode new_mode);
 
     virtual void updateLocalSdp(AmSdp &sdp);
-    virtual void updateRemoteSdp(AmSdp &sdp);
+    virtual void updateRemoteSdp(const AmSdp &sdp);
 
   public:
     virtual void onB2BEvent(B2BEvent* ev);
@@ -364,6 +353,14 @@ class CallLeg: public AmB2BSession
 	    AmSipSubscription* p_subs=NULL);
 
     virtual ~CallLeg();
+
+    // OA callbacks
+    virtual int onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
+    virtual bool getSdpOffer(AmSdp& offer) { return false; }
+    virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer) { return false; }
+    virtual void onEarlySessionStart() { }
+    virtual void onSessionStart() { }
+
 };
 
 

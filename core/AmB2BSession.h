@@ -301,7 +301,7 @@ private:
 
   /** Passes remote SDP to AmB2BMediaSession, might be redefined to provide
    * another functionality than just simply passing SDP */
-  virtual void updateRemoteSdp(AmSdp &sdp);
+  virtual void updateRemoteSdp(const AmSdp &sdp);
 
   /**
    * Returns true and sets mapped_id if refer_id corresponds to an existing

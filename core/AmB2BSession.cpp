@@ -446,7 +446,7 @@ void AmB2BSession::onRequestSent(const AmSipRequest& req)
   AmSession::onRequestSent(req);
 }
 
-void AmB2BSession::updateRemoteSdp(AmSdp &sdp)
+void AmB2BSession::updateRemoteSdp(const AmSdp &sdp)
 {
   if (rtp_relay_mode == RTP_Direct) return; // nothing to do
 
