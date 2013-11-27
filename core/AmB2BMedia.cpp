@@ -246,16 +246,7 @@ void AudioStreamData::resumeStreamProcessing()
 
 void AudioStreamData::setRelayStream(AmRtpStream *other)
 {
-  if (!stream) {
-    if (other) ERROR("BUG: trying to set relay for NULL stream\n");
-    return;
-  }
-
-  // FIXME: muted stream should not relay to the other?
-  /* if (muted) {
-    stream->disableRtpRelay();
-    return;
-  }*/
+  if (!stream) return;
 
   if (relay_address.empty()) {
     DBG("not setting relay for empty relay address\n");
@@ -920,17 +911,6 @@ void AmB2BMedia::onSdpUpdate()
   if (!(
       (have_a || have_b)
       )) return;
-
-  // clear all the stored flags (re-INVITEs or UPDATEs will negotiate new remote
-  // & local SDPs so the current ones are not interesting later)
-/*  if (have_a) {
-    have_a_leg_local_sdp = false;
-    have_a_leg_remote_sdp = false;
-  }
-  if (have_b) {
-    have_b_leg_local_sdp = false;
-    have_b_leg_remote_sdp = false;
-  }*/
 
   processing_started = true;
 
