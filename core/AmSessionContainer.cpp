@@ -404,7 +404,7 @@ void AmSessionContainer::setCPSSoftLimit(unsigned int percent)
       break;
     }
   }
-  CPSLimit = (percent / 100) * ((float)cps_queue.size() / CPS_SAMPLERATE);
+  CPSLimit = ((float)percent / 100) * ((float)cps_queue.size() / CPS_SAMPLERATE);
   if(0 == CPSLimit) CPSLimit = 1;
 }
 
