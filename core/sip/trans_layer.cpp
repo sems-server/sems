@@ -1210,6 +1210,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     }
     else {
 	sip_destination dest;
+	memset(&dest, 0, sizeof(struct sip_destination));
 	if(set_next_hop(msg,&dest.host,&dest.port,&dest.trsp) < 0){
 	    DBG("set_next_hop failed\n");
 	    return -1;
