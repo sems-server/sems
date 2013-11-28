@@ -2443,7 +2443,7 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
 {
     if(transports.size() == 0)
-	return NULL;
+	return 0;
 
     if(transports.size() == 1)
 	return 0;
@@ -2452,7 +2452,7 @@ int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
     if (temp_sock == -1) {
 	ERROR( "ERROR: socket() failed: %s\n",
 	       strerror(errno));
-	return NULL;
+	return 0;
     }
     
     sockaddr_storage from;
@@ -2509,7 +2509,7 @@ int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
 
  error:
     close(temp_sock);
-    return NULL;
+    return 0;
 }
 
 sip_trans* _trans_layer::copy_uac_trans(sip_trans* tr)
