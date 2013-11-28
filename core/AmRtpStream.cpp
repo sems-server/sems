@@ -616,7 +616,7 @@ int AmRtpStream::init(const AmSdp& local,
         ++sdp_it;
         continue;
       } else {
-        ERROR("No internal payload corresponding to type %s/%i (ignoring)\n",
+        DBG("No internal payload corresponding to type %s/%i (ignoring)\n",
               sdp_it->encoding_name.c_str(),
               sdp_it->clock_rate);
 	// ignore this payload
