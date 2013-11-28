@@ -361,16 +361,16 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
     }
   }
 
-  if (reply.cseq_method == SIP_METH_INVITE && reply.code < 200) {
-    // ignore SDP repeated in 1xx replies (183, 180, ... 200)
-    if (has_sdp && !generate_sdp &&
+  if (reply.cseq_method == SIP_METH_INVITE && reply.code < 300) {
+    // ignore SDP repeated in 1xx and 2xx replies (183, 180, ... 2xx)
+    if (has_sdp &&
         (state == OA_Completed || state == OA_OfferSent) &&
         reply.cseq == cseq)
     {
       has_sdp = false;
     }
   }
-  
+
   saveState();
 
   if (generate_sdp) {
