@@ -861,6 +861,8 @@ void AmB2BMedia::updateStreamPair(AudioStreamPair &pair)
   if (pair.a.getInput()) pair.b.setRelayStream(NULL); // don't mix relayed RTP into the other's input
   else pair.b.setRelayStream(pair.a.getStream());
   if (have_b) pair.b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, pair.media_idx);
+
+  TRACE("audio streams updated\n");
 }
 
 void AmB2BMedia::updateAudioStreams()
@@ -940,22 +942,38 @@ void AmB2BMedia::updateRelayStream(AmRtpStream *stream, AmB2BSession *session,
   }
 }
 
-void AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl)
+void AmB2BMedia::updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp, RelayController *ctrl)
 {
-  AmLock lock(mutex);
+  TRACE("%s (%c): updating streams with local & remote SDP\n",
+      a_leg ? a->getLocalTag().c_str() : b->getLocalTag().c_str(),
+      a_leg ? 'A': 'B');
 
-  // save SDP
+  /*string s;
+  local_sdp.print(s);
+  INFO("local SDP: %s\n", s.c_str());
+  remote_sdp.print(s);
+  INFO("remote SDP: %s\n", s.c_str());*/
+
+  AmLock lock(mutex);
+  // streams should be created already (replaceConnectionAddress called
+  // before updateLocalSdp uses/assignes their port numbers)
+
+  // save SDP: FIXME: really needed to store instead of just to use?
   if (a_leg) {
+    a_leg_local_sdp = local_sdp;
     a_leg_remote_sdp = remote_sdp;
+    have_a_leg_local_sdp = true;
     have_a_leg_remote_sdp = true;
   }
   else {
+    b_leg_local_sdp = local_sdp;
     b_leg_remote_sdp = remote_sdp;
+    have_b_leg_local_sdp = true;
     have_b_leg_remote_sdp = true;
   }
 
   // create missing streams
-  createStreams(remote_sdp);
+  createStreams(local_sdp); // FIXME: remote_sdp?
 
   // compute relay mask for every stream
   // Warning: do not apply the new mask unless the offer answer succeeds?
@@ -1000,28 +1018,8 @@ void AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
   }
 
   updateAudioStreams();
-}
-    
-void AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
-{
-  AmLock lock(mutex);
-  // streams should be created already (replaceConnectionAddress called
-  // before updateLocalSdp uses/assignes their port numbers)
 
-  // save SDP
-  if (a_leg) {
-    a_leg_local_sdp = local_sdp;
-    have_a_leg_local_sdp = true;
-  }
-  else {
-    b_leg_local_sdp = local_sdp;
-    have_b_leg_local_sdp = true;
-  }
-
-  // create missing streams
-  createStreams(local_sdp);
-
-  updateAudioStreams();
+  TRACE("streams updated with SDP\n");
 }
 
 void AmB2BMedia::stop(bool a_leg)

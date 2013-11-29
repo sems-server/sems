@@ -95,9 +95,6 @@ class CallLeg: public AmB2BSession
 
     CallStatus call_status; //< status of the call (replaces callee's status)
 
-    AmSdp initial_sdp;
-    bool initial_sdp_stored;
-
     /** information needed in A leg for a B leg */
     struct OtherLegInfo {
       /** local tag of the B leg */
@@ -282,7 +279,6 @@ class CallLeg: public AmB2BSession
     void changeRtpMode(RTPRelayMode new_mode);
 
     virtual void updateLocalSdp(AmSdp &sdp);
-    virtual void updateRemoteSdp(const AmSdp &sdp);
 
   public:
     virtual void onB2BEvent(B2BEvent* ev);
@@ -355,7 +351,7 @@ class CallLeg: public AmB2BSession
     virtual ~CallLeg();
 
     // OA callbacks
-    virtual int onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
+    virtual int onSdpCompleted(const AmSdp& local, const AmSdp& remote);
     virtual bool getSdpOffer(AmSdp& offer) { return false; }
     virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer) { return false; }
     virtual void onEarlySessionStart() { }

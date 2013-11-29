@@ -411,11 +411,8 @@ class AmB2BMedia: public AmMediaSession
      * etc must be initialised like in case replaceConnectionAddress) */
     bool replaceOffer(AmSdp &sdp, bool a_leg);
 
-    /** Store remote SDP for given leg and update media session appropriately. */
-    void updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl);
-    
-    /** Store local SDP for given leg and update media session appropriately. */
-    void updateLocalSdp(bool a_leg, const AmSdp &local_sdp);
+    /** Update media session with local & remote SDP. */
+    void updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp, RelayController *ctrl);
 
     /** Clear audio for given leg and stop processing if both legs stopped. 
      *

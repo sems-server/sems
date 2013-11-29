@@ -384,7 +384,7 @@ int CallLeg::relaySipReply(AmSipReply &reply)
   return res;
 }
 
-bool CallLeg::setOther(const string &id, bool use_initial_sdp)
+bool CallLeg::setOther(const string &id, bool forward)
 {
   if (getOtherId() == id) return true; // already set (needed when processing 2xx after 1xx)
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
@@ -392,6 +392,11 @@ bool CallLeg::setOther(const string &id, bool use_initial_sdp)
       setOtherId(id);
       clearRtpReceiverRelay(); // release old media session if set
       setMediaSession(i->media_session);
+      if (forward && dlg->getOAState() == AmOfferAnswer::OA_Completed) {
+        // reset OA state to offer_recived if already completed to accept new
+        // B leg's SDP
+        dlg->setOAState(AmOfferAnswer::OA_OfferRecved);
+      }
       if (i->media_session) {
         TRACE("connecting media session: %s to %s\n", 
             dlg->getLocalTag().c_str(), getOtherId().c_str());
@@ -401,7 +406,6 @@ bool CallLeg::setOther(const string &id, bool use_initial_sdp)
         // media session not set, set direct mode if not set already
         if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
       }
-      if (use_initial_sdp) updateRemoteSdp(initial_sdp);
       set_sip_relay_only(true); // relay only from now on
       return true;
     }
@@ -423,7 +427,7 @@ void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
     DBG("1xx reply with to-tag received in NoReply state,"
         " changing status to Ringing and remembering the"
         " other leg ID (%s)\n", getOtherId().c_str());
-    if (setOther(reply.from_tag, initial_sdp_stored && forward)) {
+    if (setOther(reply.from_tag, forward)) {
       updateCallStatus(Ringing, &reply);
       if (forward && relaySipReply(reply) != 0) stopCall(StatusChangeCause::InternalError);
     }
@@ -444,7 +448,7 @@ void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
 
 void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
 {
-  if (!setOther(reply.from_tag, initial_sdp_stored && forward)) {
+  if (!setOther(reply.from_tag, forward)) {
     // ignore reply which comes from non-our-peer leg?
     DBG("2xx reply received from unknown B leg, ignoring\n");
     return;
@@ -871,14 +875,6 @@ void CallLeg::onInvite(const AmSipRequest& req)
     // relayed INVITE - we need to add the original INVITE to
     // list of received (relayed) requests
     recvd_req.insert(std::make_pair(req.cseq, req));
-
-    initial_sdp_stored = false;
-    const AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
-    DBG("SDP %sfound in initial INVITE\n", sdp_body ? "": "not ");
-    if (sdp_body && (initial_sdp.parse((const char *)sdp_body->getPayload()) == 0)) {
-      DBG("storing remote SDP for later\n");
-      initial_sdp_stored = true;
-    }
   }
 }
 
@@ -1352,8 +1348,7 @@ void CallLeg::changeRtpMode(RTPRelayMode new_mode)
       break;
 
     case AmOfferAnswer::OA_OfferRecved:
-      TRACE("changing RTP mode after offer was received, needed to updateRemoteSdp again\n");
-      AmB2BSession::updateRemoteSdp(dlg->getRemoteSdp()); // hack
+      TRACE("changing RTP mode after offer was received\n");
       break;
 
     case AmOfferAnswer::__max_OA: break; // grrrr
@@ -1409,8 +1404,7 @@ void CallLeg::changeRtpMode(RTPRelayMode new_mode, AmB2BMedia *new_media)
       break;
 
     case AmOfferAnswer::OA_OfferRecved:
-      TRACE("changing RTP mode/media session after offer was received, needed to updateRemoteSdp again\n");
-      AmB2BSession::updateRemoteSdp(dlg->getRemoteSdp()); // hack
+      TRACE("changing RTP mode/media session after offer was received\n");
       break;
 
     case AmOfferAnswer::__max_OA: break; // grrrr
@@ -1577,12 +1571,6 @@ void CallLeg::updateLocalSdp(AmSdp &sdp)
   AmB2BSession::updateLocalSdp(sdp);
 }
 
-void CallLeg::updateRemoteSdp(const AmSdp &sdp)
-{
-  TRACE("%s: updateRemoteSdp (OA: %d)\n", getLocalTag().c_str(), dlg->getOAState());
-  AmB2BSession::updateRemoteSdp(sdp);
-}
-
 void CallLeg::offerRejected()
 {
   switch (hold) {
@@ -1632,5 +1620,5 @@ int CallLeg::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
   }
 
   hold = PreserveHoldStatus;
-  return 0;
+  return AmB2BSession::onSdpCompleted(offer, answer);
 }
