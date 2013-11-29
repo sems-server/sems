@@ -452,10 +452,11 @@ static int parse_first_line(sip_msg* msg, char** c, char* end)
 
 int parse_headers(sip_msg* msg, char** c, char* end)
 {
-    int err = parse_headers(msg->hdrs,c,end);
+    list<sip_header*> hdrs;
+    int err = parse_headers(hdrs,c,end);
     if(!err) {
-	for(list<sip_header*>::iterator it = msg->hdrs.begin();
-	    it != msg->hdrs.end(); ++it) {
+	for(list<sip_header*>::iterator it = hdrs.begin();
+	    it != hdrs.end(); ++it) {
 
 	    sip_header* hdr = *it;
 	    switch(hdr->type) {
@@ -514,6 +515,7 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 		msg->record_route.push_back(hdr);
 		break;
 	    }
+	    msg->hdrs.push_back(hdr);
 	}
     }
 
