@@ -313,25 +313,31 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
     return;
     
   uas_trans[req.cseq] = req;
-    
+
+  string nh = req.remote_ip + ":"
+    + int2str(req.remote_port)
+    + "/" + req.trsp;
+
+  bool target_refresh_req =
+    req.from_uri.length() && 
+    (remote_uri.empty() ||
+     (req.method == SIP_METH_INVITE || 
+      req.method == SIP_METH_UPDATE ||
+      req.method == SIP_METH_SUBSCRIBE ||
+      req.method == SIP_METH_NOTIFY));
+
   // target refresh requests
-  if (req.from_uri.length() && 
-      (remote_uri.empty() ||
-       (req.method == SIP_METH_INVITE || 
-	req.method == SIP_METH_UPDATE ||
-	req.method == SIP_METH_SUBSCRIBE ||
-	req.method == SIP_METH_NOTIFY))) {
+  if (target_refresh_req) {
     
     // refresh the target
     if (remote_uri != req.from_uri) {
       setRemoteUri(req.from_uri);
-      if(nat_handling && req.first_hop) {
-	string nh = req.remote_ip + ":"
-	  + int2str(req.remote_port)
-	  + "/" + req.trsp;
-	setNextHop(nh);
-	setNextHop1stReq(false);
-      }
+    }
+
+    if(nat_handling && req.first_hop) {
+      DBG("nat_handling: setting next_hop to received '%s'\n", nh.c_str());
+      setNextHop(nh);
+      setNextHop1stReq(false);
     }
 
     string ua = getHeader(req.hdrs,"User-Agent");
@@ -356,6 +362,14 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
 
   if(onRxReqStatus(req) && hdl)
     hdl->onSipRequest(req);
+
+  // reevaluate nat_handling next hop - may have changed in onSipRequest
+  if(target_refresh_req && nat_handling && req.first_hop) {
+    DBG("nat_handling: setting next_hop to received '%s'\n", nh.c_str());
+    setNextHop(nh);
+    setNextHop1stReq(false);
+  }
+
 }
 
 bool AmBasicSipDialog::onRxReplyStatus(const AmSipReply& reply, 
