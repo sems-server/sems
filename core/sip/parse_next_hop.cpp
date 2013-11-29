@@ -21,7 +21,7 @@ int parse_next_hop(const cstring& next_hop,
   const char* end = c + next_hop.len;
   const char* beg = NULL;
 
-  sip_destination dest = {};
+  sip_destination dest;
 
   for(;c<end; c++) {
 
