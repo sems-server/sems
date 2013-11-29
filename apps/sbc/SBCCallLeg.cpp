@@ -793,7 +793,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   }
   else if(call_profile.reg_caching) {
     // REG-Cache lookup
-    uac_req.r_uri = call_profile.retarget(req.user,*dlg);
+    uac_req.r_uri = call_profile.retarget(req.user);
   }
 
   ruri = call_profile.ruri.empty() ? uac_req.r_uri : call_profile.ruri;
