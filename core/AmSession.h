@@ -184,6 +184,7 @@ public:
   void updateRefreshMethod(const string& headers);
 
   AmRtpAudio* RTPStream();
+  bool hasRtpStream() { return _rtp_str.get() != NULL; }
 
 #ifdef WITH_ZRTP
   zrtp_conn_ctx_t*    zrtp_session; // ZRTP session

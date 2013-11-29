@@ -607,11 +607,13 @@ int AmB2BSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp
     }
   }
 
-  if(!sip_relay_only){
-    return AmSession::onSdpCompleted(local_sdp,remote_sdp);
+  if(hasRtpStream() && RTPStream()->getSdpMediaIndex() >= 0) {
+    if(!sip_relay_only){
+      return AmSession::onSdpCompleted(local_sdp,remote_sdp);
+    }
+    DBG("sip_relay_only = true: doing nothing!\n");
   }
-  
-  DBG("sip_relay_only = true: doing nothing!\n");
+
   return 0;
 }
 
