@@ -392,6 +392,11 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
     sdp_body->setPayload((const unsigned char*)sdp_buf.c_str(),
 			 sdp_buf.length());
     has_sdp = true;
+  } else if (sdp_body && has_sdp) {
+    // update local SDP copy
+    if (sdp_local.parse((const char*)sdp_body->getPayload())) {
+      ERROR("parser failed on Tx SDP: '%s'\n", (const char*)sdp_body->getPayload());
+    }
   }
 
   if (has_sdp && (onTxSdp(reply.cseq,reply.body) != 0)) {
