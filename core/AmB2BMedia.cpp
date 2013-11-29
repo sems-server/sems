@@ -344,6 +344,7 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
   // TODO: try to init only in case there are some payloads which can't be relayed
   stream->forceSdpMediaIndex(media_idx);
 
+  stream->setOnHold(false); // just hack to do correctly mute detection in stream->init
   if (stream->init(local_sdp, remote_sdp, force_symmetric_rtp) == 0) {
     stream->setPlayoutType(playout_type);
     initialized = true;
