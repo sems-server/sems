@@ -42,10 +42,13 @@ SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const VarMapT& values)
   : call(call), local_media_connected(false)
 {
   DBG("SBCDSMInstance::SBCDSMInstance()\n");
-  var = values;
+  VarMapT::const_iterator it = values.find(DSM_SBC_CCVAR_START_DIAG);
+  if (it != values.end())
+    startDiagName = it->second;
 
-  startDiagName = var[DSM_SBC_CCVAR_START_DIAG];
-  appBundle = var[DSM_SBC_CCVAR_APP_BUNDLE];
+  it = values.find(DSM_SBC_CCVAR_APP_BUNDLE);
+  if (it != values.end())
+    appBundle = it->second;
 
   if (startDiagName.empty()) {
     throw string("DSM SBC call control "DSM_SBC_CCVAR_START_DIAG" parameter not set (see call profile)'");
@@ -63,9 +66,14 @@ SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const VarMapT& values)
     throw string("initializing call with DSM app bundle '" +appBundle);
   }
 
- for (map<string, string>::const_iterator it = 
+  for (map<string, string>::const_iterator it =
 	 config_vars.begin(); it != config_vars.end(); it++) 
     var["config."+it->first] = it->second;
+
+  // overwrite config. variables with cc-instance variables (map::insert doesn't overwrite)
+  for (VarMapT::const_iterator it = values.begin(); it != values.end(); it++) {
+    var[it->first] = it->second;
+  }
 
   DBG("Running init of SBCDSMInstance...\n");
   if (!engine.init(call, this, startDiagName, DSMCondition::Start)) {
