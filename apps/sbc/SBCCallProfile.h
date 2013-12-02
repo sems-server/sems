@@ -59,6 +59,7 @@ struct CCInterface {
 
 typedef std::list<CCInterface> CCInterfaceListT;
 typedef CCInterfaceListT::iterator CCInterfaceListIteratorT;
+typedef CCInterfaceListT::const_iterator CCInterfaceListConstIteratorT;
 
 template <class T>
 class ref_counted_ptr

@@ -60,6 +60,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   vector<AmDynInvoke*> cc_modules;
   vector<ExtendedCCInterface*> cc_ext;
 
+  // modules to initialize
+  CCInterfaceListT cc_module_queue;
+
   // current timer ID - cc module setting timer will use this
   int cc_timer_id;
   int ext_cc_timer_id; // for assigning IDs to timers through "extended CC interface"
@@ -153,7 +156,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
-  bool initCCExtModules();
+  bool initCCExtModules(const CCInterfaceListT& cc_module_list, const vector<AmDynInvoke*>& cc_module_di);
+  bool initPendingCCExtModules();
+  void addPendingCCExtModule(const string& cc_name, const string& cc_module, const map<string, string>& cc_values);
 
   /** save call timer; only effective before call is connected */
   void saveCallTimer(int timer, double timeout);
