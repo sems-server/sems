@@ -377,21 +377,25 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
 
     string sdp_buf;
     if(getSdpBody(sdp_buf)) {
-      return -1;
-    }
-
-    if(!sdp_body){
-      if( (sdp_body = 
-	   reply.body.addPart(SIP_APPLICATION_SDP)) 
-	  == NULL ) {
-	DBG("AmMimeBody::addPart() failed\n");
-	return -1;
+      if (reply.code == 183 && reply.cseq_method == SIP_METH_INVITE) {
+        // just ignore if no SDP is generated (required for B2B)
       }
+      else return -1;
     }
+    else {
+      if(!sdp_body){
+        if( (sdp_body = 
+             reply.body.addPart(SIP_APPLICATION_SDP)) 
+            == NULL ) {
+          DBG("AmMimeBody::addPart() failed\n");
+          return -1;
+        }
+      }
 
-    sdp_body->setPayload((const unsigned char*)sdp_buf.c_str(),
-			 sdp_buf.length());
-    has_sdp = true;
+      sdp_body->setPayload((const unsigned char*)sdp_buf.c_str(),
+                           sdp_buf.length());
+      has_sdp = true;
+    }
   } else if (sdp_body && has_sdp) {
     // update local SDP copy
     if (sdp_local.parse((const char*)sdp_body->getPayload())) {
