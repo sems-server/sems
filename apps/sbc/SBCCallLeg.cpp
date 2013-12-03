@@ -130,10 +130,6 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
   set_sip_relay_only(false);
   dlg->setRel100State(Am100rel::REL100_IGNORED);
 
-  // better here than in onInvite
-  // or do we really want to start with OA when handling initial INVITE?
-  dlg->setOAEnabled(false);
-
   memset(&call_start_ts, 0, sizeof(struct timeval));
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
@@ -165,7 +161,6 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   // call_profile.cc_vars.clear();
 
   dlg->setRel100State(Am100rel::REL100_IGNORED);
-  dlg->setOAEnabled(false);
 
   // we need to apply it here instead of in applyBProfile because we have caller
   // here (FIXME: do it on better place and better way than accessing internals
@@ -649,11 +644,6 @@ void SBCCallLeg::updateLocalSdp(AmSdp &sdp)
   // remember transcodable payload IDs
   if (call_profile.transcoder.isActive()) savePayloadIDs(sdp);
   CallLeg::updateLocalSdp(sdp);
-}
-
-void SBCCallLeg::updateRemoteSdp(AmSdp &sdp)
-{
-  CallLeg::updateRemoteSdp(sdp);
 }
 
 void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {

@@ -373,11 +373,6 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
     return;
   }
 
-  AmSdp sdp;
-  // We have to update media session before filtering because we may want to
-  // use the codec later filtered out for transcoding.
-  if (parseSdp(sdp, req)) updateRemoteSdp(sdp);
-
   if(!fwd)
     AmSession::onSipRequest(req);
   else {
@@ -446,18 +441,6 @@ void AmB2BSession::onRequestSent(const AmSipRequest& req)
   AmSession::onRequestSent(req);
 }
 
-void AmB2BSession::updateRemoteSdp(AmSdp &sdp)
-{
-  if (rtp_relay_mode == RTP_Direct) return; // nothing to do
-
-  if (!media_session) {
-    // report missing media session (here we get for rtp_relay_mode == RTP_Relay)
-    ERROR("BUG: media session is missing, can't update remote SDP\n");
-    return; // FIXME: throw an exception here?
-  }
-  media_session->updateRemoteSdp(a_leg, sdp, this);
-}
-
 void AmB2BSession::updateLocalSdp(AmSdp &sdp)
 {
   if (rtp_relay_mode == RTP_Direct) return; // nothing to do
@@ -469,12 +452,6 @@ void AmB2BSession::updateLocalSdp(AmSdp &sdp)
   }
 
   media_session->replaceConnectionAddress(sdp, a_leg, localMediaIP(), advertisedIP());
-
-  // We are handling relayed request or reply.  The SDP in request/reply being
-  // relayed describes local side of current leg (doesn't matter if it was offer
-  // or answer) of the RTP stream. We need to update media session with it.
-
-  media_session->updateLocalSdp(a_leg, sdp);
 }
 
 void AmB2BSession::updateLocalBody(AmMimeBody& body)
@@ -536,14 +513,6 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
       && !subs->onReplyIn(req,reply) ) {
     DBG("subs.onReplyIn returned false\n");
     return;
-  }
-
-  if (reply.code >= 180  && reply.code < 300)
-  {
-    AmSdp sdp;
-    // We have to update media session before filtering because we may want to
-    // use the codec later filtered out for transcoding.
-    if (parseSdp(sdp, reply)) updateRemoteSdp(sdp);
   }
 
   if(fwd) {
@@ -628,11 +597,23 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
 
 int AmB2BSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 {
-  if(!sip_relay_only){
-    return AmSession::onSdpCompleted(local_sdp,remote_sdp);
+  if (rtp_relay_mode != RTP_Direct) {
+    if (!media_session) {
+      // report missing media session (here we get for rtp_relay_mode == RTP_Relay)
+      ERROR("BUG: media session is missing, can't update SDP\n");
+    }
+    else {
+      media_session->updateStreams(a_leg, local_sdp, remote_sdp, this);
+    }
   }
-  
-  DBG("sip_relay_only = true: doing nothing!\n");
+
+  if(hasRtpStream() && RTPStream()->getSdpMediaIndex() >= 0) {
+    if(!sip_relay_only){
+      return AmSession::onSdpCompleted(local_sdp,remote_sdp);
+    }
+    DBG("sip_relay_only = true: doing nothing!\n");
+  }
+
   return 0;
 }
 
@@ -1315,12 +1296,6 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
     setMediaSession(new AmB2BMedia(this, callee_session)); // we need to add our reference
     callee_session->setMediaSession(getMediaSession());
   }
-
-  // Misusing invite_req here, but seems to be better than misusing
-  // invite_sdp. The best way would be to propagate SDP as parameter of
-  // initializeRTPRelay method.
-  AmSdp sdp;
-  if (parseSdp(sdp, invite_req)) updateRemoteSdp(sdp);
 }
 
 AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)

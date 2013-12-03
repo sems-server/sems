@@ -299,10 +299,6 @@ private:
    * Default implementation updates connection address and ports. */
   virtual void updateLocalSdp(AmSdp &sdp);
 
-  /** Passes remote SDP to AmB2BMediaSession, might be redefined to provide
-   * another functionality than just simply passing SDP */
-  virtual void updateRemoteSdp(AmSdp &sdp);
-
   /**
    * Returns true and sets mapped_id if refer_id corresponds to an existing
    * refer event subscription which has been relayed.

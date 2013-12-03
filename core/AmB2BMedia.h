@@ -322,11 +322,6 @@ class AmB2BMedia: public AmMediaSession
     bool have_a_leg_local_sdp, have_a_leg_remote_sdp;
     bool have_b_leg_local_sdp, have_b_leg_remote_sdp;
 
-    /** RTP streams were activated (i.e. are processed by AmRtpReceiver)
-     * Note that they need NOT to be processed by MediaProcessor
-     * (isProcessingMedia). */
-    bool processing_started;
-
     AmMutex mutex;
     int ref_cnt;
 
@@ -348,7 +343,8 @@ class AmB2BMedia: public AmMediaSession
     bool relay_paused;
 
     void createStreams(const AmSdp &sdp);
-    void onSdpUpdate();
+    void updateStreamPair(AudioStreamPair &pair);
+    void updateAudioStreams();
     void updateRelayStream(AmRtpStream *stream, AmB2BSession *session,
 			   const string& connection_address,
 			   const SdpMedia &m, AmRtpStream *relay_to);
@@ -415,11 +411,8 @@ class AmB2BMedia: public AmMediaSession
      * etc must be initialised like in case replaceConnectionAddress) */
     bool replaceOffer(AmSdp &sdp, bool a_leg);
 
-    /** Store remote SDP for given leg and update media session appropriately. */
-    void updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl);
-    
-    /** Store local SDP for given leg and update media session appropriately. */
-    void updateLocalSdp(bool a_leg, const AmSdp &local_sdp);
+    /** Update media session with local & remote SDP. */
+    void updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp, RelayController *ctrl);
 
     /** Clear audio for given leg and stop processing if both legs stopped. 
      *
