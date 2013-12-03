@@ -58,6 +58,8 @@ struct ReliableB2BEvent: public B2BEvent
 
     ReliableB2BEvent(int ev_id, B2BEvent *_processed, B2BEvent *_unprocessed):
       B2BEvent(ev_id), processed(false), processed_reply(_processed), unprocessed_reply(_unprocessed) { }
+    ReliableB2BEvent(int ev_id, B2BEventType ev_type, B2BEvent *_processed, B2BEvent *_unprocessed):
+      B2BEvent(ev_id, ev_type), processed(false), processed_reply(_processed), unprocessed_reply(_unprocessed) { }
     void markAsProcessed() { processed = true; }
     void setSender(const string &tag) { sender = tag; }
     virtual ~ReliableB2BEvent();
@@ -102,7 +104,7 @@ struct ReconnectLegEvent: public ReliableB2BEvent
     role(_role)
   { setSender(tag); }
 
-  virtual ~ReconnectLegEvent() { if (media && media->releaseReference()) delete media; }
+    virtual ~ReconnectLegEvent() { if (media) media->releaseReference(); }
 };
 
 
@@ -157,7 +159,7 @@ struct ChangeRtpModeEvent: public B2BEvent
     B2BEvent(ChangeRtpModeEventId), new_mode(_new_mode), media(_media)
     { if (media) media->addReference(); }
 
-  virtual ~ChangeRtpModeEvent() { if (media && media->releaseReference()) delete media; }
+    virtual ~ChangeRtpModeEvent() { if (media) media->releaseReference(); }
 };
 
 struct ResumeHeldEvent: public B2BEvent

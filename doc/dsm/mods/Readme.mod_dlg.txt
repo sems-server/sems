@@ -68,9 +68,24 @@ dlg.dialout(string arrayname)
                        arrayname_var.somevar will be set as $somevar
 
   returns $arrayname_ltag (if successful) and sets ERRNO.
-   
-Request/Reply Body handling in sipRequest/sipReply events:
 
+   
+dlg.getOtherId(varname)
+   get other related dlg id in $varname
+
+dlg.getRtpRelayMode(varname)
+   get RTP relay mode (RTP_Direct, RTP_Relay, RTP_Transcoding) in $varname
+
+dlg.refer(string refer_to [, int expires=0])
+   refer to refer_to, optionally with expires
+
+dlg.relayError(code,reason);  -  relay reply (>=200) to B2B request (sbc)
+  reply to B2B request (in avar[DSM_AVAR_REQUEST]) with code and reason
+  sbc: set(#StopProcessing="true") to prevent B2B request to be relayed
+       after replying from DSM script
+
+Request/Reply Body handling in sipRequest/sipReply events:
+----------------------------------------------------------
 actions (applicable only in sipRequest/sipReply event handling blocks):
 dlg.getRequestBody(content_type, dstvar)  - get body of content_type in $dstvar
 dlg.getReplyBody(content_type, dstvar)    - get body of content_type in $dstvar

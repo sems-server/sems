@@ -60,6 +60,16 @@ class EventQueueWorker
   void startEventQueue(AmEventQueue* q);
 };
 
+/**
+ * The event queue processor processes event queues
+ * using a pool of workers.
+ *
+ * Note: the queue's ref-count should be increased
+ * before binding the queue to the processor. Also,
+ * the ref-count should be decreased at some place
+ * during or after finalize(), so that the queue
+ * gets disposed correctly.
+ */
 class AmEventQueueProcessor {
 
   typedef vector<EventQueueWorker*> Workers;
@@ -70,6 +80,7 @@ class AmEventQueueProcessor {
 
  public:
   AmEventQueueProcessor();
+  ~AmEventQueueProcessor();
 
   void addThreads(unsigned int num_threads);
 

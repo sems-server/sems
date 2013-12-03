@@ -86,7 +86,7 @@ int SimpleRelayDialog::relayRequest(const AmSipRequest& req)
     error.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
     error.cseq = req.cseq;
 
-    B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(error,true,req.method);
+    B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(error,true,req.method, getLocalTag());
     if(!AmEventDispatcher::instance()->post(other_dlg,b2b_ev)) {
       delete b2b_ev;
     }
@@ -189,7 +189,6 @@ bool SimpleRelayDialog::processingCycle()
       if (!AmEventDispatcher::instance()->post(other_dlg, e)) delete e;
     }
     terminate();
-    return false;
   }
 
   DBG("^^ [%s|%s] %i usages (%s) ^^\n",
@@ -203,20 +202,25 @@ void SimpleRelayDialog::finalize()
 {
   AmBasicSipDialog::finalize();
 
-  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin();
+       i != cc_ext.end(); ++i) {
     i->module->finalize(i->user_data);
   }
 
   DBG("finalize(): tag=%s\n",local_tag.c_str());
+  AmEventQueue::finalize();
   if(parent_obj) {
     // this might delete us!!!
-    dec_ref(parent_obj);
+    atomic_ref_cnt* p_obj = parent_obj;
+    parent_obj = NULL;
+    dec_ref(p_obj);
   }
 }
 
 void SimpleRelayDialog::onB2BRequest(const AmSipRequest& req)
 {
-  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin();
+       i != cc_ext.end(); ++i) {
     i->module->onB2BRequest(req, i->user_data);
   }
   relayRequest(req);
@@ -224,7 +228,8 @@ void SimpleRelayDialog::onB2BRequest(const AmSipRequest& req)
 
 void SimpleRelayDialog::onB2BReply(const AmSipReply& reply)
 {
-  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin();
+       i != cc_ext.end(); ++i) {
     i->module->onB2BReply(reply, i->user_data);
   }
   if(reply.code >= 200)
@@ -235,7 +240,8 @@ void SimpleRelayDialog::onB2BReply(const AmSipReply& reply)
 
 void SimpleRelayDialog::onSipRequest(const AmSipRequest& req)
 {
-  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin();
+       i != cc_ext.end(); ++i) {
     i->module->onSipRequest(req, i->user_data);
   }
   if(other_dlg.empty()) {
@@ -255,7 +261,8 @@ void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
 				   const AmSipReply& reply, 
 				   AmBasicSipDialog::Status old_dlg_status)
 {
-  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin();
+       i != cc_ext.end(); ++i) {
     i->module->onSipReply(req, reply, old_dlg_status, i->user_data);
   }
   if(reply.code >= 200)
@@ -272,7 +279,7 @@ void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
     return;
   }
   
-  B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(reply,true,req.method);
+  B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(reply,true,req.method,getLocalTag());
   b2b_ev->reply.cseq = t_req_it->second;
   if(reply.code >= 200)
     relayed_reqs.erase(t_req_it);
@@ -447,7 +454,8 @@ int SBCSimpleRelay::start(const SimpleRelayCreator::Relay& relay,
   }
 
   // must be added to the same worker thread
-  EventQueueWorker* worker = SBCFactory::instance()->subnot_processor.getWorker();
+  EventQueueWorker* worker = SBCFactory::instance()->
+    subnot_processor.getWorker();
   if(!worker) return -1;
 
   worker->startEventQueue(relay.first);

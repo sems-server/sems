@@ -416,6 +416,9 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       }
       break;
 
+    //case Connected: // late 200...
+    //  TODO: if reply.to_tag != getRemoteTag()
+    //        -> ACK + BYE (+absorb answer)
     default:
       break;
     }

@@ -33,6 +33,7 @@
 #include "log.h"
 #include "AmConfig.h"
 
+#include "sip/raw_sender.h"
 #include "sip/ip_util.h"
 
 #include <assert.h>
@@ -249,8 +250,13 @@ int AmRtpPacket::sendmsg(int sd, unsigned int sys_if_idx)
   return 0;
 }
 
-int AmRtpPacket::send(int sd, unsigned int sys_if_idx)
+int AmRtpPacket::send(int sd, unsigned int sys_if_idx,
+		      sockaddr_storage* l_saddr)
 {
+  if(sys_if_idx && AmConfig::UseRawSockets) {
+    return raw_sender::send((char*)buffer,b_size,sys_if_idx,l_saddr,&addr);
+  }
+
   if(sys_if_idx && AmConfig::ForceOutboundIf) {
     return sendmsg(sd,sys_if_idx);
   }

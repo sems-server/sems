@@ -403,7 +403,16 @@ rtprelay_msgflags_symmetric_rtp=yes
 
 the SBC honors this and sets symmetric RTP accordingly.
 
+With the option rtprelay_dtmf_filtering=yes the SBC filters out RTP DTMF
+(RFC2833 / RFC4733) packets in relayed streams.
 
+If rtprelay_dtmf_detection=yes is set, DTMF from RTP packets is detected
+and can be used to control applications, e.g. special call flows, implemented with
+the extended call control API. Note that the call needs to be added to
+the media processor in order for DTMF events to be processed.
+
+Transcoding
+-----------
 The SBC is able to do transcoding together with relaying. 
 
 To trigger transcoding you have to configure transcoder_codecs to a set

@@ -62,6 +62,7 @@ enum {
     TS_TERMINATED_200,
     TS_TERMINATED, // UAC:INV,!INV; UAS:INV,!INV
 
+    TS_ABANDONED,
     TS_REMOVED
 };
 
@@ -77,6 +78,8 @@ class sip_trans;
 class trans_timer
     : protected timer
 {
+    trans_timer(const trans_timer& ti) {}
+
 public:
     unsigned int type;
     unsigned int bucket_id;
@@ -88,20 +91,17 @@ public:
 	  bucket_id(bucket_id), t(t)
     {}
 
+    trans_timer(const trans_timer& ti, int bucket_id, sip_trans* t)
+        : timer(ti.expires), type(ti.type),
+	  bucket_id(bucket_id), t(t)
+    {}
+
     void fire();
 };
 
 class sip_trans
 {
     trans_timer* timers[SIP_TRANS_TIMERS];
-
-    /**
-     * Resets a specific timer
-     *
-     * @param t the new timer
-     * @param timer_type @see sip_timer_type
-    */
-    void reset_timer(trans_timer* t, unsigned int timer_type);
 
  public:
     /** Transaction type */
@@ -161,7 +161,6 @@ class sip_trans
      * @param timer_type @see sip_timer_type
      */
     trans_timer* get_timer(unsigned int timer_type);
-
     
     /**
      * Resets a specfic timer with a delay value
@@ -173,6 +172,14 @@ class sip_trans
     void reset_timer(unsigned int timer_type, 
 		     unsigned int expire_delay /* ms */,
 		     unsigned int bucket_id);
+
+    /**
+     * Resets a specific timer
+     *
+     * @param t the new timer
+     * @param timer_type @see sip_timer_type
+    */
+    void reset_timer(trans_timer* t, unsigned int timer_type);
 
     /**
      * Clears a specfic timer

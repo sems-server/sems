@@ -73,6 +73,7 @@ class DSMCondition
     Hold,
     UnHold,
 
+    B2BOtherRequest,
     B2BOtherReply,
     B2BOtherBye,
 
@@ -87,6 +88,7 @@ class DSMCondition
     PlaylistSeparator,
 
     DSMEvent,    
+    B2BEvent,
     DSMException,
 
     XmlrpcResponse,
@@ -100,7 +102,25 @@ class DSMCondition
 
     SIPSubscription,
 
-    RTPTimeout
+    RTPTimeout,
+
+    // SBC related
+    LegStateChange,
+    BLegRefused,
+
+    PutOnHold,
+    ResumeHeld,
+    CreateHoldRequest,
+    HandleHoldReply,
+
+    RelayInit,
+    RelayInitUAC,
+    RelayInitUAS,
+    RelayFinalize,
+    RelayOnSipRequest,
+    RelayOnSipReply,
+    RelayOnB2BRequest,
+    RelayOnB2BReply
   };
 
   bool invert; 

@@ -36,25 +36,6 @@
 // the internal delay of the mixer (between put and get)
 #define MIXER_DELAY_MS 20
 
-struct MixerBufferState
-{
-  typedef std::map<int,SampleArrayShort*> ChannelMap;
-
-  unsigned int sample_rate;
-  unsigned int last_ts;
-  ChannelMap channels;
-  SampleArrayInt *mixed_channel;
-
-  MixerBufferState(unsigned int sample_rate, std::set<int>& channelids);
-  MixerBufferState(const MixerBufferState& other);
-  ~MixerBufferState();
-
-  void add_channel(unsigned int channel_id);
-  void remove_channel(unsigned int channel_id);
-  SampleArrayShort* get_channel(unsigned int channel_id);
-  void fix_channels(std::set<int>& curchannelids);
-  void free_channels();
-};
 
 void DEBUG_MIXER_BUFFER_STATE(const MixerBufferState& mbs, const string& context)
 {

@@ -127,7 +127,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
-  void initCCExtModules();
+  bool initCCExtModules();
 
   /** save call timer; only effective before call is connected */
   void saveCallTimer(int timer, double timeout);
@@ -156,7 +156,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   // media interface must be accessible from CC modules
   AmB2BMedia *getMediaSession() { return AmB2BSession::getMediaSession(); }
   virtual void updateLocalSdp(AmSdp &sdp);
-  virtual void updateRemoteSdp(AmSdp &sdp);
   void changeRtpMode(RTPRelayMode new_mode) { CallLeg::changeRtpMode(new_mode); }
 
   bool reinvite(const AmSdp &sdp, unsigned &request_cseq);
