@@ -31,18 +31,15 @@
 #include "msg_fline.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 inline void status_code_wr(char** c, int code)
 {
-    int div = code / 100;
-    *((*c)++) = div + '0';
-    code -= div*100;
-
-    div = code / 10;
-    *((*c)++) = div + '0';
-    code -= div*10;
-    
-    *((*c)++) = code + '0';
+    div_t d = div(code, 100);
+    *((*c)++) = d.quot + '0';
+    d = div(d.rem, 10);
+    *((*c)++) = d.quot + '0';
+    *((*c)++) = d.rem + '0';
 }
 
 
