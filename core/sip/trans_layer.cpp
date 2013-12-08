@@ -1255,7 +1255,8 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     return send_err;
 }
 
-int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
+int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
+			 unsigned int inv_cseq, const cstring& hdrs)
 {
     assert(tt);
     assert(tt->_bucket && tt->_t);
@@ -1264,7 +1265,14 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
     sip_trans*    t = tt->_t;
 
     bucket->lock();
-    if(!bucket->exist(t)){
+    if(!bucket->exist(t) || (t->state == TS_ABANDONED)){
+	if(dialog_id.len)
+	    t = bucket->find_uac_trans(dialog_id,inv_cseq);
+	else
+	    t = NULL;
+    }
+
+    if(!t){
 	DBG("No transaction to cancel: wrong key or finally replied\n");
 	bucket->unlock();
 	return 0;
@@ -1644,7 +1652,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    {
 		// send CANCEL
 		trans_ticket tt(t,bucket);
-		cancel(&tt,cstring());
+		cancel(&tt,cstring(),0,cstring());
 	    
 		// Now remove the transaction
 		bucket->lock();
@@ -1847,7 +1855,8 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     return 0;
 }
 
-int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg* msg)
+int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t,
+				     sip_msg* msg)
 {
     if(msg->u.request->method != sip_request::ACK){
 	t = bucket->add_trans(msg,TT_UAC);
@@ -2129,13 +2138,12 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	tr->clear_timer(STIMER_C);
 	//if(tr->state != TS_PROCEEDING)
 	//  break; // shouldn't happen
-
 	bucket->unlock();
 
 	{
 	    // send CANCEL
 	    trans_ticket tt(tr,bucket);
-	    cancel(&tt,cstring());
+	    cancel(&tt,cstring(),0,cstring());
 	    
 	    // Now remove the transaction
 	    bucket->lock();
