@@ -888,9 +888,10 @@ int SBCCallProfile::apply_a_routing(ParamReplacerCtx& ctx,
   }
   else {
     dlg.nat_handling = dlg_nat_handling;
-    if(dlg_nat_handling) {
-      string nh = req.remote_ip;
-      nh += ":" + int2str(req.remote_port);
+    if(dlg_nat_handling && req.first_hop) {
+      string nh = req.remote_ip + ":"
+	+ int2str(req.remote_port)
+	+ "/" + req.trsp;
       dlg.setNextHop(nh);
       dlg.setNextHop1stReq(false);
     }
