@@ -284,9 +284,13 @@ int parse_headers(list<sip_header*>& hdrs, char** c, char* end)
     int saved_st = 0;
 
     char* begin = *c;
+    if(!(*c) || (*c == end)) {
+	return 0;
+    }
+
     auto_ptr<sip_header> hdr(new sip_header());
 
-    for(;**c && (*c < end);(*c)++){
+    for(;(*c < end) && **c;(*c)++){
 
 	switch(st){
 
