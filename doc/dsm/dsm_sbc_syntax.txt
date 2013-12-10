@@ -78,7 +78,7 @@ sipRequest       - in dialog request
 sipReply         - in dialog reply
     Reply parameters (#sip_reason, #sip_code, ...)
  
-LegStateChange
+legStateChange
    #SBCCallStatus  - sbc call status (Disconnected, NoReply, Ringing, Connected, Disconnecting, Unknown)
  
    #reason == "SipRequest"
