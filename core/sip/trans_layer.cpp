@@ -2204,10 +2204,14 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 	+ copy_hdr_len(inv->callid);
     
     ack_len += cseq_len(get_cseq(inv)->num_str,method);
-    ack_len += 2/* EoH CRLF */;
 
     if(!inv->route.empty())
  	ack_len += copy_hdrs_len(inv->route);
+
+    cstring content_len("0");
+    ack_len += content_length_len(content_len);
+
+    ack_len += 2/* EoH CRLF */;
     
     char* ack_buf = new char [ack_len];
     char* c = ack_buf;
@@ -2216,14 +2220,16 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     
     copy_hdr_wr(&c,inv->via1);
 
-    if(!inv->route.empty())
-	 copy_hdrs_wr(&c,inv->route);
-
     copy_hdr_wr(&c,inv->from);
     copy_hdr_wr(&c,reply->to);
     copy_hdr_wr(&c,inv->callid);
     
     cseq_wr(&c,get_cseq(inv)->num_str,method);
+
+    if(!inv->route.empty())
+	 copy_hdrs_wr(&c,inv->route);
+
+    content_length_wr(&c,content_len);
     
     *c++ = CR;
     *c++ = LF;
