@@ -41,6 +41,7 @@
 #define HANGUP_CAUSE "hangup_cause"
 #define HANGUP_INITIATOR "hangup_initiator"
 #define DISPOSITION "disposition"
+#define DST_IP "destination_ip"
 
 
 struct HangupCause: public B2BEvent
@@ -374,21 +375,31 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
   DBG("written CDR '%s' to syslog\n", ltag.c_str());
 }
 
-void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause)
-{
-  SBCCallProfile &prof = call->getCallProfile();
 
+static AmArg *getCDRVars(SBCCallProfile &prof)
+{
   SBCVarMapIteratorT i = prof.cc_vars.find(CDR_VARS);
   if (i == prof.cc_vars.end()) {
     prof.cc_vars[CDR_VARS] = AmArg();
     i = prof.cc_vars.find(CDR_VARS);
   }
   if (i == prof.cc_vars.end()) {
-    ERROR("can't update CDR\n");
+    return NULL;
+  }
+  return &i->second;
+}
+
+void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause)
+{
+  SBCCallProfile &prof = call->getCallProfile();
+
+  AmArg *pcdr = getCDRVars(prof);
+  if (!pcdr) {
+    ERROR("can't update CDR variables upon call state change\n");
     return;
   }
 
-  AmArg &cdr = i->second;
+  AmArg &cdr = *pcdr;
 
   CallLeg::CallStatus s = call->getCallStatus();
 
@@ -518,5 +529,21 @@ CCChainProcessing SyslogCDR::onEvent(SBCCallLeg *call, AmEvent *e)
       return StopProcessing;
     }
   }
+
+  // determine destination IP address
+  if (e->event_id == B2BSipReply &&  // replies received in our peer leg
+      call->isALeg() &&
+      call->getCallStatus() != CallLeg::Connected) // just replies before we get connected, then no failover is expected
+  {
+    B2BSipReplyEvent *ev = dynamic_cast<B2BSipReplyEvent*>(e);
+    if (ev) {
+      AmArg *cdr = getCDRVars(call->getCallProfile());
+      if (cdr) {
+        (*cdr)[DST_IP] = ev->reply.remote_ip;
+      }
+      else ERROR("can't update CDR variables with destination IP\n");
+    }
+  }
+
   return ContinueProcessing;
 }
