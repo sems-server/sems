@@ -98,6 +98,8 @@ legStateChange
 BLegRefused
     Reply parameters (#sip_reason, #sip_code, ...)
 
+B2B.otherRequest, B2B.otherReply - see dsm_syntax.txt
+
 -- ----- hold related -------- 
 PutOnHold
 
