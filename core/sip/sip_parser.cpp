@@ -63,10 +63,7 @@ sip_msg::sip_msg(const char* msg_buf, int msg_len)
     u.request = 0;
     u.reply   = 0;
 
-    buf = new char[msg_len+1];
-    memcpy(buf,msg_buf,msg_len);
-    buf[msg_len] = '\0';
-    len = msg_len;
+    copy_msg_buf(msg_buf,msg_len);
 
     memset(&local_ip,0,sizeof(sockaddr_storage));
     memset(&remote_ip,0,sizeof(sockaddr_storage));
@@ -119,6 +116,14 @@ sip_msg::~sip_msg()
     
     if(local_socket)
 	dec_ref(local_socket);
+}
+
+void sip_msg::copy_msg_buf(const char* msg_buf, int msg_len)
+{
+    buf = new char[msg_len+1];
+    memcpy(buf,msg_buf,msg_len);
+    buf[msg_len] = '\0';
+    len = msg_len;
 }
 
 void sip_msg::release()

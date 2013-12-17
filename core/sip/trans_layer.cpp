@@ -834,14 +834,14 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop,
 }
 
 static void translate_string(sip_msg* dst_msg, cstring& dst,
-			     sip_msg* src_msg, cstring& src)
+			     const sip_msg* src_msg, const cstring& src)
 {
     dst.s = (char*)src.s + (dst_msg->buf - src_msg->buf);
     dst.len = src.len;
 }
 
 static void translate_hdr(sip_msg* dst_msg, sip_header*& dst, 
-			  sip_msg* src_msg, sip_header* src)
+			  const sip_msg* src_msg, const sip_header* src)
 {
     dst = new sip_header();
     dst_msg->hdrs.push_back(dst);
@@ -851,37 +851,43 @@ static void translate_hdr(sip_msg* dst_msg, sip_header*& dst,
     dst->p = NULL;
 }
 
+static void gen_error_reply_from_req(sip_msg& reply, const sip_msg* req,
+				     int code, const char* reason)
+{
+    reply.copy_msg_buf(req->buf,req->len);
+
+    reply.type = SIP_REPLY;
+    reply.u.reply = new sip_reply();
+
+    reply.u.reply->code = code;
+    reply.u.reply->reason = cstring(reason);
+
+    translate_hdr(&reply,reply.from, req,req->from);
+    reply.from->p = new sip_from_to();
+    parse_from_to((sip_from_to*)reply.from->p,
+		  reply.from->value.s,reply.from->value.len);
+
+    translate_hdr(&reply,reply.to, req,req->to);
+    reply.to->p = new sip_from_to();
+    parse_from_to((sip_from_to*)reply.to->p,
+		  reply.to->value.s,reply.to->value.len);
+
+    translate_hdr(&reply,reply.cseq, req,req->cseq);
+    reply.cseq->p = new sip_cseq();
+    parse_cseq((sip_cseq*)reply.cseq->p,
+	       reply.cseq->value.s,reply.cseq->value.len);
+
+    translate_hdr(&reply,reply.callid, req,req->callid);
+}
+
 void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 {
     t->reset_all_timers();
     t->state = TS_TERMINATED;
 
     // send 408 to 'ua'
-    sip_msg* req = t->msg;
-    sip_msg  msg(req->buf,req->len);
-
-    msg.type = SIP_REPLY;
-    msg.u.reply = new sip_reply();
-
-    msg.u.reply->code = 408;
-    msg.u.reply->reason = cstring("Timeout");
-
-    translate_hdr(&msg,msg.from, req,req->from);
-    msg.from->p = new sip_from_to();
-    parse_from_to((sip_from_to*)msg.from->p,
-		  msg.from->value.s,msg.from->value.len);
-
-    translate_hdr(&msg,msg.to, req,req->to);
-    msg.to->p = new sip_from_to();
-    parse_from_to((sip_from_to*)msg.to->p,
-		  msg.to->value.s,msg.to->value.len);
-
-    translate_hdr(&msg,msg.cseq, req,req->cseq);
-    msg.cseq->p = new sip_cseq();
-    parse_cseq((sip_cseq*)msg.cseq->p,
-	       msg.cseq->value.s,msg.cseq->value.len);
-
-    translate_hdr(&msg,msg.callid, req,req->callid);
+    sip_msg reply;
+    gen_error_reply_from_req(reply,t->msg,408,"Timeout");
 
     string dialog_id(t->dialog_id.s,t->dialog_id.len);
 
@@ -894,7 +900,7 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     }
     bucket->unlock();
 
-    ua->handle_sip_reply(dialog_id,&msg);
+    ua->handle_sip_reply(dialog_id,&reply);
 }
 
 static int patch_ruri_with_remote_ip(string& n_uri, sip_msg* msg)
@@ -1290,10 +1296,21 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     }
     
     switch(t->state){
-    case TS_CALLING:
+    case TS_CALLING: {
+	// Abandon canceled transaction
+	t->clear_timer(STIMER_A);
+	t->clear_timer(STIMER_M);
+	t->flags |= TR_FLAG_DISABLE_BL;
+	t->state = TS_ABANDONED;
+
+	// Answer request internally to terminate the dialog...
+	sip_msg reply;
+	gen_error_reply_from_req(reply, t->msg, 487, "Request Terminated");
+	string dlg_id(t->dialog_id.s, t->dialog_id.len);
 	bucket->unlock();
-	ERROR("Trying to cancel a request while in TS_CALLING state.\n");
-	return -1;
+	ua->handle_sip_reply(dlg_id, &reply);
+	return 0;
+    }
 
     case TS_COMPLETED:
 	bucket->unlock();
@@ -1645,9 +1662,9 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 
 	case TS_ABANDONED:
 	    // disable blacklisting: remote UA did reply
-	    INFO("disable blacklisting: remote UA (%s/%i) did reply",
-		 am_inet_ntop(&msg->remote_ip).c_str(),
-		 am_get_port(&msg->remote_ip));
+	    DBG("disable blacklisting: remote UA (%s/%i) did reply",
+		am_inet_ntop(&msg->remote_ip).c_str(),
+		am_get_port(&msg->remote_ip));
 	    t->flags |= TR_FLAG_DISABLE_BL;
 	    bucket->unlock();
 	    {
@@ -1663,9 +1680,9 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 
 	case TS_TERMINATED:
 	    // disable blacklisting: remote UA did reply
-	    INFO("disable blacklisting: remote UA (%s/%i) did reply",
-		 am_inet_ntop(&msg->remote_ip).c_str(),
-		 am_get_port(&msg->remote_ip));
+	    DBG("disable blacklisting: remote UA (%s/%i) did reply",
+		am_inet_ntop(&msg->remote_ip).c_str(),
+		am_get_port(&msg->remote_ip));
 	    t->flags |= TR_FLAG_DISABLE_BL;
 	    goto end;
 
@@ -1718,9 +1735,9 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    case TS_ABANDONED:
 	    case TS_TERMINATED:
 		// disable blacklisting: remote UA did reply
-		INFO("disable blacklisting: remote UA (%s/%i) did reply",
-		     am_inet_ntop(&msg->remote_ip).c_str(),
-		     am_get_port(&msg->remote_ip));
+		DBG("disable blacklisting: remote UA (%s/%i) did reply",
+		    am_inet_ntop(&msg->remote_ip).c_str(),
+		    am_get_port(&msg->remote_ip));
 
 		t->flags |= TR_FLAG_DISABLE_BL;
 		// fall through trap
@@ -1794,9 +1811,9 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    case TS_ABANDONED:
 	    case TS_TERMINATED:
 		//TODO: send ACK+BYE
-		INFO("disable blacklisting: remote UA (%s/%i) did reply",
-		     am_inet_ntop(&msg->remote_ip).c_str(),
-		     am_get_port(&msg->remote_ip));
+		DBG("disable blacklisting: remote UA (%s/%i) did reply",
+		    am_inet_ntop(&msg->remote_ip).c_str(),
+		    am_get_port(&msg->remote_ip));
 		t->flags |= TR_FLAG_DISABLE_BL;
 		goto end;
 

@@ -46,10 +46,6 @@ protected:
   // Number of open UAS INVITE transactions
   unsigned int pending_invites;
 
-  // In case a CANCEL should have been sent
-  // while in 'Trying' state
-  bool         cancel_pending;
-
   AmSdp   sdp_local;
   AmSdp   sdp_remote;
 
@@ -102,28 +98,6 @@ protected:
   void setRel100State(Am100rel::State rel100_state);
 
   void uasTimeout(AmSipTimeoutEvent* to_ev);
-
-  /** @return 0 on success (deprecated) */
-  // int reply(const AmSipRequest& req,
-  // 	    unsigned int  code, 
-  // 	    const string& reason,
-  // 	    const AmMimeBody* body = NULL,
-  // 	    const string& hdrs = "",
-  // 	    int flags = 0);
-
-  /** @return 0 on success */
-  // int reply(const AmSipTransaction& t,
-  // 	    unsigned int  code, 
-  // 	    const string& reason,
-  // 	    const AmMimeBody* body = NULL,
-  // 	    const string& hdrs = "",
-  // 	    int flags = 0);
-
-  /** @return 0 on success */
-  // int sendRequest(const string& method, 
-  // 		  const AmMimeBody* body = NULL,
-  // 		  const string& hdrs = "",
-  // 		  int flags = 0);
 
   /** @return 0 on success */
   int send_200_ack(unsigned int inv_cseq,

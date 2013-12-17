@@ -138,6 +138,8 @@ struct sip_msg
     sip_msg(const char* msg_buf, int msg_len);
     ~sip_msg();
 
+    void copy_msg_buf(const char* msg_buf, int msg_len);
+
     int send();
 
     /**
