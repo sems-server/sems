@@ -315,6 +315,11 @@ protected:
 public:
 
   /**
+   * Set whether RTP stream will receive RTP packets internally (received packets will be dropped or not).
+   */
+  void setReceiving(bool r);
+
+  /**
    * Stops RTP stream receiving RTP packets internally (received packets will be dropped).
    */
   void pause();

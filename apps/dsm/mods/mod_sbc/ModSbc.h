@@ -54,10 +54,6 @@ DEF_ACTION_1P(MODSBCEnableRelayDTMFReceiving);
 DEF_ACTION_1P(MODSBCAddToMediaProcessor);
 DEF_ACTION_1P(MODSBCRemoveFromMediaProcessor);
 
-DEF_ACTION_2P(MODSBCPauseRtpStreams);
-DEF_ACTION_2P(MODSBCResumeRtpStreams);
-
-DEF_ACTION_2P(MODSBCMuteRtpStreams);
-DEF_ACTION_2P(MODSBCUnmuteRtpStreams);
+DEF_ACTION_2P(MODSBCRtpStreamsSetReceiving);
 
 #endif

@@ -184,7 +184,7 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   incoming_payload(UNDEFINED_PAYLOAD),
   force_symmetric_rtp(false),
   enable_dtmf_transcoding(false),
-  muted(false), relay_paused(false)
+  muted(false), relay_paused(false), receiving(true)
 {
   if (session) initialize(session);
   else stream = NULL; // not initialized yet
@@ -359,6 +359,7 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
     // to be relayed this needs not to be an error)
   }
   stream->setOnHold(muted);
+  stream->setReceiving(receiving);
 
   return initialized;
 }
@@ -472,12 +473,23 @@ int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, A
 
 void AudioStreamData::mute(bool set_mute)
 {
+  DBG("mute(%s) - RTP stream [%p]\n", set_mute?"true":"false", stream);
+ 
   if (stream) {
     stream->setOnHold(set_mute);
     if (muted != set_mute) stream->clearRTPTimeout();
   }
   muted = set_mute;
 }
+
+void AudioStreamData::setReceiving(bool r) {
+  DBG("setReceiving(%s) - RTP stream [%p]\n", r?"true":"false", stream);
+  if (stream) {
+    stream->setReceiving(r);
+  }
+  receiving = r;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 
 AmB2BMedia::RelayStreamPair::RelayStreamPair(AmB2BSession *_a, AmB2BSession *_b)
@@ -1182,36 +1194,26 @@ void AmB2BMedia::setRelayDTMFReceiving(bool enabled) {
   }
 }
 
-#define ALL_STREAMS_OP(op_name, op_action)				\
-  void AmB2BMedia::op_name(bool pause_a, bool pause_b) {		\
-    DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size()); \
-    for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) { \
-      if (pause_a) {							\
-	DBG(#op_name " A relay stream [%p]\n", &(*j)->a);		\
-	(*j)->a.op_action;						\
-      }									\
-      if (pause_b) {							\
-	DBG(#op_name " B relay stream [%p]\n", &(*j)->b);		\
-	(*j)->b.op_action;						\
-      }									\
-    }									\
-									\
-    for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) { \
-      if (pause_a && NULL != j->a.getStream()) {			\
-	DBG(#op_name " A audio stream [%p]\n", j->a.getStream());	\
-	j->a.getStream()->op_action;					\
-      }									\
-      if (pause_b && NULL != j->b.getStream()) {			\
-	DBG(#op_name " B audio stream [%p]\n", j->b.getStream());	\
-	j->b.getStream()->op_action;					\
-      }									\
-    }									\
+/** set receving of RTP/relay streams (not receiving=drop incoming packets) */
+void AmB2BMedia::setReceiving(bool receiving_a, bool receiving_b) {
+  AmLock lock(mutex); // TODO: is this necessary?
+
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    DBG("setReceiving(%s) A relay stream [%p]\n", receiving_a?"true":"false", &(*j)->a);
+    (*j)->a.setReceiving(receiving_a);
+    DBG("setReceiving(%s) B relay stream [%p]\n", receiving_b?"true":"false", &(*j)->b);
+    (*j)->b.setReceiving(receiving_b);
   }
 
-ALL_STREAMS_OP(pauseStreams, pause());
-ALL_STREAMS_OP(resumeStreams, resume());
-ALL_STREAMS_OP(muteStreams, mute=true);
-ALL_STREAMS_OP(unmuteStreams, mute=false);
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    DBG("setReceiving(%s) A audio stream [%p]\n", receiving_a?"true":"false", j->a.getStream());
+    j->a.setReceiving(receiving_a);
+    DBG("setReceiving(%s) B audio stream [%p]\n", receiving_b?"true":"false", j->b.getStream());
+    j->b.setReceiving(receiving_b);
+  }
+
+}
 
 void AmB2BMedia::pauseRelay() {
   DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());

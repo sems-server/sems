@@ -97,6 +97,8 @@ class AudioStreamData {
 
     bool muted;
 
+    bool receiving;
+
     // for performance monitoring
     int outgoing_payload;
     int incoming_payload;
@@ -205,6 +207,7 @@ class AudioStreamData {
     void getSdpOffer(int media_idx, SdpMedia &m) { if (stream) stream->getSdpOffer(media_idx, m); }
     void getSdpAnswer(int media_idx, const SdpMedia &offer, SdpMedia &answer) { if (stream) stream->getSdpAnswer(media_idx, offer, answer); }
     void mute(bool set_mute);
+    void setReceiving(bool r);
     void setInput(AmAudio *_in) { in = _in; }
     AmAudio *getInput() { return in; }
 
@@ -339,6 +342,7 @@ class AmB2BMedia: public AmMediaSession
     std::vector<RelayStreamPair*> relay_streams;
 
     bool a_leg_muted, b_leg_muted;
+    bool a_leg_receiving, b_leg_receiving;
 
     bool relay_paused;
 
@@ -479,17 +483,8 @@ class AmB2BMedia: public AmMediaSession
     /** restart relaying on streams */
     void restartRelay();
 
-    /** set RTP/relay streams to 'paused' (= not receiving, drop incoming packets) */
-    void pauseStreams(bool pause_a, bool pause_b);
-
-    /** resume RTP/relay streams from 'paused' (= receiving) */
-    void resumeStreams(bool resume_a, bool resume_b);
-
-    /** set RTP/relay streams to muted (don't send RTP packets) */
-    void muteStreams(bool mute_a, bool mute_b);
-
-    /** set RTP/relay streams to unmuted (do send RTP packets) */
-    void unmuteStreams(bool unmute_a, bool unmute_b);
+    /** set 'receving' property of RTP/relay streams (not receiving=drop incoming packets) */
+    void setReceiving(bool receiving_a, bool receiving_b);
 
     // print debug info
     void debug();
