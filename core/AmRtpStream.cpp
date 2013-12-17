@@ -758,13 +758,20 @@ int AmRtpStream::init(const AmSdp& local,
   return 0;
 }
 
+void AmRtpStream::setReceiving(bool r) {
+  DBG("RTP stream instance [%p] set receiving=%s\n", this, r?"true":"false");
+  receiving = r;
+}
+
 void AmRtpStream::pause()
 {
+  DBG("RTP Stream instance [%p] pausing (receiving=false)\n", this);
   receiving = false;
 }
 
 void AmRtpStream::resume()
 {
+  DBG("RTP Stream instance [%p] resuming (receiving=true, clearing biffers/TS/TO)\n", this);
   clearRTPTimeout();
   receive_mut.lock();
   mem.clear();

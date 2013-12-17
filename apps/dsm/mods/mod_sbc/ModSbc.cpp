@@ -59,11 +59,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sbc.addToMediaProcessor", MODSBCAddToMediaProcessor);
   DEF_CMD("sbc.removeFromMediaProcessor", MODSBCRemoveFromMediaProcessor);
 
-  DEF_CMD("sbc.pauseRtpStreams", MODSBCPauseRtpStreams);
-  DEF_CMD("sbc.resumeRtpStreams", MODSBCResumeRtpStreams);
-
-  DEF_CMD("sbc.muteRtpStreams", MODSBCMuteRtpStreams);
-  DEF_CMD("sbc.unmuteRtpStreams", MODSBCUnmuteRtpStreams);
+  DEF_CMD("sbc.streamsSetReceiving", MODSBCRtpStreamsSetReceiving);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -494,46 +490,13 @@ EXEC_ACTION_START(MODSBCRemoveFromMediaProcessor) {
   AmMediaProcessor::instance()->removeSession(call_leg);
 } EXEC_ACTION_END;
 
-CONST_ACTION_2P(MODSBCPauseRtpStreams, ',', false);
-EXEC_ACTION_START(MODSBCPauseRtpStreams) {
+CONST_ACTION_2P(MODSBCRtpStreamsSetReceiving, ',', false);
+EXEC_ACTION_START(MODSBCRtpStreamsSetReceiving) {
   bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
   bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
 
-  GET_SBC_CALL_LEG(PauseRtpStream);
+  GET_SBC_CALL_LEG(RtpStreamsSetReceiving);
   GET_B2B_MEDIA;
 
-  b2b_media->pauseStreams(p_a, p_b);
-} EXEC_ACTION_END;
-
-CONST_ACTION_2P(MODSBCResumeRtpStreams, ',', false);
-EXEC_ACTION_START(MODSBCResumeRtpStreams) {
-  bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
-  bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
-
-  GET_SBC_CALL_LEG(ResumeRtpStream);
-
-  GET_B2B_MEDIA;
-  b2b_media->resumeStreams(p_a, p_b);
-} EXEC_ACTION_END;
-
-CONST_ACTION_2P(MODSBCMuteRtpStreams, ',', false);
-EXEC_ACTION_START(MODSBCMuteRtpStreams) {
-  bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
-  bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
-
-  GET_SBC_CALL_LEG(muteRtpStreams);
-  GET_B2B_MEDIA;
-
-  b2b_media->muteStreams(p_a, p_b);
-} EXEC_ACTION_END;
-
-CONST_ACTION_2P(MODSBCUnmuteRtpStreams, ',', false);
-EXEC_ACTION_START(MODSBCUnmuteRtpStreams) {
-  bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
-  bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
-
-  GET_SBC_CALL_LEG(unmuteRtpStreams);
-  GET_B2B_MEDIA;
-
-  b2b_media->unmuteStreams(p_a, p_b);
+  b2b_media->setReceiving(p_a, p_b);
 } EXEC_ACTION_END;
