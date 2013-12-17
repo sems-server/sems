@@ -803,7 +803,11 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 {
   clearRTPTimeout(&p->recv_time);
 
-  if (!receiving && !passive) {
+  if (!receiving) {
+
+    if (passive) {
+      handleSymmetricRtp(&p->addr,false);
+    }
 
     if (force_receive_dtmf) {
       recvDtmfPacket(p);
