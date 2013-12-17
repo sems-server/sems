@@ -301,7 +301,7 @@ public:
   void setMute(bool mute) { RTPStream()->mute = mute; }
 
   /** setter for rtp_str->receiving */
-  void setReceiving(bool receive) { RTPStream()->receiving = receive; }
+  void setReceiving(bool receive) { RTPStream()->setReceiving(receive); }
 
   /** setter for rtp_str->force_receive_dtmf*/
   void setForceDtmfReceiving(bool receive) { RTPStream()->force_receive_dtmf = receive; }
