@@ -252,6 +252,9 @@ protected:
   RtpEventQueue   rtp_ev_qu;
   AmMutex         receive_mut;
 
+  /** should we receive packets? if not -> drop */
+  bool receiving;
+
   /** if relay_stream is initialized, received RTP is relayed there */
   bool            relay_enabled;
   /** if true, packets are note parsed or checked */
@@ -323,9 +326,6 @@ public:
 
   /** Mute */
   bool mute;
-
-  /** should we receive packets? if not -> drop */
-  bool receiving;
 
   /** should we receive RFC-2833-style DTMF even when receiving is disabled? */
   bool force_receive_dtmf;
