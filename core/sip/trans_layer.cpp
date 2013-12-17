@@ -69,6 +69,12 @@
 bool _trans_layer::accept_fr_without_totag = false;
 unsigned int _trans_layer::default_bl_ttl = DEFAULT_BL_TTL;
 
+bool _trans_layer::less_case_i::operator () (const string& lhs, const string& rhs)
+{
+    return lower_cmp_n(lhs.c_str(),lhs.length(),
+		       rhs.c_str(),rhs.length()) < 0;
+}
+
 _trans_layer::_trans_layer()
     : ua(NULL),
       transports()
@@ -126,9 +132,19 @@ int _trans_layer::set_trsp_socket(sip_msg* msg, const cstring& next_trsp,
     prot_collection::iterator prot_sock_it =
 	transports[out_interface].find(c2stlstr(next_trsp));
 
-    // if we couldn't find anything, take whatever is there...
     if(prot_sock_it == transports[out_interface].end()) {
-	prot_sock_it = transports[out_interface].begin();
+
+	DBG("could not find transport '%.*s' in outbound interface %i",
+	    next_trsp.len,next_trsp.s,out_interface);
+
+	prot_sock_it = transports[out_interface].find("udp");
+	
+	// if we couldn't find anything, take whatever is there...
+	if(prot_sock_it == transports[out_interface].end()) {
+	    DBG("could not find transport 'udp' in outbound interface %i",
+		out_interface);
+	    prot_sock_it = transports[out_interface].begin();
+	}
     }
 
     if(msg->local_socket) dec_ref(msg->local_socket);
@@ -2506,19 +2522,6 @@ int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
     }
     close(temp_sock);
     
-    // disabled: does not work with TCP...
-    //
-    // try exact match
-    // for(vector<trsp_socket*>::iterator it = transports.begin();
-    //     it != transports.end(); ++it) {
-    //     if((*it)->match_addr(&from)){
-    // 	  tsock = *it;
-    // 	  break;
-    //     }
-    // }
-    // if(tsock != NULL)
-    //     return tsock;
-
     // try with alternative address
     char local_ip[NI_MAXHOST];
     if(am_inet_ntop(&from,local_ip,NI_MAXHOST) != NULL) {
@@ -2530,7 +2533,6 @@ int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
 		  local_ip);
 	}
 	else {
-	    //tsock = transports[if_it->second];
 	    return if_it->second;
 	}
     }
