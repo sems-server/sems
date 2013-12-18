@@ -32,6 +32,9 @@
 
 #include "parse_dns.h"
 #include "ip_util.h"
+#include "wheeltimer.h"
+
+#include "AmUtils.h"
 
 #include <sys/socket.h> 
 #include <netdb.h>
@@ -55,26 +58,12 @@ using std::list;
 // (the limit is the # bits in dns_handle::srv_used)
 #define MAX_SRV_RR (sizeof(unsigned int)*8)
 
-/* The SEMS_GET16 macro and the sems_get16 function were copied from glibc 2.7
- * (include/arpa/nameser.h (NS_GET16) and resolv/ns_netint.c (ns_get16)) to
- *  avoid using private glibc functions.
- */
+/* in seconds */
+#define DNS_CACHE_CYCLE 10L
 
-# define SEMS_GET16(s, cp)              \
-  do {                                  \
-    uint16_t *t_cp = (uint16_t *) (cp); \
-    (s) = ntohs (*t_cp);                \
-    (cp) += NS_INT16SZ;                 \
-} while (0)
-
-u_int
-sems_get16(const u_char *src)
-{
-       u_int dst;
-
-       SEMS_GET16(dst, src);
-       return (dst);
-}
+/* in us */
+#define DNS_CACHE_SINGLE_CYCLE \
+  ((DNS_CACHE_CYCLE*1000000L)/DNS_CACHE_SIZE)
 
 struct srv_entry
     : public dns_base_entry
@@ -84,6 +73,8 @@ struct srv_entry
 
     unsigned short port;
     string       target;
+
+    virtual string to_str();
 };
 
 int dns_ip_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
@@ -91,6 +82,7 @@ int dns_ip_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     if(h->ip_e != this){
 	if(h->ip_e) dec_ref(h->ip_e);
 	h->ip_e = this;
+	inc_ref(this);
 	h->ip_n = 0;
     }
     
@@ -181,6 +173,7 @@ public:
 	if(h->srv_e != this){
 	    if(h->srv_e) dec_ref(h->srv_e);
 	    h->srv_e = this;
+	    inc_ref(this);
 	    h->srv_n = 0;
 	    h->srv_used = 0;
 	}
@@ -298,6 +291,7 @@ dns_entry::dns_entry()
 
 dns_entry::~dns_entry()
 {
+    DBG("dns_entry::~dns_entry(): %s",to_str().c_str());
     for(vector<dns_base_entry*>::iterator it = ip_vec.begin();
 	it != ip_vec.end(); ++it) {
 
@@ -330,6 +324,22 @@ void dns_entry::add_rr(dns_record* rr, u_char* begin, u_char* end, long now)
 	expire = e->expire;
 
     ip_vec.push_back(e);
+}
+
+string dns_entry::to_str()
+{
+    string res;
+
+    for(vector<dns_base_entry*>::iterator it = ip_vec.begin();
+	it != ip_vec.end(); it++) {
+	
+	if(it != ip_vec.begin())
+	    res += ", ";
+
+	res += (*it)->to_str();
+    }
+
+    return "[" + res + "]";
 }
 
 dns_bucket::dns_bucket(unsigned long id) 
@@ -385,9 +395,8 @@ dns_entry* dns_bucket::find(const string& name)
 
     dns_entry* e = it->second;
 
-    timeval now;
-    gettimeofday(&now,NULL);
-    if(now.tv_sec >= e->expire){
+    u_int64_t now = wheeltimer::instance()->unix_clock.get();
+    if(now >= e->expire){
 	elmts.erase(it);
 	dec_ref(e);
 	unlock();
@@ -438,6 +447,22 @@ void ip_entry::to_sa(sockaddr_storage* sa)
     }
 }
 
+string ip_entry::to_str()
+{
+    if(type == IPv4) {
+	u_char* cp = (u_char*)&addr;
+	return int2str(cp[0]) + 
+	    "." + int2str(cp[1]) + 
+	    "." + int2str(cp[2]) + 
+	    "." + int2str(cp[3]);
+    }
+    else {
+	// not supported yet...
+	return "[IPv6]";
+    }
+}
+
+
 void ip_port_entry::to_sa(sockaddr_storage* sa)
 {
     DBG("copying ip_port_entry...");
@@ -464,6 +489,11 @@ void ip_port_entry::to_sa(sockaddr_storage* sa)
     default:
 	break;
     }
+}
+
+string ip_port_entry::to_str()
+{
+    return ip_entry::to_str() + ":" + int2str(port);
 }
 
 dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, u_char* begin, u_char* end)
@@ -508,39 +538,63 @@ dns_base_entry* dns_srv_entry::get_rr(dns_record* rr, u_char* begin, u_char* end
     DBG("SRV:\tTTL=%i\t%s\tP=<%i> W=<%i> P=<%i> T=<%s>\n",
     	ns_rr_ttl(*rr),
     	ns_rr_name(*rr),
-    	sems_get16(rdata),
-    	sems_get16(rdata+2),
-    	sems_get16(rdata+4),
+    	dns_get_16(rdata),
+    	dns_get_16(rdata+2),
+    	dns_get_16(rdata+4),
     	name_buf);
     
     srv_entry* srv_r = new srv_entry();
-    srv_r->p = sems_get16(rdata);
-    srv_r->w = sems_get16(rdata+2);
-    srv_r->port = sems_get16(rdata+4);
+    srv_r->p = dns_get_16(rdata);
+    srv_r->w = dns_get_16(rdata+2);
+    srv_r->port = dns_get_16(rdata+4);
     srv_r->target = (const char*)name_buf;
 
     return srv_r;
 }
 
-struct dns_entry_h
+string srv_entry::to_str()
 {
-    dns_entry* e;
-    long     now;
+    return target + ":" + int2str(port)
+	+ "/" + int2str(p)
+	+ "/" + int2str(w);
+};
+
+struct dns_search_h
+{
+    dns_entry_map entry_map;
+    uint64_t      now;
+
+    dns_search_h() {
+	now = wheeltimer::instance()->unix_clock.get();
+    }
 };
 
 int rr_to_dns_entry(dns_record* rr, dns_section_type t,
 		    u_char* begin, u_char* end, void* data)
 {
-    dns_entry* dns_e = ((dns_entry_h*)data)->e;
-    long     now = ((dns_entry_h*)data)->now;
+    // only answer and additional sections
+    if(t != dns_s_an && t != dns_s_ar)
+	return 0;
 
-    if(t == dns_s_an)
-	dns_e->add_rr(rr,begin,end,now);
+    dns_search_h* h = (dns_search_h*)data;
+    string name = ns_rr_name(*rr);
 
-    // TODO: parse the additional section as well.
-    //       there might be some A/AAAA records related to
-    //       the SRV targets.
-    
+    dns_entry* dns_e = NULL;
+    dns_entry_map::iterator it = h->entry_map.find(name);
+
+    if(it == h->entry_map.end()) {
+	dns_e = dns_entry::make_entry((dns_rr_type)rr->type);
+	if(!dns_e) {
+	    // unsupported record type
+	    return 0;
+	}
+	h->entry_map[name] = dns_e;
+    }
+    else {
+	dns_e = it->second;
+    }
+
+    dns_e->add_rr(rr,begin,end,h->now);
     return 0;
 }
 
@@ -682,13 +736,14 @@ _resolver::~_resolver()
     
 }
 
-int _resolver::query_dns(const char* name, dns_entry** e, long now, dns_rr_type t)
+int _resolver::query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type t)
 {
     u_char dns_res[NS_PACKETSZ];
 
     if(!name) return -1;
 
-    //TODO: add AAAA record support
+    DBG("Querying '%s' (%s)...",name,dns_rr_type_str(t));
+
     int dns_res_len = res_search(name,ns_c_in,(ns_type)t,
 				 dns_res,NS_PACKETSZ);
     if(dns_res_len < 0){
@@ -696,32 +751,33 @@ int _resolver::query_dns(const char* name, dns_entry** e, long now, dns_rr_type 
 	return -1;
     }
 
-    *e = dns_entry::make_entry(t);
-
     /*
      * Initialize a handle to this response.  The handle will
      * be used later to extract information from the response.
      */
-    dns_entry_h dns_h = { *e, now };
-    if (dns_msg_parse(dns_res, dns_res_len, rr_to_dns_entry, &dns_h) < 0) {
+    dns_search_h h;
+    if (dns_msg_parse(dns_res, dns_res_len, rr_to_dns_entry, &h) < 0) {
 	DBG("Could not parse DNS reply");
 	return -1;
     }
-    
-    *e = dns_h.e;
-    if(!*e) {
-	DBG("no dns_entry created");
-	return -1;
-    }
 
-    if((*e)->ip_vec.empty()){
-    	delete *e;
-    	*e = NULL;
-    	return -1;
-    }
+    for(dns_entry_map::iterator it = h.entry_map.begin();
+	it != h.entry_map.end(); it++) {
 
-    (*e)->init();
-    inc_ref(*e);
+	dns_entry* e = it->second;
+	if(!e) continue;
+
+	if((e)->ip_vec.empty()){
+	    delete e;
+	    e = NULL;
+	    continue;
+	}
+
+	e->init();
+	//inc_ref(e);
+
+	entry_map[it->first] = e;
+    }
 
     return 0;
 }
@@ -759,31 +815,56 @@ int _resolver::resolve_name(const char* name,
     // first attempt to get a valid IP
     // (from the cache)
     if(e){
-	return e->next_ip(h,sa);
+	int ret = e->next_ip(h,sa);
+	dec_ref(e);
+	return ret;
     }
 
-    timeval tv_now;
-    gettimeofday(&tv_now,NULL);
-
     // no valid IP, query the DNS
-    if(query_dns(name,&e,tv_now.tv_sec,t) < 0) {
+    dns_entry_map entry_map;
+    if(query_dns(name,entry_map,t) < 0) {
 	return -1;
     }
 
-    if(e) {
+    int res = -1;
+    for(dns_entry_map::iterator it = entry_map.begin();
+	it != entry_map.end(); it++) {
 
-	// if ttl != 0
-	if(e->expire != tv_now.tv_sec){
+	dns_entry*& e = it->second;
+	if(e) {
+
+	    b = cache.get_bucket(hashlittle(it->first.c_str(),
+					    it->first.length(),0));
 	    // cache the new record
-	    b->insert(name,e);
+	    if(!b->insert(it->first,e)) {
+		// record already cached
+
+		// this should allow us to avoid some race conditions
+		// ex: two simultanous exact same DNS queries
+		// -> one will be cached, the other gets destroyed after use
+		if(it->first != name) {
+		    delete e;
+		    e = NULL;
+		}
+		continue;
+	    }
+	    
+	    DBG("inserted: '%s' -> %s",
+		it->first.c_str(),
+		e->to_str().c_str());
 	}
-    
-	// now we should have a valid IP
-	return e->next_ip(h,sa);
     }
 
-    // should not happen...
-    return -1;
+    dns_entry_map::iterator it = entry_map.find(name);
+    if(it != entry_map.end()) {
+	dns_entry* e = it->second;
+	if(e) {
+	    // now we should have a valid IP
+	    res = e->next_ip(h,sa);
+	}
+    }
+
+    return res;
 }
 
 int _resolver::str2ip(const char* name,
@@ -819,39 +900,43 @@ int _resolver::str2ip(const char* name,
 
 void _resolver::run()
 {
+    struct timespec tick,rem;
+    tick.tv_sec  = (DNS_CACHE_SINGLE_CYCLE/1000000L);
+    tick.tv_nsec = (DNS_CACHE_SINGLE_CYCLE - (tick.tv_sec)*1000000L) * 1000L;
+
+    unsigned long i = 0;
     for(;;) {
-	sleep(10);
+	nanosleep(&tick,&rem);
 
-	timeval tv_now;
-	gettimeofday(&tv_now,NULL);
+	u_int64_t now = wheeltimer::instance()->unix_clock.get();
+	dns_bucket* bucket = cache.get_bucket(i);
 
-	//DBG("starting DNS cache garbage collection");
-	for(unsigned long i=0; i<cache.get_size(); i++){
-
-	    dns_bucket* bucket = cache.get_bucket(i);
-	    bucket->lock();
+	bucket->lock();
 	    
-	    for(dns_bucket::value_map::iterator it = bucket->elmts.begin();
-		it != bucket->elmts.end(); ++it){
+	for(dns_bucket::value_map::iterator it = bucket->elmts.begin();
+	    it != bucket->elmts.end(); ++it){
 
-		dns_entry* dns_e = (dns_entry*)it->second;
-		if(tv_now.tv_sec >= it->second->expire){
+	    dns_entry* dns_e = (dns_entry*)it->second;
+	    if(now >= it->second->expire){
 
-		    dns_bucket::value_map::iterator tmp_it = it;
-		    bool end_of_bucket = (++it == bucket->elmts.end());
+		dns_bucket::value_map::iterator tmp_it = it;
+		bool end_of_bucket = (++it == bucket->elmts.end());
 
-		    DBG("DNS record expired (%p)",dns_e);
-		    bucket->elmts.erase(tmp_it);
-		    dec_ref(dns_e);
+		DBG("DNS record expired (%p)",dns_e);
+		bucket->elmts.erase(tmp_it);
+		dec_ref(dns_e);
 
-		    if(end_of_bucket) break;
-		}
-		else {
-		    //DBG("######### record %p expires in %li seconds ##########",dns_e,it->second->expire-tv_now.tv_sec);
-		}
+		if(end_of_bucket) break;
 	    }
-	    bucket->unlock();
+	    else {
+		//DBG("######### record %p expires in %li seconds ##########",
+		//    dns_e,it->second->expire-tv_now.tv_sec);
+	    }
 	}
+
+	bucket->unlock();
+
+	if(++i >= cache.get_size()) i = 0;
     }
 }
 

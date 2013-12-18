@@ -61,13 +61,14 @@ struct dns_handle;
 
 struct dns_base_entry
 {
-    long int expire;
+    u_int64_t expire;
 
     dns_base_entry()
 	:expire(0)
     {}
 
     virtual ~dns_base_entry() {}
+    virtual string to_str() = 0;
 };
 
 class dns_entry
@@ -86,6 +87,8 @@ public:
     virtual void init()=0;
     virtual void add_rr(dns_record* rr, u_char* begin, u_char* end, long now);
     virtual int next_ip(dns_handle* h, sockaddr_storage* sa)=0;
+
+    virtual string to_str();
 };
 
 typedef ht_map_bucket<string,dns_entry> dns_bucket_base;
@@ -114,6 +117,7 @@ struct ip_entry
     };
 
     virtual void to_sa(sockaddr_storage* sa);
+    virtual string to_str();
 };
 
 struct ip_port_entry
@@ -122,6 +126,7 @@ struct ip_port_entry
     unsigned short port;
 
     virtual void to_sa(sockaddr_storage* sa);
+    virtual string to_str();
 };
 
 class dns_ip_entry
@@ -178,6 +183,9 @@ struct naptr_record
     string services;
     string regexp;
     string replace;
+
+    virtual string to_str() 
+    { return string(); }
 };
 
 class dns_naptr_entry
@@ -195,6 +203,8 @@ public:
     int next_ip(dns_handle* h, sockaddr_storage* sa) { return -1; }
 };
 
+typedef map<string,dns_entry*> dns_entry_map;
+
 class _resolver
     : AmThread
 {
@@ -209,9 +219,7 @@ public:
 	       sockaddr_storage* sa,
 	       const address_type types);
 
-    int query_dns(const char* name,
-		  dns_entry** e, long now,
-		  dns_rr_type t);
+    int query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type t);
 
 protected:
     _resolver();
