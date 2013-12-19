@@ -48,9 +48,11 @@
 #include <arpa/nameser.h> 
 
 #include <list>
+#include <utility>
 #include <algorithm>
 
 using std::pair;
+using std::make_pair;
 using std::list;
 
 #include "log.h"
@@ -586,7 +588,7 @@ int rr_to_dns_entry(dns_record* rr, dns_section_type t,
 	    // unsupported record type
 	    return 0;
 	}
-	h->entry_map[name] = dns_e;
+	h->entry_map.insert(name,dns_e);
     }
     else {
 	dns_e = it->second;
@@ -800,6 +802,45 @@ void sip_target_set::debug()
     }
 }
 
+dns_entry_map::dns_entry_map()
+    : map<string,dns_entry*>()
+{
+}
+
+dns_entry_map::~dns_entry_map()
+{
+    for(iterator it = begin(); it != end(); ++it) {
+	dec_ref(it->second);
+    }
+}
+
+std::pair<dns_entry_map::iterator, bool>
+dns_entry_map::insert(const dns_entry_map::value_type& x)
+{
+    return dns_entry_map_base::insert(x);
+}
+
+bool dns_entry_map::insert(const string& key, dns_entry* e)
+{
+    std::pair<iterator, bool> res =
+    	insert(make_pair<const key_type&,mapped_type>(key,e));
+
+    if(res.second) {
+	inc_ref(e);
+	return true;
+    }
+
+    return false;
+}
+
+dns_entry* dns_entry_map::fetch(const key_type& key)
+{
+    iterator it = find(key);
+    if(it != end())
+	return it->second;
+    return NULL;
+}
+
 bool _resolver::disable_srv = false;
 
 _resolver::_resolver()
@@ -842,18 +883,10 @@ int _resolver::query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type
 	it != h.entry_map.end(); it++) {
 
 	dns_entry* e = it->second;
-	if(!e) continue;
-
-	if((e)->ip_vec.empty()){
-	    delete e;
-	    e = NULL;
-	    continue;
-	}
+	if(!e || e->ip_vec.empty()) continue;
 
 	e->init();
-	//inc_ref(e);
-
-	entry_map[it->first] = e;
+	entry_map.insert(it->first,e);
     }
 
     return 0;
@@ -903,45 +936,28 @@ int _resolver::resolve_name(const char* name,
 	return -1;
     }
 
-    int res = -1;
     for(dns_entry_map::iterator it = entry_map.begin();
 	it != entry_map.end(); it++) {
 
-	dns_entry*& e = it->second;
-	if(e) {
+	if(!it->second) continue;
 
-	    b = cache.get_bucket(hashlittle(it->first.c_str(),
-					    it->first.length(),0));
-	    // cache the new record
-	    if(!b->insert(it->first,e)) {
-		// record already cached
-
-		// this should allow us to avoid some race conditions
-		// ex: two simultanous exact same DNS queries
-		// -> one will be cached, the other gets destroyed after use
-		if(it->first != name) {
-		    delete e;
-		    e = NULL;
-		}
-		continue;
-	    }
-	    
-	    DBG("inserted: '%s' -> %s",
-		it->first.c_str(),
-		e->to_str().c_str());
+	b = cache.get_bucket(hashlittle(it->first.c_str(),
+					it->first.length(),0));
+	// cache the new record
+	if(b->insert(it->first,it->second)) {
+	    // cache insert successful
+	    DBG("new DNS cache entry: '%s' -> %s",
+		it->first.c_str(), it->second->to_str().c_str());
 	}
     }
 
-    dns_entry_map::iterator it = entry_map.find(name);
-    if(it != entry_map.end()) {
-	dns_entry* e = it->second;
-	if(e) {
-	    // now we should have a valid IP
-	    res = e->next_ip(h,sa);
-	}
+    e = entry_map.fetch(name);
+    if(e) {
+	// now we should have a valid IP
+	return e->next_ip(h,sa);
     }
 
-    return res;
+    return -1;
 }
 
 int _resolver::str2ip(const char* name,
@@ -1125,6 +1141,7 @@ void _resolver::run()
 	if(++i >= cache.get_size()) i = 0;
     }
 }
+
 
 /** EMACS **
  * Local variables:

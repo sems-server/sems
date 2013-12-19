@@ -37,8 +37,10 @@
 
 #include <string>
 #include <vector>
+#include <map>
 using std::string;
 using std::vector;
+using std::map;
 
 #include <netinet/in.h>
 
@@ -236,7 +238,23 @@ private:
     sip_target_set(const sip_target_set&) {}
 };
 
-typedef map<string,dns_entry*> dns_entry_map;
+typedef map<string,dns_entry*> dns_entry_map_base;
+
+class dns_entry_map
+     : public dns_entry_map_base
+{
+public:
+    dns_entry_map();
+    ~dns_entry_map();
+
+    bool insert(const key_type& key, mapped_type e);
+    dns_entry* fetch(const key_type& key);
+
+private:
+    // forbid some inherited methods
+    mapped_type& operator[](const key_type& k);
+    std::pair<iterator, bool> insert(const value_type& x);
+};
 
 class _resolver
     : AmThread
