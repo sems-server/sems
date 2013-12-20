@@ -119,6 +119,8 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
 				     1000);
     rtp_relay_rate_limit.reset(limit);
   }
+
+  subs->allowUnsolicitedNotify(call_profile.allow_subless_notify);
 }
 
 // B leg constructor (from SBCCalleeSession)
@@ -164,6 +166,8 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   initCCExtModules();
 
   setLogger(caller->getLogger());
+
+  subs->allowUnsolicitedNotify(call_profile.allow_subless_notify);
 }
 
 SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)

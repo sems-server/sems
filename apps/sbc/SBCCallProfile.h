@@ -146,6 +146,8 @@ struct SBCCallProfile
 
   string aleg_next_hop;
 
+  bool allow_subless_notify;
+
   vector<FilterEntry> headerfilter;
   vector<FilterEntry> messagefilter;
 
@@ -339,7 +341,8 @@ struct SBCCallProfile
     log_rtp(false),
     log_sip(false),
     patch_ruri_next_hop(false),
-    next_hop_1st_req(false)
+    next_hop_1st_req(false),
+    allow_subless_notify(false)
   { }
 
   ~SBCCallProfile()
