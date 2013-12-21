@@ -468,6 +468,12 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
     if (it != sc_sess->var.end())
       p.next_hop_fixed = (it->second == DSM_TRUE);
 
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_OUTBOUND_INTERFACE);
+    if (it != sc_sess->var.end()) {
+      p.outbound_interface = it->second;
+      p.evaluateOutboundInterface();
+    }
+
     sbc_call_leg->addCallee(peer, hdrs);
   } else if (mode == DSM_SBC_PARAM_ADDCALLEE_MODE_LTAG) {
     string ltag;
