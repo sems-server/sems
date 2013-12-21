@@ -67,6 +67,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("getRecordLength", SCGetRecordLengthAction);
   DEF_CMD("getRecordDataSize", SCGetRecordDataSizeAction);
   DEF_CMD("flushPlaylist", SCFlushPlaylistAction);
+  DEF_CMD("closePlaylist", SCClosePlaylistAction); // deprecated
   DEF_CMD("setInOutPlaylist", SCSetInOutPlaylistAction);
   DEF_CMD("setInputPlaylist", SCSetInputPlaylistAction);
   DEF_CMD("setOutputPlaylist", SCSetOutputPlaylistAction);
@@ -395,6 +396,11 @@ EXEC_ACTION_START(SCGetRecordDataSizeAction) {
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCFlushPlaylistAction) {
+  sc_sess->flushPlaylist();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCClosePlaylistAction) {
+  WARN("closePlaylist() is deprecated - please use flushPlaylist() instead\n");
   sc_sess->flushPlaylist();
 } EXEC_ACTION_END;
 

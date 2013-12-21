@@ -18,10 +18,10 @@ state ENTER_PIN;
 transition "got cancel from A leg" (START, RUN_INVITE, ENTER_PIN) - event(#a_status==CANCEL) / stop(true) -> END;
 
 transition "pressed a number" ENTER_PIN - key(#key<10) / {
-  closePlaylist(false); 
+  flushPlaylist(); 
   append($entered_pin, #key);
 } -> TEST_PIN;
-transition "pressed hash or start" ENTER_PIN - key / closePlaylist(false) -> TEST_PIN_FINAL;
+transition "pressed hash or start" ENTER_PIN - key / flushPlaylist() -> TEST_PIN_FINAL;
 
 state TEST_PIN
  enter {

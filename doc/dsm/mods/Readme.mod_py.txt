@@ -115,7 +115,7 @@ FUNCTIONS
     addSeparator(string name[, bool front])
         add a named separator to playlist
 
-    closePlaylist(bool notify)
+    flushPlaylist()
         close the playlist
 
     connectMedia()

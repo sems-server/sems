@@ -133,7 +133,7 @@ transition "one more to cancel" CANCEL_OTHER_CALLEES - test($callee_counter<$db.
 } -> CANCEL_OTHER_CALLEES;
 
 transition "canceled all" CANCEL_OTHER_CALLEES - test($callee_counter==$db.rows) / {
-  closePlaylist(false);
+  flushPlaylist();
   dlg.acceptInvite(200, OK);
   conference.join(@local_tag);
 } -> CONNECTED;

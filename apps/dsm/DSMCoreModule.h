@@ -55,6 +55,7 @@ DEF_ACTION_1P(SCStopRecordAction);
 DEF_ACTION_1P(SCGetRecordDataSizeAction);
 DEF_ACTION_1P(SCGetRecordLengthAction);
 DEF_ACTION_1P(SCFlushPlaylistAction);
+DEF_ACTION_1P(SCClosePlaylistAction);
 DEF_ACTION_1P(SCSetInOutPlaylistAction);
 DEF_ACTION_1P(SCSetInputPlaylistAction);
 DEF_ACTION_1P(SCSetOutputPlaylistAction);
