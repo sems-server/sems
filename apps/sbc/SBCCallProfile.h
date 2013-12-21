@@ -228,6 +228,8 @@ struct SBCCallProfile
     
     bool evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req);
 
+    bool evaluateOutboundInterface();
+
     bool readConfig(AmConfigReader &cfg);
     void infoPrint() const;
     bool operator==(const TranscoderSettings& rhs) const;

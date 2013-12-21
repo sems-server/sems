@@ -833,6 +833,12 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
   return true;
 }
 
+
+bool SBCCallProfile::evaluateOutboundInterface() {
+  REPLACE_IFACE_SIP(outbound_interface, outbound_interface_value);
+  return true;
+}
+
 bool SBCCallProfile::evaluateRTPRelayInterface() {
   EVALUATE_IFACE_RTP(rtprelay_interface, rtprelay_interface_value);
   return true;
