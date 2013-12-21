@@ -835,7 +835,23 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
 
 
 bool SBCCallProfile::evaluateOutboundInterface() {
-  REPLACE_IFACE_SIP(outbound_interface, outbound_interface_value);
+  if (outbound_interface == "default") {
+    outbound_interface_value = 0;
+  } else {
+    map<string,unsigned short>::iterator name_it =
+      AmConfig::SIP_If_names.find(outbound_interface);
+    if (name_it != AmConfig::RTP_If_names.end()) {
+      outbound_interface_value = name_it->second;
+    } else {
+      ERROR("selected outbound_interface '%s' does not exist as a signaling"
+	    " interface. "
+	    "Please check the 'additional_interfaces' "
+	    "parameter in the main configuration file.",
+	    outbound_interface.c_str());
+      return false;
+    }
+  }
+
   return true;
 }
 
