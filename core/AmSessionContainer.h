@@ -202,6 +202,8 @@ class AmSessionContainer : public AmThread
    */
   unsigned int getMaxCPS();
 
+  void initMonitoring();
+
   _MONITORING_DEFINE_INTERFACE;
 
 };

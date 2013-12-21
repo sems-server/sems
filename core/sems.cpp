@@ -585,6 +585,8 @@ int main(int argc, char* argv[])
 
   AmPlugIn::instance()->registerLoggingPlugins();
 
+  AmSessionContainer::instance()->initMonitoring();
+
   #ifndef DISABLE_DAEMON_MODE
   if(fd[1]) {
     DBG("hi world! I'm main child [%d]\n", main_pid);
