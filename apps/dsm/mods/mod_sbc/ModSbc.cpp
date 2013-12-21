@@ -452,6 +452,22 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
     if (it != sc_sess->var.end())
       p.outbound_proxy = it->second;
 
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_NEXT_HOP);
+    if (it != sc_sess->var.end())
+      p.next_hop = it->second;
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_NEXT_HOP_1ST_REQ);
+    if (it != sc_sess->var.end())
+      p.next_hop_1st_req = (it->second == DSM_TRUE);
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_NEXT_HOP_PATCH_RURI);
+    if (it != sc_sess->var.end())
+      p.patch_ruri_next_hop = (it->second == DSM_TRUE);
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_NEXT_HOP_FIXED);
+    if (it != sc_sess->var.end())
+      p.next_hop_fixed = (it->second == DSM_TRUE);
+
     sbc_call_leg->addCallee(peer, hdrs);
   } else if (mode == DSM_SBC_PARAM_ADDCALLEE_MODE_LTAG) {
     string ltag;
