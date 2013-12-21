@@ -149,6 +149,7 @@ SimpleRelayCreator::createGenericRelay(SBCCallProfile& call_profile,
 SBCFactory::SBCFactory(const string& _app_name)
   : AmSessionFactory(_app_name), 
     AmDynInvokeFactory(_app_name),
+    core_options_handling(false),
     callLegCreator(new CallLegCreator()),
     simpleRelayCreator(new SimpleRelayCreator())
 {
@@ -229,6 +230,9 @@ int SBCFactory::onLoad()
     regex_mappings.setRegexMap(*it, v);
     INFO("loaded regex mapping '%s'\n", it->c_str());
   }
+
+  core_options_handling = cfg.getParameter("core_options_handling") == "yes";
+  DBG("OPTIONS messages handled by the core: %s\n", core_options_handling?"yes":"no");
 
   if (!AmPlugIn::registerApplication(MOD_NAME, this)) {
     ERROR("registering "MOD_NAME" application\n");
@@ -353,6 +357,13 @@ void oodHandlingTerminated(const AmSipRequest &req, vector<AmDynInvoke*>& cc_mod
 void SBCFactory::onOoDRequest(const AmSipRequest& req)
 {
   DBG("processing message %s %s\n", req.method.c_str(), req.r_uri.c_str());  
+
+  if (core_options_handling && req.method == SIP_METH_OPTIONS) {
+    DBG("processing OPTIONS in core\n");
+    AmSessionFactory::onOoDRequest(req);
+    return;
+  }
+
   profiles_mut.lock();
 
   ParamReplacerCtx ctx;

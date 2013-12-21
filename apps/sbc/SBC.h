@@ -72,6 +72,8 @@ class SBCFactory: public AmSessionFactory,
   vector<string> active_profile;
   AmMutex profiles_mut;
 
+  bool core_options_handling;
+
   auto_ptr<CallLegCreator> callLegCreator;
   auto_ptr<SimpleRelayCreator> simpleRelayCreator;
 
