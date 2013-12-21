@@ -202,6 +202,15 @@ sbc.addCallee(string mode, string varname)
          $varname.remote_party   - remote party (To) in new call
          $varname.hdrs           - headers in outgoing INVITE
          $varname.outbound_proxy - outbound proxy in new call
+         $varname.next_hop       - next hop
+         $varname.next_hop_1st_req    - next hop for 1st req, "true" or "false"
+         $varname.next_hop_patch_ruri - patch ruri with next hop, "true" or "false"
+         $varname.next_hop_fixed      - fixed next hop
+
+         $varname.outbound_proxy - outbound proxy in new call
+         $varname.outbound_proxy - outbound proxy in new call
+         $varname.outbound_proxy - outbound proxy in new call
+
          $varname.transparent_dlg_id - "yes" or "no": use transparent dlg IDs for new call; default no
                                         - "no" very much advised if current leg was connected before!
                                           otherwise local tag in current leg will be overwritten on reply
