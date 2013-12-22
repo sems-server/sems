@@ -23,7 +23,7 @@
 #define DSM_SBC_PARAM_ADDCALLEE_NEXT_HOP_PATCH_RURI "next_hop_patch_ruri"
 #define DSM_SBC_PARAM_ADDCALLEE_NEXT_HOP_FIXED      "next_hop_fixed"
 #define DSM_SBC_PARAM_ADDCALLEE_OUTBOUND_INTERFACE "outbound_interface"
-
+#define DSM_SBC_PARAM_ADDCALLEE_RTP_INTERFACE      "rtp_interface"
 
 #define DSM_SBC_PARAM_ADDCALLEE_RTP_MODE       "rtp_mode"
 #define DSM_SBC_PARAM_ADDCALLEE_TRANSPARENT_DLG_ID "transparent_dlg_id"

@@ -214,6 +214,8 @@ sbc.addCallee(string mode, string varname)
 
          $varname.outbound_proxy - outbound proxy in new call
          $varname.outbound_interface - outbound interface used for new call
+         $varname.rtp_interface - rtp interface used for new call
+
 
          $varname.transparent_dlg_id - "yes" or "no": use transparent dlg IDs for new call; default no
                                         - "no" very much advised if current leg was connected before!
