@@ -119,8 +119,6 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
 				     1000);
     rtp_relay_rate_limit.reset(limit);
   }
-
-  subs->allowUnsolicitedNotify(call_profile.allow_subless_notify);
 }
 
 // B leg constructor (from SBCCalleeSession)
@@ -861,6 +859,8 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
 
   if(a_leg && call_profile.keep_vias)
     invite_req.hdrs = invite_req.vias + invite_req.hdrs;
+
+  subs->allowUnsolicitedNotify(call_profile.allow_subless_notify);
 
   // call extend call controls
   InitialInviteHandlerParams params(to, ruri, from, &req, &invite_req);
