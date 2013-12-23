@@ -186,7 +186,7 @@ public:
   AmSipSubscription(AmBasicSipDialog* dlg, AmEventQueue* ev_q);
   virtual ~AmSipSubscription();
 
-  void allowUnsolicitedNotify(bool allow) {
+  virtual void allowUnsolicitedNotify(bool allow) {
     allow_subless_notify = allow;
   }
 
