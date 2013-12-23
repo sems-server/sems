@@ -367,7 +367,6 @@ bool str2long(char*& str, long& result, char sep)
   return false;
 }
 
-
 bool str2bool(const string &s, bool &dst)
 {
   // TODO: optimize
