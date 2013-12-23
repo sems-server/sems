@@ -914,10 +914,26 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
   // Note that setting sip_relay_only to false in this case doesn't solve the
   // problem because AmB2BSession always tries to relay the request into the
   // other leg.
-  if (getCallStatus() == Disconnected && getOtherId().empty()) {
+  if ((getCallStatus() == Disconnected || getCallStatus() == Disconnecting)
+        && getOtherId().empty())
+  {
     TRACE("handling request %s in disconnected state", req.method.c_str());
+
     // this is not correct but what is?
-    AmSession::onSipRequest(req);
+    // handle reINVITEs within B2B call with no other leg
+    if (req.method == SIP_METH_INVITE && dlg->getStatus() == AmBasicSipDialog::Connected) {
+      try {
+        AmSession::onInvite(req);
+        //or dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR); ?
+      }
+      catch(...) {
+        ERROR("exception when handling INVITE in disconnected state");
+        dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+        // stop the call?
+      }
+    }
+    else AmSession::onSipRequest(req);
+
     if (req.method == SIP_METH_BYE) {
       stopCall(&req); // is this needed?
     }
