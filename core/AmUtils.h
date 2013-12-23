@@ -158,6 +158,9 @@ bool str2long(const string& str, long& result);
  */
 bool str2long(char*& str, long& result, char sep = ' ');
 
+/* translates string value into bool, returns false on error */
+bool str2bool(const string &s, bool &dst);
+
 /**
  * Parse code/reason line.
  * Syntax: "code reason"
