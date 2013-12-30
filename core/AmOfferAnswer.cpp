@@ -178,6 +178,10 @@ int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
 	
 	DBG("ignoring subsequent SDP reply within the same transaction\n");
 	DBG("this usually happens when 183 and 200 have SDP\n");
+
+	/* Make sure that session is started when 200 OK is received */
+	if (reply.code == 200) dlg->onSdpCompleted();
+
       }
       else {
 	saveState();
