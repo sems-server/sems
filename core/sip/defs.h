@@ -36,6 +36,7 @@
 #define SIP_HDR_P_ASSERTED_IDENTITY "P-Asserted-Identity"
 #define SIP_HDR_P_PREFERRED_IDENTITY "P-Preferred-Identity"
 #define SIP_HDR_REFER_TO        "Refer-To"
+#define SIP_HDR_REFERRED_BY     "Referred-By"
 #define SIP_HDR_EXPIRES         "Expires"
 #define SIP_HDR_MIN_EXPIRES     "Min-Expires"
 #define SIP_HDR_SESSION_EXPIRES "Session-Expires"
