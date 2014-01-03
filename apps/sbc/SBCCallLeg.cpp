@@ -341,6 +341,8 @@ void SBCCallLeg::applyBProfile()
 
     setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+    setEnableDtmfRtpFiltering(call_profile.rtprelay_dtmf_filtering);
+    setEnableDtmfRtpDetection(call_profile.rtprelay_dtmf_detection);
 
     // copy stats counters
     rtp_pegs = call_profile.bleg_rtp_counters;
