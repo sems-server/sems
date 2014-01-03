@@ -49,6 +49,8 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.sub", SCUSSubAction);
   DEF_CMD("utils.int", SCUIntAction);
   DEF_CMD("utils.splitStringCR", SCUSplitStringAction);
+  DEF_CMD("utils.escapeCRLF", SCUEscapeCRLFAction);
+  DEF_CMD("utils.unescapeCRLF", SCUUnescapeCRLFAction);
   DEF_CMD("utils.playRingTone", SCUPlayRingToneAction);
 
 } MOD_ACTIONEXPORT_END;
@@ -242,7 +244,36 @@ EXEC_ACTION_START(SCUSplitStringAction) {
   }
 } EXEC_ACTION_END;
 
+EXEC_ACTION_START(SCUEscapeCRLFAction) {
+  string varname = arg;
+  if (varname.length() && varname[0]=='$')
+    varname.erase(0,1);
 
+  while (true) {
+    size_t p = sc_sess->var[varname].find("\r\n");
+    if (p==string::npos)
+      break;
+    sc_sess->var[varname].replace(p, 2, "\\r\\n");
+  }
+
+  DBG("escaped: $%s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(SCUUnescapeCRLFAction) {
+  string varname = arg;
+  if (varname.length() && varname[0]=='$')
+    varname.erase(0,1);
+
+  while (true) {
+    size_t p = sc_sess->var[varname].find("\\r\\n");
+    if (p==string::npos)
+      break;
+    sc_sess->var[varname].replace(p, 4, "\r\n");
+  }
+
+  DBG("unescaped: $%s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
+} EXEC_ACTION_END;
 
 
 CONST_ACTION_2P(SCUPlayRingToneAction, ',', true);
