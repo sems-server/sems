@@ -410,7 +410,8 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     sdp_media_index(-1),
     relay_transparent_ssrc(true),
     relay_transparent_seqno(true),
-    relay_filter_dtmf(false)
+    relay_filter_dtmf(false),
+    force_receive_dtmf(false)
 {
 
   memset(&r_saddr,0,sizeof(struct sockaddr_storage));
