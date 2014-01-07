@@ -413,6 +413,14 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
     return -1;
   }
 
+  if( (reply.code >= 300) &&
+      (reply.cseq == cseq) ) {
+    // final error reply -> cleanup OA state
+    DBG("after %u reply to %s: resetting OA state\n",
+	reply.code, reply.cseq_method.c_str());
+    clearTransitionalState();
+  }
+
   return 0;
 }
 
