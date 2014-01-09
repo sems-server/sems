@@ -1862,6 +1862,13 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		
 	    case TS_ABANDONED:
 	    case TS_TERMINATED:
+		// local reply: do not send an ACK in this case
+		if(!msg->local_socket) {
+		    t->reset_all_timers();
+		    bucket->remove(t);
+		    goto end;
+		}
+
 		// disable blacklisting: remote UA did reply
 		DBG("disable blacklisting: remote UA (%s/%i) did reply",
 		    am_inet_ntop(&msg->remote_ip).c_str(),
@@ -1996,6 +2003,15 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    
 	case TS_ABANDONED:
 	case TS_TERMINATED:
+	    //local reply
+	    if(!msg->local_socket) {
+		if(reply_code == 500 || reply_code == 503) {
+		    // no more replies will come...
+		    bucket->remove(t);
+		}
+		goto end;
+	    }
+
 	    INFO("disable blacklisting: remote UA (%s/%i) did reply",
 		 am_inet_ntop(&msg->remote_ip).c_str(),
 		 am_get_port(&msg->remote_ip));
@@ -2577,7 +2593,8 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 
  try_next_dest:
     // get the next ip
-    if(tr->targets->get_next(&sa,next_trsp,tr->flags) < 0){
+    if(!tr->targets ||
+       tr->targets->get_next(&sa,next_trsp,tr->flags) < 0){
 	DBG("no more destinations!");
 	return -1;
     }
