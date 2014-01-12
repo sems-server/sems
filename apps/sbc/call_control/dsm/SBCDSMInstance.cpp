@@ -336,6 +336,23 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
     map<string, string> params;
     params["id"] = int2str(sep_ev->event_id);
     engine.runEvent(call, this, DSMCondition::PlaylistSeparator, &params);
+
+    if (params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+      return StopProcessing;
+    return ContinueProcessing;
+  }
+
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event &&
+     ((audio_event->event_id == AmAudioEvent::cleared) ||
+      (audio_event->event_id == AmAudioEvent::noAudio))){
+    map<string, string> params;
+    params["type"] = audio_event->event_id == AmAudioEvent::cleared?"cleared":"noAudio";
+    engine.runEvent(call, this, DSMCondition::NoAudio, &params);
+
+    if (params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+      return StopProcessing;
+    return ContinueProcessing;
   }
 
   // todo: process JsonRPCEvents (? see DSMCall::process)
