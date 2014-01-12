@@ -31,6 +31,11 @@ SystemDSM::~SystemDSM() {
   for (std::set<DSMDisposable*>::iterator it=
 	 gc_trash.begin(); it != gc_trash.end(); it++)
     delete *it;
+
+#ifdef USE_MONITORING
+  MONITORING_MARK_FINISHED(dummy_session.getLocalTag());
+#endif
+
 }
 
 void SystemDSM::run() {
