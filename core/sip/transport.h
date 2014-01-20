@@ -36,6 +36,9 @@
 #include <string>
 using std::string;
 
+#define DEFAULT_TCP_CONNECT_TIMEOUT 2000 /* 2 seconds */
+#define DEFAULT_TCP_IDLE_TIMEOUT 3600000 /* 1 hour */
+
 class trsp_socket
     : public atomic_ref_cnt
 {
@@ -75,7 +78,7 @@ protected:
 
 public:
     trsp_socket(unsigned short if_num, unsigned int opts,
-		unsigned int sys_if_idx = 0);
+		unsigned int sys_if_idx = 0, int sd = 0);
     virtual ~trsp_socket();
 
     /**
@@ -145,7 +148,8 @@ public:
      * Sends a message.
      * @return -1 if error(s) occured.
      */
-    virtual int send(const sockaddr_storage* sa, const char* msg, const int msg_len)=0;
+    virtual int send(const sockaddr_storage* sa, const char* msg, 
+		     const int msg_len, unsigned int flags)=0;
 };
 
 class transport: public AmThread

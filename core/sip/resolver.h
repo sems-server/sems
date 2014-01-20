@@ -205,6 +205,39 @@ public:
     int next_ip(dns_handle* h, sockaddr_storage* sa) { return -1; }
 };
 
+#define SIP_TRSP_SIZE_MAX 4
+
+struct sip_target
+{
+    sockaddr_storage ss;
+    char             trsp[SIP_TRSP_SIZE_MAX+1];
+
+    sip_target();
+    sip_target(const sip_target& target);
+
+    void clear();
+    const sip_target& operator = (const sip_target& target);
+};
+
+struct sip_target_set
+{
+    list<sip_target>           dest_list;
+    list<sip_target>::iterator dest_list_it;
+
+    sip_target_set();
+
+    void reset_iterator();
+    bool has_next();
+    int  get_next(sockaddr_storage* ss, cstring& next_trsp,
+		  unsigned int flags);
+    bool next();
+
+    void debug();
+
+private:
+    sip_target_set(const sip_target_set&) {}
+};
+
 typedef map<string,dns_entry*> dns_entry_map_base;
 
 class dns_entry_map
@@ -227,6 +260,9 @@ class _resolver
     : AmThread
 {
 public:
+    // disable SRV lookups
+    static bool disable_srv;
+
     int resolve_name(const char* name, 
 		     dns_handle* h,
 		     sockaddr_storage* sa,
@@ -239,9 +275,23 @@ public:
 
     int query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type t);
 
+    /**
+     * Transforms all elements of a destination list into
+     * a target set, thus resolving all DNS names and
+     * converting IPs into a sockaddr_storage.
+     */
+    int resolve_targets(const list<sip_destination>& dest_list,
+			sip_target_set* targets);
+
 protected:
     _resolver();
     ~_resolver();
+
+    int set_destination_ip(const cstring& next_hop,
+			   unsigned short next_port,
+			   const cstring& next_trsp,
+			   sockaddr_storage* remote_ip,
+			   dns_handle* h_dns);
 
     void run();
     void on_stop() {}

@@ -59,6 +59,7 @@ struct CCInterface {
 
 typedef std::list<CCInterface> CCInterfaceListT;
 typedef CCInterfaceListT::iterator CCInterfaceListIteratorT;
+typedef CCInterfaceListT::const_iterator CCInterfaceListConstIteratorT;
 
 template <class T>
 class ref_counted_ptr
@@ -143,6 +144,7 @@ struct SBCCallProfile
   string next_hop;
   bool next_hop_1st_req;
   bool patch_ruri_next_hop;
+  bool next_hop_fixed;
 
   string aleg_next_hop;
 
@@ -189,6 +191,8 @@ struct SBCCallProfile
   bool msgflags_symmetric_rtp;
   bool rtprelay_transparent_seqno;
   bool rtprelay_transparent_ssrc;
+  bool rtprelay_dtmf_filtering;
+  bool rtprelay_dtmf_detection;
 
   string rtprelay_interface;
   int rtprelay_interface_value;
@@ -284,21 +288,26 @@ struct SBCCallProfile
 
   // hold settings
   class HoldSettings {
+    public:
+        enum Activity { sendrecv, sendonly, recvonly, inactive };
+
     private:
       struct HoldParams {
         // non-replaced params
-        string mark_zero_connection_str, recv_str, alter_b2b_str;
+        string mark_zero_connection_str, activity_str, alter_b2b_str;
 
         bool mark_zero_connection;
-        bool recv; // sendrecv/recvonly (if set) X sendonly/inactive (if unset)
+        Activity activity;
         bool alter_b2b; // transform B2B hold requests (not locally generated ones)
 
-        HoldParams(): mark_zero_connection(false), recv(false), alter_b2b(false) { }
+        bool setActivity(const string &s);
+        HoldParams(): mark_zero_connection(false), activity(sendonly), alter_b2b(false) { }
       } aleg, bleg;
 
     public:
       bool mark_zero_connection(bool a_leg) { return a_leg ? aleg.mark_zero_connection : bleg.mark_zero_connection; }
-      bool recv(bool a_leg) { return a_leg ? aleg.recv : bleg.recv; }
+      Activity activity(bool a_leg) { return a_leg ? aleg.activity : bleg.activity; }
+      const string &activity_str(bool a_leg) { return a_leg ? aleg.activity_str : bleg.activity_str; }
       bool alter_b2b(bool a_leg) { return a_leg ? aleg.alter_b2b : bleg.alter_b2b; }
 
       void readConfig(AmConfigReader &cfg);
@@ -342,6 +351,7 @@ struct SBCCallProfile
     log_sip(false),
     patch_ruri_next_hop(false),
     next_hop_1st_req(false),
+    next_hop_fixed(false),
     allow_subless_notify(false)
   { }
 
@@ -365,6 +375,8 @@ struct SBCCallProfile
 
   int apply_common_fields(ParamReplacerCtx& ctx,
 			  AmSipRequest& req) const;
+
+  bool evaluateOutboundInterface();
 
   bool evaluate(ParamReplacerCtx& ctx,
 		const AmSipRequest& req);

@@ -115,10 +115,12 @@ bool AmSessionContainer::clean_sessions() {
   return more;
 }
 
+void AmSessionContainer::initMonitoring() {
+  _MONITORING_INIT;
+}
+
 void AmSessionContainer::run()
 {
-  _MONITORING_INIT;
-
   while(!_container_closed.get()){
 
     _run_cond.wait_for();

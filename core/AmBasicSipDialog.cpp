@@ -30,6 +30,7 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
     next_hop(AmConfig::NextHop),
     next_hop_1st_req(AmConfig::NextHop1stReq),
     patch_ruri_next_hop(false),
+    next_hop_fixed(false),
     outbound_interface(-1),
     nat_handling(AmConfig::SipNATHandling),
     usages(0)
@@ -325,8 +326,10 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
     if (remote_uri != req.from_uri) {
       setRemoteUri(req.from_uri);
       if(nat_handling && req.first_hop) {
-	setNextHop(req.remote_ip + ":"
-		   + int2str(req.remote_port));
+	string nh = req.remote_ip + ":"
+	  + int2str(req.remote_port)
+	  + "/" + req.trsp;
+	setNextHop(nh);
 	setNextHop1stReq(false);
       }
     }
@@ -470,8 +473,10 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
     
     setRemoteUri(reply.to_uri);
     if(!getNextHop().empty()) {
-      setNextHop(reply.remote_ip + ":"
-		 + int2str(reply.remote_port));
+      string nh = reply.remote_ip 
+	+ ":" + int2str(reply.remote_port)
+	+ "/" + reply.trsp;
+      setNextHop(nh);
     }
 
     string ua = getHeader(reply.hdrs,"Server");

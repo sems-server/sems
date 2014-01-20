@@ -29,8 +29,9 @@
 
 #include "CCTemplate.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 
+#include "SBCCallLeg.h"
 #include <string.h>
 
 class CCTemplateFactory : public AmDynInvokeFactory
@@ -160,7 +161,13 @@ void CCTemplate::invoke(const string& method, const AmArg& args, AmArg& ret)
 	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
 	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt()
 	);
-  } else if(method == "_list"){
+  }
+  // extended call control
+  // else if (method == "getExtendedInterfaceHandler") {
+  //   ret.push((AmObject*)this);
+  // }
+
+  else if(method == "_list"){
     ret.push("start");
     ret.push("connect");
     ret.push("end");
@@ -173,7 +180,7 @@ void CCTemplate::start(const string& cc_name, const string& ltag,
 		       SBCCallProfile* call_profile,
 		       int start_ts_sec, int start_ts_usec,
 		       const AmArg& values, int timer_id, AmArg& res) {
-  // start code here
+  // call start code here
   res.push(AmArg());
   AmArg& res_cmd = res[0];
 
@@ -194,13 +201,138 @@ void CCTemplate::connect(const string& cc_name, const string& ltag,
 			 SBCCallProfile* call_profile,
 			 const string& other_tag,
 			 int connect_ts_sec, int connect_ts_usec) {
-  // connect code here
+  // call connect code here
 
 }
 
 void CCTemplate::end(const string& cc_name, const string& ltag,
 		     SBCCallProfile* call_profile,
 		     int end_ts_sec, int end_ts_usec) {
-  // end code here
+  // call end code here
 
+}
+
+// ------- extended call control interface -------------------
+
+
+
+bool CCTemplate::init(SBCCallLeg *call, const map<string, string> &values)
+{
+  DBG("ExtCC: init - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+
+  SBCCallProfile &profile = call->getCallProfile();
+
+  return true;
+}
+
+CCChainProcessing CCTemplate::onInitialInvite(SBCCallLeg *call, InitialInviteHandlerParams &params)
+{
+  DBG("ExtCC: onInitialInvite - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+void CCTemplate::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause) {
+  DBG("ExtCC: onStateChange - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+};
+
+CCChainProcessing CCTemplate::onBLegRefused(SBCCallLeg *call, const AmSipReply& reply)
+{
+  DBG("ExtCC: onBLegRefused - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+void CCTemplate::onDestroyLeg(SBCCallLeg *call) {
+  DBG("ExtCC: onDestroyLeg - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+}
+
+/** called from A/B leg when in-dialog request comes in */
+CCChainProcessing CCTemplate::onInDialogRequest(SBCCallLeg *call, const AmSipRequest &req) {
+  DBG("ExtCC: onInDialogRequest - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+CCChainProcessing CCTemplate::onInDialogReply(SBCCallLeg *call, const AmSipReply &reply) {
+  DBG("ExtCC: onInDialogReply - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+/** called before any other processing for the event is done */
+CCChainProcessing CCTemplate::onEvent(SBCCallLeg *call, AmEvent *e) {
+  DBG("ExtCC: onEvent - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+CCChainProcessing CCTemplate::onDtmf(SBCCallLeg *call, int event, int duration) { 
+  DBG("ExtCC: onDtmf(%i;%i) - call instance: '%p' isAleg==%s\n",
+      event, duration, call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+// hold related functionality
+CCChainProcessing CCTemplate::putOnHold(SBCCallLeg *call) {
+  DBG("ExtCC: putOnHold - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+CCChainProcessing CCTemplate::resumeHeld(SBCCallLeg *call, bool send_reinvite) {
+  DBG("ExtCC: resumeHeld - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+CCChainProcessing CCTemplate::createHoldRequest(SBCCallLeg *call, AmSdp &sdp) {
+  DBG("ExtCC: createHoldRequest - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+CCChainProcessing CCTemplate::handleHoldReply(SBCCallLeg *call, bool succeeded) {
+  DBG("ExtCC: handleHoldReply - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
+  return ContinueProcessing;
+}
+
+/** Possibility to influence messages relayed to the B2B peer leg.
+    return value:
+    - lower than 0 means error (returned upstream, the one
+    returning error is responsible for destrying the event instance)
+    - greater than 0 means "stop processing and return 0 upstream"
+    - equal to 0 means "continue processing" */
+int CCTemplate::relayEvent(SBCCallLeg *call, AmEvent *e) {
+
+  return 0;
+}
+
+// using extended CC modules with simple relay - non-call relay
+
+bool CCTemplate::init(SBCCallProfile& profile, SimpleRelayDialog *relay, void *&user_data) {
+  DBG("init simple relay\n");
+  return true;
+}
+
+void CCTemplate::initUAC(const AmSipRequest &req, void *user_data) {
+  DBG("initUAC simple relay\n");
+}
+
+void CCTemplate::initUAS(const AmSipRequest &req, void *user_data) {
+  DBG("initUAS simple relay\n");
+}
+
+void CCTemplate::finalize(void *user_data) {
+  DBG("finalize simple relay\n");
+}
+
+void CCTemplate::onSipRequest(const AmSipRequest& req, void *user_data) {
+  DBG("onSipRequest simple relay\n");
+}
+
+void CCTemplate::onSipReply(const AmSipRequest& req,
+			     const AmSipReply& reply,
+			     AmBasicSipDialog::Status old_dlg_status,
+			     void *user_data) {
+  DBG("onSipReply simple relay\n");
+}
+
+void CCTemplate::onB2BRequest(const AmSipRequest& req, void *user_data) {
+  DBG("onB2BRequest simple relay\n");
+}
+
+void CCTemplate::onB2BReply(const AmSipReply& reply, void *user_data) {
+  DBG("onB2BReply simple relay\n");
 }

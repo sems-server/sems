@@ -134,10 +134,10 @@ void sip_msg::release()
     local_socket = NULL;
 }
 
-int sip_msg::send()
+int sip_msg::send(unsigned int flags)
 {
     assert(local_socket);
-    return local_socket->send(&remote_ip,buf,len);
+    return local_socket->send(&remote_ip,buf,len,flags);
 }
 
 
@@ -242,7 +242,7 @@ int parse_method(int* method, const char* beg, int len)
 }
 
 
-static int parse_first_line(sip_msg* msg, char** c)
+static int parse_first_line(sip_msg* msg, char** c, char* end)
 {
     enum {
 	FL_METH=0,
@@ -274,7 +274,7 @@ static int parse_first_line(sip_msg* msg, char** c)
 
     bool is_request=false;
 
-    for(;**c;(*c)++){
+    for(;(*c < end) && **c;(*c)++){
 
 	switch(st){
 
@@ -338,6 +338,9 @@ static int parse_first_line(sip_msg* msg, char** c)
 		    msg->u.reply = new sip_reply;
 		    st = FL_SIPVER_SP;
 		}
+	    }
+	    else {
+	      st = FL_ERR;
 	    }
 	    break;
 
@@ -454,10 +457,11 @@ static int parse_first_line(sip_msg* msg, char** c)
 
 int parse_headers(sip_msg* msg, char** c, char* end)
 {
-    int err = parse_headers(msg->hdrs,c,end);
+    list<sip_header*> hdrs;
+    int err = parse_headers(hdrs,c,end);
     if(!err) {
-	for(list<sip_header*>::iterator it = msg->hdrs.begin();
-	    it != msg->hdrs.end(); ++it) {
+	for(list<sip_header*>::iterator it = hdrs.begin();
+	    it != hdrs.end(); ++it) {
 
 	    sip_header* hdr = *it;
 	    switch(hdr->type) {
@@ -516,6 +520,7 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 		msg->record_route.push_back(hdr);
 		break;
 	    }
+	    msg->hdrs.push_back(hdr);
 	}
     }
 
@@ -525,15 +530,16 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 int parse_sip_msg(sip_msg* msg, char*& err_msg)
 {
     char* c = msg->buf;
+    char* end = msg->buf + msg->len;
 
-    int err = parse_first_line(msg,&c);
+    int err = parse_first_line(msg,&c,end);
 
     if(err) {
 	err_msg = (char*)"Could not parse first line";
 	return MALFORMED_FLINE;
     }
 
-    err = parse_headers(msg,&c,c+msg->len);
+    err = parse_headers(msg,&c,end);
 
     if(!err){
 	msg->body.set(c,msg->len - (c - msg->buf));

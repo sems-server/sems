@@ -170,6 +170,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   next_hop = cfg.getParameter("next_hop");
   next_hop_1st_req = cfg.getParameter("next_hop_1st_req") == "yes";
   patch_ruri_next_hop = cfg.getParameter("patch_ruri_next_hop") == "yes";
+  next_hop_fixed = cfg.getParameter("next_hop_fixed") == "yes";
 
   aleg_next_hop = cfg.getParameter("aleg_next_hop");
 
@@ -356,6 +357,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     cfg.getParameter("rtprelay_transparent_seqno", "yes") == "yes";
   rtprelay_transparent_ssrc =
     cfg.getParameter("rtprelay_transparent_ssrc", "yes") == "yes";
+  rtprelay_dtmf_filtering =
+    cfg.getParameter("rtprelay_dtmf_filtering", "no") == "yes";
+  rtprelay_dtmf_detection =
+    cfg.getParameter("rtprelay_dtmf_detection", "no") == "yes";
 
   outbound_interface = cfg.getParameter("outbound_interface");
   aleg_outbound_interface = cfg.getParameter("aleg_outbound_interface");
@@ -417,8 +422,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      A leg outbound proxy = '%s'\n", aleg_outbound_proxy.c_str());
 
     if (!next_hop.empty()) {
-      INFO("SBC:      next hop = %s (%s)\n", next_hop.c_str(),
-	   next_hop_1st_req ? "1st req" : "all reqs");
+      INFO("SBC:      next hop = %s (%s, %s)\n", next_hop.c_str(),
+	   next_hop_1st_req ? "1st req" : "all reqs", next_hop_fixed?"fixed":"not fixed");
     }
 
     if (!aleg_next_hop.empty()) {
@@ -477,6 +482,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	   rtprelay_transparent_seqno?"transparent":"opaque");
       INFO("SBC:      RTP Relay %s SSRC\n",
 	   rtprelay_transparent_ssrc?"transparent":"opaque");
+      INFO("SBC:      RTP Relay RTP DTMF filtering %sabled\n",
+	   rtprelay_dtmf_filtering?"en":"dis");
+      INFO("SBC:      RTP Relay RTP DTMF detection %sabled\n",
+	   rtprelay_dtmf_detection?"en":"dis");
     }
 
     INFO("SBC:      SST on A leg enabled: '%s'\n", sst_aleg_enabled.empty() ?
@@ -573,6 +582,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     aleg_force_outbound_proxy == rhs.aleg_force_outbound_proxy &&
     next_hop == rhs.next_hop &&
     next_hop_1st_req == rhs.next_hop_1st_req &&
+    next_hop_fixed == rhs.next_hop_fixed &&
     patch_ruri_next_hop == rhs.patch_ruri_next_hop &&
     aleg_next_hop == rhs.aleg_next_hop &&
     headerfilter == rhs.headerfilter &&
@@ -630,6 +640,7 @@ string SBCCallProfile::print() const {
   res += "aleg_force_outbound_proxy: " + string(aleg_force_outbound_proxy?"true":"false") + "\n";
   res += "next_hop:             " + next_hop + "\n";
   res += "next_hop_1st_req:     " + string(next_hop_1st_req ? "true":"false") + "\n";
+  res += "next_hop_fixed:       " + string(next_hop_fixed ? "true":"false") + "\n";
   res += "aleg_next_hop:        " + aleg_next_hop + "\n";
   // res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
   // res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
@@ -807,6 +818,28 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
   return true;
 }
 
+
+bool SBCCallProfile::evaluateOutboundInterface() {
+  if (outbound_interface == "default") {
+    outbound_interface_value = 0;
+  } else {
+    map<string,unsigned short>::iterator name_it =
+      AmConfig::SIP_If_names.find(outbound_interface);
+    if (name_it != AmConfig::RTP_If_names.end()) {
+      outbound_interface_value = name_it->second;
+    } else {
+      ERROR("selected outbound_interface '%s' does not exist as a signaling"
+	    " interface. "
+	    "Please check the 'additional_interfaces' "
+	    "parameter in the main configuration file.",
+	    outbound_interface.c_str());
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool SBCCallProfile::evaluateRTPRelayInterface() {
   EVALUATE_IFACE_RTP(rtprelay_interface, rtprelay_interface_value);
   return true;
@@ -862,9 +895,10 @@ int SBCCallProfile::apply_a_routing(ParamReplacerCtx& ctx,
   }
   else {
     dlg.nat_handling = dlg_nat_handling;
-    if(dlg_nat_handling) {
-      string nh = req.remote_ip;
-      nh += ":" + int2str(req.remote_port);
+    if(dlg_nat_handling && req.first_hop) {
+      string nh = req.remote_ip + ":"
+	+ int2str(req.remote_port)
+	+ "/" + req.trsp;
       dlg.setNextHop(nh);
       dlg.setNextHop1stReq(false);
     }
@@ -896,9 +930,12 @@ int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
 
     string nh = ctx.replaceParameters(next_hop, "next_hop", req);
 
-    DBG("set next hop ip to '%s'\n", nh.c_str());
+    DBG("set next hop to '%s' (1st_req=%s,fixed=%s)\n",
+	nh.c_str(), next_hop_1st_req?"true":"false",
+	next_hop_fixed?"true":"false");
     dlg.setNextHop(nh);
     dlg.setNextHop1stReq(next_hop_1st_req);
+    dlg.setNextHopFixed(next_hop_fixed);
   }
 
   DBG("patch_ruri_next_hop = %i",patch_ruri_next_hop);
@@ -1656,23 +1693,40 @@ void SBCCallProfile::HoldSettings::readConfig(AmConfigReader &cfg)
 {
   // store string values for later evaluation
   aleg.mark_zero_connection_str = cfg.getParameter("hold_zero_connection_aleg");
-  aleg.recv_str = cfg.getParameter("hold_enable_recv_aleg");
+  aleg.activity_str = cfg.getParameter("hold_activity_aleg");
   aleg.alter_b2b_str = cfg.getParameter("hold_alter_b2b_aleg");
 
   bleg.mark_zero_connection_str = cfg.getParameter("hold_zero_connection_bleg");
-  bleg.recv_str = cfg.getParameter("hold_enable_recv_bleg");
+  bleg.activity_str = cfg.getParameter("hold_activity_bleg");
   bleg.alter_b2b_str = cfg.getParameter("hold_alter_b2b_bleg");
+}
+
+bool SBCCallProfile::HoldSettings::HoldParams::setActivity(const string &s)
+{
+  if (s == "sendrecv") activity = sendrecv;
+  else if (s == "sendonly") activity = sendonly;
+  else if (s == "recvonly") activity = recvonly;
+  else if (s == "inactive") activity = inactive;
+  else {
+    ERROR("unsupported hold stream activity: %s\n", s.c_str());
+    return false;
+  }
+
+  return true;
 }
 
 bool SBCCallProfile::HoldSettings::evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req)
 {
   REPLACE_BOOL(aleg.mark_zero_connection_str, aleg.mark_zero_connection);
-  REPLACE_BOOL(aleg.recv_str, aleg.recv);
+  REPLACE_STR(aleg.activity_str);
   REPLACE_BOOL(aleg.alter_b2b_str, aleg.alter_b2b);
 
   REPLACE_BOOL(bleg.mark_zero_connection_str, bleg.mark_zero_connection);
-  REPLACE_BOOL(bleg.recv_str, bleg.recv);
+  REPLACE_STR(bleg.activity_str);
   REPLACE_BOOL(bleg.alter_b2b_str, bleg.alter_b2b);
+
+  if (!aleg.activity_str.empty() && !aleg.setActivity(aleg.activity_str)) return false;
+  if (!bleg.activity_str.empty() && !bleg.setActivity(bleg.activity_str)) return false;
 
   return true;
 }

@@ -403,7 +403,16 @@ rtprelay_msgflags_symmetric_rtp=yes
 
 the SBC honors this and sets symmetric RTP accordingly.
 
+With the option rtprelay_dtmf_filtering=yes the SBC filters out RTP DTMF
+(RFC2833 / RFC4733) packets in relayed streams.
 
+If rtprelay_dtmf_detection=yes is set, DTMF from RTP packets is detected
+and can be used to control applications, e.g. special call flows, implemented with
+the extended call control API. Note that the call needs to be added to
+the media processor in order for DTMF events to be processed.
+
+Transcoding
+-----------
 The SBC is able to do transcoding together with relaying. 
 
 To trigger transcoding you have to configure transcoder_codecs to a set
@@ -594,6 +603,36 @@ enable_aleg_session_timer=no.  If enable_session_timer=yes and
 enable_aleg_session_timer not set, SST is enabled for both
 legs. Likewise, if aleg_session_expires etc. is not set, the SST
 configuration of the B leg is used (session_expires, minimum_timer etc).
+
+
+Call hold configuration
+-----------------------
+
+SBC detects hold offer in SDP and according to configured parameters it can
+alter the hold requests passing through. (this may be handy for example if there
+is need to change "sendonly" to "sendrecv" for correct passing hold music
+through NATs)
+
+hold_alter_b2b_aleg / hold_alter_b2b_bleg
+
+  If set to "yes" SBC alters B2B hold requests according to hold settings.
+
+  If set to "no" hold settings is used for locally generated hold requests only.
+
+hold_zero_connection_aleg / hold_zero_connection_bleg
+
+  If set to "yes" all connections within SDP are replaced with 0.0.0.0.
+
+  If set to "no" SBC tries to put its own media IP everywhere (to replace
+  0.0.0.0). Note that if SBC is not doing rtp relay, it can not replace IP
+  with its own address and the original one is kept there.
+
+hold_activity_aleg / hold_activity_bleg
+
+  Force "stream activity" (send/recv) on hold offer.
+
+  Possible values: sendrecv, sendonly, recvonly, inactive
+
 
 Call control modules
 --------------------

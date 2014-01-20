@@ -30,10 +30,15 @@
 
 #include "SBCCallProfile.h"
 
+#include "ExtendedCCInterface.h"
+
 /**
  * sample call control module
  */
 class CCTemplate : public AmDynInvoke
+/* 		   // extended CC interface  */
+/* , public AmObject, public ExtendedCCInterface */
+
 {
   static CCTemplate* _instance;
 
@@ -52,6 +57,36 @@ class CCTemplate : public AmDynInvoke
   static CCTemplate* instance();
   void invoke(const string& method, const AmArg& args, AmArg& ret);
   int onLoad();
+
+  /* // extended call control interface */
+  /* //    --- calls */
+  /* bool init(SBCCallLeg *call, const map<string, string> &values); */
+  /* CCChainProcessing onInitialInvite(SBCCallLeg *call, InitialInviteHandlerParams &params); */
+  /* CCChainProcessing onBLegRefused(SBCCallLeg *call, const AmSipReply& reply); */
+  /* void onDestroyLeg(SBCCallLeg *call); */
+  /* void onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause); */
+  /* CCChainProcessing onInDialogRequest(SBCCallLeg *call, const AmSipRequest &req); */
+  /* CCChainProcessing onInDialogReply(SBCCallLeg *call, const AmSipReply &reply); */
+  /* CCChainProcessing onEvent(SBCCallLeg *call, AmEvent *e); */
+  /* CCChainProcessing onDtmf(SBCCallLeg *call, int event, int duration); */
+  /* CCChainProcessing putOnHold(SBCCallLeg *call); */
+  /* CCChainProcessing resumeHeld(SBCCallLeg *call, bool send_reinvite); */
+  /* CCChainProcessing createHoldRequest(SBCCallLeg *call, AmSdp &sdp); */
+  /* CCChainProcessing handleHoldReply(SBCCallLeg *call, bool succeeded); */
+  /* int relayEvent(SBCCallLeg *call, AmEvent *e); */
+
+  /* //    --- simple relay */
+  /* bool init(SBCCallProfile &profile, SimpleRelayDialog *relay, void *&user_data); */
+  /* void initUAC(const AmSipRequest &req, void *user_data); */
+  /* void initUAS(const AmSipRequest &req, void *user_data); */
+  /* void finalize(void *user_data); */
+  /* void onSipRequest(const AmSipRequest& req, void *user_data); */
+  /* void onSipReply(const AmSipRequest& req, */
+  /* 		  const AmSipReply& reply, */
+  /* 		  AmBasicSipDialog::Status old_dlg_status, */
+  /* 		  void *user_data); */
+  /* void onB2BRequest(const AmSipRequest& req, void *user_data); */
+  /* void onB2BReply(const AmSipReply& reply, void *user_data); */
 };
 
 #endif 

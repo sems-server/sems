@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 2010-2013 Stefan Sayer
+ * Copyright (C) 2012-2013 FRAFOS GmbH
+ *
+ * This file is part of SEMS, a free SIP media server.
+ *
+ * SEMS is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * For a license to use the SEMS software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * SEMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "SBCCallLeg.h"
 
 #include "SBCCallControlAPI.h"
@@ -22,6 +48,7 @@
 #include "ParamReplacer.h"
 #include "SDPFilter.h"
 #include "SBCEventLog.h"
+#include "SBC.h"
 
 #include <algorithm>
 
@@ -103,10 +130,6 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
   set_sip_relay_only(false);
   dlg->setRel100State(Am100rel::REL100_IGNORED);
 
-  // better here than in onInvite
-  // or do we really want to start with OA when handling initial INVITE?
-  dlg->setOAEnabled(false);
-
   memset(&call_start_ts, 0, sizeof(struct timeval));
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
@@ -138,7 +161,6 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   // call_profile.cc_vars.clear();
 
   dlg->setRel100State(Am100rel::REL100_IGNORED);
-  dlg->setOAEnabled(false);
 
   // we need to apply it here instead of in applyBProfile because we have caller
   // here (FIXME: do it on better place and better way than accessing internals
@@ -161,7 +183,10 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCExtModules();
+  if (!initCCExtModules(call_profile.cc_interfaces, cc_modules)) {
+    ERROR("initializing extended call control modules\n");
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+  }
 
   setLogger(caller->getLogger());
 
@@ -216,6 +241,8 @@ void SBCCallLeg::applyAProfile()
 
     setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+    setEnableDtmfRtpFiltering(call_profile.rtprelay_dtmf_filtering);
+    setEnableDtmfRtpDetection(call_profile.rtprelay_dtmf_detection);
 
     if(call_profile.transcoder.isActive()) {
       setRtpRelayMode(RTP_Transcoding);
@@ -315,8 +342,12 @@ void SBCCallLeg::applyBProfile()
   }
 
   if (!call_profile.next_hop.empty()) {
+    DBG("set next hop to '%s' (1st_req=%s,fixed=%s)\n",
+	call_profile.next_hop.c_str(), call_profile.next_hop_1st_req?"true":"false",
+	call_profile.next_hop_fixed?"true":"false");
     dlg->setNextHop(call_profile.next_hop);
     dlg->setNextHop1stReq(call_profile.next_hop_1st_req);
+    dlg->setNextHopFixed(call_profile.next_hop_fixed);
   }
 
   DBG("patch_ruri_next_hop = %i",call_profile.patch_ruri_next_hop);
@@ -339,6 +370,8 @@ void SBCCallLeg::applyBProfile()
 
     setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+    setEnableDtmfRtpFiltering(call_profile.rtprelay_dtmf_filtering);
+    setEnableDtmfRtpDetection(call_profile.rtprelay_dtmf_detection);
 
     // copy stats counters
     rtp_pegs = call_profile.bleg_rtp_counters;
@@ -499,7 +532,8 @@ void SBCCallLeg::setOtherId(const AmSipReply& reply)
 
 void SBCCallLeg::onInitialReply(B2BSipReplyEvent *e)
 {
-  if (call_profile.transparent_dlg_id && !e->reply.to_tag.empty()) {
+  if (call_profile.transparent_dlg_id && !e->reply.to_tag.empty()
+      && dlg->getStatus() != AmBasicSipDialog::Connected) {
     dlg->setExtLocalTag(e->reply.to_tag);
   }
   CallLeg::onInitialReply(e);
@@ -591,10 +625,16 @@ void SBCCallLeg::onOtherBye(const AmSipRequest& req)
 
 void SBCCallLeg::onDtmf(int event, int duration)
 {
+  DBG("received DTMF on %c-leg (%i;%i)\n", a_leg ? 'A': 'B', event, duration);
+
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->onDtmf(this, event, duration)  == StopProcessing)
+      return;
+  }
+
   AmB2BMedia *ms = getMediaSession();
   if(ms) {
-    DBG("received DTMF on %c-leg (%i;%i)\n",
-	a_leg ? 'A': 'B', event, duration);
+    DBG("sending DTMF (%i;%i)\n", event, duration);
     ms->sendDtmf(!a_leg,event,duration);
   }
 }
@@ -608,11 +648,6 @@ void SBCCallLeg::updateLocalSdp(AmSdp &sdp)
   // remember transcodable payload IDs
   if (call_profile.transcoder.isActive()) savePayloadIDs(sdp);
   CallLeg::updateLocalSdp(sdp);
-}
-
-void SBCCallLeg::updateRemoteSdp(AmSdp &sdp)
-{
-  CallLeg::updateRemoteSdp(sdp);
 }
 
 void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {
@@ -777,7 +812,10 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCExtModules();
+  if (!initCCExtModules(call_profile.cc_interfaces, cc_modules)) {
+    ERROR("initializing extended call control modules\n");
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);    
+  }
 
   string ruri, to, from;
   AmSipRequest uac_req(req);
@@ -866,6 +904,8 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   InitialInviteHandlerParams params(to, ruri, from, &req, &invite_req);
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     (*i)->onInitialInvite(this, params);
+    // initialize possibily added modules
+    initPendingCCExtModules();
   }
 
   if (getCallStatus() == Disconnected) {
@@ -1507,15 +1547,19 @@ bool SBCCallLeg::reinvite(const AmSdp &sdp, unsigned &request_cseq)
   return true;
 }
 
-void SBCCallLeg::initCCExtModules()
+/**
+ * initialize modules from @arg cc_module_list with DI interface instances from @arg cc_module_di
+ * add sucessfull ext-API call control instances to cc_ext
+ * @return true on success (all modules properly initialized)
+*/
+bool SBCCallLeg::initCCExtModules(const CCInterfaceListT& cc_module_list, const vector<AmDynInvoke*>& cc_module_di)
 {
   // init extended call control modules
-  vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin();
-  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
-       cc_it != call_profile.cc_interfaces.end(); cc_it++)
+  vector<AmDynInvoke*>::const_iterator cc_mod = cc_module_di.begin();
+  for (CCInterfaceListConstIteratorT cc_it = cc_module_list.begin(); cc_it != cc_module_list.end(); cc_it++)
   {
-    CCInterface& cc_if = *cc_it;
-    string& cc_module = cc_it->cc_module;
+    const CCInterface& cc_if = *cc_it;
+    const string& cc_module = cc_it->cc_module;
 
     // get extended CC interface
     try {
@@ -1524,19 +1568,61 @@ void SBCCallLeg::initCCExtModules()
       ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
       if (iface) {
         DBG("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
-        cc_ext.push_back(iface);
-
         // module initialization
-        iface->init(this, cc_if.cc_values);
+        if (!iface->init(this, cc_if.cc_values)) {
+	  ERROR("initializing extended call control interface '%s'\n", cc_module.c_str());
+	  return false;
+	}
+
+        cc_ext.push_back(iface);
       }
       else WARN("BUG: returned invalid extended CC interface by cc_module '%s'\n", cc_module.c_str());
     }
+    catch (const string& s) {
+      DBG("initialization error '%s' or extended CC interface "
+	  "not supported by cc_module '%s'\n", s.c_str(), cc_module.c_str());
+    }
     catch (...) {
-      DBG("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
+      DBG("initialization error or extended CC interface not "
+	  "supported by cc_module '%s'\n", cc_module.c_str());
     }
 
     ++cc_mod;
   }
+
+  if (!initPendingCCExtModules()) {
+    return false;
+  }
+
+  return true; // success
+}
+
+/** init pending modules until queue is empty */
+bool SBCCallLeg::initPendingCCExtModules() {
+  while (cc_module_queue.size()) {
+    // local copy
+    CCInterfaceListT _cc_mod_queue = cc_module_queue;
+    cc_module_queue.clear();
+    vector<AmDynInvoke*> _cc_mod_ifs;
+
+    // get corresponding DI interfaces
+    if (!::getCCInterfaces(_cc_mod_queue, _cc_mod_ifs))
+      return false;
+
+    // add to call leg
+    if (!initCCExtModules(_cc_mod_queue, _cc_mod_ifs)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void SBCCallLeg::addPendingCCExtModule(const string& cc_name, const string& cc_module, const map<string, string>& cc_values) {
+  cc_module_queue.push_back(CCInterface(cc_name));
+  cc_module_queue.back().cc_module = cc_module;
+  cc_module_queue.back().cc_values = cc_values;
+  DBG("added module '%s' from module '%s' to pending CC Ext modules\n",
+      cc_name.c_str(), cc_module.c_str());
 }
 
 #define CALL_EXT_CC_MODULES(method) \
@@ -1588,39 +1674,60 @@ void SBCCallLeg::resumeRejected()
   CallLeg::resumeRejected();
 }
 
-static void zero_connection(SdpConnection &c)
+static void replace_address(SdpConnection &c, const string &ip)
 {
   if (!c.address.empty()) {
-    if (c.network == NT_IN) {
-      if (c.addrType == AT_V4) {
-        c.address = "0.0.0.0";
-        return;
-      }
-      // TODO: IPv6?
+    if (c.addrType == AT_V4) {
+      c.address = ip;
+      return;
     }
+    // TODO: IPv6?
+    DBG("unsupported address type for replacing IP");
   }
-
-  DBG("unsupported connection type for marking with 0.0.0.0");
 }
 
-static void alterHoldRequest(AmSdp &sdp, bool mark_zero_con, bool enable_recv)
+static void alterHoldRequest(AmSdp &sdp, SBCCallProfile::HoldSettings::Activity a, const string &ip)
 {
-  if (mark_zero_con) zero_connection(sdp.conn);
+  if (!ip.empty()) replace_address(sdp.conn, ip);
   for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
-    if (mark_zero_con) zero_connection(m->conn);
-    m->recv = enable_recv;
+    if (!ip.empty()) replace_address(m->conn, ip);
+    m->recv = (a == SBCCallProfile::HoldSettings::sendrecv || a == SBCCallProfile::HoldSettings::recvonly);
+    m->send = (a == SBCCallProfile::HoldSettings::sendrecv || a == SBCCallProfile::HoldSettings::sendonly);
+  }
+}
+
+void SBCCallLeg::alterHoldRequestImpl(AmSdp &sdp)
+{
+  if (call_profile.hold_settings.mark_zero_connection(a_leg)) {
+    static const string zero("0.0.0.0");
+    ::alterHoldRequest(sdp, call_profile.hold_settings.activity(a_leg), zero);
+  }
+  else {
+    if (getRtpRelayMode() == RTP_Direct) {
+      // we can not put our IP there if not relaying, using empty not to
+      // overwrite existing addresses
+      static const string empty;
+      ::alterHoldRequest(sdp, call_profile.hold_settings.activity(a_leg), empty);
+    }
+    else {
+      // use public IP to be put into connection addresses (overwrite 0.0.0.0
+      // there)
+      ::alterHoldRequest(sdp, call_profile.hold_settings.activity(a_leg), advertisedIP());
+    }
   }
 }
 
 void SBCCallLeg::alterHoldRequest(AmSdp &sdp)
 {
-  TRACE("altering B2B hold request\n");
+  TRACE("altering B2B hold request(%s, %s, %s)\n",
+      call_profile.hold_settings.alter_b2b(a_leg) ? "alter B2B" : "do not alter B2B",
+      call_profile.hold_settings.mark_zero_connection(a_leg) ? "0.0.0.0" : "own IP",
+      call_profile.hold_settings.activity_str(a_leg).c_str()
+      );
 
   if (!call_profile.hold_settings.alter_b2b(a_leg)) return;
 
-  ::alterHoldRequest(sdp,
-      call_profile.hold_settings.mark_zero_connection(a_leg),
-      call_profile.hold_settings.recv(a_leg));
+  alterHoldRequestImpl(sdp);
 }
 
 void SBCCallLeg::createHoldRequest(AmSdp &sdp)
@@ -1650,12 +1757,10 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
     m.payloads.push_back(SdpPayload(0));
   }
 
-  ::alterHoldRequest(sdp,
-      call_profile.hold_settings.mark_zero_connection(a_leg),
-      call_profile.hold_settings.recv(a_leg));
-
   AmB2BMedia *ms = getMediaSession();
   if (ms) ms->replaceOffer(sdp, a_leg);
+
+  alterHoldRequestImpl(sdp);
 }
 
 void SBCCallLeg::setMediaSession(AmB2BMedia *new_session)

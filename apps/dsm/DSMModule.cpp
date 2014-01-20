@@ -127,6 +127,8 @@ string resolveVars(const string ts, AmSession* sess,
 	return sess->getCallID();
       else if (s1 == "local_uri")
 	return sess->dlg->getLocalUri();
+      else if (s1 == "local_party")
+	return sess->dlg->getLocalParty();
       else if (s1 == "remote_uri")
 	return sess->dlg->getRemoteUri();
       else if (s1 == "remote_party")

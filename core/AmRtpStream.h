@@ -252,6 +252,9 @@ protected:
   RtpEventQueue   rtp_ev_qu;
   AmMutex         receive_mut;
 
+  /** should we receive packets? if not -> drop */
+  bool receiving;
+
   /** if relay_stream is initialized, received RTP is relayed there */
   bool            relay_enabled;
   /** if true, packets are note parsed or checked */
@@ -264,6 +267,8 @@ protected:
   bool            relay_transparent_seqno;
   /** control transparency for RTP ssrc in RTP relay mode */
   bool            relay_transparent_ssrc;
+  /** filter RTP DTMF (2833 / 4733) in relaying */
+  bool            relay_filter_dtmf;
 
   /** Session owning this stream */
   AmSession*         session;
@@ -272,6 +277,9 @@ protected:
 
   /** Payload provider */
   AmPayloadProvider* payload_provider;
+
+  /** insert packet in DTMF queue if correct payload */
+  void recvDtmfPacket(AmRtpPacket* p);
 
   /** Insert an RTP packet to the buffer queue */
   void bufferPacket(AmRtpPacket* p);
@@ -304,23 +312,25 @@ protected:
    */
   int getDefaultPT();
 
+public:
+
   /**
-   * Stops RTP stream.
+   * Set whether RTP stream will receive RTP packets internally (received packets will be dropped or not).
+   */
+  void setReceiving(bool r);
+
+  /**
+   * Stops RTP stream receiving RTP packets internally (received packets will be dropped).
    */
   void pause();
 
   /**
-   * Resume a paused RTP stream.
+   * Resume a paused RTP stream internally (received packets will be processed).
    */
   void resume();
 
-public:
-
   /** Mute */
   bool mute;
-
-  /** should we receive packets? if not -> drop */
-  bool receiving;
 
   /** should we receive RFC-2833-style DTMF even when receiving is disabled? */
   bool force_receive_dtmf;
@@ -448,10 +458,10 @@ public:
    */
   virtual int init(const AmSdp& local, const AmSdp& remote, bool force_passive_mode = false);
 
-  /** set the RTP stream on hold (mute && port = 0) */
+  /** set the RTP stream on hold */
   void setOnHold(bool on_hold);
   
-  /** get the RTP stream on hold  */
+  /** get whether RTP stream is on hold  */
   bool getOnHold();
 
   /** setter for monitor_rtp_timeout */
@@ -467,9 +477,11 @@ public:
   /** set relay stream for  RTP relaying */
   void setRelayStream(AmRtpStream* stream);
 
+  /** set relay payloads for  RTP relaying */
+  void setRelayPayloads(const PayloadMask &_relay_payloads);
+
   /** ensable RTP relaying through relay stream */
   void enableRtpRelay();
-  void enableRtpRelay(const PayloadMask &_relay_payloads, AmRtpStream *_relay_stream);
 
   /** disable RTP relaying through relay stream */
   void disableRtpRelay();
@@ -486,6 +498,9 @@ public:
   /** enable or disable transparent SSRC seqno for relay */
   void setRtpRelayTransparentSSRC(bool transparent);
 
+  /** enable or disable filtering of RTP DTMF for relay */
+  void setRtpRelayFilterRtpDtmf(bool filter);
+
   /** remove from RTP receiver */
   void stopReceiving();
 
@@ -499,6 +514,8 @@ public:
 
   /** set destination for logging all received/sent RTP and RTCP packets */
   void setLogger(msg_logger *_logger);
+
+  void debug();
 };
 
 #endif

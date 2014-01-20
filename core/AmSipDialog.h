@@ -94,6 +94,8 @@ protected:
   AmOfferAnswer::OAState getOAState();
   void setOAState(AmOfferAnswer::OAState n_st);
   void setOAEnabled(bool oa_enabled);
+  const AmSdp& getLocalSdp() { return oa.getLocalSdp(); }
+  const AmSdp& getRemoteSdp() { return oa.getRemoteSdp(); }
 
   void setRel100State(Am100rel::State rel100_state);
 
@@ -131,7 +133,8 @@ protected:
 
   /** @return 0 on success */
   int refer(const string& refer_to,
-	    int expires = -1);
+	    int expires = -1,
+	    const string& referred_by = "");
 
   /** @return 0 on success */
   int transfer(const string& target);

@@ -110,6 +110,9 @@ struct AmConfig
      */
     unsigned int SigSockOpts;
 
+    unsigned int tcp_connect_timeout;
+    unsigned int tcp_idle_timeout;
+
     /** RTP interface index */
     int RtpInterface;
 
@@ -193,8 +196,6 @@ struct AmConfig
   static bool UseRawSockets;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
-  /** skip DNS SRV lookup for resolving destination address*/
-  static bool DisableDNSSRV;
   /** Server/User-Agent header (optional) */
   static string Signature;
   /** Value of Max-Forward header field for new requests */

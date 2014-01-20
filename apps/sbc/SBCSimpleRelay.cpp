@@ -86,7 +86,7 @@ int SimpleRelayDialog::relayRequest(const AmSipRequest& req)
     error.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
     error.cseq = req.cseq;
 
-    B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(error,true,req.method);
+    B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(error,true,req.method, getLocalTag());
     if(!AmEventDispatcher::instance()->post(other_dlg,b2b_ev)) {
       delete b2b_ev;
     }
@@ -279,7 +279,7 @@ void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
     return;
   }
   
-  B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(reply,true,req.method);
+  B2BSipReplyEvent* b2b_ev = new B2BSipReplyEvent(reply,true,req.method,getLocalTag());
   b2b_ev->reply.cseq = t_req_it->second;
   if(reply.code >= 200)
     relayed_reqs.erase(t_req_it);

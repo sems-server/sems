@@ -229,6 +229,23 @@ int parse_nameaddr(sip_nameaddr* na, const char** c, int len)
     return parse_gen_params_sc(&na->params,c, end-*c, 0);
 }
 
+int parse_nameaddr_uri(sip_nameaddr* na, const char** c, int len)
+{
+    if(parse_nameaddr(na, c, len) < 0) {
+      
+      DBG("Parsing name-addr failed\n");
+      return -1;
+    }
+    
+    if(parse_uri(&na->uri,na->addr.s,na->addr.len) < 0) {
+	
+	DBG("Parsing uri failed\n");
+	return -1;
+    }
+
+    return 0;
+}
+
 static int skip_2_next_nameaddr(const char*& c, 
 				const char*& na_end,
 				const char*  end)

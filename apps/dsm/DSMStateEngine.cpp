@@ -526,17 +526,20 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
   map<string,string> exception_params;
   bool is_exception = run_exception;
 
+  DBG("o v DSM processing event, current state '%s' v\n", current->name.c_str());
   bool is_consumed = true;
   do {
     try {
       is_consumed = true;
 
+
+      DBG(" > state '%s'\n", current->name.c_str());
       for (vector<DSMTransition>::iterator tr = current->transitions.begin();
 	   tr != current->transitions.end();tr++) {
 	if (tr->is_exception != is_exception)
 	  continue;
 	
-	DBG("checking transition '%s'\n", tr->name.c_str());
+	DBG(" ...checking transition '%s'\n", tr->name.c_str());
 	
 	vector<DSMCondition*>::iterator con=tr->precond.begin();
 	while (con!=tr->precond.end()) {
@@ -545,7 +548,7 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	  con++;
 	}
 	if (con == tr->precond.end()) {
-	  DBG("transition '%s' matched.\n", tr->name.c_str());
+	  DBG(" .>>transition '%s' matched.\n", tr->name.c_str());
 	  
 	  //  matched all preconditions
 	  // find target state
@@ -560,7 +563,7 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	  
 	  // run post-actions
 	  if (current->post_actions.size()) {
-	    DBG("running %zd post_actions of state '%s'\n",
+	    DBG(" >>>running %zd post_actions of state '%s'\n",
 		current->post_actions.size(), current->name.c_str());
 	    if (runactions(current->post_actions.begin(), 
 			   current->post_actions.end(), 
@@ -571,7 +574,7 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	  
 	  // run transition actions
 	  if (tr->actions.size()) {
-	    DBG("running %zd actions of transition '%s'\n",
+	    DBG("  >>>running %zd actions of transition '%s'\n",
 		tr->actions.size(), tr->name.c_str());
 	    if (runactions(tr->actions.begin(), 
 			   tr->actions.end(), 
@@ -584,7 +587,7 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	  if (!target_st) {
 	    break;
 	  }
-	  DBG("changing to new state '%s'\n", target_st->name.c_str());
+	  DBG("  >>>changing to new state '%s'\n", target_st->name.c_str());
 	  
 #ifdef USE_MONITORING
 	  MONITORING_LOG(sess->getLocalTag().c_str(), "dsm_state", target_st->name.c_str());
@@ -606,7 +609,7 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	  
 	  // execute pre-actions
 	  if (current->pre_actions.size()) {
-	    DBG("running %zd pre_actions of state '%s'\n",
+	    DBG(" >>>running %zd pre_actions of state '%s'\n",
 		current->pre_actions.size(), current->name.c_str());
 	    if (runactions(current->pre_actions.begin(), 
 			   current->pre_actions.end(), 
@@ -614,6 +617,7 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	      break;
 	    }
 	  }
+	  DBG(" >>o arrived in state '%s'\n", current->name.c_str());
 	  
 	  break;
 	}
@@ -629,6 +633,8 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
     }
 
   } while (!is_consumed);
+
+  DBG("o ^ DSM event processed/consumed; current state '%s' ^\n", current->name.c_str());
 }
 
 bool DSMStateEngine::callDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess,

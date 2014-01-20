@@ -1,0 +1,241 @@
+
+DSM applications for SBC
+------------------------
+The "dsm" call control module implements together with mod_sbc an DSM
+layer on top of the SBC, so that custom SBC call flows can be implemented
+using DSM script.
+
+Most of the call related DSM actions (handling audio with playFile, recordFile etc)
+do not work in SBC DSMs.
+
+DSM scripts for SBC are configured in a separate application bundle
+(a .conf file in dsm.conf conf_dir=...), set in the call control variable
+"app_bundle" and started up with the DSM set in the call control variable
+"start_diag".
+
+Configuration Example:
+  sbc.conf:
+   profiles=cc_dsm
+   load_cc_plugins=cc_dsm
+   active_profile=cc_dsm
+  cc_dsm.sbcprofile.conf:
+    RURI=sip:test@192.168.5.110:5088
+    call_control=cc_dsm
+    cc_dsm_module=cc_dsm
+    cc_dsm_app_bundle=sbc
+    cc_dsm_start_diag=test_sbc
+    cc_dsm_config.myvar=myfinalvalue
+  dsm.conf
+    conf_dir=etc/sbc_dsm
+  etc/sbc_dsm/sbc.conf
+    diag_path=./etc/sbc_dsm
+    load_diags=test_sbc
+    mod_path=../apps/dsm/mods/lib/
+    myvar=willbeshadowed
+  etc/sbc_dsm/test_sbc.dsm
+     import(mod_sbc);
+     initial state START;
+     transition "init event" START - start / {
+       log(3, "initializing");
+       logAll(3);
+       sbc.profileSet(RURI, sip:set_from_DSM@192.168.5.110:5088);
+      ...
+
+
+Variables
+---------
+ $config.*    config set variables
+
+ variables set by call control instantiation, may shadow config set variables
+  (see configuration example above) 
+
+Parameters
+----------
+ #StopProcessing  = "true" -> stop call processing
+   in events: invite, 
+
+Events (Conditions)
+-------------------
+
+general: 
+   Request parameters: #method, #r_uri, #from, #to, #from_tag, #to_tag, #callid and #hdrs
+   Reply parameters:   #sip_reason, #sip_code, #from, #to, #from_tag, #to_tag, #callid and #hdrs
+
+start            - on startup of call control DSM
+  
+invite           - initial invite (onInitialInvite)
+   #remote_party
+   #remote_uri
+   #from
+
+   avars
+      DSM_AVAR_REQUEST              - original invite
+      DSM_SBC_AVAR_MODIFIED_INVITE  - modified invite (outgoing)
+
+sipRequest       - in dialog request
+    Request parameters (#method, #r_uri, ...)
+
+sipReply         - in dialog reply
+    Reply parameters (#sip_reason, #sip_code, ...)
+ 
+legStateChange
+   #SBCCallStatus  - sbc call status (Disconnected, NoReply, Ringing, Connected, Disconnecting, Unknown)
+ 
+   #reason == "SipRequest"
+          + Request parameters (#method, #r_uri, ...)
+   #reason == "SipReply"
+          + Reply parameters (#sip_reason, #sip_code, ...)
+
+   #reason == "other"
+       #desc            - description
+   #reason == "Canceled"
+   #reason == "NoAck"
+   #reason == "NoPrack"
+   #reason == "RtpTimeout"
+   #reason == "SessionTimeout"
+   #reason == "InternalError"
+
+BLegRefused
+    Reply parameters (#sip_reason, #sip_code, ...)
+
+B2B.otherRequest, B2B.otherReply - see dsm_syntax.txt
+
+-- ----- hold related -------- 
+PutOnHold
+
+ResumeHeld
+
+CreateHoldRequest,
+
+HandleHoldReply,
+   #succeeded ("true" or "false")
+
+
+-- ----- simple relay related - non-INVITE messages -------- 
+   avars
+      DSM_SBC_AVAR_PROFILE              - call profile
+
+RelayInit
+   #relay_event == "init"
+
+RelayInitUAC
+   #relay_event == "initUAC"
+
+RelayInitUAS,
+   #relay_event == "initUAS"
+
+RelayFinalize,
+   #relay_event == "finalize"
+
+RelayOnSipRequest,
+   #relay_event == "onSipRequest"
+
+RelayOnSipReply,
+   #relay_event == "onSipReply"
+
+RelayOnB2BRequest,
+   #relay_event == "onB2BRequest"
+
+RelayOnB2BReply
+   #relay_event == "onB2BReply"
+
+
+Conditions
+----------
+call leg events (don't work in non-call SBC DSMs)
+
+sbc.isALeg
+
+sbc.isOnHold
+
+Actions
+-------
+sbc.profileSet(profile_variable, value)    - set SBC profile options
+    *** only meaningful in 'start' event (later, most profile options are not used any more) *** 
+    profile_variables: To, RURI, FROM, Call-ID, next_hop, RURI_host, refuse_with,
+    outbound_proxy, force_outbound_proxy = "yes" | "no,
+    aleg_outbound_proxy, aleg_force_outbound_proxy = "yes" | "no,
+    next_hop_1st_req = "yes" | "no,  patch_ruri_next_hop = "yes" | "no,
+    aleg_next_hop,
+    append_headers, append_headers_req, 
+    rtprelay_enabled  = "yes" | "no,
+      force_symmetric_rtp  = "yes" | "no, aleg_force_symmetric_rtp  = "yes" | "no,
+      msgflags_symmetric_rtp = "yes" | "no,
+      rtprelay_transparent_seqno = "yes" | "no, rtprelay_transparent_ssrc = "yes" | "no, 
+      rtprelay_interface, aleg_rtprelay_interface,
+      rtprelay_dtmf_detection = "yes" | "no, rtprelay_dtmf_filtering = "yes" | "no
+
+sbc.stopCall(string cause)         - stop both call legs
+
+sbc.disconnect(bool hold_remote [, bool preserve_media_session])  
+                                    - disconnect this call leg from the other B2B call.
+                                     The SIP call is not ended (use dlg.bye() to end the SIP dialog).
+
+sbc.sendDisconnectEvent(bool hold_remote)   - send an event to this call leg to disconnect
+
+sbc.putOnHold()                    - put this call leg on hold
+
+sbc.resumeHeld()                   - resume from hold
+
+sbc.getSBCCallStatus(varname)      - get sbc call status into $varname
+
+sbc.relayReliableEvent(paramlist, processed_paramlist, unprocessed_paramlist) - relay reliable Event
+  if processed (#processed=true in other leg), event is sent back with processed_paramlist parameters,
+  if unprocessed, event is sent back with unprocessed_paramlist parameters
+  Example:
+   set($fwd_param1="this parameter goes fwd");
+   set($fwd_param2="this parameter goes fwd, too");
+   set($bck_param1="this parameter goes back if processed");
+   set($bck_param2="this parameter goes back if processed, too");
+   set($bck_unp_param1="this parameter goes back if not processed");
+   set($bck_unp_param2="this parameter goes back if not processed, too");
+   sbc.relayReliableEvent(fwd_param1;fwd_param2, bck_param1;bck_param2, bck_unp_param1;bck_unp_param2);
+
+   ...
+
+   transition "B2B event" RUN - B2Bevent / {
+     logParams(3);
+     set(#processed="true");
+   } -> RUN;
+
+
+sbc.addCallee(string mode, string varname)
+  add a callee leg
+
+  mode=="var"  - new call properties set through variable struct (all optional)
+         $varname.local_party    - local party (From) in new call
+         $varname.remote_party   - remote party (To) in new call
+         $varname.hdrs           - headers in outgoing INVITE
+         $varname.outbound_proxy - outbound proxy in new call
+         $varname.next_hop       - next hop
+         $varname.next_hop_1st_req    - next hop for 1st req, "true" or "false"
+         $varname.next_hop_patch_ruri - patch ruri with next hop, "true" or "false"
+         $varname.next_hop_fixed      - fixed next hop
+
+         $varname.outbound_proxy - outbound proxy in new call
+         $varname.outbound_interface - outbound interface used for new call
+         $varname.rtp_interface - rtp interface used for new call
+
+
+         $varname.transparent_dlg_id - "yes" or "no": use transparent dlg IDs for new call; default no
+                                        - "no" very much advised if current leg was connected before!
+                                          otherwise local tag in current leg will be overwritten on reply
+                                          in other leg
+
+     e.g.  set($b.local_party="sip:ftb@192.168.5.110:5080");
+           set($b.remote_party="sip:neu@192.168.5.110:5088");
+           sbc.addCallee(var, b);
+
+  mode=="ltag"  - existing call referenced by ltag
+         $varname.ltag           - ltag of call to reconnect
+         $varname.hdrs           - headers in outgoing INVITE (optional)
+
+sbc.enableRelayDTMFReceiving(bool rcv_dtmf)  - enable receiving of RTP DTMF in relayed stream (RTP_Relay mode)
+     note: session needs to be processed by media processor as well (sbc.addToMediaProcessor())
+           so that DTMF is processed and passed up to the application (key event).
+
+sbc.addToMediaProcessor      - add sbc session to media processor (no playlist set etc)
+
+sbc.removeFromMediaProcessor - remove sbc session from media processor
+
+sbc.streamsSetReceiving(bool receiving_a, bool receiving_b)     - pause A/B streams: drop received packets 

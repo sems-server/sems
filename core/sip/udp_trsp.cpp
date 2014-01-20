@@ -36,7 +36,7 @@
 #include "sip_parser.h"
 #include "trans_layer.h"
 #include "log.h"
-
+#include "AmUtils.h"
 
 #include <sys/param.h>
 #include <arpa/inet.h>
@@ -248,11 +248,15 @@ int udp_trsp_socket::sendmsg(const sockaddr_storage* sa,
 
 int udp_trsp_socket::send(const sockaddr_storage* sa, 
 			  const char* msg, 
-			  const int msg_len)
+			  const int msg_len,
+			  unsigned int flags)
 {
     if (log_level_raw_msgs >= 0) {
 	_LOG(log_level_raw_msgs, 
-	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
+	     "send  msg to %s:%i\n--++--\n%.*s--++--\n",
+	     get_addr_str(sa).c_str(),
+	     ntohs(((sockaddr_in*)sa)->sin_port),
+	     msg_len, msg);
     }
 
     if(socket_options & use_raw_sockets)

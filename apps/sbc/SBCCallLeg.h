@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 2010-2011 Stefan Sayer
+ * Copyright (C) 2012-2013 FRAFOS GmbH
+ *
+ * This file is part of SEMS, a free SIP media server.
+ *
+ * SEMS is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * For a license to use the SEMS software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * SEMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #ifndef __SBCCALL_LEG_H
 #define __SBCCALL_LEG_H
 
@@ -33,6 +59,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   // call control
   vector<AmDynInvoke*> cc_modules;
   vector<ExtendedCCInterface*> cc_ext;
+
+  // modules to initialize
+  CCInterfaceListT cc_module_queue;
 
   // current timer ID - cc module setting timer will use this
   int cc_timer_id;
@@ -105,6 +134,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void logCallStart(const AmSipReply& reply);
   void logCanceledCall();
 
+  void alterHoldRequestImpl(AmSdp &sdp); // do the SDP update (called by alterHoldRequest)
 
  public:
 
@@ -126,7 +156,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
-  void initCCExtModules();
+  bool initCCExtModules(const CCInterfaceListT& cc_module_list, const vector<AmDynInvoke*>& cc_module_di);
+  bool initPendingCCExtModules();
+  void addPendingCCExtModule(const string& cc_name, const string& cc_module, const map<string, string>& cc_values);
 
   /** save call timer; only effective before call is connected */
   void saveCallTimer(int timer, double timeout);
@@ -155,7 +187,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   // media interface must be accessible from CC modules
   AmB2BMedia *getMediaSession() { return AmB2BSession::getMediaSession(); }
   virtual void updateLocalSdp(AmSdp &sdp);
-  virtual void updateRemoteSdp(AmSdp &sdp);
   void changeRtpMode(RTPRelayMode new_mode) { CallLeg::changeRtpMode(new_mode); }
 
   bool reinvite(const AmSdp &sdp, unsigned &request_cseq);

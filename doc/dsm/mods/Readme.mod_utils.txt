@@ -42,6 +42,13 @@ Actions:
     sys.popen($myresult="/bin/ls wav/*");    
     utils.splitStringCR($myresult);
 
+ utils.escapeCRLF($var)
+   replace CRLF (\r\n) in string with escaped CRLF (\\r\\n) 
+
+ utils.unescapeCRLF($var)
+   replace escaped CRLF (\\r\\n) in string with CRLF (\r\n) 
+
+
 utils.playRingTone(length [, on [, off [, f [, f2]]]])
    play a RingTone (ringback tone)
    defaults to length=0 (indefinite), on 1000ms, off 2000ms, f 440Hz, f2 480Hz

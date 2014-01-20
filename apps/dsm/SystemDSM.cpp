@@ -7,6 +7,8 @@
 #include "DSMStateDiagramCollection.h"
 #include "../apps/jsonrpc/JsonRPCEvents.h" // todo!
 #include "AmSipSubscription.h"
+#include "AmSessionContainer.h"
+#include "ampi/MonitoringAPI.h"
 
 SystemDSM::SystemDSM(const DSMScriptConfig& config,
 		     const string& startDiagName,
@@ -31,6 +33,11 @@ SystemDSM::~SystemDSM() {
   for (std::set<DSMDisposable*>::iterator it=
 	 gc_trash.begin(); it != gc_trash.end(); it++)
     delete *it;
+
+#ifdef USE_MONITORING
+  MONITORING_MARK_FINISHED(dummy_session.getLocalTag());
+#endif
+
 }
 
 void SystemDSM::run() {
