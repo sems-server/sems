@@ -681,21 +681,6 @@ string SBCCallProfile::print() const {
   return res;
 }
 
-/* translates string value into bool, returns false on error */
-static bool str2bool(const string &s, bool &dst)
-{
-  // TODO: optimize
-  if ((s == "yes") || (s == "true") || (s == "1")) {
-    dst = true;
-    return true;
-  }
-  if ((s == "no") || (s == "false") || (s == "0")) {
-    dst = false;
-    return true;
-  }
-  return false;
-}
-
 static bool isTranscoderNeeded(const AmSipRequest& req, vector<PayloadDesc> &caps,
 			       bool default_value)
 {

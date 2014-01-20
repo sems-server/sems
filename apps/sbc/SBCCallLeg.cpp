@@ -189,6 +189,8 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   }
 
   setLogger(caller->getLogger());
+
+  subs->allowUnsolicitedNotify(call_profile.allow_subless_notify);
 }
 
 SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)
@@ -895,6 +897,8 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
 
   if(a_leg && call_profile.keep_vias)
     invite_req.hdrs = invite_req.vias + invite_req.hdrs;
+
+  subs->allowUnsolicitedNotify(call_profile.allow_subless_notify);
 
   // call extend call controls
   InitialInviteHandlerParams params(to, ruri, from, &req, &invite_req);

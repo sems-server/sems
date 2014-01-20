@@ -367,6 +367,21 @@ bool str2long(char*& str, long& result, char sep)
   return false;
 }
 
+
+bool str2bool(const string &s, bool &dst)
+{
+  // TODO: optimize
+  if ((s == "yes") || (s == "true") || (s == "1")) {
+    dst = true;
+    return true;
+  }
+  if ((s == "no") || (s == "false") || (s == "0")) {
+    dst = false;
+    return true;
+  }
+  return false;
+}
+
 std::string URL_decode(const std::string& s) {
   enum {
     uSNormal=       0, // start
@@ -429,7 +444,6 @@ std::string URL_decode(const std::string& s) {
 
   return res;
 }
-
 
 std::string URL_encode(const std::string &s)
 {

@@ -562,6 +562,12 @@ bool AmSipSubscription::onRequestIn(const AmSipRequest& req)
   // UAS side
   Subscriptions::iterator sub_it = matchSubscription(req,false);
   if((sub_it == subs.end()) || (*sub_it)->terminated()) {
+
+    if((sub_it == subs.end()) && (req.method == SIP_METH_NOTIFY)
+       && allow_subless_notify) {
+      return true;
+    }
+
     dlg->reply(req, 481, SIP_REPLY_NOT_EXIST);
     return false;
   }
@@ -576,6 +582,12 @@ void AmSipSubscription::onRequestSent(const AmSipRequest& req)
   // UAC side
   Subscriptions::iterator sub_it = matchSubscription(req,true);
   if(sub_it == subs.end()){
+
+    if((req.method == SIP_METH_NOTIFY)
+       && allow_subless_notify) {
+      return;
+    }
+
     // should we exclude this case in onSendRequest???
     ERROR("we just sent a request for which we could obtain no subscription\n");
     return;
@@ -592,6 +604,12 @@ bool AmSipSubscription::onReplyIn(const AmSipRequest& req,
   // UAC side
   CSeqMap::iterator cseq_it = uac_cseq_map.find(req.cseq);
   if(cseq_it == uac_cseq_map.end()){
+
+    if((req.method == SIP_METH_NOTIFY)
+       && allow_subless_notify) {
+      return true;
+    }
+
     DBG("could not find %i in our uac_cseq_map\n",req.cseq);
     return false;
   }
