@@ -142,8 +142,7 @@ Playing prompts and file I/O
  stopRecord()
  getRecordLength([dst_varname])   -- only while recording! default dst var: record_length
  getRecordDataSize([dst_varname]) -- only while recording! default dst var: record_data_size
- closePlaylist(notify=true)
-   if notify=true, send an event
+ flushPlaylist()
  setInOutPlaylist() 
    set playlist as input and output
  setInputPlaylist() 

@@ -4,7 +4,7 @@ Actions:
    Throws "conference" Exception if conference can not be joined (currently never).
 
  conference.leave()
-   destroy conference channel. Close playlist first!!!!!
+   destroy conference channel. Flush playlist with flushPlaylist() first!!!!!
    * Sets $errno (script).
 
  conference.rejoin(string roomname [, string mode])

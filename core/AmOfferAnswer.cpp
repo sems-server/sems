@@ -178,6 +178,10 @@ int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
 	
 	DBG("ignoring subsequent SDP reply within the same transaction\n");
 	DBG("this usually happens when 183 and 200 have SDP\n");
+
+	/* Make sure that session is started when 200 OK is received */
+	if (reply.code == 200) dlg->onSdpCompleted();
+
       }
       else {
 	saveState();
@@ -407,6 +411,14 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
     
     DBG("onTxSdp() failed\n");
     return -1;
+  }
+
+  if( (reply.code >= 300) &&
+      (reply.cseq == cseq) ) {
+    // final error reply -> cleanup OA state
+    DBG("after %u reply to %s: resetting OA state\n",
+	reply.code, reply.cseq_method.c_str());
+    clearTransitionalState();
   }
 
   return 0;

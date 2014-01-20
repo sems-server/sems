@@ -502,14 +502,14 @@ transition "pin doesn't match" TEST_PIN_FINAL - test($pin!=$entered_pin) / {
 state MATCHING_PIN;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-That works, but we want to break the prompt when the user enters a key, so we add closePlaylist(false), which stops playback of currently playing items in the playlist, but doesn't generate an event:
+That works, but we want to break the prompt when the user enters a key, so we add flushPlaylist(), which stops playback of currently playing items in the playlist (and doesn't generate an event):
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 transition "pressed a number" ENTER_PIN - key(#key<10) / {
-  closePlaylist(false);
+  flushPlaylist();
   append($entered_pin, #key);
 } -> TEST_PIN;
-transition "pressed hash or start" ENTER_PIN - key / closePlaylist(false) -> TEST_PIN_FINAL;
+transition "pressed hash or start" ENTER_PIN - key / flushPlaylist() -> TEST_PIN_FINAL;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now I realize we need to pass the id of the caller leg to the callee leg as well, so we can post back events:
@@ -564,7 +564,7 @@ transition "one more to cancel" CANCEL_OTHER_CALLEES - test($callee_counter<$db.
 } -> CANCEL_OTHER_CALLEES;
 
 transition "canceled all" CANCEL_OTHER_CALLEES - test($callee_counter==$db.rows) / {
-  closePlaylist(false);
+  flushPlaylist();
   dlg.acceptInvite(200, OK);
   conference.join(@local_tag);
 } -> CONNECTED;
