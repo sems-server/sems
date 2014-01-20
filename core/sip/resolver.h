@@ -37,8 +37,10 @@
 
 #include <string>
 #include <vector>
+#include <map>
 using std::string;
 using std::vector;
+using std::map;
 
 #include <netinet/in.h>
 
@@ -61,13 +63,14 @@ struct dns_handle;
 
 struct dns_base_entry
 {
-    long int expire;
+    u_int64_t expire;
 
     dns_base_entry()
 	:expire(0)
     {}
 
     virtual ~dns_base_entry() {}
+    virtual string to_str() = 0;
 };
 
 class dns_entry
@@ -79,13 +82,15 @@ class dns_entry
 public:
     vector<dns_base_entry*> ip_vec;
 
-    static dns_entry* make_entry(ns_type t);
+    static dns_entry* make_entry(dns_rr_type t);
 
     dns_entry();
     virtual ~dns_entry();
     virtual void init()=0;
     virtual void add_rr(dns_record* rr, u_char* begin, u_char* end, long now);
     virtual int next_ip(dns_handle* h, sockaddr_storage* sa)=0;
+
+    virtual string to_str();
 };
 
 typedef ht_map_bucket<string,dns_entry> dns_bucket_base;
@@ -114,6 +119,7 @@ struct ip_entry
     };
 
     virtual void to_sa(sockaddr_storage* sa);
+    virtual string to_str();
 };
 
 struct ip_port_entry
@@ -122,6 +128,7 @@ struct ip_port_entry
     unsigned short port;
 
     virtual void to_sa(sockaddr_storage* sa);
+    virtual string to_str();
 };
 
 class dns_ip_entry
@@ -168,6 +175,36 @@ private:
     int            ip_n;
 };
 
+struct naptr_record
+    : public dns_base_entry
+{
+    unsigned short order;
+    unsigned short pref;
+
+    string flags;
+    string services;
+    string regexp;
+    string replace;
+
+    virtual string to_str() 
+    { return string(); }
+};
+
+class dns_naptr_entry
+    : public dns_entry
+{
+public:
+    dns_naptr_entry()
+	: dns_entry()
+    {}
+
+    void init();
+    dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end);
+
+    // not needed
+    int next_ip(dns_handle* h, sockaddr_storage* sa) { return -1; }
+};
+
 #define SIP_TRSP_SIZE_MAX 4
 
 struct sip_target
@@ -201,6 +238,24 @@ private:
     sip_target_set(const sip_target_set&) {}
 };
 
+typedef map<string,dns_entry*> dns_entry_map_base;
+
+class dns_entry_map
+     : public dns_entry_map_base
+{
+public:
+    dns_entry_map();
+    ~dns_entry_map();
+
+    bool insert(const key_type& key, mapped_type e);
+    dns_entry* fetch(const key_type& key);
+
+private:
+    // forbid some inherited methods
+    mapped_type& operator[](const key_type& k);
+    std::pair<iterator, bool> insert(const value_type& x);
+};
+
 class _resolver
     : AmThread
 {
@@ -211,11 +266,14 @@ public:
     int resolve_name(const char* name, 
 		     dns_handle* h,
 		     sockaddr_storage* sa,
-		     const address_type types);
+		     const address_type types,
+		     dns_rr_type t = dns_r_a);
 
     int str2ip(const char* name,
 	       sockaddr_storage* sa,
 	       const address_type types);
+
+    int query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type t);
 
     /**
      * Transforms all elements of a destination list into
@@ -228,10 +286,6 @@ public:
 protected:
     _resolver();
     ~_resolver();
-
-    int query_dns(const char* name,
-		  dns_entry** e,
-		  long now);
 
     int set_destination_ip(const cstring& next_hop,
 			   unsigned short next_port,

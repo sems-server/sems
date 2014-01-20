@@ -7,6 +7,8 @@
 #include "DSMStateDiagramCollection.h"
 #include "../apps/jsonrpc/JsonRPCEvents.h" // todo!
 #include "AmSipSubscription.h"
+#include "AmSessionContainer.h"
+#include "ampi/MonitoringAPI.h"
 
 SystemDSM::SystemDSM(const DSMScriptConfig& config,
 		     const string& startDiagName,

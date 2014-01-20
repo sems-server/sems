@@ -166,10 +166,16 @@ inline int lower_cmp(const char* l, const char* r, int len)
     const char* end = l+len;
 
     while(l!=end){
-	if( LOWER_B(*l) != LOWER_B(*r) ){
+	if( LOWER_B(*l) == LOWER_B(*r) ){
+	    l++; r++;
+	    continue;
+	}
+	else if(LOWER_B(*l) < LOWER_B(*r)) {
+	    return -1;
+	}
+	else {
 	    return 1;
 	}
-	l++; r++;
     }
 
     return 0;
@@ -177,10 +183,12 @@ inline int lower_cmp(const char* l, const char* r, int len)
 
 inline int lower_cmp_n(const char* l, int llen, const char* r, int rlen)
 {
-    if(llen != rlen)
-	return 1;
+    if(llen == rlen)
+	return lower_cmp(l,r,rlen);
+    else if(llen < rlen)
+	return -1;
 
-    return lower_cmp(l,r,rlen);
+    return 1;
 }
 
 inline int lower_cmp_n(const cstring& l, const cstring& r)

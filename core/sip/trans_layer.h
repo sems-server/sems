@@ -122,7 +122,9 @@ private:
     trans_stats stats;
     sip_ua*     ua;
 
-    typedef map<string,trsp_socket*> prot_collection;
+    struct less_case_i { bool operator ()(const string& lhs, const string& rhs); };
+    typedef map<string,trsp_socket*,less_case_i> prot_collection;
+
     vector<prot_collection> transports;
 
 public:
@@ -181,7 +183,8 @@ public:
      * A CANCEL request is sent if necessary.
      * @param tt transaction ticket from the original INVITE.
      */
-    int cancel(trans_ticket* tt, const cstring& hdrs);
+    int cancel(trans_ticket* tt, const cstring& dialog_id,
+	       unsigned int inv_cseq, const cstring& hdrs);
     
     /**
      * Called by the transport layer

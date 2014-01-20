@@ -416,9 +416,6 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
   
   fixUacContactHosts(req,cp);
 
-  // patch initial CSeq to fix re-REGISTER with transparent-id enabled
-  cseq = req.cseq;
-
   return 0;
 }
 
