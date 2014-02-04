@@ -499,6 +499,7 @@ int _SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
 					  stl2cstr(content_type)));
     }
 
+    msg.type = SIP_REPLY;
     msg.u.reply = new sip_reply(rep.code,stl2cstr(rep.reason));
 
     return
