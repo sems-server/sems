@@ -275,20 +275,35 @@ class DSMException {
   map<string, string> params;    
 };
 
+struct DSMStackElement {
+  DSMStateDiagram* diag;
+  State* state;
+  vector<DSMElement*> actions;
+
+  DSMStackElement(DSMStateDiagram* diag, State* state)
+  : diag(diag), state(state) { }
+
+  DSMStackElement(DSMStateDiagram* diag, State* state, const vector<DSMElement*>& actions)
+  : diag(diag), state(state), actions(actions) { }
+
+};
+
 class DSMStateEngine {
   State* current;
   DSMStateDiagram* current_diag;
   vector<DSMStateDiagram*> diags;
 
-  vector<pair<DSMStateDiagram*, State*> > stack;
+  //  vector<pair<DSMStateDiagram*, State*> > stack;
+  vector<DSMStackElement> stack;
 
   bool callDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess, 
 		DSMCondition::EventType event,
-		map<string,string>* event_params);
+		map<string,string>* event_params,
+		vector<DSMElement*>::iterator actions_from, vector<DSMElement*>::iterator actions_to);
   bool jumpDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess,
 		DSMCondition::EventType event,
 		map<string,string>* event_params);
-  bool returnDiag(AmSession* sess, DSMSession* sc_sess);
+  bool returnDiag(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event, map<string,string>* event_params);
   bool runactions(vector<DSMElement*>::iterator from, 
 		  vector<DSMElement*>::iterator to, 
 		  AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,

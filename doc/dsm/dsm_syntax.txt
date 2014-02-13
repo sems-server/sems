@@ -71,7 +71,7 @@ DSM flow
 
  -- call/jump/return sub-FSM
  jumpFSM(name)
- callFSM(name)
+ callFSM(name)   - note that actions after callFSM may have the event & event params of the sub-FSM  
  returnFSM()
 
  stop(<send bye>)

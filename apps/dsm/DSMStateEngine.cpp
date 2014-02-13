@@ -262,13 +262,13 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	  break;
 	case DSMAction::Call:
 	  DBG("calling %s\n", se_modifier.c_str());
-	  if (callDiag(se_modifier, sess, sc_sess, event, event_params))  {
+	  if (callDiag(se_modifier, sess, sc_sess, event, event_params, it+1, to))  {
 	    // is_consumed = false; 
 	    return true;   
 	  } 
 	  break;
 	case DSMAction::Return: 
-	  if (returnDiag(sess, sc_sess)) {
+	  if (returnDiag(sess, sc_sess, event, event_params)) {
 	    //is_consumed = false;
 	    return true; 
 	  }
@@ -638,13 +638,17 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 }
 
 bool DSMStateEngine::callDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess,
-			   DSMCondition::EventType event,
-			   map<string,string>* event_params) {
+			      DSMCondition::EventType event,
+			      map<string,string>* event_params,
+			      vector<DSMElement*>::iterator actions_from, vector<DSMElement*>::iterator actions_to) {
   if (!current || !current_diag) {
     ERROR("no current diag to push\n");
     return false;
   }
-  stack.push_back(std::make_pair(current_diag, current));
+  stack.push_back(DSMStackElement(current_diag, current));
+  for (vector<DSMElement*>::iterator it = actions_from; it != actions_to; it++)
+    stack.back().actions.push_back(*it);
+
   return jumpDiag(diag_name, sess, sc_sess, event, event_params);
 }
 
@@ -691,14 +695,22 @@ bool DSMStateEngine::jumpDiag(const string& diag_name, AmSession* sess, DSMSessi
   return false;
 }
 
-bool DSMStateEngine::returnDiag(AmSession* sess, DSMSession* sc_sess) {
+bool DSMStateEngine::returnDiag(AmSession* sess, DSMSession* sc_sess,
+				DSMCondition::EventType event, map<string,string>* event_params) {
   if (stack.empty()) {
     ERROR("returning from empty stack\n");
     return false;
   }
-  current_diag = stack.back().first;
-  current = stack.back().second;
+  current_diag = stack.back().diag;
+  current = stack.back().state;
+  vector<DSMElement*> actions = stack.back().actions;
   stack.pop_back();
+
+  bool is_consumed; //?
+  DBG("executing %zd action elements from stack\n", actions.size());
+  if (actions.size()) {
+    runactions(actions.begin(), actions.end(), sess, sc_sess, event, event_params, is_consumed);
+  }
 
   MONITORING_LOG2(sess->getLocalTag().c_str(), 
 		  "dsm_diag", current_diag->getName().c_str(),
