@@ -765,7 +765,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	}
 	switch (ret[i][SBC_CC_ACTION].asInt()) {
 	case SBC_CC_DROP_ACTION: {
-	  DBG("dropping call on call control action DROP from '%s'\n",
+	  DBG("dropping request/call on call control action DROP from '%s'\n",
 	      cc_if.cc_name.c_str());
 	  return false;
 	}
