@@ -29,7 +29,7 @@
 #include "AmApi.h"
 #include "RedisConnectionPool.h"
 
-#include "hiredis.h"
+#include "hiredis/hiredis.h"
 
 #include "SBCCallProfile.h"
 

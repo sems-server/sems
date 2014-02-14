@@ -29,7 +29,7 @@
 
 #include "BLRedis.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 #include "AmSipHeaders.h"
 
 #include <string.h>

@@ -1,7 +1,7 @@
 #ifndef _RedisConnectionPool_h_
 #define _RedisConnectionPool_h_
 
-#include "hiredis.h"
+#include "hiredis/hiredis.h"
 #include "AmThread.h"
 
 #include <string>
