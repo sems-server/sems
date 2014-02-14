@@ -386,6 +386,13 @@ loglevel=2
 #
 # media_processor_threads=1
 
+# optional parameter: rtp_receiver_threads=<num_value>
+#
+# - controls how many threads should be created that
+#   receive and relay RTP media - on single-processor systems set this
+#   parameter to 1 (default), on MP systems to a higher value.
+#
+# rtp_receiver_threads=1
 
 # optional parameter: session_limit=<limit>;<err code>;<err reason>
 # 
