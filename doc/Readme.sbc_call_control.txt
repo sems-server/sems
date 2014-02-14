@@ -50,6 +50,10 @@ Several CC modules are implemented
   o cc_call_timer     - call timer (maximum call duration)
   o cc_prepaid        - prepaid billing with storing balances in memory
   o cc_prepaid_xmlrpc - prepaid billing querying balances from external server with XMLRPC
+  o cc_ctl            - control SBC profile options through headers
+  o cc_rest           - query REST/http API and use response for retargeting etc
+  o cc_syslog_cdr     - write CDRs to syslog
+  o cc_bl_redis        - check blacklist from REDIS (redis.io)
 
 See their respective documentation for details.
 
