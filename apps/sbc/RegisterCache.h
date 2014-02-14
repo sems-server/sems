@@ -332,7 +332,7 @@ public:
    */
   bool throttleRegister(RegisterCacheCtx& ctx,
 			const AmSipRequest& req,
-                        msg_logger *logger);
+                        msg_logger *logger = NULL);
 
   /**
    * Save a single REGISTER contact into cache
@@ -349,7 +349,7 @@ public:
    */
   bool saveSingleContact(RegisterCacheCtx& ctx,
 			const AmSipRequest& req,
-                        msg_logger *logger);
+                        msg_logger *logger = NULL);
 
   /**
    * Statistics
