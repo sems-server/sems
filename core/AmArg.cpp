@@ -381,7 +381,7 @@ void AmArg::assertArrayFmt(const char* format) const {
     for (size_t i=0;i<fmt_len;i++) {
       switch (format[i]) {
       case 'i': assertArgInt(get(i)); got+='i';  break;
-      case 'l': assertArgLongLong(get(i)); got+='i';  break;
+      case 'l': assertArgLongLong(get(i)); got+='l';  break;
       case 't': assertArgBool(get(i)); got+='t';  break;
       case 'f': assertArgDouble(get(i)); got+='f'; break;
       case 's': assertArgCStr(get(i)); got+='s'; break;

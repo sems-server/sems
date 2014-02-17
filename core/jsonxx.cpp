@@ -167,35 +167,35 @@ bool parse_float(std::istream& input, double* value) {
   */
 
 
+// bool parse_number(std::istream& input, long* value) {
+//     eat_whitespaces(input);
+//     char ch;
+//     std::string value_str;
+//     int sign = 1;
+//     if (match("-", input)) {
+//         sign = -1;
+//     } else {
+//         match("+", input);
+//     }
+//     while(input && !input.eof()) {
+//         input.get(ch);
+//         if (!isdigit(ch)) {
+//             input.putback(ch);
+//             break;
+//         }
+//         value_str.push_back(ch);
+//     }
+//     if (value_str.size() > 0) {
+//         std::istringstream(value_str) >> *value;
+// 	*value*=sign;
+//         return true;
+//     } else {
+//         return false;
+//     }
+// }
+
+
 bool parse_number(std::istream& input, long* value) {
-    eat_whitespaces(input);
-    char ch;
-    std::string value_str;
-    int sign = 1;
-    if (match("-", input)) {
-        sign = -1;
-    } else {
-        match("+", input);
-    }
-    while(input && !input.eof()) {
-        input.get(ch);
-        if (!isdigit(ch)) {
-            input.putback(ch);
-            break;
-        }
-        value_str.push_back(ch);
-    }
-    if (value_str.size() > 0) {
-        std::istringstream(value_str) >> *value;
-	*value*=sign;
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-bool parse_number(std::istream& input, int* value) {
     eat_whitespaces(input);
     char ch;
     std::string value_str;
@@ -204,7 +204,7 @@ bool parse_number(std::istream& input, int* value) {
     int sign = 1;
     int e_sign = 1;
     bool correct = true;
-    int e_value;
+    long e_value;
 
     enum {
       p_number,
@@ -303,7 +303,7 @@ bool parse_number(std::istream& input, int* value) {
 	    
 	    return false;  
 	  }
-	  *value *= pow(10, e_value);
+	  *value *= powl(10, e_value);
 	}
 
         return true;

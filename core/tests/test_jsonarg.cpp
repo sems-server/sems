@@ -54,7 +54,8 @@ FCTMF_SUITE_BGN(test_jsonarg) {
       // DBG("s.c_str() %s\n", s.c_str() );
       AmArg rpc_params;
       fct_chk(json2arg(s.c_str(), rpc_params));
-      fct_chk(isArgInt(rpc_params["result"]) && rpc_params["result"].asInt() == 0);
+      fct_chk(isArgInt(rpc_params["result"]));
+      fct_chk(rpc_params["result"].asInt() == 0);
     } FCT_TEST_END();
 
     FCT_TEST_BGN(json_number_e_pow) {
