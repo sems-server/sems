@@ -306,42 +306,6 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
   //ERROR("unknown event caught\n");
 }
 
-static bool parseSdp(AmSdp &dst, const AmMimeBody *body)
-{
-  if (body) {
-    int res = dst.parse((const char *)body->getPayload());
-    if (res != 0) {
-      DBG("SDP parsing failed (%d)!\n", res);
-      return false;
-    }
-    return true;
-  }
-  return false;
-}
-
-static bool parseSdp(AmSdp &dst, const AmSipRequest &req)
-{
-  if (req.method == SIP_METH_INVITE || 
-      req.method == SIP_METH_UPDATE ||
-      req.method == SIP_METH_ACK || 
-      req.method == SIP_METH_PRACK) 
-  {
-    return parseSdp(dst, req.body.hasContentType(SIP_APPLICATION_SDP));
-  }
-  return false;
-}
-
-static bool parseSdp(AmSdp &dst, const AmSipReply &reply)
-{
-  if (reply.cseq_method == SIP_METH_INVITE || 
-      reply.cseq_method == SIP_METH_UPDATE ||
-      reply.cseq_method == SIP_METH_PRACK) 
-  {
-    return parseSdp(dst, reply.body.hasContentType(SIP_APPLICATION_SDP));
-  }
-  return false;
-}
-
 bool AmB2BSession::getMappedReferID(unsigned int refer_id, 
 				    unsigned int& mapped_id) const
 {
