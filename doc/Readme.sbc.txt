@@ -296,6 +296,30 @@ next_hop or determined otherwise).
 These settings apply only for the UAC side, i.e. the outgoing side of
 the initial INVITE.
 
+Registration caching
+--------------------
+If registration caching is activated, SEMS SBC saves the contact of REGISTER
+messages in a local registration cache (in-memory) along with information of
+where the registration was received from and over which transport, interface
+etc. SEMS SBC then replaces the contact with a locally generated alias that
+points to itself, and sends it to the upstream registrar. When a message comes
+from the registrar, SEMS SBC looks up the alias, retargets it from the
+registration cache (sets RURI), and sends it over the saved transport to the
+proper remote address where the client is (e.g. behind NAT) by setting next_hop
+etc properly.
+
+To activate the registration cache, use the option
+ enable_reg_caching=yes
+(for both REGISTER and other messages). With the parameters
+ min_reg_expires and max_ua_expires
+it can be controlled how long the registration to the upstream registrar should
+persist and how short it should be to the UA. E.g. if the UA should periodicly
+re-REGISTER every 60 seconds, but to the upstream registrar the registration should
+persist 1h, min_reg_expires=3600 and max_ua_expires=60 should be set.
+
+For a local registrar (i.e. operation without an upstream registrar), see the 'registrar'
+call control module.
+
 Filters
 -------
 Headers and messages may be filtered. A filter can be set to 
