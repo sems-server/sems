@@ -6,16 +6,18 @@ Overview
 --------
 The SBC application is a highly flexible high-performance Back-to-Back
 User Agent (B2BUA). It can be employed for a variety of uses, for example 
-topology hiding, From/To modification, enforcing SIP Session Timers, 
-identity change, SIP authentication, RTP relaying. Future uses include
-accounting, transcoding, call distribution.
+topology hiding, NAT handling, From/To modification, enforcing SIP Session Timers, 
+identity change, SIP authentication, RTP relaying, transcoding, accounting,
+registration cache, RTP bandwidth limits.
 
 Features
 --------
- o B2BUA
+ o B2BUA with topo hiding or transparent modes
  o flexible call profile based configuration
  o online reload of call profiles
  o From, To, RURI, Contact, Call-ID update
+ o Registration caching
+ o SIP NAT handling
  o RTP bridging
  o Header and message filter
  o adding arbitrary headers
@@ -26,6 +28,8 @@ Features
  o prepaid accounting
  o CDR generation
  o call teardown from external control through RPC
+ o transcoding
+ o ...
 
 SBC Profiles
 ------------ 
@@ -398,6 +402,11 @@ Call profile options for choosing codec preferences:
     List of codec preferences describing how to reorder codecs in SDP sent from
     callee to caller.
 
+SIP NAT handling
+----------------
+dlg_nat_handling=yes makes SEMS SBC learn the proper remote address (port, transport,
+...) from the received message and use that in following in-dialog requests. Enable
+this option when handling far end NATs.
 
 RTP relay
 ---------
