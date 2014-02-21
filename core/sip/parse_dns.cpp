@@ -11,23 +11,21 @@ int dns_skip_name(u_char** p, u_char* end);
 int dns_expand_name(u_char** ptr, u_char* begin, u_char* end, 
 		    u_char* buf, unsigned int len);
 
-inline unsigned short dns_get_16(u_char* p)
+
+const char* dns_rr_type_str(dns_rr_type t)
 {
-  unsigned short res = *(p++);
-  res <<= 8;
-  res |= *p;
-  
-  return res;
+  switch(t) {
+  case dns_r_a:     return "A";
+  case dns_r_ns:    return "NS";
+  case dns_r_cname: return "CNAME";
+  case dns_r_aaaa:  return "AAAA";
+  case dns_r_srv:   return "SRV";
+  case dns_r_naptr: return "NAPTR";
+  default:          return "UNKNOWN";
+  };
 }
 
-inline unsigned int dns_get_32(u_char* p)
-{
-  unsigned int res = dns_get_16(p);
-  res <<= 16;
-  res |= dns_get_16(p+2);
 
-  return res;
-}
 
 int dns_msg_parse(u_char* msg, int len, dns_parse_fct fct, void* data)
 {

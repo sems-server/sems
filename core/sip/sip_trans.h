@@ -35,7 +35,12 @@
 
 #include <sys/socket.h>
 
+#include <list>
+using std::list;
+
 struct sip_msg;
+struct sip_target_set;
+
 class trsp_socket;
 class msg_logger;
 
@@ -128,6 +133,9 @@ class sip_trans
     /** Dialog-ID used for UAC transactions */
     cstring dialog_id;
 
+    /** Destination list for requests */
+    sip_target_set* targets;
+    
     /**
      * Retransmission buffer
      *  - UAC transaction: ACK

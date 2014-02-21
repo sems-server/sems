@@ -33,6 +33,9 @@ public:
     // in this bucket
     sip_trans* match_reply(sip_msg* msg);
 
+    // Find the latest UAC transaction matching dialog_id
+    sip_trans* find_uac_trans(const cstring& dialog_id, unsigned int inv_cseq);
+
     // Add a new transaction using provided message and type
     sip_trans* add_trans(sip_msg* msg, unsigned int ttype);
 

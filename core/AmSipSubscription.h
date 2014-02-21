@@ -164,6 +164,8 @@ protected:
   CSeqMap  uas_cseq_map;
   CSeqMap  uac_cseq_map;
 
+  bool allow_subless_notify;
+
   SingleSubscription* makeSubscription(const AmSipRequest& req, bool uac);
   Subscriptions::iterator createSubscription(const AmSipRequest& req, bool uac);
   Subscriptions::iterator matchSubscription(const AmSipRequest& req, bool uac);
@@ -183,6 +185,10 @@ protected:
 public:
   AmSipSubscription(AmBasicSipDialog* dlg, AmEventQueue* ev_q);
   virtual ~AmSipSubscription();
+
+  virtual void allowUnsolicitedNotify(bool allow) {
+    allow_subless_notify = allow;
+  }
 
   /**
    * Is there at least one active subscription?

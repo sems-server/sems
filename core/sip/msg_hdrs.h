@@ -73,20 +73,30 @@ inline void contact_wr(char** c,const cstring& contact)
     *((*c)++) = LF;
 }
 
-inline int via_len(const cstring& addr, const cstring& branch, bool rport)
+inline int via_len(const cstring& trsp, const cstring& addr, 
+		   const cstring& branch, bool rport)
 {
-    return 19/*'Via: SIP/2.0/UDP ' + CRLF*/
+    return 16/* 'Via: SIP/2.0/' + SP + CRLF */
+        + trsp.len
 	+ addr.len
 	+ 8 + MAGIC_BRANCH_LEN/*';branch=' + MAGIC_BRANCH_COOKIE*/
 	+ branch.len
         + (rport ? 6/*;rport*/ : 0 );
 }
 
-inline void via_wr(char** c, const cstring& addr, const cstring& branch, bool rport)
+inline void via_wr(char** c, const cstring& trsp, const cstring& addr, 
+		   const cstring& branch, bool rport)
 {
-    memcpy(*c,"Via: SIP/2.0/UDP ",17);
-    *c += 17/*'Via: SIP/2.0/UDP '*/;
+    memcpy(*c,"Via: SIP/2.0/",13);
+    *c += 13/*'Via: SIP/2.0/'*/;
+
+    for(unsigned int i=0; i<trsp.len; i++) {
+      if(trsp.s[i] >= 'a' && trsp.s[i] <= 'z')
+	*((*c)++) = trsp.s[i] - 'a' + 'A';
+    }
     
+    *((*c)++) = SP;
+
     memcpy(*c,addr.s,addr.len);
     *c += addr.len;
 
@@ -169,10 +179,11 @@ using std::list;
 
 
 int  copy_hdrs_len(const list<sip_header*>& hdrs);
-int  copy_hdrs_len_no_via(const list<sip_header*>& hdrs);
+int  copy_hdrs_len_no_via_contact(const list<sip_header*>& hdrs);
 
 void copy_hdrs_wr(char** c, const list<sip_header*>& hdrs);
 void copy_hdrs_wr_no_via(char** c, const list<sip_header*>& hdrs);
+void copy_hdrs_wr_no_via_contact(char** c, const list<sip_header*>& hdrs);
 
 
 #endif

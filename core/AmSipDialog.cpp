@@ -64,7 +64,7 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
   : AmBasicSipDialog(h),oa(this),rel100(this,h),
     offeranswer_enabled(true),
     early_session_started(false),session_started(false),
-    pending_invites(0),cancel_pending(false),
+    pending_invites(0),
     sdp_local(), sdp_remote()
 {
 }
@@ -361,6 +361,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 	  DBG("received 2xx reply without to-tag "
 	      "(callid=%s): sending BYE\n",reply.callid.c_str());
 
+	  send_200_ack(reply.cseq);
 	  sendRequest(SIP_METH_BYE);
 	}
 	else {
@@ -371,10 +372,6 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       if(reply.code >= 300) {// error reply
 	setStatus(Disconnected);
 	setRemoteTag(reply.to_tag);
-      }
-      else if(cancel_pending){
-	cancel_pending = false;
-	bye();
       }
       break;
 
@@ -716,14 +713,11 @@ int AmSipDialog::cancel()
 	t != uac_trans.rend(); t++) {
 	
 	if(t->second.method == SIP_METH_INVITE){
-	  
-	  if(getStatus() == Trying){
-	    cancel_pending=true;
-	    return 0;
-	  }
-	  else if(getStatus() != Cancelling){
+
+	  if(getStatus() != Cancelling){
 	    setStatus(Cancelling);
-	    return SipCtrlInterface::cancel(&t->second.tt,t->second.hdrs);
+	    return SipCtrlInterface::cancel(&t->second.tt, local_tag,
+					    t->first, t->second.hdrs);
 	  }
 	  else {
 	    ERROR("INVITE transaction has already been cancelled\n");

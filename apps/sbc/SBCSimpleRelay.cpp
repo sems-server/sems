@@ -363,6 +363,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
 
   if(cp.transparent_dlg_id){
     setExtLocalTag(req.from_tag);
+    cseq = req.cseq;
   }
   else if(n_req.callid == req.callid)
     n_req.callid = AmSession::getNewId();

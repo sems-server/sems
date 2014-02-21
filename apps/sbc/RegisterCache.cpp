@@ -90,7 +90,6 @@ void AorBucket::gbc(RegCacheStorageHandler* h, long int now,
 	      del_it->first.c_str(),binding->alias.c_str(),
 	      binding->reg_expire,now);
 
-	  if(h) h->onDelete(it->first,del_it->first,binding->alias);
 	  delete binding;
 	  aor_e->erase(del_it);
 	  continue;

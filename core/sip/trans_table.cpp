@@ -415,6 +415,33 @@ sip_trans* trans_bucket::match_1xx_prack(sip_msg* msg)
     return NULL;
 }
 
+sip_trans* trans_bucket::find_uac_trans(const cstring& dialog_id,
+					unsigned int inv_cseq)
+{
+    DBG("Matching dialog_id = '%.*s'\n",
+	dialog_id.len, dialog_id.s);
+
+    if(elmts.empty())
+	return NULL;
+    
+    trans_list::reverse_iterator it = elmts.rbegin();
+    for(;it!=elmts.rend();++it) {
+	    
+	sip_trans* t = *it;
+	if( t->type != TT_UAC ||
+	    t->msg->type != SIP_REQUEST ){
+	    continue;
+	}
+	sip_cseq* t_cseq = dynamic_cast<sip_cseq*>(t->msg->cseq->p);
+	if(t->dialog_id == dialog_id &&
+	   t_cseq && t_cseq->num == inv_cseq &&
+	   t->state != TS_ABANDONED)
+	    return t;
+    }
+
+    return NULL;
+}
+
 sip_trans* trans_bucket::add_trans(sip_msg* msg, unsigned int ttype)
 {
     sip_trans* t = new sip_trans();

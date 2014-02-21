@@ -24,12 +24,14 @@ Configuration Example:
     cc_dsm_module=cc_dsm
     cc_dsm_app_bundle=sbc
     cc_dsm_start_diag=test_sbc
+    cc_dsm_config.myvar=myfinalvalue
   dsm.conf
     conf_dir=etc/sbc_dsm
   etc/sbc_dsm/sbc.conf
     diag_path=./etc/sbc_dsm
     load_diags=test_sbc
     mod_path=../apps/dsm/mods/lib/
+    myvar=willbeshadowed
   etc/sbc_dsm/test_sbc.dsm
      import(mod_sbc);
      initial state START;
@@ -43,6 +45,9 @@ Configuration Example:
 Variables
 ---------
  $config.*    config set variables
+
+ variables set by call control instantiation, may shadow config set variables
+  (see configuration example above) 
 
 Parameters
 ----------

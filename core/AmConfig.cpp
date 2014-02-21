@@ -43,6 +43,7 @@
 #include "AmSessionContainer.h"
 #include "Am100rel.h"
 #include "sip/transport.h"
+#include "sip/resolver.h"
 #include "sip/ip_util.h"
 #include "sip/sip_timers.h"
 #include "sip/raw_sender.h"
@@ -91,7 +92,6 @@ bool         AmConfig::ForceSymmetricRtp       = false;
 bool         AmConfig::SipNATHandling          = false;
 bool         AmConfig::UseRawSockets           = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
-bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
 bool	     AmConfig::SingleCodecInOK	       = false;
@@ -386,7 +386,7 @@ int AmConfig::readConfiguration()
   }
 
   if(cfg.hasParameter("disable_dns_srv")) {
-    DisableDNSSRV = (cfg.getParameter("disable_dns_srv") == "yes");
+    _resolver::disable_srv = (cfg.getParameter("disable_dns_srv") == "yes");
   }
   
 
@@ -713,6 +713,7 @@ int AmConfig::insert_SIP_interface(const SIP_interface& intf)
 
 	return -1;
       }
+      //FIXME: what happens now? shouldn't we insert the interface????
     }
   }
 
@@ -768,6 +769,13 @@ static int readSIPInterface(AmConfigReader& cfg, const string& i_name)
     }
     intf.SigSockOpts = opts;
   }
+
+  intf.tcp_connect_timeout =
+    cfg.getParameterInt("tcp_connect_timeout" + suffix,
+			DEFAULT_TCP_CONNECT_TIMEOUT);
+
+  intf.tcp_idle_timeout =
+    cfg.getParameterInt("tcp_idle_timeout" + suffix, DEFAULT_TCP_IDLE_TIMEOUT);
 
   if(!i_name.empty())
     intf.name = i_name;
@@ -1171,9 +1179,11 @@ void AmConfig::dump_Ifs()
     SIP_interface& it_ref = SIP_Ifs[i];
 
     INFO("\t(%i) name='%s'" ";LocalIP='%s'" 
-	 ";LocalPort='%u'" ";PublicIP='%s'",
+	 ";LocalPort='%u'" ";PublicIP='%s';TCP=%u/%u",
 	 i,it_ref.name.c_str(),it_ref.LocalIP.c_str(),
-	 it_ref.LocalPort,it_ref.PublicIP.c_str());
+	 it_ref.LocalPort,it_ref.PublicIP.c_str(),
+	 it_ref.tcp_connect_timeout,
+	 it_ref.tcp_idle_timeout);
   }
   
   INFO("Signaling address map:");

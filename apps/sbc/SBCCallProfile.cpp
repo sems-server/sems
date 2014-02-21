@@ -681,21 +681,6 @@ string SBCCallProfile::print() const {
   return res;
 }
 
-/* translates string value into bool, returns false on error */
-static bool str2bool(const string &s, bool &dst)
-{
-  // TODO: optimize
-  if ((s == "yes") || (s == "true") || (s == "1")) {
-    dst = true;
-    return true;
-  }
-  if ((s == "no") || (s == "false") || (s == "0")) {
-    dst = false;
-    return true;
-  }
-  return false;
-}
-
 static bool isTranscoderNeeded(const AmSipRequest& req, vector<PayloadDesc> &caps,
 			       bool default_value)
 {
@@ -1242,6 +1227,33 @@ void SBCCallProfile::fix_reg_contact(ParamReplacerCtx& ctx,
     contact.uri_port =
       ctx.replaceParameters(this->contact.port, "Contact port", req);
   }
+}
+
+string SBCCallProfile::retarget(const string& alias)
+{
+    // REG-Cache lookup
+    AliasEntry alias_entry;
+    if(!RegisterCache::instance()->findAliasEntry(alias, alias_entry)) {
+      throw AmSession::Exception(404,"User not found");
+    }
+    string new_r_uri = alias_entry.contact_uri;
+    DBG("setting from registration cache: r_uri='%s'\n",new_r_uri.c_str());
+
+    // fix NAT
+    string nh = alias_entry.source_ip;
+    if(alias_entry.source_port != 5060)
+      nh += ":" + int2str(alias_entry.source_port);
+
+    DBG("setting from registration cache: next_hop='%s'\n", nh.c_str());
+    next_hop = nh;
+
+    // sticky interface
+    DBG("setting from registration cache: outbound_interface='%s'\n",
+	AmConfig::SIP_Ifs[alias_entry.local_if].name.c_str());
+    outbound_interface = AmConfig::SIP_Ifs[alias_entry.local_if].name;
+    outbound_interface_value = alias_entry.local_if;
+
+    return new_r_uri;
 }
 
 string SBCCallProfile::retarget(const string& alias, AmBasicSipDialog& dlg) const

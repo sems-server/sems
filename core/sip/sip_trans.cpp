@@ -35,6 +35,7 @@
 #include "trans_layer.h"
 #include "transport.h"
 #include "msg_logger.h"
+#include "ip_util.h"
 
 #include "log.h"
 
@@ -67,6 +68,7 @@ inline trans_timer** fetch_timer(unsigned int timer_type, trans_timer** base)
 
 sip_trans::sip_trans()
     : msg(NULL),
+      targets(NULL),
       retr_buf(NULL),
       retr_socket(NULL),
       retr_len(0),
@@ -80,6 +82,7 @@ sip_trans::~sip_trans()
 {
     reset_all_timers();
     delete msg;
+    delete targets;
     delete [] retr_buf;
     if(retr_socket){
 	dec_ref(retr_socket);
@@ -106,7 +109,7 @@ void sip_trans::retransmit()
     }
     assert(retr_socket);
 
-    int send_err = retr_socket->send(&retr_addr,retr_buf,retr_len);
+    int send_err = retr_socket->send(&retr_addr,retr_buf,retr_len,flags);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }
