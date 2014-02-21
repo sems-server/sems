@@ -91,6 +91,12 @@ rtp_high_port=60000
 # Example:
 #  sig_sock_opts=force_via_address
 
+# optional parameter: tcp_connect_timeout=<timeout in millisec>
+# Default: 2000 (2 sec)
+
+# optional parameter: tcp_idle_timeout=<timeout in millisec>
+# Default: 3600000 (1 hour)
+
 ############# configuration for multiple interfaces ############
 #   interfaces = <list of interface names>
 #
@@ -127,7 +133,8 @@ rtp_high_port=60000
 #  rtp_high_port_extern=5000
 #  public_ip_extern=213.192.35.73
 #  sig_sock_opts_extern=force_via_address
-
+#  tcp_connect_timeout_extern=1000
+#  tcp_idle_timeout_extern=900000
 ############# other network configuration ############################## 
 
 # NAT handling for SIP:sip_nat_handling={yes|no}
@@ -560,6 +567,20 @@ use_default_signature=yes
 # Default: supported
 #
 #100rel=require
+
+# force the use of outbound interface? [yes, no]
+#
+# Useful in case of overlapping networks, or if OS routing can/should not be used. 
+# Default: no
+#
+# force_outbound_if=yes
+
+# use raw sockets for sending? [yes, no]
+# faster, requires root or CAP_NET_RAW
+#
+# Default: no
+#
+# use_raw_sockets=yes
 
 #
 # accept forked dialogs on UAS side? [yes|no]
