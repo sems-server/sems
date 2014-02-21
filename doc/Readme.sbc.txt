@@ -289,7 +289,11 @@ also for in-dialog requests. Note that this is NOT RFC3261 compliant (section
 
 The next hop (destination IP[:port] of outgoing requests) can be set
 with the next_hop option. next_hop port defaults to 5060 if not set or
-empty. Usually, replies are sent back to where the request came from
+empty. Multiple alternatives for the next hop can be set, also with their
+respective transports, e.g.
+ next_hop=1.2.3.4/TCP,1.2.3.4:5060/UDP
+
+Usually, replies are sent back to where the request came from
 (honoring rport), but if next_hop should be used nevertheless,
 next_hop_for_replies profile option can be set to "yes".
 
