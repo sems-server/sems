@@ -151,7 +151,7 @@ static unsigned int g726_40_samples2bytes(long h_codec, unsigned int num_samples
 
 static int Pcm16_2_G726_16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			    unsigned int channels, unsigned int rate, long h_codec ) {
-  int i, j;  
+  unsigned int i, j;  
   if (!h_codec)
     return -1;
 
@@ -177,7 +177,7 @@ static int Pcm16_2_G726_16( unsigned char* out_buf, unsigned char* in_buf, unsig
 
 static int G726_16_2_Pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			   unsigned int channels, unsigned int rate, long h_codec ) {
-  int i, j;
+  unsigned int i, j;
   if (!h_codec)
     return -1;
 
@@ -202,7 +202,7 @@ static int G726_16_2_Pcm16(unsigned char* out_buf, unsigned char* in_buf, unsign
 
 static int Pcm16_2_G726_24( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			    unsigned int channels, unsigned int rate, long h_codec ) {
-  int i, j;  
+  unsigned int i, j;  
   if (!h_codec)
     return -1;
   short* sample_buf = (short*)in_buf;
@@ -229,7 +229,7 @@ static int Pcm16_2_G726_24( unsigned char* out_buf, unsigned char* in_buf, unsig
 
 static int G726_24_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			    unsigned int channels, unsigned int rate, long h_codec ) {
-  int i, j;
+  unsigned int i, j;
   if (!h_codec)
     return -1;
 
@@ -258,7 +258,7 @@ static int G726_24_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsig
 
 static int Pcm16_2_G726_32( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			    unsigned int channels, unsigned int rate, long h_codec ) {
-  int i, j;  
+  unsigned int i, j;  
   if (!h_codec)
     return -1;
   short* sample_buf = (short*)in_buf;
@@ -284,7 +284,7 @@ static int Pcm16_2_G726_32( unsigned char* out_buf, unsigned char* in_buf, unsig
 static int G726_32_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			    unsigned int channels, unsigned int rate, long h_codec ) {
 
-  int i, j;
+  unsigned int i, j;
   if (!h_codec)
     return -1;
 
@@ -310,7 +310,7 @@ static int G726_32_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsig
 static int Pcm16_2_G726_40( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			    unsigned int channels, unsigned int rate, long h_codec ) {
 
-  int i, j;  
+  unsigned int i, j;  
   if (!h_codec)
     return -1;
   short* sample_buf = (short*)in_buf;
@@ -340,7 +340,7 @@ static int Pcm16_2_G726_40( unsigned char* out_buf, unsigned char* in_buf, unsig
 static int G726_40_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			    unsigned int channels, unsigned int rate, long h_codec ) {
 
-  int i, j;
+  unsigned int i, j;
   u_int64_t v;
   if (!h_codec)
     return -1;
