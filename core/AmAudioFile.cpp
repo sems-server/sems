@@ -299,7 +299,8 @@ void AmAudioFile::on_close()
       amci_file_desc_t fmt_desc = { f_fmt->getSubtypeId(), 
 				    (int)f_fmt->getRate(),
 				    f_fmt->channels, 
-				    data_size };
+				    data_size ,
+				    0, 0, 0};
 	    
       if(!iofmt){
 	ERROR("file format pointer not initialized: on_close will not be called\n");
