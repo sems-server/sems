@@ -191,7 +191,7 @@ int Pcm16_2_iLBC( unsigned char* out_buf, unsigned char* in_buf, unsigned int si
   short* in_b = (short*)in_buf;
 
   float block[BLOCKL_MAX];
-  int i,k;
+  unsigned int i,k;
   iLBC_Codec_Inst_t* codec_inst;
   int out_buf_offset=0;
 
