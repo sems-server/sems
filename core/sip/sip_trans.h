@@ -83,7 +83,7 @@ class sip_trans;
 class trans_timer
     : protected timer
 {
-    trans_timer(const trans_timer& ti) {}
+    trans_timer(const trans_timer& ti) : timer() {}
 
 public:
     unsigned int type;
