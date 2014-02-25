@@ -222,7 +222,7 @@ void AmArg::concat(const AmArg& a) {
   }
 }
 
-const size_t AmArg::size() const {
+size_t AmArg::size() const {
   if (Array == type)
     return v_array->size(); 
 

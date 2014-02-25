@@ -929,7 +929,8 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
     answer.media.push_back(SdpMedia());
     SdpMedia& answer_media = answer.media.back();
 
-    if( m_it->type == MT_AUDIO 
+    if( m_it->type == MT_AUDIO
+	&& m_it->transport == TP_RTPAVP
         && audio_1st_stream 
         && (m_it->port != 0) ) {
 
@@ -949,7 +950,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
       answer_media.type = m_it->type;
       answer_media.port = 0;
       answer_media.nports = 0;
-      answer_media.transport = TP_RTPAVP;
+      answer_media.transport = m_it->transport;
       answer_media.send = false;
       answer_media.recv = false;
       answer_media.payloads.clear();
