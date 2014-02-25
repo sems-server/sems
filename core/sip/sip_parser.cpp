@@ -58,7 +58,8 @@ sip_msg::sip_msg(const char* msg_buf, int msg_len)
       content_type(NULL),
       content_length(NULL),
       body(),
-      local_socket(NULL)
+      local_socket(NULL),
+      type(SIP_UNKNOWN)
 {
     u.request = 0;
     u.reply   = 0;
@@ -84,7 +85,8 @@ sip_msg::sip_msg()
       content_type(NULL),
       content_length(NULL),
       body(),
-      local_socket(NULL)
+      local_socket(NULL),
+      type(SIP_UNKNOWN)
 {
     u.request = 0;
     u.reply   = 0;
@@ -106,10 +108,10 @@ sip_msg::~sip_msg()
     }
 
     if(u.request){
-	if(type == SIP_REQUEST){
+	if(type == SIP_REQUEST && u.request){
 	    delete u.request;
 	}
-	else {
+	else if(type == SIP_REPLY && u.reply) {
 	    delete u.reply;
 	}
     }
