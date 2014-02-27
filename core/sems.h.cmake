@@ -32,6 +32,8 @@
 #define OS "${CMAKE_SYSTEM_NAME}"
 #define ARCH "${CMAKE_SYSTEM_PROCESSOR}"
 
+#define SEMS_APP_NAME "${SEMS_APP_NAME}"
+
 #define CONFIG_FILE         "${SEMS_CFG_PREFIX}/etc/sems/sems.conf"
 #define MOD_CFG_PATH        "${SEMS_CFG_PREFIX}/etc/sems/etc/"
 #define ANNOUNCE_PATH       "${SEMS_AUDIO_PREFIX}/sems/audio"

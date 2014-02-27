@@ -27,6 +27,8 @@ ENDIF(EXISTS ${CMAKE_SOURCE_DIR}/.git)
 
 MESSAGE(STATUS "Configuring ${CMAKE_PROJECT_NAME} v. ${SEMS_VERSION}")
 
+SET(SEMS_APP_NAME "sems")
+
 IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT MSVC_IDE)
 	message(FATAL_ERROR "In-source builds are not allowed.
 CMake would overwrite all makefiles distributed with SEMS.
