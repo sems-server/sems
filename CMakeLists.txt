@@ -86,6 +86,8 @@ MESSAGE(STATUS "SEMS doc prefix was set to: ${SEMS_DOC_PREFIX}")
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
+FIND_PACKAGE(Libevent2 REQUIRED)
+
 # compile with spandsp DTMF detection? see soft-switch.org
 #   this needs a fairly new version of spandsp - tested with 0.0.4pre11
 #   will not work with spandsp 0.0.2 .
