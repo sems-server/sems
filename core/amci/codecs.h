@@ -85,4 +85,6 @@
 
 #define CODEC_iSAC_WB 40
 
+#define CODEC_OPUS 50
+
 #endif

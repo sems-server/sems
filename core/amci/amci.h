@@ -29,7 +29,7 @@
 #define _amci_h_
 
 /** AUDIO_BUFFER_SIZE must be a power of 2 */
-#define AUDIO_BUFFER_SIZE (1<<12) /* 2 KB */
+#define AUDIO_BUFFER_SIZE (1<<13) /* 4 KB samples */
 
 #ifdef __cplusplus
 extern "C" {
