@@ -52,6 +52,7 @@ int AmAudioRtpFormat::setCurrentPayload(Payload pl)
     this->advertized_rate = pl.advertised_clock_rate;
     DBG("fmt.advertized_rate = %d", this->advertized_rate);
     this->frame_size = 20*this->rate/1000;
+    DBG("fmt.sdp_format_parameters = %s", this->sdp_format_parameters.c_str());
     if (this->codec != NULL) {
       destroyCodec();
     }
@@ -333,6 +334,8 @@ int AmRtpAudio::init(const AmSdp& local,
   }
   fmt_p->setCurrentPayload(payloads[pl_it->second.index]);
   fmt.reset(fmt_p);
+  amci_codec_t* codec = fmt->getCodec();
+  use_default_plc = ((codec==NULL) || (codec->plc == NULL));
 
   fec.reset(new LowcFE(getSampleRate()));
 
@@ -371,7 +374,13 @@ int AmRtpAudio::setCurrentPayload(int payload)
     }
     
     this->payload = payload;
-    return ((AmAudioRtpFormat*)fmt.get())->setCurrentPayload(payloads[index]);
+    int res = ((AmAudioRtpFormat*)fmt.get())->setCurrentPayload(payloads[index]);
+
+    amci_codec_t* codec = fmt->getCodec();
+    use_default_plc = ((codec==NULL) || (codec->plc == NULL));
+
+    return res;
+
   }
   else {
     return 0;
