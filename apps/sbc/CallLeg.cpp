@@ -986,6 +986,7 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
     return;
   }
 #endif
+  if (reply.code >= 300 && reply.cseq_method == SIP_METH_INVITE) offerRejected();
 
   AmB2BSession::onSipReply(req, reply, old_dlg_status);
 
@@ -1615,11 +1616,13 @@ void CallLeg::updateLocalSdp(AmSdp &sdp)
 
 void CallLeg::offerRejected()
 {
+  TRACE("%s: offer rejected! (hold status: %d)", getLocalTag().c_str(), hold);
   switch (hold) {
     case HoldRequested: holdRejected(); break;
     case ResumeRequested: resumeRejected(); break;
     case PreserveHoldStatus: break;
   }
+  hold = PreserveHoldStatus;
 }
 
 void CallLeg::createResumeRequest(AmSdp &sdp)
