@@ -207,6 +207,16 @@ class DSMSipRequest
   ~DSMSipRequest() { }
 };
 
+class DSMMutableSipRequest
+: public DSMSipRequest {
+ public:
+  AmSipRequest* mutable_req;
+
+  DSMMutableSipRequest(AmSipRequest* req)
+    : DSMSipRequest(req), mutable_req(req) { }
+  ~DSMMutableSipRequest() { }
+};
+
 class DSMSipReply
 : public AmObject {
  public: 
@@ -217,6 +227,15 @@ class DSMSipReply
   ~DSMSipReply() { }
 };
 
+class DSMMutableSipReply
+: public DSMSipReply {
+ public:
+  AmSipReply* mutable_reply;
+
+  DSMMutableSipReply(AmSipReply* reply)
+    : DSMSipReply(reply), mutable_reply(reply) { }
+  ~DSMMutableSipReply() { }
+};
 
 #define DSM_EVENT_ID -10
 /**  generic event for passing events between DSM sessions */

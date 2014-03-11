@@ -58,6 +58,8 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("dlg.refer", DLGReferAction);
   DEF_CMD("dlg.relayError", DLGB2BRelayErrorAction);
 
+  DEF_CMD("dlg.addReplyBodyPart", DLGAddReplyBodyPartAction);
+
 } MOD_ACTIONEXPORT_END;
 
 //MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
@@ -523,4 +525,27 @@ EXEC_ACTION_START(DLGB2BRelayErrorAction) {
   }
 
   b2b_sess->relayError(sip_req->req->method, sip_req->req->cseq, true, code_i, reason.c_str());
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(DLGAddReplyBodyPartAction, ',', false);
+EXEC_ACTION_START(DLGAddReplyBodyPartAction) {
+  DSMMutableSipReply* sip_reply;
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REPLY);
+  if (it == sc_sess->avar.end() ||
+      !isArgAObject(it->second) ||
+      !(sip_reply = dynamic_cast<DSMMutableSipReply*>(it->second.asObject()))) {
+    throw DSMException("dlg", "cause", "no reply");
+  }
+
+  string content_type = resolveVars(par1, sess, sc_sess, event_params);
+  string body_part = resolveVars(par2, sess, sc_sess, event_params);
+
+  AmMimeBody* new_part;
+
+  new_part = sip_reply->mutable_reply->body.addPart(content_type);
+  new_part->setPayload((const unsigned char*)body_part.c_str(),
+		       body_part.length());
+  DBG("added to reply body part %s='%s'\n",
+      content_type.c_str(), body_part.c_str());
 } EXEC_ACTION_END;

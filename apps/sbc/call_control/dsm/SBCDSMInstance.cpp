@@ -304,7 +304,7 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
     B2BSipRequestEvent* b2b_req_ev = dynamic_cast<B2BSipRequestEvent*>(b2b_ev);
     if (b2b_req_ev) {
       VarMapT event_params;
-      DSMSipRequest sip_req(&b2b_req_ev->req);
+      DSMMutableSipRequest sip_req(&b2b_req_ev->req);
       extractRequestParameters(event_params, avar, &sip_req);
       event_params["forward"] = b2b_req_ev->forward?"true":"false";
       engine.runEvent(call, this, DSMCondition::B2BOtherRequest, &event_params);
@@ -315,7 +315,7 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
       B2BSipReplyEvent* b2b_reply_ev = dynamic_cast<B2BSipReplyEvent*>(b2b_ev);
       if (b2b_reply_ev) {
 	VarMapT event_params;
-	DSMSipReply dsm_reply(&b2b_reply_ev->reply);
+	DSMMutableSipReply dsm_reply(&b2b_reply_ev->reply);
 	extractReplyParameters(event_params, avar, &dsm_reply);
 	event_params["forward"] = b2b_reply_ev->forward?"true":"false";
 	event_params["trans_method"] = b2b_reply_ev->trans_method;
