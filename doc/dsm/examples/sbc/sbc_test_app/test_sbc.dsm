@@ -1,0 +1,63 @@
+--
+-- simple DSM/SBC example: disconnect B leg after a timer, play a file in the A leg after that
+--
+
+import(mod_dlg);
+import(mod_sbc);
+import(mod_utils);
+
+initial state START enter {
+  log(3, "entering START state");
+};
+
+transition "init event" START - start / {
+  log(3, "initializing");
+  logAll(3);
+
+  if sbc.isALeg() {
+    log(3, "this is an A leg");
+    setTimer(1, 10);
+  } else {
+    log(3, "this is a B leg");
+  }
+} -> RUN;
+
+state RUN;
+
+transition "state changed" RUN - legStateChange / logParams(3) -> RUN;
+
+transition "timer hit" RUN - timer(#id == 1) / {
+  -- save other leg's ltag
+  dlg.getOtherId($b_ltag);
+
+  -- don't send hold, keep media session
+  sbc.disconnect(false, true);
+  
+  -- instruct other leg to hang up
+  set($cmd="hangup");
+  set($call_id=@local_tag);
+  postEvent($b_ltag, cmd;call_id);
+
+  setInputPlaylist();
+  connectMedia();
+  playFile("wav/default_en.wav");
+  sbc.streamsSetReceiving(false, false);
+
+} -> PLAYING_FILE;
+
+state PLAYING_FILE;
+
+transition "file ended" PLAYING_FILE - noAudio / {
+  -- use sbc.stopCall, otherwise RTP relay may still be active
+  sbc.stopCall("normal-call-clearance");
+} -> END;
+
+-- B leg side 
+transition "got disconnect cmd" RUN - event(#cmd=="hangup") / {
+  -- disconnect our leg from the other, too
+  sbc.disconnect(false, true);
+  -- stop our call leg
+  sbc.stopCall("normal-call-clearance");
+} -> END;
+
+state END;

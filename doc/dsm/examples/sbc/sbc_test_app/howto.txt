@@ -1,0 +1,18 @@
+ simple DSM SBC test app  -  disconnect B leg after a timer, play a file in the A leg after that
+
+ how to use (running from within source dir, in core/):
+  cd core/etc
+  ln -s ../../doc/dsm/examples/sbc/sbc_test_app/profile/sbc_test_app_profile.sbcprofile.conf .
+  mkdir sbc ; cd sbc
+  ln -s ../../doc/dsm/examples/sbc/sbc_test_app/sbc_test_app.conf .
+  
+ corresponding sbc.conf section - load cc_dsm cc plugin:
+   load_cc_plugins=cc_dsm
+   profiles=sbc_test_app_profile
+   active_profile=sbc_test_app_profile
+
+ corresponding dsm.conf :
+   conf_dir=etc/sbc
+
+
+
