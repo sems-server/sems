@@ -144,10 +144,13 @@ Conditions
 ----------
 call leg events (don't work in non-call SBC DSMs)
 
-sbc.isALeg
+sbc.isALeg   - is A leg of the call
 
-sbc.isOnHold
+sbc.isOnHold -  is on hold
 
+sbc.isDisconnected() / sbc.isNoReply() / sbc.isRinging() / sbc.isConnected() / sbc.isDisconnecting()
+  call leg status
+ 
 Actions
 -------
 sbc.profileSet(profile_variable, value)    - set SBC profile options
@@ -177,7 +180,8 @@ sbc.putOnHold()                    - put this call leg on hold
 
 sbc.resumeHeld()                   - resume from hold
 
-sbc.getSBCCallStatus(varname)      - get sbc call status into $varname
+sbc.getSBCCallStatus(varname)      - get sbc call status into $varname:
+                                     Disconnected/NoReply/Ringing/Connected/Disconnecting/Unknown
 
 sbc.relayReliableEvent(paramlist, processed_paramlist, unprocessed_paramlist) - relay reliable Event
   if processed (#processed=true in other leg), event is sent back with processed_paramlist parameters,

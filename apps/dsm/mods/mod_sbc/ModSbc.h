@@ -47,6 +47,12 @@ DEF_ACTION_1P(MODSBCActionGetCallStatus);
 DEF_SCCondition(SBCIsALegCondition);
 DEF_SCCondition(SBCIsOnHoldCondition);
 
+DEF_SCCondition(SBCIsDisconnectedCondition);
+DEF_SCCondition(SBCIsNoReplyCondition);
+DEF_SCCondition(SBCIsRingingCondition);
+DEF_SCCondition(SBCIsConnectedCondition);
+DEF_SCCondition(SBCIsDisconnectingCondition);
+
 DEF_ACTION_2P(MODSBCActionB2BRelayReliable);
 DEF_ACTION_2P(MODSBCActionAddCallee);
 

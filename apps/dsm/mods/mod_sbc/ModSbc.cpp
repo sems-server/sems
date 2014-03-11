@@ -117,6 +117,22 @@ MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
   if (cmd == "sbc.isOnHold")
     return new SBCIsOnHoldCondition(params, false);
 
+  if (cmd == "sbc.isDisconnected")
+    return new SBCIsDisconnectedCondition(params, false);
+
+  if (cmd == "sbc.isNoReply")
+    return new SBCIsNoReplyCondition(params, false);
+
+  if (cmd == "sbc.isRinging")
+    return new SBCIsRingingCondition(params, false);
+
+  if (cmd == "sbc.isConnected")
+    return new SBCIsConnectedCondition(params, false);
+
+  if (cmd == "sbc.isDisconnecting")
+    return new SBCIsDisconnectingCondition(params, false);
+
+
 } MOD_CONDITIONEXPORT_END
 
 
@@ -150,6 +166,28 @@ MATCH_CONDITION_START(SBCIsOnHoldCondition) {
   return res;
 } MATCH_CONDITION_END;
 
+#define DEF_CALLSTATUS_COND(cond_name, cond_desc, call_status)		\
+									\
+  MATCH_CONDITION_START(cond_name) {					\
+    SBCCallLeg* call_leg = dynamic_cast<SBCCallLeg*>(sess);		\
+    if (NULL == call_leg) {						\
+      DBG("script writer error: DSM condition used without call leg\n"); \
+      return false;							\
+    }									\
+									\
+    bool b = call_leg->getCallStatus() == call_status;			\
+    bool res = inv ^ b;							\
+    DBG("SBC: " cond_desc " == %s (res = %s)\n",			\
+	b ? "true":"false", res ? "true":"false");			\
+    return res;								\
+  } MATCH_CONDITION_END
+
+
+DEF_CALLSTATUS_COND(SBCIsDisconnectedCondition, "sbc.isDisconnected", CallLeg::Disconnected);
+DEF_CALLSTATUS_COND(SBCIsNoReplyCondition, "sbc.isNoReply", CallLeg::NoReply);
+DEF_CALLSTATUS_COND(SBCIsRingingCondition, "sbc.isRinging", CallLeg::Ringing);
+DEF_CALLSTATUS_COND(SBCIsConnectedCondition, "sbc.isConnected", CallLeg::Connected);
+DEF_CALLSTATUS_COND(SBCIsDisconnectingCondition, "sbc.isDisconnecting", CallLeg::Disconnecting);
 
 #define ACTION_GET_PROFILE			\
   SBCCallProfile* profile = NULL;					\
