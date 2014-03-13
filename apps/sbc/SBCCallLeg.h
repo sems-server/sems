@@ -251,6 +251,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   bool openLogger(const std::string &path);
   msg_logger *getLogger() { return logger; }
+
+  virtual double get491RetryTime() { return (get_random() % call_profile.max_491_retry_time) / 1000.0; }
 };
 
 #endif

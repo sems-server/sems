@@ -386,6 +386,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   min_reg_expires = cfg.getParameterInt("min_reg_expires",0);
   max_ua_expires = cfg.getParameterInt("max_ua_expires",0);
 
+  max_491_retry_time = cfg.getParameterInt("max_491_retry_time", 2000);
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
