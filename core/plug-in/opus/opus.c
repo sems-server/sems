@@ -46,7 +46,7 @@
  *
  */
 
-#include <opus.h>
+#include <opus/opus.h>
 
 #define _OPUS_APPLICATION_ OPUS_APPLICATION_VOIP
 /* Allowed values:
