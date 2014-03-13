@@ -9,10 +9,11 @@ enum {
   ReplaceInProgress,
   DisconnectLeg,
   ChangeRtpModeEventId,
-  ResumeHeld
+  ResumeHeldLeg,
+  ApplyPendingUpdatesEventId
 };
 
-#define LAST_B2B_CALL_LEG_EVENT_ID ResumeHeld
+#define LAST_B2B_CALL_LEG_EVENT_ID ApplyPendingUpdatesEventId
 
 struct ConnectLegEvent: public B2BEvent
 {
@@ -164,7 +165,12 @@ struct ChangeRtpModeEvent: public B2BEvent
 
 struct ResumeHeldEvent: public B2BEvent
 {
-  ResumeHeldEvent(): B2BEvent(ResumeHeld) { }
+  ResumeHeldEvent(): B2BEvent(ResumeHeldLeg) { }
+};
+
+struct ApplyPendingUpdatesEvent: public B2BEvent
+{
+  ApplyPendingUpdatesEvent(): B2BEvent(ApplyPendingUpdatesEventId) { }
 };
 
 #endif
