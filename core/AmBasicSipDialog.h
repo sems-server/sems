@@ -456,6 +456,10 @@ class AmBasicSipEventHandler
    */
   virtual void onFailure() {}
 
+  // called upon finishing either UAC or UAS transaction
+  virtual void onTransFinished() { }
+
+
   virtual ~AmBasicSipEventHandler() {}
 };
 
