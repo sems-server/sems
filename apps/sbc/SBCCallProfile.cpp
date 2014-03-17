@@ -1347,7 +1347,7 @@ static bool readPayload(SdpPayload &p, const string &src)
 
   if (elems.size() < 1) return false;
 
-  if (elems.size() > 2) str2int(elems[1], p.encoding_param);
+  if (elems.size() > 2) str2int(elems[2], p.encoding_param);
   if (elems.size() > 1) str2int(elems[1], p.clock_rate);
   else p.clock_rate = 8000; // default value
   p.encoding_name = elems[0];
