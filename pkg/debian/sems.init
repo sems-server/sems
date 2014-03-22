@@ -51,6 +51,11 @@ if ! test -f $DAEMON ; then
   exit 0
 fi
 
+# /var/run can be a tmpfs
+if [ ! -d $HOMEDIR ]; then
+    mkdir -p $HOMEDIR
+fi
+
 LD_LIBRARY_PATH=/usr/lib/sems
 export LD_LIBRARY_PATH
 

@@ -25,6 +25,7 @@ SEMS_GROUP="sems"
 
 # ser pidfile
 SEMS_PIDFILE="/var/run/sems/sems.pid"
+HOMEDIR=/var/run/sems
 
 # set if you want to create core files
 #DEBCONF-CREATE_CORE-START
