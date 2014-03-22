@@ -54,6 +54,7 @@ fi
 # /var/run can be a tmpfs
 if [ ! -d $HOMEDIR ]; then
     mkdir -p $HOMEDIR
+    chown $SEMS_USER:$SEMS_GROUP $HOMEDIR
 fi
 
 LD_LIBRARY_PATH=/usr/lib/sems
