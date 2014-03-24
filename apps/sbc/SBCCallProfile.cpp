@@ -174,6 +174,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   aleg_next_hop = cfg.getParameter("aleg_next_hop");
 
+  allow_subless_notify = cfg.getParameter("allow_subless_notify", "yes") == "yes";
+
   if (!readFilter(cfg, "header_filter", "header_list", headerfilter, false))
     return false;
   

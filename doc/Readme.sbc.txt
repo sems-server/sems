@@ -627,6 +627,13 @@ Example:
   auth_aleg_pwd=$H(P-Auth-A-Pwd)
 
 
+NOTIFY pass-through
+-------------------
+If in-dialog NOTIFY messages which do not belong to an established subscription
+should not be passed through, the profile option 
+ allow_subless_notify=no
+may be set. This defaults to yes.
+
 SIP Session Timer configuration
 -------------------------------
 If SIP Session Timers are enabled for a profile, the session timers values
