@@ -215,22 +215,27 @@ How to get started with SEMS:
   applications, see the explanation of 'application' parameter in 
   sems.conf.
 
-Creating packages on debian (ubuntu, ...):
+Creating packages on debian (ubuntu, ...), here for wheezy:
 
    install debian package build tools:
    $ sudo apt-get install debhelper devscripts
 
    install dependencies:
    $  sudo apt-get install g++ make libspandsp-dev flite-dev libspeex-dev \
-         libssl-dev python-dev python-sip4-dev openssl sip4 libev-dev \
-         libmysql++-dev
+         libssl-dev python-dev python-sip-dev openssl libev-dev \
+         libmysql++-dev libevent-dev libxml2-dev libcurl4-openssl-dev
    
    get the source: 
    $ wget ftp.iptel.org/pub/sems/sems-x.y.z.tar.gz ; tar xzvf sems-x.y.z.tar.gz
+   or, for git master:
+   $ git clone git://git.sip-router.org/sems
+
    $ cd sems-x.y.z ; ln -s pkg/debian .
 
    set version in changelog if not correct
    $ dch -v x.y.z "SEMS x.y.z release"
+   or:
+   $ dch -b -v `git describe --always` "sems git master"
    
    build package:
    $ dpkg-buildpackage -rfakeroot -us -uc
