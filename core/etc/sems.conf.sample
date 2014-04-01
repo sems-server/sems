@@ -232,6 +232,7 @@ plugin_path=/usr/local/lib/sems/plug-in/
 #
 # example for announcement with only g711 and ilbc codecs  
 # load_plugins=wav;ilbc;announcement
+load_plugins=wav;isac;l16;speex;g722;gsm;ilbc;webconference
 
 # optional parameter: exclude_plugins=<modules list>
 #
@@ -274,7 +275,8 @@ exclude_plugins=precoded_announce;py_sems;db_reg_agent;cc_call_timer;cc_ctl;cc_p
 # application = $(mapping)
 # application = $(ruri.user)
 # application = $(ruri.param)
-application = $(apphdr)
+# application = $(apphdr)
+application=webconference
 
 # parameter: plugin_config_path=<path>
 #
