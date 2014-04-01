@@ -9,3 +9,4 @@
 %Include PySemsB2BDialog.sip
 %Include PySemsB2ABDialog.sip
 %Include AmUtils.sip
+%Include AmMimeBody.sip

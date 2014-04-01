@@ -8,7 +8,7 @@ class PySemsDialog
 
 public:
 
-    AmSipDialog dlg;
+    AmSipDialog* dlg;
 
     PySemsDialog();
 

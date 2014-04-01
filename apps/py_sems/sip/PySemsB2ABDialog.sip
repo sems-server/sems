@@ -27,7 +27,7 @@ class PySemsB2ABDialog
 
 public:
 
-    AmSipDialog dlg;
+    AmSipDialog* dlg;
 
     PySemsB2ABDialog();
 

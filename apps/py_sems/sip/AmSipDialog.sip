@@ -26,12 +26,12 @@ public:
 
     string contact_uri;  // pre-calculated contact uri
 
-    string callid;
-    string remote_tag;
-    string local_tag;
+    string getCallid();
+    string getRemoteTag();
+    string getLocalTag();
 
-    string remote_party; // To/From
-    string local_party;  // To/From
+    string getRemoteParty(); // To/From
+    string getLocalParty();  // To/From
 
     int cseq;            // CSeq for next request
     int r_cseq;
@@ -49,23 +49,21 @@ public:
  	      unsigned int  /* code */, 
  	      const string& /* reason */,
  	      const string& /* content_type */,
- 	      const string& /* body */,
+ 	      const AmMimeBody* /* body */,
  	      const string& /* hdrs */);
 
     int sendRequest(const string& /* method */, 
 		    const string& /* content_type */,
-		    const string& /* body */,
+		    const AmMimeBody* /* body */,
 		    const string& /* hdrs */);
     
     int bye();
 
     int cancel();
 
-    int update(const string& /* content_type */,
-	       const string& /* body */,
+    int update(const AmMimeBody* /* body */,
 	       const string& /* hdrs */);
 
-    int reinvite(const string& /* hdrs */,
-		 const string& /* content_type */,
-		 const string& /* body */);
+    int reinvite(const AmMimeBody* /* body */,
+    	         const string& /* hdrs */);
 };
