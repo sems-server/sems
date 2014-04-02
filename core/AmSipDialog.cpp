@@ -332,8 +332,7 @@ void AmSipDialog::onRequestTxed(const AmSipRequest& req)
   }
 }
 
-bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply, 
-				  TransMap::iterator t_uac_it)
+bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
 {
   // rfc3261 12.1
   // Dialog established only by 101-199 or 2xx 

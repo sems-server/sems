@@ -68,7 +68,7 @@ protected:
   bool onRxReqSanity(const AmSipRequest& req);
   bool onRxReqStatus(const AmSipRequest& req);
 
-  bool onRxReplyStatus(const AmSipReply& reply, TransMap::iterator t_uac_it);
+  bool onRxReplyStatus(const AmSipReply& reply);
 
 
  public:

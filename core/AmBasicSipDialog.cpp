@@ -358,8 +358,7 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
     hdl->onSipRequest(req);
 }
 
-bool AmBasicSipDialog::onRxReplyStatus(const AmSipReply& reply, 
-				       TransMap::iterator t_uac_it)
+bool AmBasicSipDialog::onRxReplyStatus(const AmSipReply& reply)
 {
   /**
    * Error code list from RFC 5057:
@@ -448,15 +447,18 @@ void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
   updateDialogTarget(reply);
   
   Status saved_status = status;
-  if(onRxReplyStatus(reply,t_it) && hdl)
-    hdl->onSipReply(t_it->second,reply,saved_status);
+  AmSipRequest orig_req(t_it->second);
+
+  if(onRxReplyStatus(reply) && hdl) {
+    hdl->onSipReply(orig_req,reply,saved_status);
+  }
 
   if((reply.code >= 200) && // final reply
      // but not for 2xx INV reply (wait for 200 ACK)
      ((reply.cseq_method != SIP_METH_INVITE) ||
       (reply.code >= 300))) {
        
-    uac_trans.erase(t_it);
+    uac_trans.erase(reply.cseq);
   }
 }
 

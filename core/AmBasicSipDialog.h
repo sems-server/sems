@@ -183,8 +183,7 @@ protected:
    *
    * @return true to continue processing, false otherwise
    */
-  virtual bool onRxReplyStatus(const AmSipReply& reply, 
-			       TransMap::iterator t_uac_it);
+  virtual bool onRxReplyStatus(const AmSipReply& reply);
 
   /**
    * Terminate pending UAS transactions
