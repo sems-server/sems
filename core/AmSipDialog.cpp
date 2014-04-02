@@ -442,7 +442,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
     if(hdl) ((AmSipDialogEventHandler*)hdl)->onInvite2xx(reply);
 
   } else {
-    cont = AmBasicSipDialog::onRxReplyStatus(reply,t_uac_it);
+    cont = AmBasicSipDialog::onRxReplyStatus(reply);
   }
 
   return cont && rel100.onReplyIn(reply);
