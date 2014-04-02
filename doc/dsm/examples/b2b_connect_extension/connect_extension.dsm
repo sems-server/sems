@@ -101,6 +101,7 @@ transition "positive reply" CONNECTING - B2B.otherReply(#code < 300)  / {
    log(3, received positive reply)
    log(3, #code)
    log(3, #reason)
+   disconnectMedia();
 } -> CONNECTED;
 
 -- negative reply in callee leg, try again
