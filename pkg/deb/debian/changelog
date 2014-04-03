@@ -1,3 +1,9 @@
+sems (1.6.0~dev) unstable; urgency=medium
+
+  * Devel version
+
+ -- Victor Seva <linuxmaniac@torreviejawireless.org>  Thu, 03 Apr 2014 17:52:53 +0200
+
 sems (1.5.0) maverick; urgency=low
 
   * Core
