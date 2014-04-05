@@ -2,37 +2,24 @@
 #
 # this file is sourced by SEMS init script /etc/init.d/sems
 
-# Note: the #DEBCONF-xxx-START and DEBCONF-xxx-END lines are used for
-# debconf configuration, please don't remove or alter them.
+# Don't start with default config as we need to deploy the ngcp-templates first
+SEMS_RUN="no"
 
-# SEMS configuration file
-#DEBCONF-CFG_FILE-START
+# ser configuration file
 SEMS_CFG_FILE="/etc/sems/sems.conf"
-#DEBCONF-CFG_FILE-END
-
-# WARN:  if SEMS_USER/SEMS_GROUP is set, dumping core
-#        might not work any more on linux
 
 # user to run SEMS as
-#DEBCONF-USER-START
 SEMS_USER="sems"
-#DEBCONF-USER-END
 
 # group to run SEMS as
-#DEBCONF-GROUP-START
 SEMS_GROUP="sems"
-#DEBCONF-GROUP-END
 
-# ser pidfile
-SEMS_PIDFILE="/var/run/sems/sems.pid"
-HOMEDIR=/var/run/sems
+SEMS_RUNDIR="/var/run/sems"
+
+# sems pidfile
+SEMS_PIDFILE="$SEMS_RUNDIR/sems.pid"
 
 # set if you want to create core files
-#DEBCONF-CREATE_CORE-START
 SEMS_CREATE_CORE="yes"
-#DEBCONF-CREATE_CORE-END
 
-#DEBCONF-COREDIR-START
 SEMS_COREDIR="/var/cores"
-#DEBCONF-COREDIR-END
-

@@ -1,87 +1,36 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper.
-# GNU copyright 1997 to 1999 by Joey Hess.
-#
-# $Id: rules,v 1.7 2007/12/20 14:21:19 paka Exp $
-#
-# History:
-# --------
-#  2008-02-06  stolen from SER and adapted for SEMS (stefan)
+# -*- makefile -*-
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
-# This is the debhelper compatibility version to use.
-# export DH_COMPAT=5
-#  -- already set in compat
-#  force no striping (always include debug symbols for now)
-export DEB_BUILD_OPTIONS:="$(DEB_BUILD_OPTIONS) nostrip"
-
 PYTHON_MODULES=ivr conf_auth mailbox pin_collect
 
-EXCLUDED_MODULES=gateway examples mp3 twit py_sems
+EXCLUDED_MODULES=gateway examples mp3 twit
 
 EXCLUDED_DSM_MODULES=mod_aws
 EXCLUDED_DSM_PY_MODULES=mod_aws mod_py
-CPPFLAGS += -DHAVE_XMLRPCPP_SSL 
-# for older than lenny add:
-# -DHAVE_OLD_SPANDSP_CALLBACK
 
-ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -g
-endif
-ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
-	INSTALL_PROGRAM += -s
-endif
+CPPFLAGS += -DHAVE_XMLRPCPP_SSL
 
+export USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)"
 
-configure: configure-stamp
-configure-stamp:
-	dh_testdir
-# Add here commands to configure the package.
+%:
+	dh $@
 
-	touch configure-stamp
-
-build: build-stamp
-
-build-stamp: configure-stamp 
-	dh_testdir
-
-# Add here commands to compile the package.
-	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
+override_dh_auto_build:
 	$(MAKE) \
 	cfg-target=/etc/sems/ prefix=/usr \
 	exclude_app_modules="$(EXCLUDED_MODULES)" \
 	exclude_dsm_modules="$(EXCLUDED_DSM_MODULES)" \
 	DESTDIR=$(CURDIR)/debian/sems
-#/usr/bin/docbook-to-man debian/ser.sgml > ser.1
 
-	touch build-stamp
-
-clean:
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp configure-stamp
-
-# Add here commands to clean up after the build process.
-
-	dh_clean
-
-install: build
-	dh_testdir
-	dh_testroot
-	dh_clean -k
-	dh_install
-#	dh_installdirs
-
-# Add here commands to install the package into debian/sems
-	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
+override_dh_auto_install:
 	$(MAKE) -C core/ install \
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
 		cfg-target=/etc/sems/
 
-	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
 	$(MAKE) -C apps/ install \
 		exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
 		exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
@@ -89,75 +38,5 @@ install: build
 		prefix=/usr \
 		cfg-target=/etc/sems/
 
-# install only the python modules
-	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
-	$(MAKE) -C apps/ install \
-		app_modules="$(PYTHON_MODULES)" \
-		DESTDIR=$(CURDIR)/debian/sems-python-modules \
-		prefix=/usr \
-		cfg-target=/etc/sems/  
-
-# install mod_py DSM module
-	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
-	$(MAKE) -C apps/dsm/mods/mod_py install \
-		DESTDIR=$(CURDIR)/debian/sems-python-modules \
-		prefix=/usr \
-		cfg-target=/etc/sems/  
-
-# This single target is used to build all the packages, all at once, or
-# one at a time. So keep in mind: any options passed to commands here will
-# affect _all_ packages. Anything you want to only affect one package
-# should be put in another target, such as the install target.
-binary-common: 
-	dh_testdir
-	dh_testroot
-	dh_installdebconf	
-	dh_installdocs doc/*.txt
-	dh_installdocs doc/dsm/
-	dh_installexamples
-	dh_installmenu
-#	dh_installlogrotate
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-	dh_installinit  -- defaults 23
-	dh_installcron
-	dh_installman
-	dh_installinfo
-#	dh_undocumented
-	dh_installchangelogs 
-	dh_link
-	dh_strip
-	dh_compress 
-	dh_fixperms
-
-#       fixperms (rightly) sets 644 to getos/getarch (should it be somewhere else?)
-	chmod 755 $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getos
-	chmod 755 $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getarch
-
-#	dh_makeshlibs
-	dh_installdeb
-#	dh_perl
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
-
-# Build architecture-independent packages using the common target
-binary-indep: build install
-# (Uncomment this next line if you have such packages.)
-#        $(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
-# We have nothing to do by default.
-
-
-# Build architecture-dependent packages using the common target
-binary-arch: build install
-	$(MAKE) -f debian/rules DH_OPTIONS=-a binary-common
-
-# Any other binary targets build just one binary package at a time.
-binary-%: build install
-	$(MAKE) -f debian/rules binary-common DH_OPTIONS=-p$*
-
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
-
+override_dh_strip:
+	dh_strip --dbg-package=sems-dbg
