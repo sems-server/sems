@@ -1,0 +1,25 @@
+# configuration for SEMS - SIP Express Media Server
+#
+# this file is sourced by SEMS init script /etc/init.d/sems
+
+# Don't start with default config as we need to deploy the ngcp-templates first
+SEMS_RUN="no"
+
+# ser configuration file
+SEMS_CFG_FILE="/etc/sems/sems.conf"
+
+# user to run SEMS as
+SEMS_USER="sems"
+
+# group to run SEMS as
+SEMS_GROUP="sems"
+
+SEMS_RUNDIR="/var/run/sems"
+
+# sems pidfile
+SEMS_PIDFILE="$SEMS_RUNDIR/sems.pid"
+
+# set if you want to create core files
+SEMS_CREATE_CORE="yes"
+
+SEMS_COREDIR="/var/cores"

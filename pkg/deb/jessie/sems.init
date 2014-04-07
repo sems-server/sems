@@ -1,0 +1,108 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          sems
+# Required-Start:    $local_fs $remote_fs $network $syslog
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop SEMS Application Server
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+# read configuration from /etc/default/sems file
+if test -f /etc/default/sems ; then
+  . /etc/default/sems
+fi
+
+
+if test "$SEMS_RUN" = "no" ; then
+    log_failure_msg "Sems start disabled by default file"
+    exit 0
+fi
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/sems
+NAME=sems
+DESC=sems
+
+PARAMS=""
+
+if ! test -d $SEMS_RUNDIR ; then
+   mkdir $SEMS_RUNDIR
+fi
+chown $SEMS_USER:$SEMS_GROUP $SEMS_RUNDIR
+
+if test "$SEMS_PIDFILE" ; then
+  PARAMS="$PARAMS -P $SEMS_PIDFILE"
+fi
+
+if test "$SEMS_USER" ; then
+  PARAMS="$PARAMS -u $SEMS_USER"
+fi
+
+if test "$SEMS_GROUP" ; then
+  PARAMS="$PARAMS -g $SEMS_GROUP"
+fi
+
+if test "$SEMS_CFG_FILE" ; then
+  PARAMS="$PARAMS -f $SEMS_CFG_FILE"
+  CFGPARAMS="-f $SEMS_CFG_FILE"
+fi
+
+if test "$SEMS_CREATE_CORE" = "yes" ; then
+	# directory for the core dump files
+	[ -d $SEMS_COREDIR ] || mkdir $SEMS_COREDIR
+	chmod 777 $SEMS_COREDIR
+	echo "$SEMS_COREDIR/core.%e.sig%s.%p" > /proc/sys/kernel/core_pattern
+	echo 2 > /proc/sys/fs/suid_dumpable
+	ulimit -c unlimited
+fi
+
+# raise file descriptors limit - call hold consumes two fds for RTP ports and one for moh file
+ulimit -n 100000
+
+if ! test -f $DAEMON ; then
+  log_failure_msg "Error: cannot find $DAEMON"
+  exit 1
+fi
+
+LD_LIBRARY_PATH=/usr/lib/sems
+export LD_LIBRARY_PATH
+
+set -e
+
+case "$1" in
+  start)
+	log_daemon_msg "Starting $DESC: $NAME "
+	start-stop-daemon --start --quiet --oknodo --pidfile $SEMS_PIDFILE \
+		--exec $DAEMON -- $PARAMS
+	log_end_msg $?
+	;;
+  stop)
+	log_daemon_msg "Stopping $DESC: $NAME "
+	start-stop-daemon --oknodo --stop --quiet --pidfile $SEMS_PIDFILE \
+		--exec $DAEMON
+	log_end_msg $?
+	;;
+  restart|force-reload)
+	log_daemon_msg "Restarting $DESC: $NAME "
+	start-stop-daemon --oknodo --stop --quiet --pidfile \
+		$SEMS_PIDFILE --exec $DAEMON
+	sleep 5
+	start-stop-daemon --start --quiet --pidfile \
+		$SEMS_PIDFILE --exec $DAEMON  -- $PARAMS
+	echo "."
+	;;
+  status)
+       status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+       ;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart|force-reload|status}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
+

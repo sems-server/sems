@@ -1,0 +1,54 @@
+Source: sems
+Section: net
+Priority: optional
+Maintainer: Debian VoIP Team <pkg-voip-maintainers@lists.alioth.debian.org>
+Uploaders: Victor Seva <linuxmaniac@torreviejawireless.org>
+Build-Depends: debhelper (>= 9~),
+               flite-dev,
+               libcurl4-openssl-dev | libcurl4-gnutls-dev,
+               libev-dev,
+               libevent-dev (>= 2.0.0),
+               libhiredis-dev,
+               libmysql++-dev,
+               libspandsp-dev,
+               libspeex-dev,
+               libssl-dev,
+               libxml2-dev,
+               openssl,
+               python-dev,
+               python-sip-dev
+Standards-Version: 3.9.5
+
+Package: sems
+Architecture: any
+Depends: adduser, python, ${misc:Depends}, ${shlibs:Depends}
+Description: SIP Express Media Server, very fast and flexible SIP media server
+ SEMS, the SIP Express Media Server, is a free, high performance,
+ extensible media server and SBC for SIP (RFC3261) based VoIP  services. It
+ features voicemail, conferencing, announcements, pre-call announcements,
+ prepaid service, calling card service etc.
+
+Package: sems-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends: sems (= ${binary:Version}), ${misc:Depends}
+Description: Debugging symbols for Sems SIP Express Media Server
+ SEMS, the SIP Express Media Server, is a free, high performance,
+ extensible media server and SBC for SIP (RFC3261) based VoIP  services. It
+ features voicemail, conferencing, announcements, pre-call announcements,
+ prepaid service, calling card service etc.
+ .
+ This package contains the debugging sysmbols.
+
+Package: libsems1-dev
+Architecture: any
+Section: libdevel
+Depends: ${misc:Depends}
+Description: development files for SIP Express Media Server
+ SEMS, the SIP Express Media Server, is a free, high performance,
+ extensible media server and SBC for SIP (RFC3261) based VoIP  services. It
+ features voicemail, conferencing, announcements, pre-call announcements,
+ prepaid service, calling card service etc.
+ .
+ This package contains the files needed to compile sems applications.
