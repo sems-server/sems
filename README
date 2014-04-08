@@ -230,7 +230,7 @@ Creating packages on debian (ubuntu, ...), here for wheezy:
    or, for git master:
    $ git clone git://git.sip-router.org/sems
 
-   $ cd sems-x.y.z ; ln -s pkg/debian .
+   $ cd sems-x.y.z ; ln -s pkg/deb/debian .
 
    set version in changelog if not correct
    $ dch -v x.y.z "SEMS x.y.z release"
