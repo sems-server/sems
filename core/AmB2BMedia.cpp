@@ -957,7 +957,7 @@ void AmB2BMedia::updateRelayStream(AmRtpStream *stream, AmB2BSession *session,
 void AmB2BMedia::updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp, RelayController *ctrl)
 {
   TRACE("%s (%c): updating streams with local & remote SDP\n",
-      a_leg ? a->getLocalTag().c_str() : b->getLocalTag().c_str(),
+      a_leg ? (a ? a->getLocalTag().c_str() : "NULL") : (b ? b->getLocalTag().c_str() : "NULL"),
       a_leg ? 'A': 'B');
 
   /*string s;
