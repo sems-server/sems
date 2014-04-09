@@ -794,7 +794,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   call_profile.sst_enabled = ctx.replaceParameters(call_profile.sst_enabled, 
 						   "enable_session_timer", req);
 
-  if ((call_profile.sst_aleg_enabled == "yes") ||
+  if ((call_profile.sst_aleg_enabled == "yes") &&
       (call_profile.sst_enabled == "yes")) {
 
     call_profile.eval_sst_config(ctx,req,call_profile.sst_a_cfg);
