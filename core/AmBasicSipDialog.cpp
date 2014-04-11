@@ -459,6 +459,7 @@ void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
       (reply.code >= 300))) {
        
     uac_trans.erase(reply.cseq);
+    if (hdl) hdl->onTransFinished();
   }
 }
 
@@ -540,6 +541,7 @@ void AmBasicSipDialog::onReplyTxed(const AmSipRequest& req,
       (reply.cseq_method != SIP_METH_CANCEL)) {
     
     uas_trans.erase(reply.cseq);
+    if (hdl) hdl->onTransFinished();
   }
 }
 
@@ -553,6 +555,7 @@ void AmBasicSipDialog::onRequestTxed(const AmSipRequest& req)
   }
   else {
     uac_trans.erase(req.cseq);
+    if (hdl) hdl->onTransFinished();
   }
 }
 

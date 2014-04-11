@@ -29,17 +29,9 @@
 #include "AmB2BSession.h"
 #include "AmSessionContainer.h"
 #include "CallLegEvents.h"
+#include "SessionUpdate.h"
 
 #include <queue>
-
-struct PendingReinvite
-{
-  string hdrs;
-  AmMimeBody body;
-  unsigned r_cseq;
-  bool relayed_invite;
-  bool establishing;
-};
 
 /** composed AmB2BCalleeSession & AmB2BCallerSession
  * represents indepenedently A or B leg of a call,
@@ -151,12 +143,23 @@ class CallLeg: public AmB2BSession
     AmSdp non_hold_sdp;
     enum { HoldRequested, ResumeRequested, PreserveHoldStatus } hold;
 
-    std::queue<PendingReinvite> pending_reinvites;
-
+    // queue of session update operations, first element is possibly the one
+    // being in progress
+    std::list<SessionUpdate *> pending_updates;
+    class SessionUpdateTimer pending_updates_timer;
 
     // generate re-INVITE with given parameters (establishing means that the
     // INVITE is establishing a connection between two legs)
-    void reinvite(const string &hdrs, const AmMimeBody &body, bool relayed, unsigned r_cseq, bool establishing);
+    // returns the request CSeq or -1 upon error
+    int reinvite(const string &hdrs, const AmMimeBody &body, bool relayed, unsigned r_cseq, bool establishing);
+
+    // put on hold directly, returns CSeq of hold request or -1 if no request
+    // was sent out (either error or on hold already)
+    int putOnHoldImpl();
+
+    // resume held call directly; returns CSeq of unhold request or -1 if no request
+    // was sent out (either error or not on hold)
+    int resumeHeldImpl();
 
     // generate 200 reply on a pending INVITE (uses fake body)
     void acceptPendingInvite(AmSipRequest *invite);
@@ -234,15 +237,20 @@ class CallLeg: public AmB2BSession
       * doesn't cause calling this */
      void offerRejected();
 
+    // returns false if there is a pending INVITE so the session can not be
+    // changed right now
+    bool canUpdateSession() { return !(dlg->getUACInvTransPending() || dlg->getUASPendingInv()); }
+    void applyPendingUpdate();
+    void updateSession(SessionUpdate *op);
+
+    virtual void onTransFinished();
+
   protected:
 
     // functions offered to successors
 
     virtual void setCallStatus(CallStatus new_status);
     CallStatus getCallStatus() { return call_status; }
-
-    void queueReinvite(const string& hdrs, const AmMimeBody& body, bool establishing = false,
-		       bool relayed_invite=false, unsigned int r_cseq = 0);
 
     // @see AmSession
     virtual void onInvite(const AmSipRequest& req);
@@ -304,6 +312,9 @@ class CallLeg: public AmB2BSession
     void changeRtpMode(RTPRelayMode new_mode);
 
     virtual void updateLocalSdp(AmSdp &sdp);
+
+    // return retry time for 491 reply in seconds
+    virtual double get491RetryTime() { return (get_random() % 200) / 100.0; }
 
   public:
     virtual void onB2BEvent(B2BEvent* ev);
@@ -382,6 +393,10 @@ class CallLeg: public AmB2BSession
     virtual void onEarlySessionStart() { }
     virtual void onSessionStart() { }
 
+    // classes doing session update are allowed to access our internals:
+    friend class Reinvite;
+    friend class PutOnHold;
+    friend class ResumeHeld;
 };
 
 

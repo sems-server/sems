@@ -260,6 +260,12 @@ CallLeg::~CallLeg()
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
     i->releaseMediaSession();
   }
+
+  while (!pending_updates.empty()) {
+    SessionUpdate *u = pending_updates.front();
+    pending_updates.pop_front();
+    delete u;
+  }
 }
 
 void CallLeg::terminateOtherLeg()
@@ -355,7 +361,7 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
       }
       break;
 
-    case ResumeHeld:
+    case ResumeHeldLeg:
       {
         ResumeHeldEvent *e = dynamic_cast<ResumeHeldEvent*>(ev);
         if (e) resumeHeld();
@@ -368,6 +374,11 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
         if (e) changeRtpMode(e->new_mode, e->media);
       }
       break;
+
+      case ApplyPendingUpdatesEventId:
+        if (dynamic_cast<ApplyPendingUpdatesEvent*>(ev)) applyPendingUpdate();
+        break;
+
 
     case B2BSipRequest:
       if (!sip_relay_only) {
@@ -692,12 +703,8 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
 		  "to", dlg->getRemoteParty().c_str(),
 		  "ruri", dlg->getRemoteUri().c_str());
 
-  if (invite) {
-    // there is pending INVITE, replied just above but we need to wait for ACK
-    // before sending re-INVITE with real body
-    queueReinvite(ev->hdrs, ev->body, /* establishing = */ true, ev->relayed_invite, ev->r_cseq);  
-  }
-  else reinvite(ev->hdrs, ev->body, ev->relayed_invite, ev->r_cseq, true);
+  updateSession(new Reinvite(ev->hdrs, ev->body,
+        /* establishing = */ true, ev->relayed_invite, ev->r_cseq));
 }
 
 void CallLeg::onB2BReplace(ReplaceLegEvent *e)
@@ -799,9 +806,9 @@ static void sdp2body(const AmSdp &sdp, AmMimeBody &body)
   else body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
 }
 
-void CallLeg::putOnHold()
+int CallLeg::putOnHoldImpl()
 {
-  if (on_hold) return;
+  if (on_hold) return -1; // no request went out
 
   TRACE("putting remote on hold\n");
   hold = HoldRequested;
@@ -814,20 +821,17 @@ void CallLeg::putOnHold()
 
   AmMimeBody body;
   sdp2body(sdp, body);
-  if (dlg->getUACInvTransPending()) {
-    // there is pending INVITE, add reinvite to waiting requests
-    DBG("INVITE pending, queueing hold Re-Invite\n");
-    queueReinvite("", body);
-  } else if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+  if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
     offerRejected();
+    return -1;
   }
-  //else hold_request_cseq = dlg->cseq - 1;
+  return dlg->cseq - 1;
 }
 
-void CallLeg::resumeHeld(/*bool send_reinvite*/)
+int CallLeg::resumeHeldImpl()
 {
-  if (!on_hold) return;
+  if (!on_hold) return -1;
 
   try {
     TRACE("resume held remote\n");
@@ -840,24 +844,22 @@ void CallLeg::resumeHeld(/*bool send_reinvite*/)
     if (sdp.media.empty()) {
       ERROR("invalid un-hold SDP, can't unhold\n");
       offerRejected();
-      return;
+      return -1;
     }
     updateLocalSdp(sdp);
 
     AmMimeBody body(established_body);
     sdp2body(sdp, body);
-    if (dlg->getUACInvTransPending()) {
-      // there is a pending INVITE, add reinvite to waiting requests
-      DBG("INVITE pending, queueing un-hold Re-Invite\n");
-      queueReinvite("", body);
-    } else if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+    if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
       ERROR("re-INVITE failed\n");
       offerRejected();
+      return -1;
     }
-    //else hold_request_cseq = dlg->cseq - 1;
+    return dlg->cseq - 1;
   }
   catch (...) {
     offerRejected();
+    return -1;
   }
 }
 
@@ -923,8 +925,7 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
     // handle reINVITEs within B2B call with no other leg
     if (req.method == SIP_METH_INVITE && dlg->getStatus() == AmBasicSipDialog::Connected) {
       try {
-        AmSession::onInvite(req);
-        //or dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR); ?
+        dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       }
       catch(...) {
         ERROR("exception when handling INVITE in disconnected state");
@@ -948,13 +949,6 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
     }
     else
       AmB2BSession::onSipRequest(req);
-  }
-
-  if (req.method == SIP_METH_ACK && !pending_reinvites.empty()) {
-    TRACE("ACK received, we can send a queued re-INVITE\n");
-    PendingReinvite p = pending_reinvites.front();
-    pending_reinvites.pop();
-    reinvite(p.hdrs, p.body, p.relayed_invite, p.r_cseq, p.establishing);
   }
 }
 
@@ -986,6 +980,22 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
     return;
   }
 #endif
+  if (reply.code >= 300 && reply.cseq_method == SIP_METH_INVITE) offerRejected();
+
+  // handle final replies of session updates in progress
+  if (!pending_updates.empty() && reply.code >= 200 && pending_updates.front()->hasCSeq(reply.cseq)) {
+    if (reply.code == 491) {
+      pending_updates.front()->reset();
+      double t = get491RetryTime();
+      pending_updates_timer.start(getLocalTag(), t);
+      TRACE("planning to retry update operation in %gs", t);
+    }
+    else {
+      // TODO: 503, ...
+      delete pending_updates.front();
+      pending_updates.pop_front();
+    }
+  }
 
   AmB2BSession::onSipReply(req, reply, old_dlg_status);
 
@@ -1313,17 +1323,6 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
   if (call_status == Disconnected) updateCallStatus(NoReply); // we are something like connected to another leg
 }
 
-void CallLeg::queueReinvite(const string& hdrs, const AmMimeBody& body, bool establishing,
-			    bool relayed_invite, unsigned int r_cseq) {
-  PendingReinvite p;
-  p.hdrs = hdrs;
-  p.body = body;
-  p.relayed_invite = relayed_invite;
-  p.r_cseq = r_cseq;
-  p.establishing = establishing;
-  pending_reinvites.push(p);
-}
-
 void CallLeg::clear_other()
 {
   removeOtherLeg(getOtherId());
@@ -1522,7 +1521,7 @@ void CallLeg::acceptPendingInvite(AmSipRequest *invite)
   if (getCallStatus() != Connected) updateCallStatus(Connected);
 }
 
-void CallLeg::reinvite(const string &hdrs, const AmMimeBody &body, bool relayed, unsigned r_cseq, bool establishing)
+int CallLeg::reinvite(const string &hdrs, const AmMimeBody &body, bool relayed, unsigned r_cseq, bool establishing)
 {
   int res;
   try {
@@ -1539,7 +1538,7 @@ void CallLeg::reinvite(const string &hdrs, const AmMimeBody &body, bool relayed,
 
     DBG("sending re-INVITE failed, terminating the call\n");
     stopCall(StatusChangeCause::InternalError);
-    return;
+    return -1;
   }
 
   if (relayed) {
@@ -1557,6 +1556,7 @@ void CallLeg::reinvite(const string &hdrs, const AmMimeBody &body, bool relayed,
     // save CSeq of establishing INVITE
     est_invite_cseq = dlg->cseq - 1;
   }
+  return dlg->cseq - 1;
 }
 
 void CallLeg::adjustOffer(AmSdp &sdp)
@@ -1615,11 +1615,13 @@ void CallLeg::updateLocalSdp(AmSdp &sdp)
 
 void CallLeg::offerRejected()
 {
+  TRACE("%s: offer rejected! (hold status: %d)", getLocalTag().c_str(), hold);
   switch (hold) {
     case HoldRequested: holdRejected(); break;
     case ResumeRequested: resumeRejected(); break;
     case PreserveHoldStatus: break;
   }
+  hold = PreserveHoldStatus;
 }
 
 void CallLeg::createResumeRequest(AmSdp &sdp)
@@ -1663,4 +1665,73 @@ int CallLeg::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
 
   hold = PreserveHoldStatus;
   return AmB2BSession::onSdpCompleted(offer, answer);
+}
+
+void CallLeg::applyPendingUpdate()
+{
+  TRACE("going to apply pending updates");
+
+  if (pending_updates.empty()) return;
+
+  if (!canUpdateSession()) {
+    TRACE("can't apply pending updates now");
+    return;
+  }
+
+  TRACE("applying pending updates");
+
+  do {
+    SessionUpdate *u = pending_updates.front();
+    u->apply(this);
+    if (u->hasCSeq()) {
+      // SIP transaction started, wait for finishing it
+      break;
+    }
+    else {
+      // the update operation hasn't started a SIP transaction so it can be
+      // understood as finished
+      pending_updates.pop_front();
+      delete u;
+    }
+  } while (!pending_updates.empty());
+}
+
+void CallLeg::onTransFinished()
+{
+  TRACE("UAC/UAS transaction finished");
+  AmB2BSession::onTransFinished();
+
+  if (pending_updates.empty() || !canUpdateSession()) return; // there is nothing we can do now
+
+  if (pending_updates_timer.started()) {
+    TRACE("UAC/UAS transaction finished, but waiting for planned updates");
+    return; // it is planned to apply the updates later on
+  }
+
+  TRACE("UAC/UAS transaction finished, try to apply pending updates");
+  AmSessionContainer::instance()->postEvent(getLocalTag(), new ApplyPendingUpdatesEvent());
+}
+
+void CallLeg::updateSession(SessionUpdate *u)
+{
+  if (!canUpdateSession() || !pending_updates.empty()) {
+    TRACE("planning session update for later");
+    pending_updates.push_back(u);
+  }
+  else {
+    u->apply(this);
+
+    if (u->hasCSeq()) pending_updates.push_back(u); // store for failover
+    else delete u; // finished
+  }
+}
+
+void CallLeg::putOnHold()
+{
+  updateSession(new PutOnHold());
+}
+
+void CallLeg::resumeHeld()
+{
+  updateSession(new ResumeHeld());
 }
