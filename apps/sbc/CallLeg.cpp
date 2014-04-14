@@ -1032,7 +1032,7 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
 
   // update call registry (unfortunately has to be done always -
   // not possible to determine if learned in this reply (?))
-  if (!dlg->getRemoteTag().empty()) {
+  if (!dlg->getRemoteTag().empty() && reply.code >= 200 && req.method == SIP_METH_INVITE) {
     SBCCallRegistry::updateCall(getOtherId(), dlg->getRemoteTag());
   }
 
