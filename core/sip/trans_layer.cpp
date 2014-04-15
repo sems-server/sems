@@ -2179,22 +2179,31 @@ int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply
 int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
 {
     DBG("update_uas_request(t=%p)\n", t);
+    int method = msg->u.request->method;
 
-    if(msg->u.request->method != sip_request::ACK &&
-            msg->u.request->method != sip_request::PRACK){
+    if(method != sip_request::ACK &&
+       method != sip_request::PRACK) {
+
 	ERROR("Bug? Recvd non PR-/ACK request for existing UAS transact.!?\n");
 	return -1;
     }
-	
+
     switch(t->state){
 
+    case TS_PROCEEDING:
+	// ACK or PRACK after non-reliable 1xx???
+	return -1;
+
     case TS_PROCEEDING_REL:
-        // stop retransmissions
-	t->clear_timer(STIMER_G);
-	t->clear_timer(STIMER_H);
+	if(method == sip_request::PRACK) {
+	    // stop retransmissions
+	    t->clear_timer(STIMER_G);
+	    t->clear_timer(STIMER_H);
+	}
         return t->state;
 	    
     case TS_COMPLETED: // non-2xx-ACK
+	if(method != sip_request::ACK) return -1;
 	t->state = TS_CONFIRMED;
 
 	t->clear_timer(STIMER_G);
@@ -2212,12 +2221,14 @@ int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg
 	return t->state;
 	    
     case TS_TERMINATED_200: // 2xx-ACK
+	if(method != sip_request::ACK) return -1;
 	// remove transaction
 	bucket->remove(t);
 	return TS_REMOVED;
 	    
     default:
 	DBG("Bug? Unknown state at this point: %i\n",t->state);
+	break;
     }
 
     return -1;
