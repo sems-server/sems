@@ -29,7 +29,7 @@ FCTMF_SUITE_BGN(test_replaces) {
 
       AmSipRequest r;
       r.hdrs="Replaces: C;from-tag=Cf;to-tag=Ct\r\n";
-      fixReplaces(r, true);
+      fixReplaces(r.hdrs, true);
       DBG("r.hdrs='%s'\n", r.hdrs.c_str());
       fct_chk(r.hdrs=="Replaces: C2;from-tag=C2f;to-tag=C2t\r\n");
 
@@ -48,7 +48,7 @@ FCTMF_SUITE_BGN(test_replaces) {
       string new_str = "Refer-To: \"Mr. Watson\" <sip:watson@bell-telephone.com?Replaces=C2%3Bfrom-tag%3DC2f%3Bto-tag%3DC2t>;q=0.1\r\n";
 
       r.hdrs=orig_str+"\r\n";
-      fixReplaces(r, false);
+      fixReplaces(r.hdrs, false);
       DBG("r.hdrs='%s'\n", r.hdrs.c_str());
       DBG("new  s='%s'\n", new_str.c_str());
 
@@ -69,7 +69,7 @@ FCTMF_SUITE_BGN(test_replaces) {
       string new_str  = "Refer-To: \"Mr. Watson\" <sip:watson@bell-telephone.com?Require=replaces;Replaces=C2%3Bfrom-tag%3DC2f%3Bto-tag%3DC2t>;q=0.1\r\n";
 
       r.hdrs=orig_str;
-      fixReplaces(r, false);
+      fixReplaces(r.hdrs, false);
       DBG("r.hdrs='%s'\n", r.hdrs.c_str());
       DBG("new  s='%s'\n", new_str.c_str());
 
@@ -90,7 +90,7 @@ FCTMF_SUITE_BGN(test_replaces) {
       string new_str  = "Refer-To: \"Mr. Watson\" <sip:watson@bell-telephone.com?Require=replaces;Replaces=C2%3Bfrom-tag%3DC2f%3Bto-tag%3DC2t;Bla=Blub>;q=0.1\r\n";
 
       r.hdrs=orig_str;
-      fixReplaces(r, false);
+      fixReplaces(r.hdrs, false);
       DBG("r.hdrs='%s'\n", r.hdrs.c_str());
       DBG("new  s='%s'\n", new_str.c_str());
 
