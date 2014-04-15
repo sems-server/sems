@@ -48,4 +48,34 @@ FCTMF_SUITE_BGN(test_auth) {
       fct_chk( !UACAuth::checkNonce(nonce));
     } FCT_TEST_END();
 
+    FCT_TEST_BGN(t_cmp_len) {
+      string s1 = "1234secret";
+      string s2 = "1234s3ecret";
+      fct_chk( !UACAuth::tc_isequal(s1,s2) );
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(t_cmp_eq) {
+      string s1 = "1234secret";
+      string s2 = "1234secret";
+      fct_chk( UACAuth::tc_isequal(s1,s2) );
+    } FCT_TEST_END();
+
+
+    FCT_TEST_BGN(t_cmp_empty) {
+      fct_chk( UACAuth::tc_isequal("","") );
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(t_cmp_uneq) {
+      fct_chk( !UACAuth::tc_isequal("1234secret","2134secret") );
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(t_cmp_uneq_chr) {
+      fct_chk( !UACAuth::tc_isequal("1234secret","2134secret", 10) );
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(t_cmp_eq_charptr) {
+      fct_chk( UACAuth::tc_isequal("1234secret","1234secret", 10) );
+    } FCT_TEST_END();
+
+
 } FCTMF_SUITE_END();

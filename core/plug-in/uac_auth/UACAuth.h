@@ -112,7 +112,7 @@ class UACAuth : public AmSessionEventHandler
   unsigned int nonce_count;
 
   bool nonce_reuse; // reused nonce?
-
+ 
   static std::string find_attribute(const std::string& name, const std::string& header);
   static bool parse_header(const std::string& auth_hdr, UACAuthDigestChallenge& challenge);
 
@@ -171,6 +171,13 @@ class UACAuth : public AmSessionEventHandler
 				  const string& user, const string& pwd, AmArg& ret);
 
   static void setServerSecret(const string& secret);
+
+  /** time-constant string compare function (but leaks timing of length mismatch)
+      @return true if matching */
+  static bool tc_isequal(const std::string& s1, const std::string& s2);
+  /** time-constant string compare function @return true if matching */
+  static bool tc_isequal(const char* s1, const char* s2, size_t len);
+
 };
 
 

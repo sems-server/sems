@@ -293,6 +293,30 @@ void w_MD5Update(MD5_CTX *ctx, const string& s) {
   MD5Update(ctx, a, s.length());
 }
 
+/** time-constant string compare function, but leaks timing of length mismatch */
+bool UACAuth::tc_isequal(const std::string& s1, const std::string& s2) {
+  if (s1.length() != s2.length())
+    return false;
+
+  bool res = false;
+
+  for (size_t i=0;i<s1.length();i++)
+    res |= s1[i]^s2[i];
+
+  return !res;
+}
+
+/** time-constant string compare function, but leaks timing of length mismatch */
+bool UACAuth::tc_isequal(const char* s1, const char* s2, size_t len) {
+
+  bool res = false;
+
+  for (size_t i=0;i<len;i++)
+    res |= s1[i]^s2[i];
+
+  return !res;
+}
+
 // supr gly
 string UACAuth::find_attribute(const string& name, const string& header) {
   size_t pos1 = header.find(name);
@@ -597,7 +621,7 @@ bool UACAuth::checkNonce(const string& nonce) {
   MD5Final(RespHash, &Md5Ctx);
   cvt_hex(RespHash, hash);
 
-  return !strncmp((const char*)hash, &nonce[INT_HEX_LEN], HASHHEXLEN);
+  return tc_isequal((const char*)hash, &nonce[INT_HEX_LEN], HASHHEXLEN);
 }
 
 void UACAuth::setServerSecret(const string& secret) {
@@ -709,7 +733,7 @@ void UACAuth::checkAuthentication(const AmSipRequest* req, const string& realm, 
     uac_calc_response( ha1, ha2, r_challenge, r_cnonce, qop_value, client_nonce_count, response);
     DBG("calculated our response vs request: '%s' vs '%s'", response, r_response.c_str());
 
-    if (!strncmp((const char*)response, r_response.c_str(), HASHHEXLEN)) {
+    if (tc_isequal((const char*)response, r_response.c_str(), HASHHEXLEN)) {
       DBG("Auth: authentication successfull\n");
       authenticated = true;
     } else {
