@@ -354,7 +354,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   refuse_with = cfg.getParameter("refuse_with");
 
-  rtprelay_enabled = cfg.getParameter("enable_rtprelay") == "yes";
+  rtprelay_enabled = cfg.getParameter("enable_rtprelay");
   aleg_force_symmetric_rtp = cfg.getParameter("rtprelay_force_symmetric_rtp");
   force_symmetric_rtp = aleg_force_symmetric_rtp;
   msgflags_symmetric_rtp = cfg.getParameter("rtprelay_msgflags_symmetric_rtp") == "yes";
@@ -476,8 +476,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      fixing Replaces in INVITE: '%s'\n", fix_replaces_inv.c_str());
     INFO("SBC:      fixing Replaces in REFER: '%s'\n", fix_replaces_ref.c_str());
 
-    INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
-    if (rtprelay_enabled) {
+
+    INFO("SBC:      RTP relay enabled: '%s'\n", rtprelay_enabled.c_str());
+    if (!rtprelay_enabled.empty() && rtprelay_enabled != "no") {
       if (!force_symmetric_rtp.empty()) {
 	INFO("SBC:      RTP force symmetric RTP: %s\n",
 	     force_symmetric_rtp.c_str());
@@ -674,7 +675,7 @@ string SBCCallProfile::print() const {
   res += "auth_aleg_enabled:    " + string(auth_aleg_enabled?"true":"false") + "\n";
   res += "auth_aleg_user:       " + auth_aleg_credentials.user+"\n";
   res += "auth_aleg_pwd:        " + auth_aleg_credentials.pwd+"\n";
-  res += "rtprelay_enabled:     " + string(rtprelay_enabled?"true":"false") + "\n";
+  res += "rtprelay_enabled:     " + rtprelay_enabled + "\n";
   res += "force_symmetric_rtp:  " + force_symmetric_rtp;
   res += "msgflags_symmetric_rtp: " + string(msgflags_symmetric_rtp?"true":"false") + "\n";
   
@@ -771,9 +772,10 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
 
   if (!transcoder.evaluate(ctx,req)) return false;
 
-  if (rtprelay_enabled || transcoder.isActive()) {
+  REPLACE_BOOL(rtprelay_enabled, rtprelay_enabled_value);
+
+  if (rtprelay_enabled_value || transcoder.isActive()) {
     // evaluate other RTP relay related params only if enabled
-    // FIXME: really not evaluate rtprelay_enabled itself?
     REPLACE_BOOL(force_symmetric_rtp, force_symmetric_rtp_value);
     REPLACE_BOOL(aleg_force_symmetric_rtp, aleg_force_symmetric_rtp_value);
 

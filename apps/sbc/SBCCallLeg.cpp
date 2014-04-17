@@ -227,7 +227,7 @@ void SBCCallLeg::applyAProfile()
   // apply A leg configuration (but most of the configuration is applied in
   // SBCFactory::onInvite)
 
-  if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
+  if (call_profile.rtprelay_enabled_value || call_profile.transcoder.isActive()) {
     DBG("Enabling RTP relay mode for SBC call\n");
 
     setRtpRelayForceSymmetricRtp(call_profile.aleg_force_symmetric_rtp_value);
@@ -371,7 +371,7 @@ void SBCCallLeg::applyBProfile()
     dlg->setOutboundInterface(call_profile.outbound_interface_value);
 
   // was read from caller but reading directly from profile now
-  if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
+  if (call_profile.rtprelay_enabled_value || call_profile.transcoder.isActive()) {
 
     if (call_profile.rtprelay_interface_value >= 0)
       setRtpInterface(call_profile.rtprelay_interface_value);
