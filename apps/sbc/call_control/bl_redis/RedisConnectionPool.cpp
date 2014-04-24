@@ -101,6 +101,7 @@ void RedisConnectionPool::run() {
 
   while (true) {
     try_connect.wait_for();
+    try_connect.set(false);
     while (true) {
       connections_mut.lock();
       unsigned int m_failed_connections = failed_connections;
