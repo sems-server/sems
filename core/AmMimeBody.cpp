@@ -4,6 +4,7 @@
 #include "sip/defs.h"
 
 #include "log.h"
+#include "AmUtils.h"
 
 #include <memory>
 using std::auto_ptr;
@@ -110,6 +111,22 @@ void AmContentType::clearParams()
     delete params.front();
     params.pop_front();
   }
+}
+
+void AmContentType::resetBoundary()
+{
+  Params::iterator it = params.begin();
+  while (it != params.end()) {
+    Params::iterator l_it = it;
+    it++;
+    if ((*l_it)->type == Param::BOUNDARY)
+      delete *l_it;
+      params.erase(l_it);
+  }
+
+  params.push_back(new Param(BOUNDARY_str, int2hex(get_random())));
+  params.back()->type = Param::BOUNDARY;
+  mp_boundary = params.back();
 }
 
 void AmMimeBody::clearParts()
@@ -574,12 +591,15 @@ void AmMimeBody::convertToMultipart()
 {
   AmContentType n_ct;
   n_ct.parse(MULTIPART_MIXED); // never fails
+  n_ct.resetBoundary();
 
   AmMimeBody* n_part = new AmMimeBody(*this);
   n_part->ct = ct;
 
   parts.push_back(n_part);
   ct = n_ct;
+
+  content_len = 0;
 }
 
 void AmContentType::setType(const string& t)
@@ -745,10 +765,14 @@ void AmMimeBody::print(string& buf) const
     buf += string((const char*)payload,content_len);
   }
   else {
+
+    // if (ct.mp_boundary == NULL)
+    //   ct.resetBoundary(); 
+
     for(Parts::const_iterator it = parts.begin();
 	it != parts.end(); ++it) {
 
-      buf += "--" + ct.mp_boundary->value + CRLF;
+      buf += "--" + (ct.mp_boundary != NULL ? ct.mp_boundary->value : string("") ) + CRLF;
       buf += SIP_HDR_CONTENT_TYPE COLSP + (*it)->getCTHdr() + CRLF;
       buf += (*it)->hdrs + CRLF;
       (*it)->print(buf);
@@ -756,7 +780,7 @@ void AmMimeBody::print(string& buf) const
     }
 
     if(!parts.empty()) {
-      buf += "--" + ct.mp_boundary->value + "--" CRLF;
+      buf += "--" + (ct.mp_boundary != NULL ? ct.mp_boundary->value : string("") ) + "--" CRLF;
     }
   }
 }
