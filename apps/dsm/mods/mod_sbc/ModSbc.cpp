@@ -279,7 +279,7 @@ EXEC_ACTION_START(MODSBCActionProfileSet) {
   SET_TO_CALL_PROFILE("append_headers_req", append_headers_req);
   SET_TO_CALL_PROFILE("aleg_append_headers_req", aleg_append_headers_req);
 
-  SET_TO_CALL_PROFILE_OPTION("rtprelay_enabled", rtprelay_enabled);
+  SET_TO_CALL_PROFILE("rtprelay_enabled", rtprelay_enabled);
 
   SET_TO_CALL_PROFILE_OPTION("force_symmetric_rtp", force_symmetric_rtp_value);
   SET_TO_CALL_PROFILE_OPTION("aleg_force_symmetric_rtp", aleg_force_symmetric_rtp_value);
