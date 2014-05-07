@@ -218,7 +218,14 @@ int AmOfferAnswer::onRxSdp(unsigned int m_cseq, const AmMimeBody& body, const ch
   int err_code = 0;
   assert(err_txt);
 
-  if(sdp_remote.parse((const char*)body.getPayload())){
+  const AmMimeBody *sdp = body.hasContentType("application/sdp");
+
+  if (sdp == NULL) {
+    err_code = 400;
+    *err_txt = "sdp body part not found";
+  }
+ 
+  if (sdp_remote.parse((const char*)sdp->getPayload())) {
     err_code = 400;
     *err_txt = "session description parsing failed";
   }
