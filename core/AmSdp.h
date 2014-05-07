@@ -55,7 +55,7 @@ enum AddressType { AT_NONE=0, AT_V4, AT_V6 };
 /** media type */
 enum MediaType { MT_NONE=0, MT_AUDIO, MT_VIDEO, MT_APPLICATION, MT_TEXT, MT_MESSAGE, MT_IMAGE };
 /** transport protocol */
-enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP, TP_RTPSAVP, TP_UDPTL };
+enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP, TP_RTPSAVP, TP_UDPTL, TP_RTPSAVPF };
 
 /** \brief c=... line in SDP*/
 struct SdpConnection
