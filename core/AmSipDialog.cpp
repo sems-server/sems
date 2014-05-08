@@ -641,6 +641,17 @@ int AmSipDialog::refer(const string& refer_to,
   }	
 }
 
+int AmSipDialog::info(const string& hdrs, const AmMimeBody* body)
+{
+  if(getStatus() == Connected) {
+    return sendRequest("INFO", body, hdrs);
+  } else {
+    DBG("info(): we are not Connected."
+	"(status=%s). do nothing!\n", getStatusStr());
+    return 0;
+  }
+}    
+
 // proprietary
 int AmSipDialog::transfer(const string& target)
 {

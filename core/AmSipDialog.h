@@ -137,6 +137,10 @@ protected:
 	    const string& referred_by = "");
 
   /** @return 0 on success */
+  int info(const string& hdrs,  
+	   const AmMimeBody* body);
+
+  /** @return 0 on success */
   int transfer(const string& target);
   int drop();
 };
