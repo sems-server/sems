@@ -83,6 +83,7 @@ private:
   Parts parts;
 
   void clearParts();
+  void clearPart(Parts::iterator position);
   void clearPayload();
 
   int parseMultipart(const unsigned char* buf, unsigned int len);
@@ -90,6 +91,7 @@ private:
   int parseSinglePart(unsigned char* buf, unsigned int len);
 
   void convertToMultipart();
+  void convertToSinglepart();
 
 public:
   /** Empty constructor */
@@ -121,6 +123,11 @@ public:
    * @return a pointer to the new empty part.
    */
   AmMimeBody* addPart(const string& content_type);
+
+  /** 
+   * Delete a body part, converting resulting body to single-part if necessary.
+   */
+  int deletePart(const string& content_type);
 
   /** Get content-type without any parameters */
   string getCTStr() const { return ct.getStr(); }

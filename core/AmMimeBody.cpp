@@ -137,6 +137,11 @@ void AmMimeBody::clearParts()
   }
 }
 
+void AmMimeBody::clearPart(Parts::iterator position)
+{
+  parts.erase(position);
+}
+
 void AmMimeBody::clearPayload()
 {
   delete [] payload;
@@ -602,6 +607,17 @@ void AmMimeBody::convertToMultipart()
   content_len = 0;
 }
 
+void AmMimeBody::convertToSinglepart()
+{
+  if (parts.size() == 1) {
+    this->ct = parts.front()->ct;
+    setPayload(parts.front()->payload, parts.front()->content_len);
+    clearParts();
+  } else {
+    DBG("body does not have exactly one part\n");
+  }
+}
+
 void AmContentType::setType(const string& t)
 {
   type = t;
@@ -657,6 +673,26 @@ AmMimeBody* AmMimeBody::addPart(const string& content_type)
   }
   
   return body;
+}
+
+int AmMimeBody::deletePart(const string& content_type)
+{
+  if (!ct.isType(MULTIPART)) {
+    DBG("body is not multipart\n");
+    return -1;
+  }
+
+  for(Parts::iterator it = parts.begin();
+      it != parts.end(); ++it) {
+    if((*it)->hasContentType(content_type)) {
+      clearPart(it);
+      if (parts.size() == 1) convertToSinglepart();
+      return 0;
+    }
+  }
+
+  DBG("no match");
+  return -1;
 }
 
 void AmMimeBody::setPayload(const unsigned char* buf, unsigned int len)
