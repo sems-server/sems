@@ -59,6 +59,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("dlg.relayError", DLGB2BRelayErrorAction);
 
   DEF_CMD("dlg.addReplyBodyPart", DLGAddReplyBodyPartAction);
+  DEF_CMD("dlg.deleteReplyBodyPart", DLGDeleteReplyBodyPartAction);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -548,4 +549,21 @@ EXEC_ACTION_START(DLGAddReplyBodyPartAction) {
 		       body_part.length());
   DBG("added to reply body part %s='%s'\n",
       content_type.c_str(), body_part.c_str());
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(DLGDeleteReplyBodyPartAction) {
+  DSMMutableSipReply* sip_reply;
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REPLY);
+  if (it == sc_sess->avar.end() ||
+      !isArgAObject(it->second) ||
+      !(sip_reply = dynamic_cast<DSMMutableSipReply*>(it->second.asObject()))) {
+    throw DSMException("dlg", "cause", "no reply");
+  }
+
+  if (sip_reply->mutable_reply->body.deletePart(arg)) {
+    INFO("failed to delete reply body part '%s'\n", arg.c_str());
+  } else {
+    INFO("deleted reply body part '%s'\n", arg.c_str());
+  }
 } EXEC_ACTION_END;

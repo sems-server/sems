@@ -55,4 +55,6 @@ DEF_ACTION_2P(DLGReferAction);
 DEF_ACTION_2P(DLGB2BRelayErrorAction);
 
 DEF_ACTION_2P(DLGAddReplyBodyPartAction);
+DEF_ACTION_1P(DLGDeleteReplyBodyPartAction);
+
 #endif

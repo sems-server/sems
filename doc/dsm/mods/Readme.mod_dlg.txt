@@ -89,6 +89,10 @@ Request/Reply Body handling in sipRequest/sipReply events:
 actions (applicable only in sipRequest/sipReply event handling blocks):
 dlg.getRequestBody(content_type, dstvar)  - get body of content_type in $dstvar
 dlg.getReplyBody(content_type, dstvar)    - get body of content_type in $dstvar
+dlg.addReplyBodyPart(content_type, payload) - add new body part possibly
+  converting the resulting body to multipart
+dlg.deleteReplyBodyPart(content_type) - delete body part from multipart
+  body possibly converting the resulting body to singlepart
 
 conditions: 
   dlg.replyHasContentType(content_type) and dlg.requestHasContentType(content_type)
