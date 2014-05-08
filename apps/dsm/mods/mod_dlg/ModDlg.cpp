@@ -56,6 +56,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("dlg.getRtpRelayMode", DLGGetRtpRelayModeAction)
 
   DEF_CMD("dlg.refer", DLGReferAction);
+  DEF_CMD("dlg.info", DLGInfoAction);
   DEF_CMD("dlg.relayError", DLGB2BRelayErrorAction);
 
   DEF_CMD("dlg.addReplyBodyPart", DLGAddReplyBodyPartAction);
@@ -496,6 +497,50 @@ EXEC_ACTION_START(DLGReferAction) {
   }
 } EXEC_ACTION_END;
 
+CONST_ACTION_2P(DLGInfoAction, ',', true);
+EXEC_ACTION_START(DLGInfoAction) {
+
+  AmSession* b2b_sess = dynamic_cast<AmSession*>(sess);
+  if (NULL == b2b_sess) {
+    throw DSMException("sbc", "type", "param", "cause",
+		       "dlg.info used on non-session");
+  }
+
+  string content_type = resolveVars(par1, sess, sc_sess, event_params);
+  string body_str = resolveVars(par2, sess, sc_sess, event_params);
+
+  if (NULL == b2b_sess->dlg) {
+    throw DSMException("sbc", "type", "param", "cause",
+		       "call doesn't have SIP dialog (OOPS!)");
+  }
+
+  string body_crlf = body_str;
+  AmMimeBody *body = new AmMimeBody();
+  if (!content_type.empty()) {
+    DBG("body_crlf is '%s'\n", body_crlf.c_str());
+    while (true) {
+      size_t p = body_crlf.find("\\r\\n");
+      if (p==string::npos)
+	break;
+      body_crlf.replace(p, 4, "\r\n");
+    }
+    DBG("-> body_crlf is '%s'\n", body_crlf.c_str());
+    if (body->parse(content_type,
+		    reinterpret_cast<const unsigned char*>(body_crlf.c_str()),
+		    body_crlf.length())) {
+      throw DSMException("sbc", "type", "param", "cause",
+			 "parsing of INFO body failed");
+    }
+  }
+
+  if (b2b_sess->dlg->info("", body)) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_DLG);
+    sc_sess->SET_STRERROR("sending INFO failed");
+  } else {
+    sc_sess->CLR_ERRNO;
+  }
+
+} EXEC_ACTION_END;
 
 #define GET_B2B_SESSION(action)						\
   AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);		\
@@ -562,8 +607,8 @@ EXEC_ACTION_START(DLGDeleteReplyBodyPartAction) {
   }
 
   if (sip_reply->mutable_reply->body.deletePart(arg)) {
-    INFO("failed to delete reply body part '%s'\n", arg.c_str());
+    DBG("failed to delete reply body part '%s'\n", arg.c_str());
   } else {
-    INFO("deleted reply body part '%s'\n", arg.c_str());
+    DBG("deleted reply body part '%s'\n", arg.c_str());
   }
 } EXEC_ACTION_END;

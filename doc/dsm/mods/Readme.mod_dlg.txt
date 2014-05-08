@@ -79,6 +79,9 @@ dlg.getRtpRelayMode(varname)
 dlg.refer(string refer_to [, int expires=0])
    refer to refer_to, optionally with expires
 
+dlg.info(content_type, body)
+   send INFO request; use \r\n for crlf in body
+
 dlg.relayError(code,reason);  -  relay reply (>=200) to B2B request (sbc)
   reply to B2B request (in avar[DSM_AVAR_REQUEST]) with code and reason
   sbc: set(#StopProcessing="true") to prevent B2B request to be relayed
