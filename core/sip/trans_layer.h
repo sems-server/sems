@@ -122,7 +122,7 @@ private:
     trans_stats stats;
     sip_ua*     ua;
 
-    struct less_case_i { bool operator ()(const string& lhs, const string& rhs); };
+    struct less_case_i { bool operator ()(const string& lhs, const string& rhs) const; };
     typedef map<string,trsp_socket*,less_case_i> prot_collection;
 
     vector<prot_collection> transports;

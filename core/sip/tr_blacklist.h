@@ -33,6 +33,11 @@ typedef ht_map_bucket<bl_addr,bl_entry,
 class blacklist_bucket
   : public bl_bucket_base
 {
+protected:
+  bool insert(const bl_addr& k, bl_entry* v) {
+    return bl_bucket_base::insert(k,v);
+  }
+
 public:
   blacklist_bucket(unsigned long id)
   : bl_bucket_base(id)

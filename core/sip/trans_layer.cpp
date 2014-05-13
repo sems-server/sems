@@ -69,7 +69,7 @@
 bool _trans_layer::accept_fr_without_totag = false;
 unsigned int _trans_layer::default_bl_ttl = DEFAULT_BL_TTL;
 
-bool _trans_layer::less_case_i::operator () (const string& lhs, const string& rhs)
+bool _trans_layer::less_case_i::operator () (const string& lhs, const string& rhs) const
 {
     return lower_cmp_n(lhs.c_str(),lhs.length(),
 		       rhs.c_str(),rhs.length()) < 0;
