@@ -555,7 +555,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 
       // missing AmSipRequest to be able
       // to send the reply on behalf of the app.
-      ERROR("ignoring bye() in %s state: no UAS transaction to reply",getStatusStr());
+      DBG("ignoring bye() in %s state: no UAS transaction to reply",getStatusStr());
       setStatus(Disconnected);
       return 0;
 
