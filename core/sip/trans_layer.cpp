@@ -1333,9 +1333,11 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    return err;
 	}
 
-	if(tt->_t) {
+	if(tt->_t && (method != sip_request::ACK)) {
 	    // save flags & target set in transaction
 	    tt->_t->flags = flags;
+
+	    if(tt->_t->targets)	delete tt->_t->targets;
 	    tt->_t->targets = targets.release();
 
 	    if(tt->_t->targets->has_next()){
