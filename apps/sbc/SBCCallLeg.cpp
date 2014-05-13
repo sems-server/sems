@@ -516,8 +516,11 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
 	 it != call_profile.messagefilter.end(); it++) {
 
       if (isActiveFilter(it->filter_type)) {
+	string method = req.method;
+	std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+
 	bool is_filtered = (it->filter_type == Whitelist) ^ 
-	  (it->filter_list.find(req.method) != it->filter_list.end());
+	  (it->filter_list.find(method) != it->filter_list.end());
 	if (is_filtered) {
 	  DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
 	  dlg->reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
