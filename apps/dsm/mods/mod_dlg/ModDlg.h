@@ -52,6 +52,7 @@ DEF_ACTION_1P(DLGGetOtherIdAction);
 DEF_ACTION_1P(DLGGetRtpRelayModeAction);
 
 DEF_ACTION_2P(DLGReferAction);
+DEF_ACTION_2P(DLGInfoAction);
 DEF_ACTION_2P(DLGB2BRelayErrorAction);
 
 DEF_ACTION_2P(DLGAddReplyBodyPartAction);
