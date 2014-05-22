@@ -210,6 +210,7 @@ CONST_ACTION_2P(MODSBCActionProfileSet, ',', false);
 EXEC_ACTION_START(MODSBCActionProfileSet) {
   string profile_param = resolveVars(par1, sess, sc_sess, event_params);
   string value = resolveVars(par2, sess, sc_sess, event_params);
+  FilterEntry mf;
 
   ACTION_GET_PROFILE;
 
@@ -268,7 +269,6 @@ EXEC_ACTION_START(MODSBCActionProfileSet) {
 
   SET_TO_CALL_PROFILE("aleg_next_hop", aleg_next_hop);
 
-  // TODO: message_filter
   // TODO: header_filter
   // TODO: sdp_filter
 
@@ -309,6 +309,22 @@ EXEC_ACTION_START(MODSBCActionProfileSet) {
     } else {
       DBG("aleg_rtprelay_interface set to '%s'\n", value.c_str());
     }
+    EXEC_ACTION_STOP;
+  }
+
+  if (profile_param == "message_filter") {
+    mf.filter_type = String2FilterType(value.c_str());
+    DBG("message_filter set to '%s'\n", value.c_str());
+    EXEC_ACTION_STOP;
+  }
+
+  if (profile_param == "message_list") {
+    vector<string> elems = explode(value, ",");
+    for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
+      mf.filter_list.insert(*it);
+    profile->messagefilter.push_back(mf);
+    mf.filter_type = Undefined;
+    DBG("message_list set to '%s'\n", value.c_str());
     EXEC_ACTION_STOP;
   }
 

@@ -154,19 +154,20 @@ sbc.isDisconnected() / sbc.isNoReply() / sbc.isRinging() / sbc.isConnected() / s
 Actions
 -------
 sbc.profileSet(profile_variable, value)    - set SBC profile options
-    *** only meaningful in 'start' event (later, most profile options are not used any more) *** 
-    profile_variables: To, RURI, FROM, Call-ID, next_hop, RURI_host, refuse_with,
-    outbound_proxy, force_outbound_proxy = "yes" | "no,
+    *** only meaningful in 'start' event (later, most profile options
+    are not used any more) *** 
+    profile_variables: To, RURI, FROM, Call-ID, next_hop, RURI_host,
+    refuse_with, outbound_proxy, force_outbound_proxy = "yes" | "no,
     aleg_outbound_proxy, aleg_force_outbound_proxy = "yes" | "no,
-    next_hop_1st_req = "yes" | "no,  patch_ruri_next_hop = "yes" | "no,
-    aleg_next_hop,
-    append_headers, append_headers_req, 
-    rtprelay_enabled  = "yes" | "no,
-      force_symmetric_rtp  = "yes" | "no, aleg_force_symmetric_rtp  = "yes" | "no,
-      msgflags_symmetric_rtp = "yes" | "no,
-      rtprelay_transparent_seqno = "yes" | "no, rtprelay_transparent_ssrc = "yes" | "no, 
-      rtprelay_interface, aleg_rtprelay_interface,
-      rtprelay_dtmf_detection = "yes" | "no, rtprelay_dtmf_filtering = "yes" | "no
+    next_hop_1st_req = "yes" | "no, patch_ruri_next_hop = "yes" | "no,
+    aleg_next_hop, append_headers, append_headers_req, 
+    rtprelay_enabled  = "yes" | "no, force_symmetric_rtp  = "yes" | "no,
+    aleg_force_symmetric_rtp  = "yes" | "no, msgflags_symmetric_rtp =
+    "yes" | "no, rtprelay_transparent_seqno = "yes" | "no,
+    rtprelay_transparent_ssrc = "yes" | "no,
+    rtprelay_interface, aleg_rtprelay_interface,
+    rtprelay_dtmf_detection = "yes" | "no, rtprelay_dtmf_filtering =
+    "yes" | "no, message_filter, message_list
 
 sbc.stopCall(string cause)         - stop both call legs
 
