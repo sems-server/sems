@@ -173,14 +173,14 @@ int JsonRpcServer::processMessage(char* msgbuf, unsigned int* msg_size,
   }
 
   string id;
+  bool id_is_int = false;
   if (rpc_params.hasMember("id")) {
-    if (isArgCStr(rpc_params["id"]))
+    if (isArgCStr(rpc_params["id"])) {
       id = rpc_params["id"].asCStr();
-    else if (isArgInt(rpc_params["id"]))
+    } else if (isArgInt(rpc_params["id"])) {
       id = int2str(rpc_params["id"].asInt());
-    else if (isArgBool(rpc_params["id"]))
-      id = rpc_params["id"].asBool() ? "True":"False";
-    else {
+      id_is_int = true;
+    } else {
       ERROR("incorrect type for jsonrpc id <%s>\n", 
 	    AmArg::print(rpc_params["id"]).c_str());
     }
@@ -237,11 +237,18 @@ int JsonRpcServer::processMessage(char* msgbuf, unsigned int* msg_size,
   }
 
   AmArg rpc_res;
+  int int_id;
 
   execRpc(rpc_params, rpc_res);
 
-  // rpc_res["error"] = AmArg(); // Undef/null
-  // rpc_res["id"] = rpc_params["id"];
+  if (!id.empty()) {
+    if (id_is_int) {
+      str2int(id, int_id);
+      rpc_res["id"] = int_id;
+    } else {
+      rpc_res["id"] = id;
+    }
+  }
 
   string res_s = arg2json(rpc_res);
   if (res_s.length() > MAX_RPC_MSG_SIZE) {
@@ -287,7 +294,6 @@ void JsonRpcServer::execRpc(const string& method, const string& id, const AmArg&
       if (factory == "core") {
 	runCoreMethod(fact_meth, params, rpc_res["result"]);
 	rpc_res["id"] = id;
-	rpc_res["error"] = AmArg(); // Undef/null
 	rpc_res["jsonrpc"] = "2.0";
 	return;
       }
