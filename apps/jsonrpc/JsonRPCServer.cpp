@@ -350,6 +350,7 @@ void JsonRpcServer::execRpc(const string& method, const string& id, const AmArg&
     // todo: notification!
     rpc_res["id"] = id;
     rpc_res["jsonrpc"] = "2.0";
+    rpc_res.erase("result");
     return;
   }
 }
