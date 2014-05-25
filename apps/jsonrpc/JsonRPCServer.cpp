@@ -352,8 +352,6 @@ void JsonRpcServer::execRpc(const string& method, const string& id, const AmArg&
     rpc_res["jsonrpc"] = "2.0";
     return;
   }
-  
-  rpc_res["error"] = AmArg(); // Undef/null
 }
 
 void JsonRpcServer::runCoreMethod(const string& method, const AmArg& params, AmArg& res) {
