@@ -289,6 +289,7 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
     reply = 
       "calls                              -  number of active calls (Session Container size)\n"
       "which                              -  print available commands\n"
+      "version                            -  return SEMS version\n"
       "set_loglevel <loglevel>            -  set log level\n"
       "get_loglevel                       -  get log level\n"
       "set_cpslimit <limit>               -  set maximum allowed CPS\n"
@@ -305,6 +306,9 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       "When in shutdown mode, SEMS will answer with the configured 5xx errorcode to\n"
       "new INVITE and OPTIONS requests.\n"
       ;
+  }
+  else if (cmd_str == "version") {
+    reply = SEMS_VERSION;
   }
   else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "set_") {
     // setters 
