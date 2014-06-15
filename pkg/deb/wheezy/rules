@@ -40,3 +40,10 @@ override_dh_auto_install:
 
 override_dh_strip:
 	dh_strip --dbg-package=sems-dbg
+	# those binaries aren't automatically stripped
+	test -r $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getarch && \
+		strip --remove-section=.comment --remove-section=.note --strip-unneeded \
+		$(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getarch
+	test -r $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getos && \
+		strip --remove-section=.comment --remove-section=.note --strip-unneeded \
+		$(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getos
