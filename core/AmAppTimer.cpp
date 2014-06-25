@@ -68,7 +68,9 @@ public:
   }
 };
 
-_AmAppTimer::_AmAppTimer() {
+_AmAppTimer::_AmAppTimer()
+  : direct_timers_mut(true)
+{
 }
 
 _AmAppTimer::~_AmAppTimer() {
@@ -122,9 +124,7 @@ void _AmAppTimer::direct_app_timer_cb(direct_app_timer* t)
       delete t;
 
       // finally fire this timer!
-      direct_timers_mut.unlock();
       dt->fire();
-      return;
     }
   }
   direct_timers_mut.unlock();
