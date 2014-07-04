@@ -85,6 +85,24 @@ case "$1" in
 		--exec $DAEMON
 	log_end_msg $?
 	;;
+  restart-graceful)
+	log_daemon_msg "Activating shutdown mode: "
+	/usr/sbin/sems-stats -c "set_shutdownmode 1"
+	CALLS=`/usr/sbin/sems-stats | grep 'Active calls' | awk -F' ' '{print $3}'`
+	while [ $CALLS -ne "0" ]
+	do
+		echo "Current calls $CALLS, waiting..."
+		sleep 5
+		CALLS=`/usr/sbin/sems-stats | grep 'Active calls' | awk -F' ' '{print $3}'`
+	done
+	log_daemon_msg "Restarting $DESC: $NAME "
+	start-stop-daemon --oknodo --stop --quiet --pidfile \
+		$SEMS_PIDFILE --exec $DAEMON
+	sleep 5
+	start-stop-daemon --start --quiet --pidfile \
+		$SEMS_PIDFILE --exec $DAEMON  -- $PARAMS
+	echo "."
+	;;
   restart|force-reload)
 	log_daemon_msg "Restarting $DESC: $NAME "
 	start-stop-daemon --oknodo --stop --quiet --pidfile \
@@ -99,7 +117,7 @@ case "$1" in
        ;;
   *)
 	N=/etc/init.d/$NAME
-	echo "Usage: $N {start|stop|restart|force-reload|status}" >&2
+	echo "Usage: $N {start|stop|restart|restart-graceful|force-reload|status}" >&2
 	exit 1
 	;;
 esac
