@@ -58,6 +58,11 @@ SessionTimer::SessionTimer(AmSession* s)
 {
 }
 
+SessionTimer::~SessionTimer(){
+  if (NULL != s)
+    removeTimers(s);
+}
+
 bool SessionTimer::process(AmEvent* ev)
 {
   assert(ev);

@@ -156,7 +156,7 @@ protected:
 
  public:
   SessionTimer(AmSession*);
-  virtual ~SessionTimer(){}
+  virtual ~SessionTimer();
 
   /* @see AmSessionEventHandler */
   virtual int  configure(AmConfigReader& conf); 
