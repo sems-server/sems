@@ -1406,8 +1406,8 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     }
 
     if(!t){
-	DBG("No transaction to cancel: wrong key or finally replied\n");
 	bucket->unlock();
+	DBG("No transaction to cancel: wrong key or finally replied\n");
 	return 0;
     }
 
@@ -1416,8 +1416,10 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     // RFC 3261 says: SHOULD NOT be sent for other request
     // than INVITE.
     if(req->u.request->method != sip_request::INVITE){
+	t->dump();
 	bucket->unlock();
-	ERROR("Trying to cancel a non-INVITE request (we SHOULD NOT do that)\n");
+	ERROR("Trying to cancel a non-INVITE request (we SHOULD NOT do that); inv_cseq: %u, i:%.*s\n",
+	      inv_cseq, dialog_id.len,dialog_id.s);
 	return -1;
     }
     
@@ -1439,8 +1441,10 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     }
 
     case TS_COMPLETED:
+	ERROR("Trying to cancel a request while in TS_COMPLETED state; inv_cseq: %u, i:%.*s\n",
+	      inv_cseq, dialog_id.len,dialog_id.s);
+	t->dump();
 	bucket->unlock();
-	ERROR("Trying to cancel a request while in TS_COMPLETED state\n");
 	return -1;
 	
     case TS_PROCEEDING:
@@ -1449,8 +1453,10 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	break;
 
     default:
+	ERROR("Trying to cancel a request while in %s state; inv_cseq: %u, i:%.*s\n",
+	      t->state_str(), inv_cseq, dialog_id.len,dialog_id.s);
+	t->dump();
 	bucket->unlock();
-	ERROR("Trying to cancel a request while in unknown state\n");
 	return -1;
     }
 
