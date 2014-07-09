@@ -36,6 +36,8 @@
 #include "AmPlugIn.h"
 #include "AmApi.h"
 
+#include "sip/trans_table.h"
+
 #include <string>
 using std::string;
 
@@ -301,6 +303,8 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       "get_cpsavg                         -  get calls per second (5 sec average)\n"
       "get_cpsmax                         -  get maximum of CPS since the last query\n"
 
+      "dump_transactions                  -  dump transaction table to log (loglevel debug)\n"
+
       "DI <factory> <function> (<args>)*  -  invoke DI command\n"
       "\n"
       "When in shutdown mode, SEMS will answer with the configured 5xx errorcode to\n"
@@ -309,6 +313,10 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
   }
   else if (cmd_str == "version") {
     reply = SEMS_VERSION;
+  }
+  else if (cmd_str == "dump_transactions") {
+    dumps_transactions();
+    reply = "200 OK";
   }
   else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "set_") {
     // setters 
