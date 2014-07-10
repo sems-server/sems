@@ -215,7 +215,7 @@ void log_stacktrace(int ll)
    int i, frames = backtrace(callstack, 128);
    char** strs = backtrace_symbols(callstack, frames);
    for (i = 0; i < frames; ++i) {
-     _LOG(ll,"stack-trace(%i): %s", i, strs[i]);
+     _LOG(ll,"stack-trace(%i/[%p]): %s", i, callstack[i], strs[i]);
    }
    free(strs);
 }
