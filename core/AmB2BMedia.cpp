@@ -585,12 +585,13 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
 
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) {
     AmRtpStream &a = (*j)->a;
-    AmRtpStream &b = (*j)->a;
+    AmRtpStream &b = (*j)->b;
 
     // FIXME: is stop & resume receiving needed here?
-    a.changeSession(new_session);
-    b.changeSession(new_session);
-
+    if (a_leg)
+      a.changeSession(new_session);
+    else
+      b.changeSession(new_session);
   }
 
   if (needs_processing) {
