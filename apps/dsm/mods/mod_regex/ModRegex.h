@@ -46,7 +46,7 @@ class TsRegex {
   ~TsRegex();
   int regcomp(const char *regex, int cflags);
   int regexec(const char *_string, size_t nmatch, regmatch_t pmatch[], int eflags);
-
+  size_t get_nsub();
 };
 
 DECLARE_MODULE_BEGIN(MOD_CLS_NAME);

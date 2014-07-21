@@ -74,7 +74,7 @@ int MOD_CLS_NAME::preload() {
 }
 
 int MOD_CLS_NAME::add_regex(const string& r_name, const string& r_reg) {
-  if (regexes[r_name].regcomp(r_reg.c_str(), REG_NOSUB | REG_EXTENDED)) {
+  if (regexes[r_name].regcomp(r_reg.c_str(), /* REG_NOSUB | */ REG_EXTENDED)) {
     ERROR("compiling '%s' for regex '%s'\n", r_reg.c_str(), r_name.c_str());
     regexes.erase(r_name);
     return -1;
@@ -97,8 +97,18 @@ MATCH_CONDITION_START(SCExecRegexCondition) {
     return false;
   }
 
-  int res = it->second.regexec(val.c_str(), 1, NULL, 0);
+  regmatch_t matches[it->second.get_nsub()+1];
+  int res = it->second.regexec(val.c_str(), it->second.get_nsub(), matches, 0);
   // res==0 -> match
+
+  if (!res) {
+    for (size_t i=1;i<it->second.get_nsub()+1;i++) {
+      if (matches[i].rm_so < 0) continue;
+      sc_sess->var["regex.match["+int2str((unsigned int)i)+"]"] =
+	val.substr(matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
+    }
+  }
+
   DBG("regex did %smatch\n", res==0?"":"not ");
   if (inv) {
     return res != 0;
@@ -131,7 +141,17 @@ EXEC_ACTION_START(SCExecRegexAction) {
     EXEC_ACTION_STOP;
   }
 
-  int res = it->second.regexec(val.c_str(), 1, NULL, 0);
+  regmatch_t matches[it->second.get_nsub()+1];
+  int res = it->second.regexec(val.c_str(), it->second.get_nsub()+1, matches, 0);
+
+  if (!res) {
+    for (size_t i=1;i<it->second.get_nsub()+1;i++) {
+      if (matches[i].rm_so < 0) continue;
+      sc_sess->var["regex.match["+int2str((unsigned int)i)+"]"] =
+	val.substr(matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
+    }
+  }
+
   if (!res) {
     // yeah side effects
     sc_sess->var["regex.match"] = "1";
@@ -178,4 +198,8 @@ int TsRegex::regexec(const char *_string, size_t nmatch,
   int res = ::regexec(&reg, _string, nmatch, pmatch, eflags);
   m.unlock();
   return res;
+}
+
+size_t TsRegex::get_nsub() {
+  return i ? reg.re_nsub : 0;
 }

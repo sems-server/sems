@@ -15,6 +15,8 @@ regex.compile(name, reg_ex)
 regex.match(name, match_string)
  Match match_string on regex referenced by name.
  $regex.match is set to 1 if matched, 0 if not matched.
+ $regex.match[n] is set to nth substring match, starting with 1
+ ($regex.match[1] is set to first substring match...)
 
 regex.clear(name)
  Clear the regex referenced by name.
@@ -22,9 +24,8 @@ regex.clear(name)
 Conditions:
  regex.match(name, match_string)
   Match match_string on regex referenced by name.
-
-
+  $regex.match[n] is set to nth substring match, starting with 1
+  ($regex.match[1] is set to first substring match...)
 
 TODO:
- - implement substring adressing
  - find a better way for $regex.match side-effect
