@@ -109,7 +109,7 @@ BEGIN_EXPORTS( "opus" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
   END_CODECS
     
   BEGIN_PAYLOADS
-    PAYLOAD( -1, "opus", _OPUS_RATE, 48000, 2, CODEC_OPUS, AMCI_PT_AUDIO_FRAME )
+    PAYLOAD( -1, "opus", _OPUS_RATE, 48000, 1, CODEC_OPUS, AMCI_PT_AUDIO_FRAME )
   END_PAYLOADS
 
   BEGIN_FILE_FORMATS
@@ -190,7 +190,7 @@ int pcm16_2_opus( unsigned char* out_buf, unsigned char* in_buf, unsigned int si
   res = opus_encode(codec_inst->opus_enc, (opus_int16*)in_buf, size/2/channels, out_buf, AUDIO_BUFFER_SIZE);
   /* returns bytes in encoded frame */
 
-  DBG ("OPUS encode: size: %d, chan: %d, rate: %d, result %d.\n", size, channels, rate, res);
+  /* DBG ("OPUS encode: size: %d, chan: %d, rate: %d, result %d.\n", size, channels, rate, res); */
   return res;
 }
 
@@ -211,7 +211,7 @@ static int opus_2_pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned
     res*=2;
   }
 
-  DBG ("OPUS decode: size: %d, chan: %d, rate: %d, result %d.\n", size, channels, rate, res);
+  /* DBG ("OPUS decode: size: %d, chan: %d, rate: %d, result %d.\n", size, channels, rate, res); */
 
   return res;
 
@@ -230,7 +230,7 @@ static int opus_plc( unsigned char* out_buf, unsigned int size,
   codec_inst = (opus_state_t*)h_codec;
 
   if (size/channels > AUDIO_BUFFER_SIZE) {
-    DBG("OPUS plc: size %d, chan %d exceeds buffer size %d.\n", size, channels, AUDIO_BUFFER_SIZE);
+    /* DBG("OPUS plc: size %d, chan %d exceeds buffer size %d.\n", size, channels, AUDIO_BUFFER_SIZE); */
     return 0;
   }
 
@@ -239,7 +239,7 @@ static int opus_plc( unsigned char* out_buf, unsigned int size,
     res*=2;
   }
 
-  DBG ("OPUS plc: size: %d, chan: %d, rate: %d, result %d.\n", size, channels, rate, res);
+  /* DBG ("OPUS plc: size: %d, chan: %d, rate: %d, result %d.\n", size, channels, rate, res); */
 
   return res;
 }
