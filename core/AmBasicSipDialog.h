@@ -311,6 +311,11 @@ public:
   string getContactHdr();
 
   /**
+   * Compute the Contact URI for the next request
+   */
+  string getContactUri();
+
+  /**
    * Compute the Route-HF for the next request
    */
   string getRoute();
