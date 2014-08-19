@@ -226,10 +226,16 @@ bool UACAuth::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 
 	    }
 
+	    int flags = SIP_FLAGS_VERBATIM | SIP_FLAGS_NOAUTH;
+	    size_t skip = 0, pos1, pos2, hdr_start;
+	    if (findHeader(hdrs, SIP_HDR_CONTACT, skip, pos1, pos2, hdr_start) ||
+		findHeader(hdrs, "m", skip, pos1, pos2, hdr_start))
+	      flags |= SIP_FLAGS_NOCONTACT;
+
 	    // resend request 
 	    if (dlg->sendRequest(ri->second.method,
 				 &(ri->second.body),
-				 hdrs, SIP_FLAGS_VERBATIM | SIP_FLAGS_NOAUTH | SIP_FLAGS_NOCONTACT) == 0) {
+				 hdrs,  flags) == 0) {
 	      processed = true;
               DBG("authenticated request successfully sent.\n");
 	      // undo SIP dialog status change
