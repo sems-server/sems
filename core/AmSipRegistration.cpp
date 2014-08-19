@@ -287,7 +287,8 @@ void AmSIPRegistration::onSipReply(const AmSipRequest& req,
       DBG("positive reply to REGISTER!\n");
 
       size_t end  = 0;
-      string local_contact_hdr = dlg.getContactHdr();
+      string local_contact_hdr = info.contact.empty() ?
+	dlg.getContactUri() : info.contact;
       local_contact.parse_contact(local_contact_hdr, (size_t)0, end);
       local_contact.dump();
 
