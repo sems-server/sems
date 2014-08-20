@@ -44,9 +44,10 @@ class trsp_socket
 {
 public:
     enum socket_options {
-	force_via_address = (1 << 0),
-	force_outbound_if = (1 << 1),
-	use_raw_sockets   = (1 << 2)
+	force_via_address       = (1 << 0),
+	force_outbound_if       = (1 << 1),
+	use_raw_sockets         = (1 << 2),
+	no_transport_in_contact = (1 << 3)
     };
 
     static int log_level_raw_msgs;

@@ -761,8 +761,9 @@ static int readSIPInterface(AmConfigReader& cfg, const string& i_name)
 	it_opt != opt_strs.end(); ++it_opt) {
       if(*it_opt == "force_via_address") {
 	opts |= trsp_socket::force_via_address;
-      }
-      else {
+      } else if(*it_opt == "no_transport_in_contact") {
+	opts |= trsp_socket::no_transport_in_contact;
+      } else {
 	WARN("unknown signaling socket option '%s' set on interface '%s'\n",
 	     it_opt->c_str(),i_name.c_str());
       }

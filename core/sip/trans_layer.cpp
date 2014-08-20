@@ -268,16 +268,18 @@ int _trans_layer::send_reply(sip_msg* msg, const trans_ticket* tt,
     assert(req);
 
     trsp_socket* local_socket = req->local_socket;
-    cstring trsp(local_socket->get_transport());
+    if(!local_socket->is_opt_set(trsp_socket::no_transport_in_contact)) {
+	    cstring trsp(local_socket->get_transport());
 
-    // patch Contact-HF
-    vector<string> contact_buf(msg->contacts.size());
-    vector<string>::iterator contact_buf_it = contact_buf.begin();
+	    // patch Contact-HF
+	    vector<string> contact_buf(msg->contacts.size());
+	    vector<string>::iterator contact_buf_it = contact_buf.begin();
 
-    for(list<sip_header*>::iterator contact_it = msg->contacts.begin();
-	contact_it != msg->contacts.end(); contact_it++, contact_buf_it++) {
+	    for(list<sip_header*>::iterator contact_it = msg->contacts.begin();
+		contact_it != msg->contacts.end(); contact_it++, contact_buf_it++) {
 	
-	patch_contact_transport(*contact_it,trsp,*contact_buf_it);
+		patch_contact_transport(*contact_it,trsp,*contact_buf_it);
+	    }
     }
     
     bool have_to_tag = false;
