@@ -72,7 +72,6 @@ int XMLRPC2DI::load() {
   if (configured)    // load only once
     return 0;
   configured = true;
-
   
   AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
@@ -105,7 +104,6 @@ int XMLRPC2DI::load() {
   ServerRetryAfter = cfg.getParameterInt("server_retry_after", 10);
   DBG("retrying failed server after %u seconds\n", ServerRetryAfter);
 
-  
   string server_timeout = cfg.getParameter("server_timeout");
   if (!server_timeout.empty()) {
     unsigned int server_timeout_i = 0;
@@ -167,6 +165,8 @@ int XMLRPC2DI::load() {
   }
 
   server->start();
+  server->waitUntilStarted();
+
   return 0;
 }
 
@@ -337,7 +337,7 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
   : AmEventQueue(this),
     port(port),
     bind_ip(bind_ip),
-    s(s),
+    s(s), running(false),
     // register method 'calls'
     calls_method(s),
     // register method 'set_loglevel'
@@ -354,8 +354,6 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     getcpsmax_method(s),
     getcpslimit_method(s),
     setcpslimit_method(s)
-
-
 {	
   INFO("XMLRPC Server: enabled builtin method 'calls'\n");
   INFO("XMLRPC Server: enabled builtin method 'get_loglevel'\n");

@@ -105,7 +105,7 @@ class XMLRPC2DIServer
   unsigned int port; 
   string bind_ip;
 
-  AmSharedVar<bool> running;
+  AmCondition<bool> running;
 
   XMLRPC2DIServerCallsMethod       calls_method;
   XMLRPC2DIServerSetLoglevelMethod setloglevel_method;
@@ -137,8 +137,12 @@ class XMLRPC2DIServer
 
   void run();
   void on_stop();
+
+  void waitUntilStarted() { running.wait_for(); }
   
-  static void xmlrpcval2amargarray(XmlRpcValue& v, AmArg& a, unsigned int start_index);
+  static void xmlrpcval2amargarray(XmlRpcValue& v, AmArg& a, 
+				   unsigned int start_index);
+
   static void xmlrpcval2amarg(XmlRpcValue& v, AmArg& a);
 
   /** convert all args in a into result*/
