@@ -421,6 +421,11 @@ void AmBasicSipDialog::termUacTrans()
   }
 }
 
+void AmBasicSipDialog::dropTransactions() {
+  termUacTrans();
+  uas_trans.clear();
+}
+
 bool AmBasicSipDialog::onRxReplySanity(const AmSipReply& reply)
 {
   if(ext_local_tag.empty()) {

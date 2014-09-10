@@ -392,6 +392,8 @@ public:
     termUacTrans();
   }
 
+  virtual void dropTransactions();
+
   /**
    * This method should only be used to send responses
    * to requests which are not referenced by any dialog.
