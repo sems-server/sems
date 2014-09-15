@@ -267,12 +267,13 @@ int _trans_layer::send_reply(sip_msg* msg, const trans_ticket* tt,
     sip_msg* req = t->msg;
     assert(req);
 
+	    // patch Contact-HF
+    vector<string> contact_buf;
     trsp_socket* local_socket = req->local_socket;
     if(!local_socket->is_opt_set(trsp_socket::no_transport_in_contact)) {
 	    cstring trsp(local_socket->get_transport());
 
-	    // patch Contact-HF
-	    vector<string> contact_buf(msg->contacts.size());
+	    contact_buf.resize(msg->contacts.size());
 	    vector<string>::iterator contact_buf_it = contact_buf.begin();
 
 	    for(list<sip_header*>::iterator contact_it = msg->contacts.begin();
