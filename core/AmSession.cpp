@@ -1169,6 +1169,11 @@ int AmSession::getRtpInterface()
   return rtp_interface;
 }
 
+void AmSession::setRtpInterface(int _rtp_interface) {
+  DBG("setting media interface to %d\n", _rtp_interface);
+  rtp_interface = _rtp_interface;
+}
+
 string AmSession::localMediaIP(int addrType)
 {
   // sets rtp_interface if not initialized
