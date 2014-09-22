@@ -244,3 +244,8 @@ sbc.addToMediaProcessor      - add sbc session to media processor (no playlist s
 sbc.removeFromMediaProcessor - remove sbc session from media processor
 
 sbc.streamsSetReceiving(bool receiving_a, bool receiving_b)     - pause A/B streams: drop received packets 
+
+sbc.clearExtLocalTag()    - clear (externally used) local tag for the SBC call leg
+
+sbc.setExtLocalTag(string new_local_tag) - set (externally used) local tag for the SBC call leg to specified one
+

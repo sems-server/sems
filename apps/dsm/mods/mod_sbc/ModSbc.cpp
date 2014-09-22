@@ -61,6 +61,9 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("sbc.streamsSetReceiving", MODSBCRtpStreamsSetReceiving);
 
+  DEF_CMD("sbc.clearExtLocalTag", MODSBCClearExtLocalTag);
+  DEF_CMD("sbc.setExtLocalTag", MODSBCSetExtLocalTag);
+
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
@@ -581,4 +584,17 @@ EXEC_ACTION_START(MODSBCRtpStreamsSetReceiving) {
   GET_B2B_MEDIA;
 
   b2b_media->setReceiving(p_a, p_b);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(MODSBCClearExtLocalTag) {
+  DBG("clearing externally used local tag for call leg [%s/%p]\n",
+      sess->getLocalTag().c_str(), sess);
+  sess->dlg->setExtLocalTag("");
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(MODSBCSetExtLocalTag) {
+  string new_tag = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("setting externally used local tag for call leg [%s/%p] to '%s'\n",
+      sess->getLocalTag().c_str(), sess, new_tag.c_str());
+  sess->dlg->setExtLocalTag(new_tag);
 } EXEC_ACTION_END;

@@ -62,4 +62,7 @@ DEF_ACTION_1P(MODSBCRemoveFromMediaProcessor);
 
 DEF_ACTION_2P(MODSBCRtpStreamsSetReceiving);
 
+DEF_ACTION_1P(MODSBCClearExtLocalTag);
+DEF_ACTION_1P(MODSBCSetExtLocalTag);
+
 #endif
