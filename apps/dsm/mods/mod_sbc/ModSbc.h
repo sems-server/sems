@@ -65,4 +65,8 @@ DEF_ACTION_2P(MODSBCRtpStreamsSetReceiving);
 DEF_ACTION_1P(MODSBCClearExtLocalTag);
 DEF_ACTION_1P(MODSBCSetExtLocalTag);
 
+DEF_ACTION_1P(MODSBCSetLastReq);
+
+DEF_ACTION_1P(MODSBCtestSDPConnectionAddress);
+
 #endif

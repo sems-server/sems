@@ -64,6 +64,10 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sbc.clearExtLocalTag", MODSBCClearExtLocalTag);
   DEF_CMD("sbc.setExtLocalTag", MODSBCSetExtLocalTag);
 
+  DEF_CMD("sbc.setLastReq", MODSBCSetLastReq);
+
+  DEF_CMD("sbc.testSDPConnectionAddress", MODSBCtestSDPConnectionAddress);
+
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
@@ -597,4 +601,73 @@ EXEC_ACTION_START(MODSBCSetExtLocalTag) {
   DBG("setting externally used local tag for call leg [%s/%p] to '%s'\n",
       sess->getLocalTag().c_str(), sess, new_tag.c_str());
   sess->dlg->setExtLocalTag(new_tag);
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(MODSBCSetLastReq) {
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REQUEST);
+  if (it == sc_sess->avar.end()) {
+    ERROR("Could not find "DSM_AVAR_REQUEST" avar for request");
+    EXEC_ACTION_STOP;
+  }
+
+  if (NULL == it->second.asObject()) {
+    ERROR("Could not find "DSM_AVAR_REQUEST" avar as pointer");
+    EXEC_ACTION_STOP;
+  }
+
+  AmSipRequest* r = dynamic_cast<AmSipRequest*>(it->second.asObject());
+  if (NULL == r)  {
+    ERROR("Could not find "DSM_AVAR_REQUEST" avar as request");
+    EXEC_ACTION_STOP;
+  }
+
+  sc_sess->last_req.reset(new AmSipRequest(*r));
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(MODSBCtestSDPConnectionAddress) {
+  vector<string> check_adrs = explode(resolveVars(arg, sess, sc_sess, event_params), ",");
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REPLY);
+  if (it == sc_sess->avar.end()) {
+    ERROR("Could not find "DSM_AVAR_REPLY" avar for reply");
+    EXEC_ACTION_STOP;
+  }
+
+  if (NULL == it->second.asObject()) {
+    ERROR("Could not find "DSM_AVAR_REPLY" avar as pointer");
+    EXEC_ACTION_STOP;
+  }
+
+  DSMSipReply* r = dynamic_cast<DSMSipReply*>(it->second.asObject());
+  if (NULL == r)  {
+    ERROR("Could not find "DSM_AVAR_REPLY" avar as reply");
+    EXEC_ACTION_STOP;
+  }
+
+  const AmMimeBody* sdp_body = r->reply->body.hasContentType(SIP_APPLICATION_SDP);
+  if (!sdp_body) {
+    ERROR("No SDP in reply\n");
+    EXEC_ACTION_STOP;
+  }
+
+  AmSdp parser_sdp;
+  if (parser_sdp.parse((const char*)sdp_body->getPayload())) {
+    ERROR("error parsing SDP '%s'\n", sdp_body->getPayload());
+    EXEC_ACTION_STOP;
+  }
+
+  bool found = false;
+  for (vector<string>::iterator it = check_adrs.begin(); it != check_adrs.end(); it++) {
+    if (*it == parser_sdp.conn.address) {
+      DBG("found address!\n");
+      found = true;
+      break;
+    }
+  }
+ 
+  sc_sess->var["match_connection_addr"] = found ? "true":"false";
+
+  DBG("set: match_connection_addr = '%s'\n", sc_sess->var["match_connection_addr"].c_str());
 } EXEC_ACTION_END;

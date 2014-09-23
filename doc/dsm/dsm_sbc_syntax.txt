@@ -249,3 +249,22 @@ sbc.clearExtLocalTag()    - clear (externally used) local tag for the SBC call l
 
 sbc.setExtLocalTag(string new_local_tag) - set (externally used) local tag for the SBC call leg to specified one
 
+sbc.setLastReq - save a copy of request object for later use by mod_dlg, e.g.
+
+  transition "initial invite" RUN - invite / {
+    log(3, "initial invite");
+    if sbc.isALeg() {
+      sbc.setLastReq();
+    }
+   } -> RUN;
+
+   transition "200 from callee" RUN - B2B.otherReply(#sip_code == 200); test(#trans_method=="INVITE") / {
+    if test($my_condition=="true") {
+      dlg.reply($config.refuse_code, $config.refuse_reason);
+      set(#StopProcessing="true");
+      ... end the other call leg ...
+    ...
+
+sbc.testSDPConnectionAddress(string address_list) - test SDP connection address, sets 
+    $match_connection_addr = "true" or "false"; only in B2B.otherReply() or sipReply events!
+  e.g. sbc.testSDPConnectionAddress("10.0.0.2,10.0.0.1")
