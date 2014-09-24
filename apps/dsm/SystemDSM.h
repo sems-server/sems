@@ -58,6 +58,7 @@ class SystemDSM
    void playPrompt(const string& name, bool loop = false, bool front = false);
    void playFile(const string& name, bool loop, bool front = false);
    void playSilence(unsigned int length, bool front = false);
+   void playRingtone(int length, int on, int off, int f, int f2, bool front);
    void recordFile(const string& name);
    unsigned int getRecordLength();
    unsigned int getRecordDataSize();

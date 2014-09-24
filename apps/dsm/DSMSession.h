@@ -126,6 +126,8 @@ class DSMSession {
   virtual void playPrompt(const string& name, bool loop = false, bool front = false) = 0;
   virtual void playFile(const string& name, bool loop, bool front = false) = 0;
   virtual void playSilence(unsigned int length, bool front = false) = 0;
+  virtual void playRingtone(int length, int on, int off, int f, int f2, bool front) = 0;
+
   virtual void recordFile(const string& name) = 0;
   virtual unsigned int getRecordLength() = 0;
   virtual unsigned int getRecordDataSize() = 0;

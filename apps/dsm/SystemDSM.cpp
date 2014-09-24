@@ -193,6 +193,7 @@ void SystemDSM::_func {						\
 NOT_IMPLEMENTED(playPrompt(const string& name, bool loop, bool front));
 NOT_IMPLEMENTED(playFile(const string& name, bool loop, bool front));
 NOT_IMPLEMENTED(playSilence(unsigned int length, bool front));
+NOT_IMPLEMENTED(playRingtone(int length, int on, int off, int f, int f2, bool front));
 NOT_IMPLEMENTED(recordFile(const string& name));
 NOT_IMPLEMENTED_UINT(getRecordLength());
 NOT_IMPLEMENTED_UINT(getRecordDataSize());

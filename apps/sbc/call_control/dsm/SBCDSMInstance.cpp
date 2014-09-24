@@ -33,6 +33,7 @@
 #include "SBCDSMParams.h"
 
 #include "AmAdvancedAudio.h"
+#include "AmRingTone.h"
 
 #include <algorithm>
 
@@ -612,6 +613,17 @@ void SBCDSMInstance::playFile(const string& name, bool loop, bool front) {
 void SBCDSMInstance::playSilence(unsigned int length, bool front) {
   AmNullAudio* af = new AmNullAudio();
   af->setReadLength(length);
+  if (front)
+    getPlaylist()->addToPlayListFront(new AmPlaylistItem(af, NULL));
+  else
+    getPlaylist()->addToPlaylist(new AmPlaylistItem(af, NULL));
+
+  audiofiles.push_back(af);
+  CLR_ERRNO;
+}
+
+void SBCDSMInstance::playRingtone(int length, int on, int off, int f, int f2, bool front) {
+  AmRingTone* af = new AmRingTone(length, on, off, f, f2);
   if (front)
     getPlaylist()->addToPlayListFront(new AmPlaylistItem(af, NULL));
   else

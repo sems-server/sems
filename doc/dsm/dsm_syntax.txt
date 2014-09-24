@@ -147,6 +147,14 @@ Playing prompts and file I/O
  playSilence(millisec)      - play silence for millisec ms
  playSilenceFront(millisec) - play silence for millisec ms at first position in playlist
 
+ playRingtone(varname, bool front) - play ringtone - parameters in varname
+ e.g. set($r.length=10000);
+      set($r.on=150);
+      set($r.off=550);
+      set($r.f=550);
+      set($r.f2=850);
+      playRingtone($r,true);
+
  recordFile(filename)
    Throws "file" exeption with #path if file can not be opened for recording
 

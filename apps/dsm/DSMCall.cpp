@@ -32,6 +32,7 @@
 #include "DSM.h"
 #include "AmConferenceStatus.h"
 #include "AmAdvancedAudio.h"
+#include "AmRingTone.h"
 #include "AmSipSubscription.h"
 
 #include "../apps/jsonrpc/JsonRPCEvents.h" // todo!
@@ -679,6 +680,17 @@ void DSMCall::playFile(const string& name, bool loop, bool front) {
 void DSMCall::playSilence(unsigned int length, bool front) {
   AmNullAudio* af = new AmNullAudio();
   af->setReadLength(length);
+  if (front)
+    playlist.addToPlayListFront(new AmPlaylistItem(af, NULL));
+  else
+    playlist.addToPlaylist(new AmPlaylistItem(af, NULL));
+
+  audiofiles.push_back(af);
+  CLR_ERRNO;
+}
+
+void DSMCall::playRingtone(int length, int on, int off, int f, int f2, bool front) {
+  AmRingTone* af = new AmRingTone(length, on, off, f, f2);
   if (front)
     playlist.addToPlayListFront(new AmPlaylistItem(af, NULL));
   else

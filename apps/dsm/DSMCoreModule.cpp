@@ -62,6 +62,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("playFileFront", SCPlayFileFrontAction);
   DEF_CMD("playSilence", SCPlaySilenceAction);
   DEF_CMD("playSilenceFront", SCPlaySilenceFrontAction);
+  DEF_CMD("playRingtone", SCPlayRingtoneAction);
   DEF_CMD("recordFile", SCRecordFileAction);
   DEF_CMD("stopRecord", SCStopRecordAction);
   DEF_CMD("getRecordLength", SCGetRecordLengthAction);
@@ -372,6 +373,39 @@ EXEC_ACTION_START(SCPlaySilenceAction) {
     throw DSMException("core", "cause", "cannot parse number");
   }
   sc_sess->playSilence(length);
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(SCPlayRingtoneAction, ',', false);
+EXEC_ACTION_START(SCPlayRingtoneAction) {
+  int length = 0, on=0, off=0, f=0, f2=0;
+
+  string varname = par1;
+  if (varname.length() && varname[0]=='$')
+    varname = varname.substr(1);
+
+  string front = resolveVars(par2, sess, sc_sess, event_params);
+
+#define GET_VAR_INT(var_str, var_name)					\
+  it = sc_sess->var.find(varname+"." var_str);				\
+  if (it != sc_sess->var.end()) {					\
+    if (!str2int(it->second, var_name)) {				\
+      throw DSMException("core", "cause", "cannot parse number");	\
+    }									\
+  }
+
+  VarMapT::iterator
+
+  GET_VAR_INT("length", length);
+  GET_VAR_INT("on", on);
+  GET_VAR_INT("off", off);
+  GET_VAR_INT("f", f);
+  GET_VAR_INT("f2", f2);
+
+#undef GET_VAR_INT
+  DBG("Playing ringtone with length %d, on %d, off %d, f %d, f2 %d, front %s\n",
+      length, on, off, f, f2, front.c_str());
+  sc_sess->playRingtone(length, on, off, f, f2, front=="true");
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCPlaySilenceFrontAction) {
