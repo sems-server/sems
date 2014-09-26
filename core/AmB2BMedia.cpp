@@ -495,7 +495,10 @@ void AudioStreamData::setReceiving(bool r) {
 AmB2BMedia::RelayStreamPair::RelayStreamPair(AmB2BSession *_a, AmB2BSession *_b)
 : a(_a, _a ? _a->getRtpInterface() : -1),
   b(_b, _b ? _b->getRtpInterface() : -1)
-{ }
+{
+  a.enableRawRelay();
+  b.enableRawRelay();
+}
 
 AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b): 
   ref_cnt(0), // everybody who wants to use must add one reference itselves
