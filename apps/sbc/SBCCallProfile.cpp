@@ -1290,6 +1290,7 @@ string SBCCallProfile::retarget(const string& alias, AmBasicSipDialog& dlg) cons
     // REG-Cache lookup
     AliasEntry alias_entry;
     if(!RegisterCache::instance()->findAliasEntry(alias, alias_entry)) {
+      DBG("No alias entry found for alias '%s', replying with 404\n", alias.c_str());
       throw AmSession::Exception(404,"User not found");
     }
     string new_r_uri = alias_entry.contact_uri;
