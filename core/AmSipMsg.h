@@ -120,6 +120,9 @@ bool findHeader(const string& hdrs,const string& hdr_name, const size_t skip,
 		size_t& pos1, size_t& pos2, 
 		size_t& hdr_start);
 
+/** @return whether header hdr_name is in hdrs */
+bool hasHeader(const string& hdrs,const string& hdr_name);
+
 bool removeHeader(string& hdrs, const string& hdr_name);
 
 /** add an option tag @param tag to list @param hdr_name */

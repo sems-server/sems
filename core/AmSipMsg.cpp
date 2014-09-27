@@ -15,6 +15,9 @@ AmSipRequest::AmSipRequest()
 
 string getHeader(const string& hdrs,const string& hdr_name, bool single)
 {
+  if (hdr_name.empty())
+    return "";
+
   size_t pos1; 
   size_t pos2;
   size_t pos_s;
@@ -40,6 +43,12 @@ string getHeader(const string& hdrs,const string& hdr_name,
     return getHeader(hdrs, compact_hdr_name, single);
   return res;
 }
+
+bool hasHeader(const string& hdrs,const string& hdr_name) {
+  size_t skip = 0, pos1 = 0, pos2 = 0, hdr_start = 0;
+  return findHeader(hdrs, hdr_name, skip, pos1, pos2, hdr_start);
+}
+
 #include "log.h"
 bool findHeader(const string& hdrs,const string& hdr_name, const size_t skip, 
 		size_t& pos1, size_t& pos2, size_t& hdr_start)
