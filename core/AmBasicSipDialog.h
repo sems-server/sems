@@ -178,6 +178,13 @@ protected:
   virtual bool onRxReqStatus(const AmSipRequest& req) { return true; }
 
   /**
+   * Basic sanity check on received replies
+   *
+   * @return true to continue processing, false otherwise
+   */
+  virtual bool onRxReplySanity(const AmSipReply& reply);
+
+  /**
    * Executed from onRxReply() to allow inherited classes
    * to extend the basic behavior (deletes the transaction on final reply).
    *

@@ -421,7 +421,7 @@ void AmBasicSipDialog::termUacTrans()
   }
 }
 
-void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
+bool AmBasicSipDialog::onRxReplySanity(const AmSipReply& reply)
 {
   if(ext_local_tag.empty()) {
     if(reply.from_tag != local_tag) {
@@ -437,6 +437,14 @@ void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
     throw string("reply has wrong from-tag");
     //return;
   }
+
+  return true;
+}
+
+void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
+{
+  if(!onRxReplySanity(reply))
+    return;
 
   TransMap::iterator t_it = uac_trans.find(reply.cseq);
   if(t_it == uac_trans.end()){
