@@ -470,7 +470,8 @@ void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
 void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
 {
   if( (reply.code > 100) && (reply.code < 300) &&
-      reply.to_uri.length() &&
+      !reply.to_uri.empty() &&
+      !reply.to_tag.empty() &&
       (remote_uri.empty() ||
        (reply.cseq_method.length()==6 &&
 	((reply.cseq_method == SIP_METH_INVITE) ||
