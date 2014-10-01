@@ -332,6 +332,25 @@ void AmSipDialog::onRequestTxed(const AmSipRequest& req)
   }
 }
 
+bool AmSipDialog::onRxReplySanity(const AmSipReply& reply)
+{
+  if(!getRemoteTag().empty()
+     && reply.to_tag != getRemoteTag()) {
+
+    if(status == Early) {
+      if(reply.code < 200 && !reply.to_tag.empty()) {
+        return false;// DROP
+      }
+    }
+    else {
+      // DROP
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
 {
   // rfc3261 12.1
@@ -376,6 +395,8 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
 
     case Early:
       if(reply.code < 200){
+        DBG("ignoring provisional reply in Early state");
+        //DROP!!!
       }
       else if(reply.code < 300){
 	setStatus(Connected);

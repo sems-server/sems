@@ -68,6 +68,7 @@ protected:
   bool onRxReqSanity(const AmSipRequest& req);
   bool onRxReqStatus(const AmSipRequest& req);
 
+  bool onRxReplySanity(const AmSipReply& reply);
   bool onRxReplyStatus(const AmSipReply& reply);
 
 
