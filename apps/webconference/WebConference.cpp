@@ -375,22 +375,34 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string&
     if (!session_timer_f->onInvite(req, cfg))
       return NULL;
   }
-
   WebConferenceDialog* w;
 
-  if (use_direct_room && !regexec(&direct_room_re, req.user.c_str(), 0,0,0)) {
-      string room = req.user;
-      if (room.length() > direct_room_strip) 
- 	room = room.substr(direct_room_strip);
-      DBG("direct room access match. connecting to room '%s'\n", 
-	  room.c_str());
+  map<string,string>::const_iterator r_it = app_params.find("room");
+  map<string,string>::const_iterator enter_room_it = app_params.find("enter_room");
+  if (enter_room_it != app_params.end() && enter_room_it->second=="true") {
+    // enter the room
+    DBG("creating new Webconference call, room name to be entered via keypad\n");
+    w = new WebConferenceDialog(prompts, getInstance(), NULL);    
+  } else if (r_it != app_params.end()) {
+    // use provided room name
+    string room = r_it->second;
+    DBG("creating new Webconference call, room name '%s'\n", room.c_str());
+    w = new WebConferenceDialog(prompts, getInstance(), room);
+    w->setUri(getAccessUri(room));    
+  } else if (use_direct_room && !regexec(&direct_room_re, req.user.c_str(), 0,0,0)) {
+    // regegex match
+    string room = req.user;
+    if (room.length() > direct_room_strip) 
+      room = room.substr(direct_room_strip);
+    DBG("direct room access match. connecting to room '%s'\n", room.c_str());
 
-      w = new WebConferenceDialog(prompts, getInstance(), room);
-      w->setUri(getAccessUri(room));
-
+    w = new WebConferenceDialog(prompts, getInstance(), room);
+    w->setUri(getAccessUri(room));
   } else {
+    // enter the room
     w = new WebConferenceDialog(prompts, getInstance(), NULL);
   }
+
   setupSessionTimer(w);
   return w;
 }
