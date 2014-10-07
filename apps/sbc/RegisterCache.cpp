@@ -1016,9 +1016,9 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
 
       AliasEntry alias_entry;
       if(findAliasEntry(alias_map.begin()->first,alias_entry) &&
-	 (now.tv_sec > alias_entry.ua_expire)) {
+	 (now.tv_sec < alias_entry.ua_expire)) {
 
-	unsigned int exp = now.tv_sec - alias_entry.ua_expire;
+	unsigned int exp = alias_entry.ua_expire - now.tv_sec;
 	contact_hdr = SIP_HDR_COLSP(SIP_HDR_CONTACT)
 	  + alias_entry.contact_uri + ";expires=" 
 	  + int2str(exp) + CRLF;
