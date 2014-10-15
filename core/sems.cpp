@@ -331,7 +331,8 @@ int set_fd_limit()
     return -1;
   }
  
-  INFO("Open FDs limit has been raised to %i",rlim.rlim_cur);
+  INFO("Open FDs limit has been raised to %u",
+       (unsigned int)rlim.rlim_cur);
  
   return 0;
 }
