@@ -316,7 +316,25 @@ static int write_pid_file()
 
 #endif /* !DISABLE_DAEMON_MODE */
 
+int set_fd_limit()
+{
+  struct rlimit rlim;
+  if(getrlimit(RLIMIT_NOFILE,&rlim) < 0) {
+    ERROR("getrlimit: %s\n",strerror(errno));
+    return -1;
+  }
 
+  rlim.rlim_cur = rlim.rlim_max;
+
+  if(setrlimit(RLIMIT_NOFILE,&rlim) < 0) {
+    ERROR("setrlimit: %s\n",strerror(errno));
+    return -1;
+  }
+ 
+  INFO("Open FDs limit has been raised to %i",rlim.rlim_cur);
+ 
+  return 0;
+}
 
 /*
  * Main
@@ -403,6 +421,10 @@ int main(int argc, char* argv[])
 	 AmConfig::Application.empty() ? "<not set>" : AmConfig::Application.c_str());
 
   AmConfig::dump_Ifs();
+
+  if(set_fd_limit() < 0) {
+    WARN("could not raise FD limit");
+  }
 
 #ifndef DISABLE_DAEMON_MODE
 
