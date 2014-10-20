@@ -69,3 +69,9 @@ utils.playRingTone(length [, on [, off [, f [, f2]]]])
 
    Example:
       utils.playRingTone(0, 1000, 4000, 425, 0);   -- Germany
+
+Conditions
+----------
+
+utils.isInList(key, cs_list) - match if key is in comma-separated list
+   e.g. if utils.isInList(#sip_code, "404, 405") { ... }

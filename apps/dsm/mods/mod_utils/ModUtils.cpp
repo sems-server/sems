@@ -60,7 +60,12 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
 } MOD_ACTIONEXPORT_END;
 
-MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
+MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
+  if (cmd == "utils.isInList") {
+    return new IsInListCondition(params, false);
+  }
+
+} MOD_CONDITIONEXPORT_END;
 
 vector<string> utils_get_count_files(DSMSession* sc_sess, unsigned int cnt, 
 				     const string& basedir, const string& suffix, bool right) {
@@ -455,3 +460,26 @@ EXEC_ACTION_START(SCUPlayRingToneAction) {
 
   sc_sess->transferOwnership(rt);
 } EXEC_ACTION_END;
+
+CONST_CONDITION_2P(IsInListCondition, ',', false);
+MATCH_CONDITION_START(IsInListCondition) {
+  string key = resolveVars(par1, sess, sc_sess, event_params);
+  string cslist = resolveVars(par2, sess, sc_sess, event_params);
+  DBG("checking whether '%s' is in list '%s'\n", key.c_str(), cslist.c_str());
+
+  bool res = false;
+  vector<string> items = explode(cslist, ",");
+  for (vector<string>::iterator it=items.begin(); it != items.end(); it++) {
+    if (key == trim(*it, " \t")) {
+      res = true;
+      break;
+    }
+  }
+  DBG("key %sfound\n", res?"":" not");
+
+  if (inv) {
+    return !res;
+  } else {
+    return res;
+  }
+ } MATCH_CONDITION_END;

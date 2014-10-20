@@ -35,6 +35,8 @@
 
 DECLARE_MODULE(MOD_CLS_NAME);
 
+DEF_CONDITION_2P(IsInListCondition);
+
 DEF_ACTION_2P(SCUPlayCountRightAction);
 DEF_ACTION_2P(SCUPlayCountLeftAction);
 DEF_ACTION_2P(SCUGetCountRightAction);
