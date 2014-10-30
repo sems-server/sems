@@ -375,6 +375,11 @@ loglevel=2
 # Example:
 #  cps_limit="100;503;Server overload"
 
+###########################################################
+# if build with ZRTP support (see Makefile.defs)
+# enable ZRTP support in endpoint calls:
+#enable_zrtp=yes (default: yes)
+
 ############################################################
 # tuning
 

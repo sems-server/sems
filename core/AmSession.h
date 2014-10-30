@@ -41,9 +41,7 @@
 #include "AmSessionEventHandler.h"
 #include "AmMediaProcessor.h"
 
-#ifdef WITH_ZRTP
-#include "zrtp/zrtp.h"
-#endif
+#include "AmZRTP.h"
 
 #include <string>
 #include <vector>
@@ -187,11 +185,11 @@ public:
   bool hasRtpStream() { return _rtp_str.get() != NULL; }
 
 #ifdef WITH_ZRTP
-  zrtp_conn_ctx_t*    zrtp_session; // ZRTP session
-  zrtp_stream_ctx_t*  zrtp_audio;   // ZRTP stream for audio
+  AmZRTPSessionState zrtp_session_state;
 
   /** must be set before session is started! i.e. in constructor */
   bool enable_zrtp;
+
 #endif
 
   AmSipDialog* dlg;
@@ -541,7 +539,8 @@ public:
   /**
    * ZRTP events @see ZRTP
    */
-  virtual void onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx);
+  virtual void onZRTPProtocolEvent(zrtp_protocol_event_t event, zrtp_stream_t *stream_ctx);
+  virtual void onZRTPSecurityEvent(zrtp_security_event_t event, zrtp_stream_t *stream_ctx);
 #endif
 
   /** This callback is called if RTP timeout encountered */

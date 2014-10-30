@@ -38,126 +38,266 @@
 #define ZRTP_CACHE_SAVE_INTERVAL 1
 
 string AmZRTP::cache_path = "zrtp_cache.dat";
+#define SEMS_CLIENT_ID "SEMS"
+
 int AmZRTP::zrtp_cache_save_cntr = 0;
 AmMutex AmZRTP::zrtp_cache_mut;
 
-zrtp_global_ctx_t AmZRTP::zrtp_global;      // persistent storage for libzrtp data
+zrtp_global_t* AmZRTP::zrtp_global;      // persistent storage for libzrtp data
+zrtp_config_t AmZRTP::zrtp_config;
 zrtp_zid_t AmZRTP::zrtp_instance_zid = {"defaultsems"}; // todo: generate one
 
+void zrtp_log(int level, char *data, int len, int offset) {
+  int sems_lvl = L_DBG;
+  if (level==2)
+    sems_lvl = L_WARN; // ??
+  else if (level==1)
+    sems_lvl = L_INFO; // ??
+  
+  _LOG(sems_lvl, "%.*s", len, data);
+}
+
 int AmZRTP::init() {
+  zrtp_log_set_log_engine(zrtp_log);
+
   AmConfigReader cfg;
   string cfgname=add2path(AmConfig::ModConfigPath, 1,  "zrtp.conf");
   if(cfg.loadFile(cfgname)) {
-    ERROR("No %s config file present.\n", 
-	  cfgname.c_str());
+    ERROR("No %s config file present.\n", cfgname.c_str());
     return -1;
   }
+
   cache_path = cfg.getParameter("cache_path");
   string zid = cfg.getParameter("zid");
   if (zid.length() != sizeof(zrtp_zid_t)) {
     ERROR("ZID of this instance MUST be set for ZRTP.\n");
-    ERROR("ZID needs to be %u characters long.\n", 
+    ERROR("ZID needs to be %lu characters long.\n", 
 	  sizeof(zrtp_zid_t));
     return -1;
   }
-  for (int i=0;i<12;i++)
+
+  for (size_t i=0;i<zid.length();i++)
     zrtp_instance_zid[i]=zid[i];
 
   DBG("initializing ZRTP library with ZID '%s', cache path '%s'.\n",
       zid.c_str(), cache_path.c_str());
-  if ( zrtp_status_ok != zrtp_init(&zrtp_global, "zrtp_sems") ) {
-    ERROR("Some error during zrtp initialization\n");
+
+  zrtp_config_defaults(&zrtp_config);
+
+  strcpy(zrtp_config.client_id, SEMS_CLIENT_ID);
+  zrtp_config.lic_mode = ZRTP_LICENSE_MODE_UNLIMITED;
+
+  
+  strncpy(zrtp_config.cache_file_cfg.cache_path, cache_path.c_str(), 256);
+
+  zrtp_config.cb.misc_cb.on_send_packet           = AmZRTP::on_send_packet;
+  zrtp_config.cb.event_cb.on_zrtp_secure          = AmZRTP::on_zrtp_secure;
+  zrtp_config.cb.event_cb.on_zrtp_security_event  = AmZRTP::on_zrtp_security_event;
+  zrtp_config.cb.event_cb.on_zrtp_protocol_event  = AmZRTP::on_zrtp_protocol_event;
+
+  if ( zrtp_status_ok != zrtp_init(&zrtp_config, &zrtp_global) ) {
+    ERROR("Error during ZRTP initialization\n");
     return -1;
   }
-  zrtp_add_entropy(&zrtp_global, NULL, 0);
+
+  size_t rand_bytes = cfg.getParameterInt("random_entropy_bytes", 172);
+  if (rand_bytes) {
+    INFO("adding %zd bytes entropy from /dev/random to ZRTP entropy pool\n", rand_bytes);
+    FILE* fd = fopen("/dev/random", "r");
+    if (!fd) {
+      ERROR("opening /dev/random for adding entropy to the pool\n");
+      return -1;
+    }
+    void* p = malloc(rand_bytes);
+    if (p==NULL)
+      return -1;
+
+    size_t read_bytes = fread(p, 1, rand_bytes, fd);
+    if (read_bytes != rand_bytes) {
+      ERROR("reading %zd bytes from /dev/random\n", rand_bytes);
+      return -1;
+    }
+    zrtp_entropy_add(zrtp_global, (const unsigned char*)p, read_bytes);
+    free(p);
+  }
+
+
+  // zrtp_add_entropy(zrtp_global, NULL, 0); // fixme
   DBG("ZRTP initialized ok.\n");
 
   return 0;
 }
 
-void AmZRTP::freeSession(zrtp_conn_ctx_t* zrtp_session) {
-  zrtp_done_session_ctx(zrtp_session);
-  free(zrtp_session);
-  // save zrtp cache
-  zrtp_cache_mut.lock();
-  if (!((++zrtp_cache_save_cntr) % ZRTP_CACHE_SAVE_INTERVAL)) {
-    if (zrtp_cache_user_down() != zrtp_status_ok) {
-      ERROR("while writing ZRTP cache.\n");
-    }
+AmZRTPSessionState::AmZRTPSessionState()
+  : zrtp_session(NULL), zrtp_audio(NULL)
+{
+  // copy default profile
+  zrtp_profile_defaults(&zrtp_profile, AmZRTP::zrtp_global);
+}
+
+int AmZRTPSessionState::initSession(AmSession* session) {
+
+  DBG("starting ZRTP stream...\n");
+  //
+  // Allocate zrtp session with default parameters
+  //
+  zrtp_status_t status =
+    zrtp_session_init( AmZRTP::zrtp_global,
+		       &zrtp_profile,
+		       ZRTP_SIGNALING_ROLE_UNKNOWN, // fixme
+		       &zrtp_session);
+  if (zrtp_status_ok != status) {
+    // Check error code and debug logs
+    return status;
   }
-  zrtp_cache_mut.unlock();
+
+  // Set call-back pointer to our parent structure
+  zrtp_session_set_userdata(zrtp_session, session);
+
+  // 
+  // Attach Audio and Video Streams
+  //
+  status = zrtp_stream_attach(zrtp_session, &zrtp_audio);
+  if (zrtp_status_ok != status) {
+    // Check error code and debug logs
+    return status;
+  }
+  zrtp_stream_set_userdata(zrtp_audio, session);
+  return 0;
 }
 
-void zrtp_get_cache_path(char *path, uint32_t length) {
-  snprintf(path, length, "%s", AmZRTP::cache_path.c_str());
+int AmZRTPSessionState::startStreams(uint32_t ssrc){
+  zrtp_status_t status = zrtp_stream_start(zrtp_audio, ssrc);
+  if (zrtp_status_ok != status) {
+    ERROR("starting ZRTP stream\n");
+    return -1;
+  }
+  return 0;
 }
 
+int AmZRTPSessionState::stopStreams(){
+  zrtp_status_t status = zrtp_stream_stop(zrtp_audio);
+  if (zrtp_status_ok != status) {
+    ERROR("stopping ZRTP stream\n");
+    return -1;
+  }
+  return 0;
+}
+
+void AmZRTPSessionState::freeSession() {
+  if (NULL == zrtp_session)
+    return;
+
+  zrtp_session_down(zrtp_session);
+
+  // // save zrtp cache
+  // zrtp_cache_mut.lock();
+  // if (!((++zrtp_cache_save_cntr) % ZRTP_CACHE_SAVE_INTERVAL)) {
+  //   if (zrtp_cache_user_down() != zrtp_status_ok) {
+  //     ERROR("while writing ZRTP cache.\n");
+  //   }
+  // }
+  // zrtp_cache_mut.unlock();
+}
+
+AmZRTPSessionState::~AmZRTPSessionState() {
+
+}
 
 // void zrtp_get_cache_path(char *path, uint32_t length) {
 // }
 
+int AmZRTP::on_send_packet(const zrtp_stream_t *stream, char *packet, unsigned int length) {
+  DBG("on_send_packet(stream [%p], len=%u)\n", stream, length);
+  if (NULL==stream) {
+    ERROR("on_send_packet without stream context.\n");
+    return -1;
+  }
 
-void zrtp_event_callback(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx)
-{
-  if (NULL==stream_ctx) {
+  void* udata = zrtp_stream_get_userdata(stream);
+  if (NULL == udata) {
+    ERROR("ZRTP on_send_packet without session context.\n");
+    return -1;
+  }
+  AmSession* sess = reinterpret_cast<AmSession*>(udata);
+
+  return sess->RTPStream()->send_raw(packet, length);
+}
+
+void AmZRTP::on_zrtp_secure(zrtp_stream_t *stream) {
+  DBG("on_zrtp_secure(stream [%p])\n", stream);
+
+  // if (NULL==stream) {
+  //   ERROR("event received without stream context.\n");
+  //   return;
+  // }
+
+  // void* udata = zrtp_stream_get_userdata(stream);
+  // if (NULL == udata) {
+  //   ERROR("ZRTP on_send_packet without session set context.\n");
+  //   return;
+  // }
+  // AmSession* sess = reinterpret_cast<AmSession*>(udata);
+
+  // sess->onZrtpSecure();
+}
+
+void AmZRTP::on_zrtp_security_event(zrtp_stream_t *stream, zrtp_security_event_t event) {
+  DBG("on_zrtp_security_event(stream [%p])\n", stream);
+  if (NULL==stream) {
     ERROR("event received without stream context.\n");
     return;
   }
-
-  AmSession* sess = reinterpret_cast<AmSession*>(stream_ctx->stream_usr_data);
-  if (NULL==sess) {
-    ERROR("event received without session set up.\n");
+  void* udata = zrtp_stream_get_userdata(stream);
+  if (NULL == udata) {
+    ERROR("ZRTP on_send_packet without session set context.\n");
     return;
   }
-
-  sess->postEvent(new AmZRTPEvent(event, stream_ctx));
+  AmSession* sess = reinterpret_cast<AmSession*>(udata);
+  sess->postEvent(new AmZRTPSecurityEvent(event, stream));
 }
 
-void zrtp_play_alert(zrtp_stream_ctx_t* ctx) {
+void AmZRTP::on_zrtp_protocol_event(zrtp_stream_t *stream, zrtp_protocol_event_t event) {
+  DBG("on_zrtp_protocol_event(stream [%p])\n", stream);
+  if (NULL==stream) {
+    ERROR("event received without stream context.\n");
+    return;
+  }
+  void* udata = zrtp_stream_get_userdata(stream);
+  if (NULL == udata) {
+    ERROR("ZRTP on_send_packet without session set context.\n");
+    return;
+  }
+  AmSession* sess = reinterpret_cast<AmSession*>(udata);
+  sess->postEvent(new AmZRTPProtocolEvent(event, stream));
+}
+
+/*
+void zrtp_play_alert(zrtp_stream_t* ctx) {
   INFO("zrtp_play_alert: ALERT!\n");
   ctx->need_play_alert = zrtp_play_no;
 }
+*/
 
-int zrtp_send_rtp( const zrtp_stream_ctx_t* stream_ctx,
-		   char* packet, unsigned int length) {
-  if (NULL==stream_ctx) {
-    ERROR("trying to send packet without stream context.\n");
-    return -1;
-  }
+// #define BUFFER_LOG_SIZE 256
+// void zrtp_print_log(log_level_t level, const char* format, ...)
+// {
+// 	char buffer[BUFFER_LOG_SIZE];
+//     va_list arg;
 
-  AmSession* sess = reinterpret_cast<AmSession*>(stream_ctx->stream_usr_data);
-  if (NULL==sess) {
-    ERROR("trying to send packet without session set up.\n");
-    return -1;
-  }
-
-  return sess->rtp_str.send_raw(packet, length);  
-}
-
-
-#define BUFFER_LOG_SIZE 256
-void zrtp_print_log(log_level_t level, const char* format, ...)
-{
-	char buffer[BUFFER_LOG_SIZE];
-    va_list arg;
-
-    va_start(arg, format);
-    vsnprintf(buffer, BUFFER_LOG_SIZE, format, arg);
-    va_end( arg );
-    int sems_lvl = L_ERR;
-    switch(level) {
-    case ZRTP_LOG_DEBUG:   sems_lvl = L_DBG; break;
-    case ZRTP_LOG_INFO:    sems_lvl = L_INFO; break;
-    case ZRTP_LOG_WARNING: sems_lvl = L_WARN; break;
-    case ZRTP_LOG_ERROR:   sems_lvl = L_ERR; break;
-    case ZRTP_LOG_FATAL:   sems_lvl = L_ERR; break;
-    case ZRTP_LOG_ALL:   sems_lvl = L_ERR; break;
-    }
-    _LOG(sems_lvl, "*** %s", buffer);
-}
-
+//     va_start(arg, format);
+//     vsnprintf(buffer, BUFFER_LOG_SIZE, format, arg);
+//     va_end( arg );
+//     int sems_lvl = L_ERR;
+//     switch(level) {
+//     case ZRTP_LOG_DEBUG:   sems_lvl = L_DBG; break;
+//     case ZRTP_LOG_INFO:    sems_lvl = L_INFO; break;
+//     case ZRTP_LOG_WARNING: sems_lvl = L_WARN; break;
+//     case ZRTP_LOG_ERROR:   sems_lvl = L_ERR; break;
+//     case ZRTP_LOG_FATAL:   sems_lvl = L_ERR; break;
+//     case ZRTP_LOG_ALL:   sems_lvl = L_ERR; break;
+//     }
+//     _LOG(sems_lvl, "*** %s", buffer);
+// }
 
 #endif
-
-
-

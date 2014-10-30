@@ -57,7 +57,7 @@
 #include <netinet/in.h>
 
 #ifdef WITH_ZRTP
-#include "zrtp/zrtp.h"
+#include "libzrtp/zrtp.h"
 #endif
 
 #include "rtp/rtp.h"
@@ -260,10 +260,15 @@ int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int t
   rp.setAddr(&r_saddr);
 
 #ifdef WITH_ZRTP
-  if (session && session->zrtp_audio) {
-    zrtp_status_t status = zrtp_status_fail;
+  if (session && session->enable_zrtp){
+    if (NULL == session->zrtp_session_state.zrtp_audio) {
+      ERROR("ZRTP enabled on session, but no audio stream created\n");
+      return -1;
+    }
+
     unsigned int size = rp.getBufferSize();
-    status = zrtp_process_rtp(session->zrtp_audio, (char*)rp.getBuffer(), &size);
+    zrtp_status_t status = zrtp_process_rtp(session->zrtp_session_state.zrtp_audio,
+					    (char*)rp.getBuffer(), &size);
     switch (status) {
     case zrtp_status_drop: {
       DBG("ZRTP says: drop packet! %u - %u\n", size, rp.getBufferSize());
@@ -749,9 +754,11 @@ int AmRtpStream::init(const AmSdp& local,
   last_payload = payload;
 
 #ifdef WITH_ZRTP  
-  if( session->zrtp_audio  ) {
-    DBG("now starting zrtp stream...\n");
-    zrtp_start_stream( session->zrtp_audio );
+  if (session && session->enable_zrtp) {
+    if (session->zrtp_session_state.initSession(session))
+      return -1;
+
+    session->zrtp_session_state.startStreams(get_ssrc());
   }
 #endif
 
@@ -818,7 +825,7 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
     return;
   }
 
-  if (relay_enabled) {
+  if (relay_enabled) { // todo: ZRTP
     if (force_receive_dtmf) {
       recvDtmfPacket(p);
     }
@@ -858,35 +865,37 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 #endif
 
   receive_mut.lock();
-  // NOTE: useless, as DTMF events are pushed into 'rtp_ev_qu'
-  // free packet on double packet for TS received
-  // if(p->payload == getLocalTelephoneEventPT()) {
-  //   if (receive_buf.find(p->timestamp) != receive_buf.end()) {
-  //     mem.freePacket(receive_buf[p->timestamp]);
-  //   }
-  // }  
 
 #ifdef WITH_ZRTP
-  if (session->zrtp_audio) {
+  if (session && session->enable_zrtp) {
 
-    zrtp_status_t status = zrtp_status_fail;
-    unsigned int size = p->getBufferSize();
-    
-    status = zrtp_process_srtp(session->zrtp_audio, (char*)p->getBuffer(), &size);
+    if (NULL == session->zrtp_session_state.zrtp_audio) {
+      WARN("dropping received packet, as there's no ZRTP stream initialized\n");
+      receive_mut.unlock();
+      mem.freePacket(p);
+      return;      
+    }
+ 
+    unsigned int size = p->getBufferSize();    
+    zrtp_status_t status = zrtp_process_srtp(session->zrtp_session_state.zrtp_audio, (char*)p->getBuffer(), &size);
     switch (status)
       {
-      case zrtp_status_forward:
       case zrtp_status_ok: {
 	p->setBufferSize(size);
 	if (p->parse() < 0) {
 	  ERROR("parsing decoded packet!\n");
 	  mem.freePacket(p);
 	} else {
+
           if(p->payload == getLocalTelephoneEventPT()) {
             rtp_ev_qu.push(p);
           } else {
-	    receive_buf[p->timestamp] = p;
+	    if(!receive_buf.insert(ReceiveBuffer::value_type(p->timestamp,p)).second) {
+	      // insert failed
+	      mem.freePacket(p);
+	    }
           }
+
 	}
       }	break;
 
@@ -1033,9 +1042,14 @@ void AmRtpStream::recvPacket(int fd)
 
     gettimeofday(&p->recv_time,NULL);
     
-    if(!relay_raw)
+    if(!relay_raw
+#ifdef WITH_ZRTP
+       && !(session && session->enable_zrtp)
+#endif
+       ) {
       parse_res = p->parse();
- 
+    }
+
     if (parse_res == -1) {
       DBG("error while parsing RTP packet.\n");
       clearRTPTimeout(&p->recv_time);

@@ -104,6 +104,10 @@ bool         AmConfig::LogSessions             = false;
 bool         AmConfig::LogEvents               = false;
 int          AmConfig::UnhandledReplyLoglevel  = 0;
 
+#ifdef WITH_ZRTP
+bool         AmConfig::enable_zrtp             = true;
+#endif
+
 unsigned int AmConfig::SessionLimit            = 0;
 unsigned int AmConfig::SessionLimitErrCode     = 503;
 string       AmConfig::SessionLimitErrReason   = "Server overload";
@@ -587,6 +591,11 @@ int AmConfig::readConfiguration()
       DefaultDTMFDetector = Dtmf::SpanDSP;
     }
   }
+
+#ifdef WITH_ZRTP
+  enable_zrtp = cfg.getParameter("enable_zrtp", "yes") == "yes";
+  INFO("ZRTP %sabled\n", enable_zrtp ? "en":"dis");
+#endif
 
   if(cfg.hasParameter("session_limit")){ 
     vector<string> limit = explode(cfg.getParameter("session_limit"), ";");

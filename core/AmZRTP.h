@@ -30,33 +30,63 @@
 
 #ifdef WITH_ZRTP
 
-#include "zrtp/zrtp.h"
+#include "libzrtp/zrtp.h"
 #include "AmThread.h"
 #include "AmEvent.h"
 
 #include <string>
 
-#include "zrtp/zrtp.h"
-extern zrtp_global_ctx_t zrtp_global;      // persistent storage for libzrtp data
+class AmSession;
+
+extern zrtp_global_t zrtp_global;      // persistent storage for libzrtp data
 extern zrtp_zid_t zrtp_instance_zid;
 
-struct AmZRTPEvent : public AmEvent {
-  zrtp_stream_ctx_t* stream_ctx;
- AmZRTPEvent(int event_id, zrtp_stream_ctx_t* stream_ctx)
+struct AmZRTPSecurityEvent : public AmEvent {
+  zrtp_stream_t* stream_ctx;
+ AmZRTPSecurityEvent(int event_id, zrtp_stream_t* stream_ctx)
    : AmEvent(event_id), stream_ctx(stream_ctx) { }
-  ~AmZRTPEvent() { }
+  ~AmZRTPSecurityEvent() { }
 };
 
+struct AmZRTPProtocolEvent : public AmEvent {
+  zrtp_stream_t* stream_ctx;
+ AmZRTPProtocolEvent(int event_id, zrtp_stream_t* stream_ctx)
+   : AmEvent(event_id), stream_ctx(stream_ctx) { }
+  ~AmZRTPProtocolEvent() { }
+};
+
+
 struct AmZRTP { 
-   static int zrtp_cache_save_cntr;
-   static std::string cache_path;
-   static AmMutex zrtp_cache_mut;
-   static int init();
-   static zrtp_global_ctx_t zrtp_global;    
-   static zrtp_zid_t zrtp_instance_zid;
-   static void freeSession(zrtp_conn_ctx_t* zrtp_session);
+  static int zrtp_cache_save_cntr;
+  static std::string cache_path;
+  static AmMutex zrtp_cache_mut;
+  static int init();
+  static zrtp_global_t* zrtp_global;
+  static zrtp_config_t zrtp_config;
+  static zrtp_zid_t zrtp_instance_zid;
+
+  static int on_send_packet(const zrtp_stream_t *stream, char *packet, unsigned int length);
+  static void on_zrtp_secure(zrtp_stream_t *stream);
+  static void on_zrtp_security_event(zrtp_stream_t *stream, zrtp_security_event_t event);
+  static void on_zrtp_protocol_event(zrtp_stream_t *stream, zrtp_protocol_event_t event);
 }; 
 
+struct AmZRTPSessionState {
+
+  AmZRTPSessionState();
+  ~AmZRTPSessionState();
+
+  int initSession(AmSession* s);
+  void freeSession();
+
+  int startStreams(uint32_t ssrc);
+  int stopStreams();
+
+  zrtp_profile_t  zrtp_profile;
+  zrtp_session_t* zrtp_session; // ZRTP session
+  zrtp_stream_t*  zrtp_audio;   // ZRTP stream for audio
+};
+ 
 #if defined(__cplusplus)
 extern "C" {
 #endif
