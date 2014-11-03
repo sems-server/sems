@@ -97,11 +97,6 @@ AmSession::~AmSession()
       delete *evh;
   }
 
-#ifdef WITH_ZRTP
-  if (enable_zrtp)
-    zrtp_session_state.freeSession();
-#endif
-
   delete dlg;
 
   DBG("AmSession destructor finished\n");
@@ -434,6 +429,12 @@ void AmSession::finalize()
   DBG("running finalize sequence...\n");
   dlg->finalize();
   
+#ifdef WITH_ZRTP
+  if (enable_zrtp) {
+    zrtp_session_state.freeSession();
+  }
+#endif
+
   onBeforeDestroy();
   destroy();
   
@@ -1247,23 +1248,9 @@ bool AmSession::removeTimers() {
 #ifdef WITH_ZRTP
 
 void AmSession::onZRTPProtocolEvent(zrtp_protocol_event_t event, zrtp_stream_t *stream_ctx) {
-  DBG("AmSession::onZRTPProtocolEvent\n");
-  switch (event)
-    {
-    case ZRTP_EVENT_UNSUPPORTED:
-      INFO("ZRTP_EVENT_UNSUPPORTED\n");
-      break;
-    case ZRTP_EVENT_IS_CLEAR:
-      INFO("ZRTP_EVENT_IS_CLEAR\n");
-      break;
-    case ZRTP_EVENT_IS_INITIATINGSECURE:
-      INFO("ZRTP_EVENT_IS_INITIATINGSECURE\n");
-      break;
-    case ZRTP_EVENT_IS_PENDINGSECURE:
-      INFO("ZRTP_EVENT_PENDINGSECURE\n");
-      break;
+  DBG("AmSession::onZRTPProtocolEvent: %s\n", zrtp_protocol_event_desc(event));
 
-    case ZRTP_EVENT_IS_SECURE: {
+  if (event==ZRTP_EVENT_IS_SECURE) {
       INFO("ZRTP_EVENT_IS_SECURE \n");
       //         info->is_verified  = ctx->_session_ctx->secrets.verifieds & ZRTP_BIT_RS0;
  
@@ -1275,66 +1262,19 @@ void AmSession::onZRTPProtocolEvent(zrtp_protocol_event_t event, zrtp_stream_t *
       // 	DBG("Got SAS values SAS1 '%s' and SAS2 '%s'\n", 
       // 	    session->sas_values.str1.buffer,
       // 	    session->sas_values.str2.buffer);
-      // } 
-    } break;
+      // }
+  }
  
-    case ZRTP_EVENT_IS_PENDINGCLEAR:
-      INFO("ZRTP_EVENT_IS_PENDINGCLEAR\n");
-      INFO("other side requested goClear. Going clear.\n\n");
-      //      zrtp_clear_stream(zrtp_audio);
-      break;
+    // case ZRTP_EVENT_IS_PENDINGCLEAR:
+    //   INFO("ZRTP_EVENT_IS_PENDINGCLEAR\n");
+    //   INFO("other side requested goClear. Going clear.\n\n");
+    //   //      zrtp_clear_stream(zrtp_audio);
+    //   break;
   
-    case ZRTP_EVENT_IS_SECURE_DONE:
-      INFO("ZRTP_EVENT_IS_SECURE_DONE\n");
-      break;
-    case ZRTP_EVENT_NO_ZRTP:
-      INFO("ZRTP_EVENT_NO_ZRTP\n");
-      break;
-    case ZRTP_EVENT_NO_ZRTP_QUICK:
-      INFO("ZRTP_EVENT_NO_ZRTP_QUICK\n");
-      break;
- 
-      // pbx functions
-    case ZRTP_EVENT_IS_CLIENT_ENROLLMENT:
-      INFO("ZRTP_EVENT_IS_CLIENT_ENROLLMENT\n");
-      break;
-    case ZRTP_EVENT_NEW_USER_ENROLLED:
-      INFO("ZRTP_EVENT_NEW_USER_ENROLLED\n");
-      break;
-    case ZRTP_EVENT_USER_ALREADY_ENROLLED:
-      INFO("ZRTP_EVENT_USER_ALREADY_ENROLLED\n");
-      break;
-    case ZRTP_EVENT_USER_UNENROLLED:
-      INFO("ZRTP_EVENT_USER_UNENROLLED\n");
-      break;
-    case ZRTP_EVENT_LOCAL_SAS_UPDATED:
-      INFO("ZRTP_EVENT_LOCAL_SAS_UPDATED\n");
-      break;
-    case ZRTP_EVENT_REMOTE_SAS_UPDATED:
-      INFO("ZRTP_EVENT_REMOTE_SAS_UPDATED\n");
-      break;
- 
-      // errors
-    case ZRTP_EVENT_WRONG_SIGNALING_HASH:
-      INFO("ZRTP_EVENT_WRONG_SIGNALING_HASH\n");
-      break;
-    case ZRTP_EVENT_WRONG_MESSAGE_HMAC:
-      INFO("ZRTP_EVENT_WRONG_MESSAGE_HMAC\n");
-      break;
-
-    case ZRTP_EVENT_IS_PASSIVE_RESTRICTION:
-     INFO("ZRTP_EVENT_IS_PASSIVE_RESTRICTION\n");
-      break;
-
-    default: 
-      INFO("unknown ZRTP_EVENT\n");
-      break;
-    } // end events case
 }
 
 void AmSession::onZRTPSecurityEvent(zrtp_security_event_t event, zrtp_stream_t *stream_ctx) {
-  DBG("AmSession::onZRTPSecurityEvent\n");
-
+  DBG("AmSession::onZRTPSecurityEvent: %s\n", zrtp_security_event_desc(event));
 }
  
 #endif

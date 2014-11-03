@@ -86,6 +86,10 @@ struct AmZRTPSessionState {
   zrtp_session_t* zrtp_session; // ZRTP session
   zrtp_stream_t*  zrtp_audio;   // ZRTP stream for audio
 };
+
+const char* zrtp_protocol_event_desc(zrtp_protocol_event_t e);
+const char* zrtp_security_event_desc(zrtp_security_event_t e);
+
  
 #if defined(__cplusplus)
 extern "C" {

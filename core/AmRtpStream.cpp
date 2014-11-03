@@ -772,6 +772,13 @@ void AmRtpStream::pause()
 {
   DBG("RTP Stream instance [%p] pausing (receiving=false)\n", this);
   receiving = false;
+
+#ifdef WITH_ZRTP
+  if (session && session->enable_zrtp) {
+    session->zrtp_session_state.stopStreams();
+  }
+#endif
+
 }
 
 void AmRtpStream::resume()
@@ -783,6 +790,12 @@ void AmRtpStream::resume()
   receive_buf.clear();
   receive_mut.unlock();
   receiving = true;
+
+#ifdef WITH_ZRTP
+  if (session && session->enable_zrtp) {
+    session->zrtp_session_state.startStreams(get_ssrc());
+  }
+#endif
 }
 
 void AmRtpStream::setOnHold(bool on_hold) {

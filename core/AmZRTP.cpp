@@ -192,6 +192,9 @@ int AmZRTPSessionState::initSession(AmSession* session) {
 }
 
 int AmZRTPSessionState::startStreams(uint32_t ssrc){
+  if (NULL == zrtp_audio)
+    return -1;
+
   zrtp_status_t status = zrtp_stream_start(zrtp_audio, ssrc);
   if (zrtp_status_ok != status) {
     ERROR("starting ZRTP stream\n");
@@ -201,6 +204,9 @@ int AmZRTPSessionState::startStreams(uint32_t ssrc){
 }
 
 int AmZRTPSessionState::stopStreams(){
+  if (NULL == zrtp_audio)
+    return -1;
+
   zrtp_status_t status = zrtp_stream_stop(zrtp_audio);
   if (zrtp_status_ok != status) {
     ERROR("stopping ZRTP stream\n");
@@ -295,6 +301,40 @@ void AmZRTP::on_zrtp_protocol_event(zrtp_stream_t *stream, zrtp_protocol_event_t
   }
   AmSession* sess = reinterpret_cast<AmSession*>(udata);
   sess->postEvent(new AmZRTPProtocolEvent(event, stream));
+}
+
+const char* zrtp_protocol_event_desc(zrtp_protocol_event_t e) {
+  switch (e) {
+  case ZRTP_EVENT_UNSUPPORTED: return "ZRTP_EVENT_UNSUPPORTED";
+
+  case ZRTP_EVENT_IS_CLEAR: return "ZRTP_EVENT_IS_CLEAR";
+  case ZRTP_EVENT_IS_INITIATINGSECURE: return "ZRTP_EVENT_IS_INITIATINGSECURE";
+  case ZRTP_EVENT_IS_PENDINGSECURE: return "ZRTP_EVENT_IS_PENDINGSECURE";
+  case ZRTP_EVENT_IS_PENDINGCLEAR: return "ZRTP_EVENT_IS_PENDINGCLEAR";
+  case ZRTP_EVENT_NO_ZRTP: return "ZRTP_EVENT_NO_ZRTP";
+  case ZRTP_EVENT_NO_ZRTP_QUICK: return "ZRTP_EVENT_NO_ZRTP_QUICK";
+  case ZRTP_EVENT_IS_CLIENT_ENROLLMENT: return "ZRTP_EVENT_IS_CLIENT_ENROLLMENT";
+  case ZRTP_EVENT_NEW_USER_ENROLLED: return "ZRTP_EVENT_NEW_USER_ENROLLED";
+  case ZRTP_EVENT_USER_ALREADY_ENROLLED: return "ZRTP_EVENT_USER_ALREADY_ENROLLED";
+  case ZRTP_EVENT_USER_UNENROLLED: return "ZRTP_EVENT_USER_UNENROLLED";
+  case ZRTP_EVENT_LOCAL_SAS_UPDATED: return "ZRTP_EVENT_LOCAL_SAS_UPDATED";
+  case ZRTP_EVENT_REMOTE_SAS_UPDATED: return "ZRTP_EVENT_REMOTE_SAS_UPDATED";
+  case ZRTP_EVENT_IS_SECURE: return "ZRTP_EVENT_IS_SECURE";
+  case ZRTP_EVENT_IS_SECURE_DONE: return "ZRTP_EVENT_IS_SECURE_DONE";
+  case ZRTP_EVENT_IS_PASSIVE_RESTRICTION: return "ZRTP_EVENT_IS_PASSIVE_RESTRICTION";
+  case ZRTP_EVENT_COUNT: return "ZRTP_EVENT_COUNT"; // ?
+  default:    return "UNKNOWN_ZRTP_PROTOCOL_EVENT";
+  }
+};
+
+const char* zrtp_security_event_desc(zrtp_security_event_t e) {
+  switch (e) {
+  case ZRTP_EVENT_PROTOCOL_ERROR: return "ZRTP_EVENT_PROTOCOL_ERROR";
+  case ZRTP_EVENT_WRONG_SIGNALING_HASH: return "ZRTP_EVENT_WRONG_SIGNALING_HASH";
+  case ZRTP_EVENT_WRONG_MESSAGE_HMAC: return "ZRTP_EVENT_WRONG_MESSAGE_HMAC";
+  case ZRTP_EVENT_MITM_WARNING: return "ZRTP_EVENT_MITM_WARNING";
+  default:    return "UNKNOWN_ZRTP_SECURITY_EVENT";
+  }
 }
 
 #endif
