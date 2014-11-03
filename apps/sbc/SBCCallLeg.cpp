@@ -128,6 +128,9 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
     cc_started(false),
     logger(NULL)
 {
+#ifdef WITH_ZRTP
+  enable_zrtp = false;
+#endif
   set_sip_relay_only(false);
   dlg->setRel100State(Am100rel::REL100_IGNORED);
 
@@ -155,6 +158,10 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
     cc_started(false),
     logger(NULL)
 {
+#ifdef WITH_ZRTP
+  enable_zrtp = false;
+#endif
+
   // FIXME: do we want to inherit cc_vars from caller?
   // Can be pretty dangerous when caller stored pointer to object - we should
   // not probably operate on it! But on other hand it could be handy for
@@ -202,6 +209,10 @@ SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)
     cc_started(false),
     logger(NULL)
 {
+#ifdef WITH_ZRTP
+  enable_zrtp = false;
+#endif
+
   memset(&call_start_ts, 0, sizeof(struct timeval));
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
