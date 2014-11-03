@@ -222,6 +222,7 @@ struct AmConfig
 
 #ifdef WITH_ZRTP
   static bool enable_zrtp;
+  static bool enable_zrtp_debuglog;
 #endif
 
   static unsigned int SessionLimit;

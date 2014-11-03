@@ -54,6 +54,9 @@ void zrtp_log(int level, char *data, int len, int offset) {
   else if (level==1)
     sems_lvl = L_INFO; // ??
   
+  if (sems_lvl==L_DBG && !AmConfig::enable_zrtp_debuglog)
+    return;
+
   _LOG(sems_lvl, "%.*s", len, data);
 }
 

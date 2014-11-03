@@ -36,13 +36,25 @@
  *   <pre> $ make WITH_ZRTP=yes</pre>
  *  </p>
  * 
+  <p>ZRTP can be enabled in sems.conf by the enable_zrtp config parameter, e.g. enable_zrtp=yes.</p>
+
+  <p>ZRTP debug logging (lots of info in the log) can be disabled in sems.conf by setting enable_zrtp_debuglog=no</p>
+
+  <p>ZRTP is NOT supported by the sbc application. I.e. if you want to transcrypt cleartext calls into ZRTP encrypted calls,
+     you need to use an endpoint application like the webconference module, the conference module, or better yet a
+     DSM application. If you want to make a plain-RTP to ZRTP gateway, have a look at the b2b_connect_audio DSM example,
+    which can be found in doc/dsm/examples/b2b_connect_audio.
+  </p>
+
+  <p> There is support for some utility functions in a DSM module (see \ref dsm_mod_zrtp). </p>
+
  *  <p>The <em>conference</em> application is enabled to tell the caller the SAS phrase
  *  if it is compiled with WITH_SAS_TTS option, set in apps/conference/Makefile. For this to work,
  *  the <a href="http://cmuflite.org">flite text-to-speech synthesizer</a> version 1.2 or 1.3 is needed.</p>
  *  
  *  \section zinyourapp How to use ZRTP in your application 
  *
- *  Have a look at the conference application on how to add ZRTP support in your application. There is a 
+ *  Have a look at the dsm or the conference application on how to add ZRTP support in your application. There is a 
  *  <code>void AmSession::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx)</code> 
  *  event that is called with the appropriate ZRTP event type and the zrtp stream context, if the state
  *  of the ZRTP encryption changes. The zrtp_event are defined in the Zfone SDK, e.g. ZRTP_EVENT_IS_SECURE.
