@@ -449,6 +449,32 @@ void DSMCall::onBeforeDestroy() {
   engine.onBeforeDestroy(this, this);
 }
 
+#ifdef WITH_ZRTP
+void DSMCall::onZRTPProtocolEvent(zrtp_protocol_event_t event, zrtp_stream_t *stream_ctx) {
+  DBG("DSMCall::onZRTPProtocolEvent: %s\n", zrtp_protocol_event_desc(event));
+
+  if (checkVar(DSM_ENABLE_ZRTP_EVENTS, DSM_TRUE)) {
+    map<string, string> params;
+    params["event"] = zrtp_protocol_event_desc(event);
+    params["event_id"] = int2str(event);
+    engine.runEvent(this, this, DSMCondition::ZRTPProtocolEvent, &params);
+  }
+
+}
+
+void DSMCall::onZRTPSecurityEvent(zrtp_security_event_t event, zrtp_stream_t *stream_ctx) {
+  DBG("DSMCall::onZRTPSecurityEvent: %s\n", zrtp_security_event_desc(event));
+
+  if (checkVar(DSM_ENABLE_ZRTP_EVENTS, DSM_TRUE)) {
+    map<string, string> params;
+    params["event"] = zrtp_security_event_desc(event);
+    params["event_id"] = int2str(event);
+    engine.runEvent(this, this, DSMCondition::ZRTPSecurityEvent, &params);
+  }
+
+}
+#endif
+
 void DSMCall::process(AmEvent* event)
 {
 

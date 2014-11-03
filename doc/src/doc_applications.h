@@ -443,6 +443,12 @@
    \verbinclude Readme.mod_xml.txt
    </p>
 
+
+   \subsection dsm_mod_zrtp mod_zrtp - ZRTP support functions
+   <p>
+   \verbinclude Readme.mod_zrtp.txt
+   </p>
+
  * 
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.

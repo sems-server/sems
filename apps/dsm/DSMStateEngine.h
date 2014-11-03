@@ -121,6 +121,11 @@ class DSMCondition
     RelayOnSipReply,
     RelayOnB2BRequest,
     RelayOnB2BReply
+
+#ifdef WITH_ZRTP
+    , ZRTPProtocolEvent,
+    ZRTPSecurityEvent
+#endif
   };
 
   bool invert; 

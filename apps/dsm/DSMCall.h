@@ -98,9 +98,14 @@ public:
   bool getSdpOffer(AmSdp& offer);
   bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
 
-  virtual void onNoAck(unsigned int cseq);
+  void onNoAck(unsigned int cseq);
 
   void onSystemEvent(AmSystemEvent* ev);
+
+#ifdef WITH_ZRTP
+  void onZRTPProtocolEvent(zrtp_protocol_event_t event, zrtp_stream_t *stream_ctx);
+  void onZRTPSecurityEvent(zrtp_security_event_t event, zrtp_stream_t *stream_ctx);
+#endif
 
   void process(AmEvent* event);
 

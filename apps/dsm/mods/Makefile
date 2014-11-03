@@ -10,6 +10,10 @@ ifneq ($(USE_MONITORING), yes)
 exclude_dsm_modules += mod_monitoring
 endif
 
+ifneq ($(WITH_ZRTP), yes)
+exclude_dsm_modules += mod_zrtp
+endif
+
 $(info exclude_dsm_modules: $(exclude_dsm_modules))
 dsm_modules = $(filter-out $(subst ;, ,$(exclude_dsm_modules))\
 		$(wildcard Makefile*) lib CMakeLists.txt, \

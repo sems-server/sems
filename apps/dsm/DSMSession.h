@@ -58,6 +58,8 @@ using std::map;
 #define DSM_ENABLE_REQUEST_EVENTS  "enable_request_events"
 #define DSM_ENABLE_REPLY_EVENTS    "enable_reply_events"
 
+#define DSM_ENABLE_ZRTP_EVENTS     "enable_zrtp_events"
+
 #define DSM_B2B_RELAYED_INVITE     "b2b_relayed_invite"
 #define DSM_B2B_LOCAL_PARTY  "b2b_local_party" // From in outgoing call
 #define DSM_B2B_LOCAL_URI    "b2b_local_uri"
