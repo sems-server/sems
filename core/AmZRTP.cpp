@@ -45,7 +45,7 @@ AmMutex AmZRTP::zrtp_cache_mut;
 
 zrtp_global_t* AmZRTP::zrtp_global;      // persistent storage for libzrtp data
 zrtp_config_t AmZRTP::zrtp_config;
-zrtp_zid_t AmZRTP::zrtp_instance_zid = {"defaultsems"}; // todo: generate one
+zrtp_zid_t AmZRTP::zrtp_instance_zid = {"defaultsems"}; // todo: generate one?
 
 void zrtp_log(int level, char *data, int len, int offset) {
   int sems_lvl = L_DBG;
@@ -68,25 +68,54 @@ int AmZRTP::init() {
   }
 
   cache_path = cfg.getParameter("cache_path");
-  string zid = cfg.getParameter("zid");
-  if (zid.length() != sizeof(zrtp_zid_t)) {
-    ERROR("ZID of this instance MUST be set for ZRTP.\n");
-    ERROR("ZID needs to be %lu characters long.\n", 
-	  sizeof(zrtp_zid_t));
-    return -1;
+  if (cfg.hasParameter("zid_hex")) {
+    string zid_hex = cfg.getParameter("zid_hex");
+    if (zid_hex.size() != 2*sizeof(zrtp_instance_zid)) {
+      ERROR("zid_hex config parameter in zrtp.conf must be %lu characters long.\n", 
+	    sizeof(zrtp_zid_t)*2);
+      return -1;
+    }
+
+    for (size_t i=0;i<sizeof(zrtp_instance_zid);i++) {
+      unsigned int h;
+      if (reverse_hex2int(zid_hex.substr(i*2, 2), h)) {
+	ERROR("in zid_hex in zrtp.conf: '%s' is no hex number\n", zid_hex.substr(i*2, 2).c_str());
+	return -1;
+      }
+
+      zrtp_instance_zid[i]=h % 0xff;
+    }
+
+  } else if (cfg.hasParameter("zid")) {
+    string zid = cfg.getParameter("zid");
+    WARN("zid parameter in zrtp.conf is only supported for backwards compatibility. Please use zid_hex\n");
+    if (zid.length() != sizeof(zrtp_zid_t)) {
+      ERROR("zid config parameter in zrtp.conf must be %lu characters long.\n", 
+	    sizeof(zrtp_zid_t));
+      return -1;
+    }
+    for (size_t i=0;i<zid.length();i++)
+      zrtp_instance_zid[i]=zid[i];
+  } else {
+    // generate one
+    string zid_hex;
+    for (size_t i=0;i<sizeof(zrtp_instance_zid);i++) {
+      zrtp_instance_zid[i]=get_random() % 0xff;
+      zid_hex+=char2hex(zrtp_instance_zid[i], true);
+    }
+
+    WARN("Generated random ZID. To support key continuity through key cache "
+	 "on the peers, add this to zrtp.conf: 'zid_hex=\"%s\"'", zid_hex.c_str());
   }
 
-  for (size_t i=0;i<zid.length();i++)
-    zrtp_instance_zid[i]=zid[i];
 
-  DBG("initializing ZRTP library with ZID '%s', cache path '%s'.\n",
-      zid.c_str(), cache_path.c_str());
+  DBG("initializing ZRTP library with cache path '%s'.\n", cache_path.c_str());
 
   zrtp_config_defaults(&zrtp_config);
 
   strcpy(zrtp_config.client_id, SEMS_CLIENT_ID);
+  memcpy((char*)zrtp_config.zid, (char*)zrtp_instance_zid, sizeof(zrtp_zid_t));
   zrtp_config.lic_mode = ZRTP_LICENSE_MODE_UNLIMITED;
-
   
   strncpy(zrtp_config.cache_file_cfg.cache_path, cache_path.c_str(), 256);
 
@@ -136,11 +165,9 @@ AmZRTPSessionState::AmZRTPSessionState()
 }
 
 int AmZRTPSessionState::initSession(AmSession* session) {
+  DBG("Initializing ZRTP stream...\n");
 
-  DBG("starting ZRTP stream...\n");
-  //
-  // Allocate zrtp session with default parameters
-  //
+  // Allocate zrtp session
   zrtp_status_t status =
     zrtp_session_init( AmZRTP::zrtp_global,
 		       &zrtp_profile,
@@ -154,9 +181,7 @@ int AmZRTPSessionState::initSession(AmSession* session) {
   // Set call-back pointer to our parent structure
   zrtp_session_set_userdata(zrtp_session, session);
 
-  // 
-  // Attach Audio and Video Streams
-  //
+  // Attach audio stream
   status = zrtp_stream_attach(zrtp_session, &zrtp_audio);
   if (zrtp_status_ok != status) {
     // Check error code and debug logs
@@ -271,33 +296,5 @@ void AmZRTP::on_zrtp_protocol_event(zrtp_stream_t *stream, zrtp_protocol_event_t
   AmSession* sess = reinterpret_cast<AmSession*>(udata);
   sess->postEvent(new AmZRTPProtocolEvent(event, stream));
 }
-
-/*
-void zrtp_play_alert(zrtp_stream_t* ctx) {
-  INFO("zrtp_play_alert: ALERT!\n");
-  ctx->need_play_alert = zrtp_play_no;
-}
-*/
-
-// #define BUFFER_LOG_SIZE 256
-// void zrtp_print_log(log_level_t level, const char* format, ...)
-// {
-// 	char buffer[BUFFER_LOG_SIZE];
-//     va_list arg;
-
-//     va_start(arg, format);
-//     vsnprintf(buffer, BUFFER_LOG_SIZE, format, arg);
-//     va_end( arg );
-//     int sems_lvl = L_ERR;
-//     switch(level) {
-//     case ZRTP_LOG_DEBUG:   sems_lvl = L_DBG; break;
-//     case ZRTP_LOG_INFO:    sems_lvl = L_INFO; break;
-//     case ZRTP_LOG_WARNING: sems_lvl = L_WARN; break;
-//     case ZRTP_LOG_ERROR:   sems_lvl = L_ERR; break;
-//     case ZRTP_LOG_FATAL:   sems_lvl = L_ERR; break;
-//     case ZRTP_LOG_ALL:   sems_lvl = L_ERR; break;
-//     }
-//     _LOG(sems_lvl, "*** %s", buffer);
-// }
 
 #endif

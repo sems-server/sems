@@ -755,9 +755,6 @@ int AmRtpStream::init(const AmSdp& local,
 
 #ifdef WITH_ZRTP  
   if (session && session->enable_zrtp) {
-    if (session->zrtp_session_state.initSession(session))
-      return -1;
-
     session->zrtp_session_state.startStreams(get_ssrc());
   }
 #endif

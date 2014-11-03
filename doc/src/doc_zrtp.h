@@ -1,4 +1,4 @@
-/* \file info about ZRTP usage in SEMS
+/* \file info about using ZRTP with SEMS
  */
 
 /*!
@@ -15,7 +15,7 @@
  *  not supporting it are still possible, but unencrypted. The actual RTP encryption is done with 
  *  <a href="http://www.ietf.org/rfc/rfc3711.txt">SRTP</a>.
  *
- *  <p>ZRTP is one of the widest (if not the widest) supported end-to-end encryption methods for VoIP. 
+ *  <p>ZRTP is one of the most widely (if not the most widely) supported end-to-end encryption methods for VoIP. 
  *  Popular SIP clients that support ZRTP are <a href="http://www.jitsi.org">Jitsi</a>, CSipSimple, Twinkle, Linphone.</p>
  * 
  *  <p>For more information about ZRTP, see the 

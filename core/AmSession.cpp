@@ -279,21 +279,22 @@ void AmSession::run() {
 #endif
 
 bool AmSession::startup() {
-#ifdef WITH_ZRTP
-  if (enable_zrtp) {
-    if (zrtp_session_state.initSession(this))
-      return -1;
-      
-      DBG("initialized ZRTP session context OK\n");
-  }
-#endif
-
   session_started();
 
   try {
     try {
 
       onStart();
+
+#ifdef WITH_ZRTP
+      if (enable_zrtp) {
+	if (zrtp_session_state.initSession(this)) {
+	  ERROR("initializing ZRTP session\n");
+	  throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+	}
+	DBG("initialized ZRTP session context OK\n");
+      }
+#endif
 
     } 
     catch(const AmSession::Exception& e){ throw e; }
@@ -1322,9 +1323,9 @@ void AmSession::onZRTPProtocolEvent(zrtp_protocol_event_t event, zrtp_stream_t *
       break;
 
     case ZRTP_EVENT_IS_PASSIVE_RESTRICTION:
-      INFO("ZRTP_EVENT_IS_PASSIVE_RESTRICTION\n");
+     INFO("ZRTP_EVENT_IS_PASSIVE_RESTRICTION\n");
       break;
-     
+
     default: 
       INFO("unknown ZRTP_EVENT\n");
       break;
