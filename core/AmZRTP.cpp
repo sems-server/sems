@@ -45,7 +45,7 @@ AmMutex AmZRTP::zrtp_cache_mut;
 
 zrtp_global_t* AmZRTP::zrtp_global;      // persistent storage for libzrtp data
 zrtp_config_t AmZRTP::zrtp_config;
-zrtp_zid_t AmZRTP::zrtp_instance_zid = {"defaultsems"}; // todo: generate one?
+zrtp_zid_t AmZRTP::zrtp_instance_zid = {"defaultsems"};
 
 void zrtp_log(int level, char *data, int len, int offset) {
   int sems_lvl = L_DBG;

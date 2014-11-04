@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2014 Stefan Sayer
  *
+ * Parts of the development of this module was kindly sponsored by AMTEL Inc.
+ *
  * This file is part of SEMS, a free SIP media server.
  *
  * SEMS is free software; you can redistribute it and/or modify
@@ -35,6 +37,15 @@ DECLARE_MODULE_END;
 
 #ifdef WITH_ZRTP
 DEF_ACTION_1P(ZRTPSetEnabledAction);
+DEF_ACTION_1P(ZRTPSetAllowclearAction);
+DEF_ACTION_1P(ZRTPSetAutosecureAction);
+DEF_ACTION_1P(ZRTPSetDisclosebitAction);
+DEF_ACTION_2P(ZRTPGetSASAction);
+DEF_ACTION_1P(ZRTPGetSessionInfoAction);
+DEF_ACTION_2P(ZRTPSetVerifiedAction);
+DEF_ACTION_2P(ZRTPSetUnverifiedAction);
+DEF_ACTION_1P(ZRTPSetSignalingHash);
+DEF_ACTION_1P(ZRTPGetSignalingHash);
 #endif // WITH_ZRTP
 
 #endif

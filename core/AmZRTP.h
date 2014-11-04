@@ -38,9 +38,6 @@
 
 class AmSession;
 
-extern zrtp_global_t zrtp_global;      // persistent storage for libzrtp data
-extern zrtp_zid_t zrtp_instance_zid;
-
 struct AmZRTPSecurityEvent : public AmEvent {
   zrtp_stream_t* stream_ctx;
  AmZRTPSecurityEvent(int event_id, zrtp_stream_t* stream_ctx)
@@ -90,7 +87,6 @@ struct AmZRTPSessionState {
 const char* zrtp_protocol_event_desc(zrtp_protocol_event_t e);
 const char* zrtp_security_event_desc(zrtp_security_event_t e);
 
- 
 #if defined(__cplusplus)
 extern "C" {
 #endif

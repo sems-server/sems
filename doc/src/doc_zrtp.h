@@ -16,7 +16,8 @@
  *  <a href="http://www.ietf.org/rfc/rfc3711.txt">SRTP</a>.
  *
  *  <p>ZRTP is one of the most widely (if not the most widely) supported end-to-end encryption methods for VoIP. 
- *  Popular SIP clients that support ZRTP are <a href="http://www.jitsi.org">Jitsi</a>, CSipSimple, Twinkle, Linphone.</p>
+ *  Popular SIP clients that support ZRTP are <a href="http://www.jitsi.org">Jitsi</a>, 
+   <a href="http://www.creytiv.com/baresip.html">baresip</a>, CSipSimple, Twinkle, Linphone.</p>
  * 
  *  <p>For more information about ZRTP, see the 
  *  <a href="http://zfoneproject.com/">Zfone project</a>, the 
@@ -46,7 +47,8 @@
     which can be found in doc/dsm/examples/b2b_connect_audio.
   </p>
 
-  <p> There is support for some utility functions in a DSM module (see \ref dsm_mod_zrtp). </p>
+  <p> There is support for some utility functions in a DSM module (see \ref dsm_mod_zrtp). 
+  </p>
 
  *  <p>The <em>conference</em> application is enabled to tell the caller the SAS phrase
  *  if it is compiled with WITH_SAS_TTS option, set in apps/conference/Makefile. For this to work,
@@ -54,7 +56,8 @@
  *  
  *  \section zinyourapp How to use ZRTP in your application 
  *
- *  Have a look at the dsm or the conference application on how to add ZRTP support in your application. There is a 
+ *  Have a look at the dsm module mod_zrtp for examples   
+or the conference application on how to add ZRTP support in your application. There is a 
  *  <code>void AmSession::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx)</code> 
  *  event that is called with the appropriate ZRTP event type and the zrtp stream context, if the state
  *  of the ZRTP encryption changes. The zrtp_event are defined in the Zfone SDK, e.g. ZRTP_EVENT_IS_SECURE.
