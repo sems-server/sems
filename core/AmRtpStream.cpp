@@ -788,6 +788,8 @@ void AmRtpStream::resume()
   receive_mut.lock();
   mem.clear();
   receive_buf.clear();
+  while (!rtp_ev_qu.empty())
+    rtp_ev_qu.pop();
   receive_mut.unlock();
   receiving = true;
 
