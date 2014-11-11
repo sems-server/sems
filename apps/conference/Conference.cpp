@@ -155,8 +155,11 @@ int get_audio_file(const string& message, const string& domain, const string& la
 
 int ConferenceFactory::onLoad()
 {
-  if(cfg.loadFile(AmConfig::ModConfigPath + string(APP_NAME)+ ".conf"))
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(APP_NAME)+ ".conf")) {
+    ERROR("Configuration file '%s' missing.\n",
+	  (AmConfig::ModConfigPath + string(APP_NAME)+ ".conf").c_str());
     return -1;
+  }
 
   // get application specific global parameters
   configureModule(cfg);
