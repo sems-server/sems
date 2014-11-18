@@ -753,12 +753,6 @@ int AmRtpStream::init(const AmSdp& local,
   DBG("default payload selected = %i\n",payload);
   last_payload = payload;
 
-#ifdef WITH_ZRTP  
-  if (session && session->enable_zrtp) {
-    session->zrtp_session_state.startStreams(get_ssrc());
-  }
-#endif
-
   active = false; // mark as nothing received yet
   return 0;
 }
