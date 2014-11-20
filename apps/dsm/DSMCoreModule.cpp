@@ -753,23 +753,37 @@ string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
     // todo: simply use resolveVars (?)
     switch(res[rstart]) {
     case '$': {
-      
-      if (sc_sess->var.find(keyname) == sc_sess->var.end())
-	res.erase(rstart, rend-rstart); 
-      else 
-	res.replace(rstart, rend-rstart, sc_sess->var[keyname]); 
+      if (sc_sess->var.find(keyname) == sc_sess->var.end()) {
+	res.erase(rstart, rend-rstart);
+	if (repl_pos) repl_pos--; // repl_pos was after $
+      } else { 
+	res.replace(rstart, rend-rstart, sc_sess->var[keyname]);
+	if (sc_sess->var[keyname].size())
+	  repl_pos+=sc_sess->var[keyname].size()-1; // skip after new string
+      }
     } break;
     case '#':
       if (NULL!=event_params) {
-	if (event_params->find(keyname) != event_params->end())
+	if (event_params->find(keyname) != event_params->end()) {
 	  res.replace(rstart, rend-rstart, (*event_params)[keyname]);
-	else
-	  res.erase(rstart, rend-rstart);	
+	  if (repl_pos+=(*event_params)[keyname].size())
+	    repl_pos+=(*event_params)[keyname].size()-1; // skip after new string
+	} else {
+	  res.erase(rstart, rend-rstart);
+	  if (repl_pos) repl_pos--; // repl_pos was after #
+	}
       } break;
     case '@': {
-      // todo: optimize 
-      res.replace(rstart, rend-rstart, 
-		  resolveVars("@"+keyname, sess, sc_sess, event_params));
+      // todo: optimize
+      string n = resolveVars("@"+keyname, sess, sc_sess, event_params);
+      res.replace(rstart, rend-rstart, n);
+      if (n.size())
+	repl_pos+=n.size()-1;  // skip after new string
+        //    rstart  rend
+	// bla@(varname)uuuu
+        //     r
+        //         r
+        // bla12345huuuu
     } break;
     default: break;
     }
