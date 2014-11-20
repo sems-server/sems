@@ -50,11 +50,11 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
   while (ifs.good() && !ifs.eof()) {
     string r;
     getline(ifs, r);
-    // skip comments
+    // skip comments: lines starting with -- or #
     size_t fpos  = r.find_first_not_of(" \t");
     if (fpos != string::npos) {
-      if (r.length() > fpos+1 &&
-	  r.substr(fpos, 2) == "--")
+      if ((r.length() > fpos+1 && r.substr(fpos, 2) == "--") ||
+	  ((r.length() >= fpos+1 && r.substr(fpos, 1) == "#" && r.substr(fpos, 8) != "#include") ))
 	continue;
 
       if (r.length() > fpos+1 && 

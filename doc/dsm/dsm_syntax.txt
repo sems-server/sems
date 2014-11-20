@@ -4,6 +4,8 @@ DSM quick reference
 Syntax
 ======
 -- comment
+# also comment
+
 #include "script.dsm"
 #include "/path/to/anotherscript.dsm"
 import(mod_name);
