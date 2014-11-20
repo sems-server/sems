@@ -89,6 +89,9 @@ DSM flow
   e.g.  set($var="text"); set($var=$var2); set($var=#key)
  sets($var=value)
   e.g.  sets($var="text and some $variable and some #param");
+        sets($var="$(variable1)$(variable2)");
+        sets($var="this is a single hash: ##")
+        sets($var="a single at on a date with a single dollar: @@$$")
  var($dstvar=srcvarname)
   e.g.  var($dstvar=$var_counter)
  param($dstvar=srcparamname)

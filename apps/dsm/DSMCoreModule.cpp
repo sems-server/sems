@@ -722,6 +722,10 @@ string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
     repl_pos = rstart+1;
     if (rstart == string::npos) 
       break;
+    if (rstart && (res.length() > rstart) && (res[rstart]==res[repl_pos])) {
+      res.erase(rstart, 1);
+      continue;
+    }
     if (rstart && res[rstart-1] == '\\') // escaped
       continue;
     size_t rend;
