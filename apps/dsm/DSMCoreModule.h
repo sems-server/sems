@@ -163,4 +163,8 @@ class TestDSMCondition
 	     map<string,string>* event_params);
 };
 
+/** return string q with variables/params/selects replaced */
+string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
+		     map<string,string>* event_params);
+
 #endif
