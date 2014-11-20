@@ -103,6 +103,8 @@ inline string transport_p_2_str(int tp)
   case TP_UDP: return "udp";
   case TP_RTPSAVP: return "RTP/SAVP";
   case TP_RTPSAVPF: return "RTP/SAVPF";
+  case TP_UDPTLSRTPSAVP: return "UDP/TLS/RTP/SAVP";
+  case TP_UDPTLSRTPSAVPF: return "UDP/TLS/RTP/SAVPF";
   case TP_UDPTL: return "udptl";
   default: return "<unknown media type>";
   }
@@ -358,7 +360,7 @@ void AmSdp::print(string& body) const
 
       string options;
 
-      if (media_it->transport == TP_RTPAVP || media_it->transport == TP_RTPSAVP || media_it->transport == TP_RTPSAVPF) {
+      if (media_it->transport == TP_RTPAVP || media_it->transport == TP_RTPSAVP || media_it->transport == TP_RTPSAVPF || media_it->transport == TP_UDPTLSRTPSAVP || media_it->transport == TP_UDPTLSRTPSAVPF) {
 	for(std::vector<SdpPayload>::const_iterator pl_it = media_it->payloads.begin();
 	    pl_it != media_it->payloads.end(); pl_it++) {
 
@@ -889,7 +891,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       }
     case FMT:
       {
-	if (m.transport == TP_RTPAVP || m.transport == TP_RTPSAVP || m.transport == TP_RTPSAVPF) {
+	if (m.transport == TP_RTPAVP || m.transport == TP_RTPSAVP || m.transport == TP_RTPSAVPF || m.transport == TP_UDPTLSRTPSAVP || m.transport == TP_UDPTLSRTPSAVPF) {
 	  if (contains(media_line, line_end, ' ')) {
 	    next = parse_until(media_line, ' ');
 	    string value;
@@ -1471,6 +1473,10 @@ static TransProt transport_type(string transport)
     return TP_RTPSAVP;
   else if(transport_uc == "RTP/SAVPF")
     return TP_RTPSAVPF;
+  else if(transport_uc == "UDP/TLS/RTP/SAVP")
+    return TP_UDPTLSRTPSAVP;
+  else if(transport_uc == "UDP/TLS/RTP/SAVPF")
+    return TP_UDPTLSRTPSAVPF;
   else if(transport_uc == "UDPTL")
     return TP_UDPTL;
   else 
