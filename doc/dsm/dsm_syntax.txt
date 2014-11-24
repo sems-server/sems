@@ -106,9 +106,12 @@ DSM flow
 
  inc($var)
  clear($var)
- clearArray($var)
+ clearStruct($var)
   clears all var.* variables
+ clearArray($var)
+  clears all var[* variables 
 
+ 
 Playing prompts and file I/O
 ----------------------------
 

@@ -102,6 +102,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("warn", SCWarnAction);
   DEF_CMD("error", SCErrorAction);
   DEF_CMD("clear", SCClearAction);
+  DEF_CMD("clearStruct", SCClearStructAction);
   DEF_CMD("clearArray", SCClearArrayAction);
   DEF_CMD("size", SCSizeAction);
   DEF_CMD("logVars", SCLogVarsAction);
@@ -855,10 +856,10 @@ EXEC_ACTION_START(SCClearAction) {
   sc_sess->var.erase(var_name);
 } EXEC_ACTION_END;
 
-EXEC_ACTION_START(SCClearArrayAction) {
+EXEC_ACTION_START(SCClearStructAction) {
   string varprefix = (arg.length() && arg[0] == '$')?
     arg.substr(1) : arg;
-  DBG("clear variable array '%s.*'\n", varprefix.c_str());
+  DBG("clear variable struct '%s.*'\n", varprefix.c_str());
 
   varprefix+=".";
 
@@ -870,6 +871,27 @@ EXEC_ACTION_START(SCClearArrayAction) {
     map<string, string>::iterator lb_d = lb;
     lb++;
     sc_sess->var.erase(lb_d);    
+  }
+
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(SCClearArrayAction) {
+  string varprefix = (arg.length() && arg[0] == '$')?
+    arg.substr(1) : arg;
+  DBG("clear variable array '%s[*'\n", varprefix.c_str());
+
+  varprefix+="[";
+
+  VarMapT::iterator lb = sc_sess->var.lower_bound(varprefix);
+  while (lb != sc_sess->var.end()) {
+    if ((lb->first.length() < varprefix.length()) ||
+	strncmp(lb->first.c_str(), varprefix.c_str(),varprefix.length()))
+      break;
+    // fixme: check whether it's really an array index
+    VarMapT::iterator lb_d = lb;
+    lb++;
+    sc_sess->var.erase(lb_d);
   }
 
 } EXEC_ACTION_END;
