@@ -104,6 +104,9 @@ DSM flow
   set variable $dst to size of array 
   (e.g. $arrayname[0], $arrayname[1] set, $dst set to 2)
 
+ arrayIndex($array, key)  - find key in $array, set $index to its index, or "nil" if not found
+ arrayIndex($array, $var) - find $var in $array, set $var.index to its index, or "nil" if not found
+
  inc($var)
  clear($var)
  clearStruct($var)

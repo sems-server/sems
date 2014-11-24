@@ -105,6 +105,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("clearStruct", SCClearStructAction);
   DEF_CMD("clearArray", SCClearArrayAction);
   DEF_CMD("size", SCSizeAction);
+  DEF_CMD("arrayIndex", SCArrayIndexAction);
   DEF_CMD("logVars", SCLogVarsAction);
   DEF_CMD("logParams", SCLogParamsAction);
   DEF_CMD("logSelects", SCLogSelectsAction);
@@ -921,6 +922,35 @@ EXEC_ACTION_START(SCSizeAction) {
   DBG("set $%s=%s\n", dst_name.c_str(), res.c_str());
 } EXEC_ACTION_END;
 
+CONST_ACTION_2P(SCArrayIndexAction, ',', false);
+EXEC_ACTION_START(SCArrayIndexAction) {
+  string array_name = par1;
+  if (array_name.length() && array_name[0]=='$')
+    array_name.erase(0,1);
+
+  string val = resolveVars(par2, sess, sc_sess, event_params);
+  unsigned int i = 0;
+  bool found = false;
+  while (true) {
+    VarMapT::iterator lb = sc_sess->var.find(array_name+"["+int2str(i)+"]");
+    if (lb == sc_sess->var.end())
+      break;
+    if (val == lb->second) {
+      found = true;
+      break;
+    }
+    i++;
+  }
+
+  string res = found ? int2str(i) : "nil";
+  if (par2[0]=='$') {
+    sc_sess->var[par2.substr(1)+".index"] = res;
+    DBG("set %s=%s\n", (par2+".index").c_str(), res.c_str());
+  } else {
+    sc_sess->var["index"] = res;
+    DBG("set $index=%s\n", res.c_str());
+  }
+} EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCAppendAction,',', false);
 EXEC_ACTION_START(SCAppendAction) {

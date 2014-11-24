@@ -95,6 +95,7 @@ DEF_ACTION_1P(SCClearAction);
 DEF_ACTION_1P(SCClearStructAction);
 DEF_ACTION_1P(SCClearArrayAction);
 DEF_ACTION_2P(SCSizeAction);
+DEF_ACTION_2P(SCArrayIndexAction);
 DEF_ACTION_2P(SCSetTimerAction);
 DEF_ACTION_1P(SCRemoveTimerAction);
 DEF_ACTION_1P(SCRemoveTimersAction);
