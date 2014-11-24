@@ -35,6 +35,8 @@
 #include "SBC.h"
 #include "ExtendedCCInterface.h"
 
+#include "ampi/UACAuthAPI.h"
+
 #include <map>
 #include <list>
 using std::map;
@@ -43,7 +45,9 @@ class SimpleRelayDialog
   : public AmBasicSipDialog,
     public AmBasicSipEventHandler,
     public AmEventQueue,
-    public AmEventHandler
+    public AmEventHandler,
+    public DialogControl,
+    public CredentialHolder
 {
   atomic_ref_cnt*     parent_obj;
   string              other_dlg;
@@ -63,6 +67,13 @@ class SimpleRelayDialog
     void *user_data;
   };
   std::list<CCModuleInfo> cc_ext;
+
+  // auth support
+  std::auto_ptr<UACAuthCred>           auth_cred;
+  std::auto_ptr<AmSessionEventHandler> auth_h;
+
+  UACAuthCred* getCredentials() { return auth_cred.get(); }
+  AmBasicSipDialog* getDlg() { return this; }
 
   // relay methods
   int relayRequest(const AmSipRequest& req);
@@ -132,6 +143,7 @@ public:
   virtual bool terminated() { return finished; }
 
   // AmBasicSipEventHandler interface
+  void onSendRequest(AmSipRequest& req, int& flags);
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipRequest& req,
 		  const AmSipReply& reply, 

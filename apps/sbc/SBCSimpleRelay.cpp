@@ -250,6 +250,12 @@ void SimpleRelayDialog::onB2BReply(const AmSipReply& reply)
   relayReply(reply);
 }
 
+void SimpleRelayDialog::onSendRequest(AmSipRequest& req, int& flags)
+{
+  if(auth_h.get())
+    auth_h->onSendRequest(req,flags);
+}
+
 void SimpleRelayDialog::onSipRequest(const AmSipRequest& req)
 {
   for (list<CCModuleInfo>::iterator i = cc_ext.begin();
@@ -273,6 +279,25 @@ void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
 				   const AmSipReply& reply, 
 				   AmBasicSipDialog::Status old_dlg_status)
 {
+  unsigned int cseq_before = cseq;
+  if(auth_h.get() && auth_h->onSipReply(req,reply,old_dlg_status)) {
+
+    if (cseq_before != cseq) {
+      DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
+          "updating relayed_req map\n", reply.cseq, cseq_before);
+
+      RelayMap::iterator t = relayed_reqs.find(reply.cseq);
+      if (t != relayed_reqs.end()) {
+        relayed_reqs[cseq_before] = t->second;
+        relayed_reqs.erase(t);
+        DBG("updated relayed_req (UAC trans): CSeq %u -> %u\n",
+            reply.cseq, cseq_before);
+      }
+
+      return;
+    }
+  }
+
   for (list<CCModuleInfo>::iterator i = cc_ext.begin();
        i != cc_ext.end(); ++i) {
     i->module->onSipReply(req, reply, old_dlg_status, i->user_data);
@@ -389,6 +414,46 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
 
   if(!cp.bleg_dlg_contact_params.empty())
     setContactParams(cp.bleg_dlg_contact_params);
+
+  if(cp.auth_enabled) {
+    // adding auth handler
+    AmDynInvokeFactory* uac_auth_f =
+      AmPlugIn::instance()->getFactory4Di("uac_auth");
+    if (NULL == uac_auth_f)  {
+      ERROR("uac_auth module not loaded. uac auth NOT enabled.\n");
+    } else {
+      AmDynInvoke* uac_auth_i = uac_auth_f->getInstance();
+
+      // get a sessionEventHandler from uac_auth
+      AmArg di_args,ret;
+      AmArg cred_h,dlg_ctrl;
+
+      CredentialHolder* c = (CredentialHolder*)this;
+      cred_h.setBorrowedPointer(c);
+
+      DialogControl* cc = (DialogControl*)this;
+      dlg_ctrl.setBorrowedPointer(cc);
+
+      di_args.push(cred_h);
+      di_args.push(dlg_ctrl);
+
+      auth_cred.reset(new UACAuthCred(cp.auth_credentials));
+      uac_auth_i->invoke("getHandler", di_args, ret);
+
+      if (!ret.size()) {
+        ERROR("Can not add auth handler to new registration!\n");
+      } else {
+        AmObject* p = ret.get(0).asObject();
+        if (p != NULL) {
+          AmSessionEventHandler* h = dynamic_cast<AmSessionEventHandler*>(p);
+          if (h != NULL) {
+            auth_h.reset(h);
+            DBG("uac auth enabled for callee session.\n");
+          }
+        }
+      }
+    }
+  }
 
   return 0;
 }
