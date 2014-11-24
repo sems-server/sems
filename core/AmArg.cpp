@@ -471,3 +471,29 @@ string AmArg::print(const AmArg &a) {
   }
   return "<UNKONWN TYPE>";
 }
+
+const int arg2int(const AmArg &a)
+{
+  if (isArgInt(a)) return a.asInt();
+  if (isArgBool(a)) return a.asBool();
+  if (isArgCStr(a)) {
+    int res;
+    if (!str2int(a.asCStr(), res)) {
+      throw std::runtime_error(string("can't convert arg to int: ") + a.asCStr());
+    }
+    return res;
+  }
+
+  throw std::runtime_error(string("can't convert arg to int"));
+}
+
+string arg2str(const AmArg &a)
+{
+  if (isArgInt(a)) return int2str(a.asInt());
+  if (isArgBool(a)) return int2str(a.asBool());
+  if (isArgCStr(a)) return a.asCStr();
+
+  throw std::runtime_error(string("can't convert arg to string"));
+}
+
+>>>>>>> f216211... core: added arg2int() & arg2str() methods
