@@ -34,7 +34,7 @@
 using std::string;
 
 class DialogControl 
-: public AmObject 
+: public virtual AmObject 
 {
  public:
   virtual AmBasicSipDialog* getDlg()=0;
@@ -52,7 +52,8 @@ class UACAuthCred
 	      const string& pwd);
 };
 
-class CredentialHolder {
+class CredentialHolder
+: public virtual AmObject {
  public:
   virtual UACAuthCred* getCredentials() = 0;
   virtual ~CredentialHolder() { }
