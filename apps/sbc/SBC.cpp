@@ -244,8 +244,8 @@ int SBCFactory::onLoad()
     return -1;
   }
 
-  // TODO: add config param for the number of threads
-  subnot_processor.addThreads(1);
+  subnot_processor.addThreads(cfg.getParameterInt("out_of_dialog_threads",
+                                                  DEFAULT_OOD_THREADS));
   RegisterCache::instance()->start();
 
   return 0;

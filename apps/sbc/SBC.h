@@ -42,6 +42,8 @@ class SBCCallLeg;
 
 using std::string;
 
+#define DEFAULT_OOD_THREADS 1
+
 #define SBC_TIMER_ID_CALL_TIMERS_START   10
 #define SBC_TIMER_ID_CALL_TIMERS_END     99
 
