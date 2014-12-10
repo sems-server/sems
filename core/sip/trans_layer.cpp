@@ -1414,6 +1414,12 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	return 0;
     }
 
+    if(t->canceled) {
+	DBG("Transaction has already been canceled\n");
+	bucket->unlock();
+	return 0;
+    }
+
     sip_msg* req = t->msg;
     
     // RFC 3261 says: SHOULD NOT be sent for other request
@@ -1544,16 +1550,20 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	    DBG("Could not update state for UAC transaction\n");
 	    delete p_msg;
 	}
-	else if(t->logger) {
-	    sockaddr_storage src_ip;
-	    p_msg->local_socket->copy_addr_to(&src_ip);
-	    t->logger->log(p_msg->buf,p_msg->len,&src_ip,
-			   &p_msg->remote_ip,cancel_str);
+	else {
+            t->canceled = true;
 
-	    if(!cancel_t->logger) {
-		cancel_t->logger = t->logger;
-		inc_ref(t->logger);
-	    }
+            if(t->logger) {
+                sockaddr_storage src_ip;
+                p_msg->local_socket->copy_addr_to(&src_ip);
+                t->logger->log(p_msg->buf,p_msg->len,&src_ip,
+                               &p_msg->remote_ip,cancel_str);
+
+                if(!cancel_t->logger) {
+                    cancel_t->logger = t->logger;
+                    inc_ref(t->logger);
+                }
+            }
 	}
     }
 

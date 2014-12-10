@@ -156,6 +156,9 @@ class sip_trans
     /** message logging */
     msg_logger* logger;
 
+    /** request canceled? */
+    bool canceled;
+
     /**
      * Tells if a specific timer is set
      *
