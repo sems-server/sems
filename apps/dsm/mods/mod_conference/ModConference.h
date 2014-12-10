@@ -39,6 +39,7 @@ DECLARE_MODULE(MOD_CLS_NAME);
 #define CONF_AKEY_CHANNEL        "conf.chan" 
 #define CONF_AKEY_DEF_TEECHANNEL "conf.teechan" 
 #define CONF_AKEY_MIXER          "conf.mixer" 
+#define CONF_AKEY_MIXLIST        "conf.mixlist" 
 
 /** holds a conference channel  */
 class DSMConfChannel 
@@ -94,5 +95,6 @@ DEF_ACTION_1P(ConfTeeLeaveAction);
 
 DEF_ACTION_2P(ConfSetupMixInAction);
 DEF_ACTION_1P(ConfPlayMixInAction);
+DEF_ACTION_1P(ConfPlayMixInListAction);
 
 #endif

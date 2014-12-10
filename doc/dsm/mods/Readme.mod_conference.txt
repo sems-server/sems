@@ -48,3 +48,7 @@ conference.setupMixIn(float level, unsigned int seconds)
 
 conference.playMixIn(string filename)
     - mix in a file
+
+conference.playMixInList(string filename)
+    - add a file to the mix-in playlist
+    - the list is setup when this is called for the first time and set as mixin source 

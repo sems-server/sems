@@ -49,7 +49,8 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("conference.teeleave", ConfTeeLeaveAction);
 
   DEF_CMD("conference.setupMixIn", ConfSetupMixInAction);
-  DEF_CMD("conference.playMixIn", ConfPlayMixInAction);
+  DEF_CMD("conference.playMixIn",  ConfPlayMixInAction);
+  DEF_CMD("conference.playMixInList", ConfPlayMixInListAction);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -175,7 +176,8 @@ EXEC_ACTION_START(ConfJoinAction) {
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
   }
 } EXEC_ACTION_END;
- 
+
+// get conference channel or other object (mixer etc)
 template<class T> 
 static T* getDSMConfChannel(DSMSession* sc_sess, const char* key_name) {
   if (sc_sess->avar.find(key_name) == sc_sess->avar.end()) {
@@ -398,4 +400,53 @@ EXEC_ACTION_START(ConfPlayMixInAction) {
   DBG("starting mixin of file '%s'\n", filename.c_str());
   m->mixin(af);
 
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(ConfPlayMixInListAction) {
+  string filename = resolveVars(arg, sess, sc_sess, event_params);
+
+  bool has_playlist = true;
+  // get playlist
+  DSMDisposableT<AmPlaylist >* l_obj = 
+    getDSMConfChannel<DSMDisposableT<AmPlaylist> >(sc_sess, CONF_AKEY_MIXLIST);
+  if (NULL == l_obj) {
+    // playlist newly setup
+    AmPlaylist* pl = new AmPlaylist(NULL); // no event receiver - no 'clear' event
+    l_obj = new DSMDisposableT<AmPlaylist >(pl);
+    AmArg c_arg;
+    c_arg.setBorrowedPointer(l_obj);
+    sc_sess->avar[CONF_AKEY_MIXLIST] = c_arg;
+      
+    // add to garbage collector
+    sc_sess->transferOwnership(l_obj);
+    has_playlist = false;
+  }
+  AmPlaylist* l = l_obj->get();
+
+
+  DSMDisposableAudioFile* af = new DSMDisposableAudioFile();
+  if(af->open(filename,AmAudioFile::Read)) {
+    ERROR("audio file '%s' could not be opened for reading.\n", 
+	  filename.c_str());
+    delete af;
+    
+    throw DSMException("file", "path", filename);
+  }
+  sc_sess->transferOwnership(af);
+
+    DBG("adding file '%s' to mixin playlist\n", filename.c_str());
+    l->addToPlaylist(new AmPlaylistItem(af, NULL));
+
+  if (!has_playlist) {
+    // get mixin mixer
+    DSMDisposableT<AmAudioMixIn >* m_obj = 
+      getDSMConfChannel<DSMDisposableT<AmAudioMixIn > >(sc_sess, CONF_AKEY_MIXER);
+    if (NULL == m_obj) {
+      throw DSMException("conference", "cause", "mixer not setup!\n");
+    }
+    AmAudioMixIn* m = m_obj->get();
+    // play from list
+    m->mixin(l);
+  }
 } EXEC_ACTION_END;
