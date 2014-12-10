@@ -30,7 +30,7 @@
 #define IS_ONLY_ONCE       (flags & AUDIO_MIXIN_ONCE)
 #define IS_IMMEDIATE_START (flags & AUDIO_MIXIN_IMMEDIATE_START)
 
-AmAudioMixIn::AmAudioMixIn(AmAudio* A, AmAudioFile* B, 
+AmAudioMixIn::AmAudioMixIn(AmAudio* A, AmAudio* B, 
 			   unsigned int s, double l,
 			   unsigned int flags) 
   :   A(A),B(B), s(s), l(l), 
@@ -71,10 +71,14 @@ int AmAudioMixIn::get(unsigned long long system_ts, unsigned char* buffer,
       if (res <= 0) { // B empty
 	res = A->get(system_ts, buffer, output_sample_rate, nb_samples);
 	mixing = false;
-	if (IS_ONLY_ONCE)
+	if (IS_ONLY_ONCE) {
 	  B = NULL;
-	else
-	  B->rewind();
+	} else {
+	  AmAudioFile* B_file = dynamic_cast<AmAudioFile*>(B);
+	  if (NULL != B_file) {
+	    B_file->rewind();
+	  }
+	}
       }
       B_mut.unlock();
       return  res;
@@ -110,10 +114,14 @@ int AmAudioMixIn::get(unsigned long long system_ts, unsigned char* buffer,
       if (len<0) { // B finished
 	mixing = false;
 	
-	if (IS_ONLY_ONCE)
+	if (IS_ONLY_ONCE) {
 	  B = NULL;
-	else
-	  B->rewind();
+	} else {
+	  AmAudioFile* B_file = dynamic_cast<AmAudioFile*>(B);
+	  if (NULL != B_file) {
+	    B_file->rewind();
+	  }
+	}
       } else {
 	for (int i=0; i<(PCM16_B2S(len)); i++)  {
 	  pdest[i]+=(short)(((double)mix_buf[i])*l);
@@ -135,7 +143,7 @@ int AmAudioMixIn::put(unsigned long long system_ts, unsigned char* buffer,
   return -1;
 }
 
-void AmAudioMixIn::mixin(AmAudioFile* f) {
+void AmAudioMixIn::mixin(AmAudio* f) {
   B_mut.lock();
   B = f;
   mixing = next_start_ts_i = false; /* so that mix in will re-start */

@@ -52,7 +52,7 @@
 
 class AmAudioMixIn : public AmAudio {
   AmAudio* A;
-  AmAudioFile* B;
+  AmAudio* B;
   unsigned int s;
   double l;
   int flags;
@@ -68,12 +68,12 @@ class AmAudioMixIn : public AmAudio {
 
 
  public:
-  AmAudioMixIn(AmAudio* A, AmAudioFile* B, 
+  AmAudioMixIn(AmAudio* A, AmAudio* B, 
 	       unsigned int s, double l, 
 	       unsigned int flags = 0);
   ~AmAudioMixIn();
 
-  void mixin(AmAudioFile* f);
+  void mixin(AmAudio* f);
 
  protected:
   // not used
