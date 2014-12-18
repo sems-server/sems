@@ -68,6 +68,7 @@ class DSMCondition
     FailedCall,
     SipRequest,
     SipReply,
+    BeforeDestroy,
 
     Hangup,
     Hold,

@@ -446,6 +446,9 @@ void DSMCall::onSystemEvent(AmSystemEvent* ev) {
 }
 
 void DSMCall::onBeforeDestroy() {
+  map<string, string> params;
+  engine.runEvent(this, this, DSMCondition::BeforeDestroy, &params);
+
   engine.onBeforeDestroy(this, this);
 }
 

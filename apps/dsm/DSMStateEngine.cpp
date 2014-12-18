@@ -50,6 +50,7 @@ const char* DSMCondition::type2str(EventType event) {
     rt(FailedCall);
     rt(SipRequest);
     rt(SipReply);
+    rt(BeforeDestroy);
 
     rt(Hangup);
     rt(Hold);

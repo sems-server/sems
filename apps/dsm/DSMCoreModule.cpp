@@ -246,6 +246,9 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "start")
     return new TestDSMCondition(params, DSMCondition::Start);
 
+  if (cmd == "beforeDestroy")
+    return new TestDSMCondition(params, DSMCondition::BeforeDestroy);
+
   if (cmd == "reload")
     return new TestDSMCondition(params, DSMCondition::Reload);
 

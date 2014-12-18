@@ -356,6 +356,9 @@ brackets match.
  start
    start of a session (onStart). This event is processed before any other.
 
+beforeDestroy
+   end of a session (onBeforeDestroy). This event is processed after any other.
+
  hangup
    bye/cancel received
    parameters:
