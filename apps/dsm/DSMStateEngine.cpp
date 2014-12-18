@@ -37,6 +37,78 @@
 
 #include "DSM.h" // for DSMFactory::MonitoringFullCallgraph
 
+const char* DSMCondition::type2str(EventType event) {
+#define rt(e) case e: return #e;
+
+  switch (event) {
+    rt(Any);
+    rt(Start);
+    rt(Invite);
+    rt(SessionStart);
+    rt(Ringing);
+    rt(EarlySession);
+    rt(FailedCall);
+    rt(SipRequest);
+    rt(SipReply);
+
+    rt(Hangup);
+    rt(Hold);
+    rt(UnHold);
+
+    rt(B2BOtherRequest);
+    rt(B2BOtherReply);
+    rt(B2BOtherBye);
+
+    rt(SessionTimeout);
+    rt(RtpTimeout);
+    rt(RemoteDisappeared);
+
+    rt(Key);
+    rt(Timer);
+
+    rt(NoAudio);
+    rt(PlaylistSeparator);
+
+    rt(DSMEvent);
+    rt(B2BEvent);
+    rt(DSMException);
+
+    rt(XmlrpcResponse);
+
+    rt(JsonRpcResponse);
+    rt(JsonRpcRequest);
+
+    rt(Startup);
+    rt(Reload);
+    rt(System);
+
+    rt(SIPSubscription);
+
+    rt(RTPTimeout);
+
+    // SBC related
+    rt(LegStateChange);
+    rt(BLegRefused);
+
+    rt(PutOnHold);
+    rt(ResumeHeld);
+    rt(CreateHoldRequest);
+    rt(HandleHoldReply);
+
+    rt(RelayInit);
+    rt(RelayInitUAC);
+    rt(RelayInitUAS);
+    rt(RelayFinalize);
+    rt(RelayOnSipRequest);
+    rt(RelayOnSipReply);
+    rt(RelayOnB2BRequest);
+    rt(RelayOnB2BReply);
+
+  default: return "<unknown>";
+#undef rt
+  };
+}
+
 DSMStateDiagram::DSMStateDiagram(const string& name) 
   : name(name) {
 }
@@ -526,7 +598,9 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
   map<string,string> exception_params;
   bool is_exception = run_exception;
 
-  DBG("o v DSM processing event, current state '%s' v\n", current->name.c_str());
+  DBG("o v DSM current state '%s', processing '%s' event v\n",
+      current->name.c_str(), DSMCondition::type2str(event));
+
   bool is_consumed = true;
   do {
     try {

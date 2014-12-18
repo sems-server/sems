@@ -128,6 +128,8 @@ class DSMCondition
 #endif
   };
 
+  static const char* type2str(EventType event);
+
   bool invert; 
   
   DSMCondition() : invert(false) { }
