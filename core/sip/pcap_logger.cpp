@@ -99,8 +99,12 @@ int pcap_logger::log(const char* buf, int len,
   return log(buf, len, (sockaddr*)src_ip, (sockaddr*)dst_ip, sizeof(sockaddr_storage));
 }
 
-int pcap_logger::log(const char *data, int data_len, struct sockaddr *src, struct sockaddr *dst, size_t addr_len)
+int pcap_logger::log(const char *data, int data_len,
+                     struct sockaddr *src, struct sockaddr *dst,
+                     size_t addr_len)
 {
+  assert(excl_fp != NULL);
+
   if (((sockaddr_in*)src)->sin_family != AF_INET) {
     ERROR("writing only IPv4 is supported\n");
     return -1;

@@ -1,4 +1,5 @@
 #include "msg_logger.h"
+#include "exclusive_file.h"
 
 #include "AmUtils.h"
 
@@ -8,45 +9,32 @@
 
 file_msg_logger::~file_msg_logger()
 {
-  fd_mut.lock();
-  if(fd >= 0)
-    close(fd);
-  fd_mut.unlock();
+  exclusive_file::close(excl_fp);
 }
 
 int file_msg_logger::open(const char* filename)
 {
-  fd_mut.lock();
-  if(fd != -1) {
-    ERROR("file already open\n");
-    fd_mut.unlock();
-    return -1;
-  }
-  
-  fd = ::open(filename,O_WRONLY | O_CREAT | O_APPEND,
-	      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-  if(fd < 0) {
-    ERROR("could not open file '%s': %s", filename, strerror(errno));
-    fd_mut.unlock();
+  if(excl_fp) return 0;
+
+  bool is_new = false;
+  if(exclusive_file::open(filename,excl_fp,is_new) < 0) {
     return -1;
   }
 
-  // need not to work for 100% (the access will not to be locked if opened from
-  // another logger instance)
-  off_t pos = lseek(fd, 0, SEEK_END);
-  if (pos == 0) write_file_header();
+  if (is_new) {
+    write_file_header();
 
-  fd_mut.unlock();
+    // exclusive files are created locked
+    excl_fp->unlock();
+  }
+
   return 0;
 }
 
 int file_msg_logger::write(const void *buf, int len)
 {
-  int res = ::write(fd, buf, len);
-  if (res != len) {
-    ERROR("while writing to message log: %s\n",strerror(errno));
-  }
-  return res;
+  assert(excl_fp != NULL);
+  return excl_fp->write(buf,len);
 }
 
 int file_msg_logger::writev(const struct iovec *iov, int iovcnt)
@@ -112,10 +100,12 @@ int cf_msg_logger::log(const char* buf, int len,
 			 sockaddr_storage* dst_ip,
 			 cstring method, int reply_code)
 {
+  assert(excl_fp != NULL);
+
   string src = addr2str(src_ip);
   string dst = addr2str(dst_ip);
 
-  AmLock _l(fd_mut);
+  AmLock _l(*(AmMutex*)excl_fp);
 
   write_src_dst(src);
   write_src_dst(dst);

@@ -13,7 +13,9 @@ class pcap_logger: public file_msg_logger
     int write_file_header();
 
   public:
-    int log(const char *data, int data_len, struct sockaddr *src, struct sockaddr *dst, size_t addr_len);
+    int log(const char *data, int data_len, 
+            struct sockaddr *src, struct sockaddr *dst, 
+            size_t addr_len);
 
     int log(const char* buf, int len,
             sockaddr_storage* src_ip,
