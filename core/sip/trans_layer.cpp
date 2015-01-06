@@ -1726,7 +1726,7 @@ void _trans_layer::process_rcvd_msg(sip_msg* msg)
 	    
 	    DBG("Reply matched an existing transaction\n");
 
-	    if(t->logger) {
+	    if(t->logger && msg->local_socket && msg->buf && msg->len) {
 		t->logger->log(msg->buf,msg->len,&msg->remote_ip,
 			       &msg->local_ip,get_cseq(msg)->method_str,
 			       msg->u.reply->code);
