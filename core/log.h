@@ -115,8 +115,8 @@ enum Log_Level {
       pthread_t tid_ = GET_TID();					\
       char msg_[LOG_BUFFER_LEN];					\
       int n_ = snprintf(msg_, sizeof(msg_), fmt, ##args);		\
-      if (msg_[n_ - 1] == '\n') msg_[n_ - 1] = '\0';			\
-									\
+      if ((n_ < LOG_BUFFER_LEN) && (msg_[n_ - 1] == '\n'))              \
+        msg_[n_ - 1] = '\0';                                            \
       if (log_stderr) {							\
 	fprintf(stderr, COMPLETE_LOG_FMT);				\
 	fflush(stderr);							\
