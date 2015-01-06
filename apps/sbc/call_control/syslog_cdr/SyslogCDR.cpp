@@ -327,6 +327,7 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
 	  SBCVarMapIteratorT var_it = call_profile->cc_vars.find(varname);
 	  if (var_it == call_profile->cc_vars.end()) {
 	    DBG("unknown variable '%s' in cdr_format\n", it->c_str());
+            cdr+=csv_quote(string("")) + ",";
 	  } else {
 	    AmArg* v = &var_it->second;
 	    if (!prop.empty()) {
