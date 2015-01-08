@@ -755,11 +755,14 @@ static char* parse_sdp_connection(AmSdp* sdp_msg, char* s, char t)
     case ADDR_TYPE:
       {
 	string addr_type(connection_line,3);
-	connection_line +=4; // fixme
-	if(addr_type == "IP4"){
+
+	string addr_type_uc = addr_type;
+	std::transform(addr_type_uc.begin(), addr_type_uc.end(), addr_type_uc.begin(), toupper);
+	connection_line +=4;
+	if(addr_type_uc == "IP4"){
 	  c.addrType = AT_V4;
 	  state = IP4;
-	}else if(addr_type == "IP6"){
+	}else if(addr_type_uc == "IP6"){
 	  c.addrType = AT_V6;
 	  state = IP6;
 	}else{
