@@ -18,7 +18,7 @@ install_tools: $(DESTDIR)$(bin-prefix)/$(bin-dir)
 	done
 
 sems-logfile-callextract: logfile-splitter.o
-	g++ -o sems-logfile-callextract logfile-splitter.o
+	$(LD) -o sems-logfile-callextract logfile-splitter.o -lstdc++
 
 clean:
 	rm -f logfile-splitter.o sems-logfile-callextract
