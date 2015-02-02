@@ -119,7 +119,11 @@ protected:
 public:
     //clock reference
     volatile u_int32_t wall_clock; // 32 bits
+#ifdef __LP64__
     atomic_int64 unix_clock; // 64 bits
+#else
+    atomic_int unix_clock; // 32 bits
+#endif
 
     void insert_timer(timer* t);
     void remove_timer(timer* t);
