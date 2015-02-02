@@ -303,7 +303,7 @@ bool parse_number(std::istream& input, long* value) {
 	    
 	    return false;  
 	  }
-	  *value *= powl(10, e_value);
+	  *value *= pow(10, e_value);
 	}
 
         return true;
