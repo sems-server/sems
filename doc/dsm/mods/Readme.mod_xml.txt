@@ -27,6 +27,18 @@ xml.XPathResultCount($cntvar=xpath_object)
   Example:
     xml.XPathResultCount($rescnt="substatus.xpath");
 
+xml.getXPathResult($dstvar=xpath_object)
+  save contents of xpath result object into $dstvar,
+  or $dstvar[0] .. $dstvar[n] if more than one result 
+
+xml.printXPathResult($dstvar=xpath_object)
+  print information abut XPath result into $dstvar (with object names)
+
+xml.updateXPathResult(xpath_object=content) - update xpath object with content (xml string)
+xml.updateXPathResult(xpath_object[index]=content) - update only object at position index
+
+xml.docDump($varname=xml_object) - dump xml_object to variable $varname
+
 xml.setLoglevel(level)
  set libxml2 error logging level. Default: error
  Valid: error, warn, info, debug

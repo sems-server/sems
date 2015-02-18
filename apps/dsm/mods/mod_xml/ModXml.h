@@ -47,6 +47,10 @@ DEF_ACTION_2P(MODXMLParseSIPMsgBodyAction);
 DEF_ACTION_2P(MODXMLParseAction);
 DEF_ACTION_2P(MODXMLEvalXPathAction);
 DEF_ACTION_2P(MODXMLXPathResultNodeCount);
+DEF_ACTION_2P(MODXMLgetXPathResult);
+DEF_ACTION_2P(MODXMLprintXPathResult);
+DEF_ACTION_2P(MODXMLupdateXPathResult);
+DEF_ACTION_2P(MODXMLdocDump);
 DEF_ACTION_1P(MODXMLSetLogLevelAction);
 
 class ModXmlDoc 
