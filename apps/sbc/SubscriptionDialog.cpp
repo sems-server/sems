@@ -130,11 +130,12 @@ void SubscriptionDialog::onSipRequest(const AmSipRequest& req)
     }
   }
 
-  SimpleRelayDialog::onSipRequest(req);
+  SimpleRelayDialog::onSipRequest(req, relay_req);
 }
 
 void SubscriptionDialog::onSipReply(const AmSipRequest& req,
-				    const AmSipReply& reply, 
+				    const AmSipReply& reply,
+				    AmSipReply*& relay_reply,
 				    AmBasicSipDialog::Status old_dlg_status)
 {
   if(!subs->onReplyIn(req,reply))
@@ -153,7 +154,7 @@ void SubscriptionDialog::onSipReply(const AmSipRequest& req,
     }
   }
 
-  SimpleRelayDialog::onSipReply(req,reply,old_dlg_status);
+  SimpleRelayDialog::onSipReply(req,reply,relay_reply,old_dlg_status);
 }
 
 void SubscriptionDialog::onRequestSent(const AmSipRequest& req)

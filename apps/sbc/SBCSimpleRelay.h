@@ -136,11 +136,17 @@ public:
   void onSipReply(const AmSipRequest& req,
 		  const AmSipReply& reply, 
 		  AmBasicSipDialog::Status old_dlg_status);
+
   void onRequestSent(const AmSipRequest& req);
   void onReplySent(const AmSipRequest& req, const AmSipReply& reply);
 
   void onRemoteDisappeared(const AmSipReply& reply);
   void onLocalTerminate(const AmSipReply& reply);
+
+  // SBCSimpleRelay interface (also ExtendedCCInterface) 
+  virtual void onSipRequest(const AmSipRequest& req, AmSipRequest*& relay_req);
+  virtual void onSipReply(const AmSipRequest& req, const AmSipReply& reply,
+			  AmSipReply*& relay_reply, AmBasicSipDialog::Status old_dlg_status);
 
   // AmEventQueue
   void finalize();

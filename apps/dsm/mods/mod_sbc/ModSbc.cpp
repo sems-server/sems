@@ -68,6 +68,9 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("sbc.testSDPConnectionAddress", MODSBCtestSDPConnectionAddress);
 
+  DEF_CMD("sbc.prepareAlterableRequest", MODSBCprepareAlterableRequest);
+  DEF_CMD("sbc.prepareAlterableReply", MODSBCprepareAlterableReply);
+
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
@@ -670,4 +673,80 @@ EXEC_ACTION_START(MODSBCtestSDPConnectionAddress) {
   sc_sess->var["match_connection_addr"] = found ? "true":"false";
 
   DBG("set: match_connection_addr = '%s'\n", sc_sess->var["match_connection_addr"].c_str());
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(MODSBCprepareAlterableRequest) {
+  GET_SBC_CALL_LEG(sbc.prepareAlterableRequest);
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_MUTABLE_REQUEST);
+  if (it == sc_sess->avar.end()) {
+    WARN("script error: trying to use sbc.prepareAlterableRequest where no Msg object available");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("script error: trying to use sbc.prepareAlterableRequest where no Msg object available");
+    EXEC_ACTION_STOP;
+  }
+
+  DSMMutableSipRequest* dsm_m_req = dynamic_cast<DSMMutableSipRequest*>(it->second.asObject());
+  if (NULL == dsm_m_req) {
+    WARN("script error: in sbc.prepareAlterableRequest, msg object invalid");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("script error: in sbc.prepareAlterableMessage, msg object invalid");
+    EXEC_ACTION_STOP;
+  }
+
+  if (dsm_m_req->mutable_req == NULL) {
+    DSMSipRequest* dsm_sip_req;
+    AVarMapT::iterator r_it = sc_sess->avar.find(DSM_AVAR_REQUEST);
+    if (r_it == sc_sess->avar.end() ||
+	(NULL == (dsm_sip_req=dynamic_cast<DSMSipRequest*>(r_it->second.asObject())))) {
+      ERROR("internal error: trying to use sbc.prepareAlterableRequest without original Msg object");
+      sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+      sc_sess->SET_STRERROR("internal error: trying to use sbc.prepareAlterableRequest without original Msg object");
+      EXEC_ACTION_STOP;
+    }
+    dsm_m_req->mutable_req = new AmSipRequest(*dsm_sip_req->req);
+    DBG("created "DSM_AVAR_MUTABLE_REQUEST" AmSipRequest object\n");
+  } else {
+    DBG(DSM_AVAR_MUTABLE_REQUEST" AmSipRequest object already there\n");
+  }
+
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(MODSBCprepareAlterableReply) {
+  GET_SBC_CALL_LEG(sbc.prepareAlterableReply);
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_MUTABLE_REPLY);
+  if (it == sc_sess->avar.end()) {
+    WARN("script error: trying to use sbc.prepareAlterableReply where no Msg object available");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("script error: trying to use sbc.prepareAlterableReply where no Msg object available");
+    EXEC_ACTION_STOP;
+  }
+
+  DSMMutableSipReply* dsm_m_rep = dynamic_cast<DSMMutableSipReply*>(it->second.asObject());
+  if (NULL == dsm_m_rep) {
+    WARN("script error: in sbc.prepareAlterableReply, msg object invalid");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("script error: in sbc.prepareAlterableReply, msg object invalid");
+    EXEC_ACTION_STOP;
+  }
+
+  if (dsm_m_rep->mutable_reply == NULL) {
+    DSMSipReply* dsm_sip_rep;
+    AVarMapT::iterator r_it = sc_sess->avar.find(DSM_AVAR_REPLY);
+    if (r_it == sc_sess->avar.end() ||
+	(NULL == (dsm_sip_rep=dynamic_cast<DSMSipReply*>(r_it->second.asObject())))) {
+      ERROR("internal error: trying to use sbc.prepareAlterableReply without original Msg object");
+      sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+      sc_sess->SET_STRERROR("internal error: trying to use sbc.prepareAlterableReply without original Msg object");
+      EXEC_ACTION_STOP;
+    }
+    dsm_m_rep->mutable_reply = new AmSipReply(*dsm_sip_rep->reply);
+    DBG("created "DSM_AVAR_MUTABLE_REPLY" AmSipReply object\n");
+  } else {
+    DBG(DSM_AVAR_MUTABLE_REPLY" AmSipReply object already there\n");
+  }
+
 } EXEC_ACTION_END;

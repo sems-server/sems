@@ -123,7 +123,7 @@ CCChainProcessing SBCDSMInstance::onInitialInvite(SBCCallLeg *call, InitialInvit
   RETURN_CONTINUE_OR_STOP_PROCESSING;
 }
 
-void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, DSMSipRequest* request) {
+void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, DSMSipRequest* request, DSMMutableSipRequest* mutable_request) {
   if (NULL == request)
     return;
 
@@ -152,14 +152,18 @@ void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, DSMSipReque
 
     // avar[DSM_AVAR_REQUEST] = AmArg(const_cast<AmSipRequest*>(request));
     avar[DSM_AVAR_REQUEST] = AmArg(request);
+    if (NULL != mutable_request) {
+      avar[DSM_AVAR_MUTABLE_REQUEST] = AmArg(mutable_request);
+    }
   }
 }
 
 void clearRequestParameters(AVarMapT& avar) {
   avar.erase(DSM_AVAR_REQUEST);
+  avar.erase(DSM_AVAR_MUTABLE_REQUEST);
 }
 
-void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, DSMSipReply* reply) {
+void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, DSMSipReply* reply, DSMSipReply* mutable_reply) {
   if (NULL == reply)
     return;
 
@@ -191,10 +195,14 @@ void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, DSMSipReply* 
   }
 #endif
   avar[DSM_AVAR_REPLY] = AmArg(reply);
+  if (NULL != mutable_reply) {
+    avar[DSM_AVAR_MUTABLE_REPLY] = AmArg(mutable_reply);
+  }
 }
 
 void clearReplyParameters(AVarMapT& avar) {
   avar.erase(DSM_AVAR_REPLY);
+  avar.erase(DSM_AVAR_MUTABLE_REPLY);
 }
 
 void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause) {
@@ -209,12 +217,12 @@ void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChange
   case CallLeg::StatusChangeCause::SipReply:
     event_params["reason"] = "SipReply";
     dsm_reply.reset(new DSMSipReply(cause.param.reply));
-    extractReplyParameters(event_params, avar, dsm_reply.get());
+    extractReplyParameters(event_params, avar, dsm_reply.get(), NULL);
     break;
   case CallLeg::StatusChangeCause::SipRequest:
     event_params["reason"] = "SipRequest";
     dsm_request.reset(new DSMSipRequest(cause.param.request));
-    extractRequestParameters(event_params, avar, dsm_request.get());
+    extractRequestParameters(event_params, avar, dsm_request.get(), NULL);
     break;
   case CallLeg::StatusChangeCause::Other:
     event_params["reason"] = "other";
@@ -246,7 +254,7 @@ CCChainProcessing SBCDSMInstance::onInDialogRequest(SBCCallLeg* call, const AmSi
   VarMapT event_params;
   DSMSipRequest dsm_request(&req);
 
-  extractRequestParameters(event_params, avar, &dsm_request);
+  extractRequestParameters(event_params, avar, &dsm_request, NULL);
 
   engine.runEvent(call, this, DSMCondition::SipRequest, &event_params);
 
@@ -258,7 +266,7 @@ CCChainProcessing SBCDSMInstance::onInDialogReply(SBCCallLeg* call, const AmSipR
   DBG("SBCDSMInstance::onInDialogReply()\n");
   VarMapT event_params;
   DSMSipReply dsm_reply(&reply);
-  extractReplyParameters(event_params, avar, &dsm_reply);
+  extractReplyParameters(event_params, avar, &dsm_reply, NULL);
 
   engine.runEvent(call, this, DSMCondition::SipReply, &event_params);
 
@@ -305,10 +313,10 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
     if (b2b_req_ev) {
       VarMapT event_params;
       DSMMutableSipRequest sip_req(&b2b_req_ev->req);
-      extractRequestParameters(event_params, avar, &sip_req);
+      extractRequestParameters(event_params, avar, &sip_req, NULL);
       event_params["forward"] = b2b_req_ev->forward?"true":"false";
       engine.runEvent(call, this, DSMCondition::B2BOtherRequest, &event_params);
-      avar.erase(DSM_AVAR_REQUEST);
+      clearRequestParameters(avar);
       if (event_params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
 	return StopProcessing;
     } else {
@@ -316,10 +324,11 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
       if (b2b_reply_ev) {
 	VarMapT event_params;
 	DSMMutableSipReply dsm_reply(&b2b_reply_ev->reply);
-	extractReplyParameters(event_params, avar, &dsm_reply);
+	extractReplyParameters(event_params, avar, &dsm_reply, NULL);
 	event_params["forward"] = b2b_reply_ev->forward?"true":"false";
 	event_params["trans_method"] = b2b_reply_ev->trans_method;
 	engine.runEvent(call, this, DSMCondition::B2BOtherReply, &event_params);
+	clearReplyParameters(avar);
 	if (event_params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
 	  return StopProcessing;
       }
@@ -389,7 +398,7 @@ CCChainProcessing SBCDSMInstance::onBLegRefused(SBCCallLeg* call, const AmSipRep
   DBG("SBCDSMInstance::onBLegRefused()\n");
   VarMapT event_params;
   DSMSipReply dsm_reply(&reply);
-  extractReplyParameters(event_params, avar, &dsm_reply);
+  extractReplyParameters(event_params, avar, &dsm_reply, NULL);
 
   engine.runEvent(call, this, DSMCondition::BLegRefused, &event_params);
 
@@ -474,7 +483,7 @@ void SBCDSMInstance::initUAC(SBCCallProfile &profile, SimpleRelayDialog *relay, 
   event_params["relay_event"] = "initUAC";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
   DSMSipRequest sip_req(&req);
-  extractRequestParameters(event_params, avar, &sip_req);
+  extractRequestParameters(event_params, avar, &sip_req, NULL /* ??? may be useful as well */);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInitUAC, &event_params);
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
@@ -487,7 +496,7 @@ void SBCDSMInstance::initUAS(SBCCallProfile &profile, SimpleRelayDialog *relay, 
   event_params["relay_event"] = "initUAS";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
   DSMSipRequest sip_req(&req);
-  extractRequestParameters(event_params, avar, &sip_req);
+  extractRequestParameters(event_params, avar, &sip_req, NULL /* ??? may be useful as well */);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInitUAS, &event_params);
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
@@ -503,21 +512,25 @@ void SBCDSMInstance::finalize(SBCCallProfile &profile, SimpleRelayDialog *relay)
   avar.erase(DSM_SBC_AVAR_PROFILE);
 }
 
-void SBCDSMInstance::onSipRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req) {
+void SBCDSMInstance::onSipRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req,
+				  AmSipRequest*& relay_req) {
   DBG("SBCDSMInstance::onSipRequest() - simple relay\n");
   resetDummySession(relay);
   VarMapT event_params;
   event_params["relay_event"] = "onSipRequest";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
   DSMSipRequest sip_req(&req);
-  extractRequestParameters(event_params, avar, &sip_req);
+  DSMMutableSipRequest dsm_relay_req(relay_req);
+  extractRequestParameters(event_params, avar, &sip_req, &dsm_relay_req);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnSipRequest, &event_params);
+  relay_req = dsm_relay_req.mutable_req; // in case it was created by DSM
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
 }
 
 void SBCDSMInstance::onSipReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req,
 				const AmSipReply& reply,
+				AmSipReply*& relay_reply,
 				AmBasicSipDialog::Status old_dlg_status) {
   DBG("SBCDSMInstance::onSipReply() - simple relay\n");
   resetDummySession(relay);
@@ -525,38 +538,46 @@ void SBCDSMInstance::onSipReply(SBCCallProfile &profile, SimpleRelayDialog *rela
   event_params["relay_event"] = "onSipReply";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
   DSMSipRequest sip_req(&req);
-  extractRequestParameters(event_params, avar, &sip_req);
+  extractRequestParameters(event_params, avar, &sip_req, NULL);
   DSMSipReply dsm_reply(&reply);
-  extractReplyParameters(event_params, avar, &dsm_reply); // TODO: shadows request
+  DSMMutableSipReply dsm_relay_reply(relay_reply);
+  extractReplyParameters(event_params, avar, &dsm_reply, &dsm_relay_reply);
   event_params["old_dlg_status"] = AmBasicSipDialog::getStatusStr(old_dlg_status);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnSipReply, &event_params);
+  relay_reply = dsm_relay_reply.mutable_reply; // in case it was created by DSM
   clearReplyParameters(avar);
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
 }
 
-void SBCDSMInstance::onB2BRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req) {
+void SBCDSMInstance::onB2BRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req,
+				  AmSipRequest*& relay_req) {
   DBG("SBCDSMInstance::onB2BRequest() - relay\n");
   resetDummySession(relay);
   VarMapT event_params;
   event_params["relay_event"] = "onB2BRequest";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
   DSMSipRequest sip_req(&req);
-  extractRequestParameters(event_params, avar, &sip_req);
+  DSMMutableSipRequest dsm_relay_req(relay_req);
+  extractRequestParameters(event_params, avar, &sip_req, &dsm_relay_req);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnB2BRequest, &event_params);
+  relay_req = dsm_relay_req.mutable_req; // in case it was created by DSM
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
 }
 
-void SBCDSMInstance::onB2BReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipReply& reply) {
+void SBCDSMInstance::onB2BReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipReply& reply,
+				AmSipReply*& relay_reply) {
   DBG("SBCDSMInstance::onB2BReply() - relay\n");
   resetDummySession(relay);
   VarMapT event_params;
   event_params["relay_event"] = "onB2BReply";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
   DSMSipReply dsm_reply(&reply);
-  extractReplyParameters(event_params, avar, &dsm_reply);
+  DSMMutableSipReply dsm_relay_reply(relay_reply);
+  extractReplyParameters(event_params, avar, &dsm_reply, &dsm_relay_reply);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnB2BReply, &event_params);
+  relay_reply = dsm_relay_reply.mutable_reply; // in case it was created by DSM
   clearReplyParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
 }

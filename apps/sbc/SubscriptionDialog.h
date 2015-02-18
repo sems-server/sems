@@ -68,7 +68,8 @@ public:
   // AmBasicSipEventHandler interface
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipRequest& req,
-		  const AmSipReply& reply, 
+		  const AmSipReply& reply,
+		  AmSipReply*& relay_reply,
 		  AmBasicSipDialog::Status old_dlg_status);
 
   void onRequestSent(const AmSipRequest& req);

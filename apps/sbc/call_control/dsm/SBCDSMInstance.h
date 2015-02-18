@@ -84,12 +84,13 @@ class SBCDSMInstance
     void initUAC(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest &req);
     void initUAS(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest &req);
     void finalize(SBCCallProfile &profile, SimpleRelayDialog *relay);
-    void onSipRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req);
+    void onSipRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req, AmSipRequest*& relay_req);
     void onSipReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req,
 		    const AmSipReply& reply,
+		    AmSipReply*& relay_reply,
 		    AmBasicSipDialog::Status old_dlg_status);
-    void onB2BRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req);
-    void onB2BReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipReply& reply);
+    void onB2BRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req, AmSipRequest*& relay_req);
+    void onB2BReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipReply& reply, AmSipReply*& relay_reply);
 
     /* -------- DSM session API - mostly not implemented -------------------------- */
     void playPrompt(const string& name, bool loop = false, bool front = false);
