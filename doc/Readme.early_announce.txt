@@ -66,6 +66,10 @@ mysql_passwd=secret
 # Database where audio is stored (optional, defaults to 'sems') 
 mysql_db=sems
 
+# CA certificate of MySQL server (optional, set if MySQL access over SSL
+# is desired) 
+mysql_ca_cert=/etc/sems/mysql-ssl-ca-cert.pem 
+
 # Value of 'application' field in early_announce audio records (optional,
 # defaults to 'early_announce')
 application=early_announce
