@@ -144,7 +144,7 @@ EXEC_ACTION_START(GroupsPostEventAction) {
 
 
   DBG("posting event to group '%s'\n", groupname.c_str());
-  GroupsModule::groups_mut.unlock();
+  GroupsModule::groups_mut.lock();
   GroupMap::iterator grp = GroupsModule::groups.find(groupname);
   bool posted = false;
   if (grp != GroupsModule::groups.end()) {
