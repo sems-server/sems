@@ -236,6 +236,7 @@ B2B call control
 
  log(level, text)
    e.g. log(1, $var1)
+ logs(level, "text with $(variable_name) and #(paramname) replacements")
  -- log all variables:
  logVars(level) 
  -- log all selects:
@@ -243,7 +244,11 @@ B2B call control
  -- log all Params (only in actions of a transition):
  logParams(level) 
  -- log everything:
- logAll(level) 
+ logAll(level)
+ dbg("some debug with $(replaced_var)") 
+ info("some info $(message)")
+ warn("warn #(message_parameter)")
+ error("error in call @(local_tag)")
 
  Timers
  ------

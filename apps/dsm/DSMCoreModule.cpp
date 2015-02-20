@@ -96,6 +96,11 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("substr", SCSubStrAction);
   DEF_CMD("inc", SCIncAction);
   DEF_CMD("log", SCLogAction);
+  DEF_CMD("logs", SCLogsAction);
+  DEF_CMD("dbg", SCDbgAction);
+  DEF_CMD("info", SCInfoAction);
+  DEF_CMD("warn", SCWarnAction);
+  DEF_CMD("error", SCErrorAction);
   DEF_CMD("clear", SCClearAction);
   DEF_CMD("clearArray", SCClearArrayAction);
   DEF_CMD("size", SCSizeAction);
@@ -567,6 +572,37 @@ EXEC_ACTION_START(SCLogAction) {
   string l_line = resolveVars(par2, sess, sc_sess, event_params).c_str();
   _LOG((int)lvl, "FSM: %s '%s'\n", (par2 != l_line)?par2.c_str():"",
        l_line.c_str());
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCLogsAction, ',', false);
+EXEC_ACTION_START(SCLogsAction) {
+  unsigned int lvl;
+  if (str2i(resolveVars(par1, sess, sc_sess, event_params), lvl)) {
+    ERROR("unknown log level '%s'\n", par1.c_str());
+    EXEC_ACTION_STOP;
+  }
+  string l_line = replaceParams(par2, sess, sc_sess, event_params);
+  _LOG((int)lvl, "FSM: '%s'\n", l_line.c_str());
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCDbgAction) {
+  string l_line = replaceParams(arg, sess, sc_sess, event_params);
+  DBG("FSM: '%s'\n", l_line.c_str());
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCInfoAction) {
+  string l_line = replaceParams(arg, sess, sc_sess, event_params);
+  INFO("FSM: '%s'\n", l_line.c_str());
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCWarnAction) {
+  string l_line = replaceParams(arg, sess, sc_sess, event_params);
+  WARN("FSM: '%s'\n", l_line.c_str());
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCErrorAction) {
+  string l_line = replaceParams(arg, sess, sc_sess, event_params);
+  ERROR("FSM: '%s'\n", l_line.c_str());
 } EXEC_ACTION_END;
 
 void log_vars(const string& l_arg, AmSession* sess,
@@ -1200,7 +1236,7 @@ EXEC_ACTION_START(SCDIAction) {
       p.erase(0, 8);
       AmArg var_struct;
       string varprefix = p+".";
-      bool has_vars = false;
+      //bool has_vars = false;
       map<string, string>::iterator lb = sc_sess->var.lower_bound(varprefix);
       while (lb != sc_sess->var.end()) {
 	if ((lb->first.length() < varprefix.length()) ||
@@ -1214,7 +1250,7 @@ EXEC_ACTION_START(SCDIAction) {
 	  string2argarray(varname, lb->second, var_struct);
 	
 	lb++;
-	has_vars = true;
+	//has_vars = true;
       }
       di_args.push(var_struct);
     } else if (p.length() > 7 &&  
