@@ -51,6 +51,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("conference.setupMixIn", ConfSetupMixInAction);
   DEF_CMD("conference.playMixIn",  ConfPlayMixInAction);
   DEF_CMD("conference.playMixInList", ConfPlayMixInListAction);
+  DEF_CMD("conference.flushMixInList", ConfFlushMixInListAction);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -402,9 +403,10 @@ EXEC_ACTION_START(ConfPlayMixInAction) {
 
 } EXEC_ACTION_END;
 
-
+CONST_ACTION_2P(ConfPlayMixInListAction, ',', true);
 EXEC_ACTION_START(ConfPlayMixInListAction) {
-  string filename = resolveVars(arg, sess, sc_sess, event_params);
+  string filename = resolveVars(par1, sess, sc_sess, event_params);
+  bool loop = resolveVars(par2, sess, sc_sess, event_params) == "true";
 
   bool has_playlist = true;
   // get playlist
@@ -434,9 +436,10 @@ EXEC_ACTION_START(ConfPlayMixInListAction) {
     throw DSMException("file", "path", filename);
   }
   sc_sess->transferOwnership(af);
+  af->loop.set(loop);
 
-    DBG("adding file '%s' to mixin playlist\n", filename.c_str());
-    l->addToPlaylist(new AmPlaylistItem(af, NULL));
+  DBG("adding file '%s' to mixin playlist\n", filename.c_str());
+  l->addToPlaylist(new AmPlaylistItem(af, NULL));
 
   if (!has_playlist) {
     // get mixin mixer
@@ -449,4 +452,17 @@ EXEC_ACTION_START(ConfPlayMixInListAction) {
     // play from list
     m->mixin(l);
   }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(ConfFlushMixInListAction) {
+  // get playlist
+  DSMDisposableT<AmPlaylist >* l_obj = 
+    getDSMConfChannel<DSMDisposableT<AmPlaylist> >(sc_sess, CONF_AKEY_MIXLIST);
+  if (NULL == l_obj) {
+    DBG("no mix list present - not flushing list\n");
+    EXEC_ACTION_STOP;
+  }
+  AmPlaylist* l = l_obj->get();
+  l->flush();
+  DBG("flushed mixInList\n");
 } EXEC_ACTION_END;

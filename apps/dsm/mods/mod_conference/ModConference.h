@@ -95,6 +95,6 @@ DEF_ACTION_1P(ConfTeeLeaveAction);
 
 DEF_ACTION_2P(ConfSetupMixInAction);
 DEF_ACTION_1P(ConfPlayMixInAction);
-DEF_ACTION_1P(ConfPlayMixInListAction);
-
+DEF_ACTION_2P(ConfPlayMixInListAction);
+DEF_ACTION_1P(ConfFlushMixInListAction);
 #endif
