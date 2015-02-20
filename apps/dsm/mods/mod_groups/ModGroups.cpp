@@ -47,7 +47,8 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("groups.join", GroupsJoinAction);
   DEF_CMD("groups.leave", GroupsLeaveAction);
   DEF_CMD("groups.leaveAll", GroupsLeaveAllAction);
-  // DEF_CMD("groups.get", GroupsGetAction);
+  DEF_CMD("groups.get", GroupsGetAction);
+  DEF_CMD("groups.getSize", GroupsGetSizeAction);
   // DEF_CMD("groups.getMembers", GroupsGetMembersAction);
   DEF_CMD("groups.postEvent", GroupsPostEventAction);
 
@@ -123,6 +124,43 @@ EXEC_ACTION_START(GroupsLeaveAllAction) {
   DBG("call '%s' leaving all groups\n", ltag.c_str());
 
   GroupsModule::leave_all_groups(ltag);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(GroupsGetAction, '=', false);
+EXEC_ACTION_START(GroupsGetAction) {
+  string var = par1;
+  if (var.size() && var[0]=='$') var.erase(0,1);
+  string groupname = resolveVars(par2, sess, sc_sess, event_params);
+  GroupsModule::groups_mut.lock();
+  GroupMap::iterator grp = GroupsModule::groups.find(groupname);
+  int i=0;
+  if (grp != GroupsModule::groups.end()) {
+    for (set<string>::iterator it =
+	   grp->second.begin(); it != grp->second.end(); it++) {
+      sc_sess->var[var+"["+int2str(i)+"]"] = *it;
+      i++;
+    }
+  }
+  GroupsModule::groups_mut.unlock();
+  DBG("get %d group members of '%s' in $%s[]\n", i, groupname.c_str(), var.c_str());
+
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(GroupsGetSizeAction, '=', false);
+EXEC_ACTION_START(GroupsGetSizeAction) {
+  string var = par1;
+  if (var.size() && var[0]=='$') var.erase(0,1);
+  string groupname = resolveVars(par2, sess, sc_sess, event_params);
+  DBG("posting event to group '%s'\n", groupname.c_str());
+  GroupsModule::groups_mut.lock();
+  int size = 0;
+  GroupMap::iterator grp = GroupsModule::groups.find(groupname);
+  if (grp != GroupsModule::groups.end()) {
+    size = grp->second.size();
+  }
+  GroupsModule::groups_mut.unlock();
+  sc_sess->var[var] = int2str(size);
+  DBG("get group '%s' size $%s=%d\n", groupname.c_str(), var.c_str(), size);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(GroupsPostEventAction, ',', true);

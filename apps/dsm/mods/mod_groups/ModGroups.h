@@ -60,7 +60,8 @@ DECLARE_MODULE_END;
 DEF_ACTION_1P(GroupsJoinAction);
 DEF_ACTION_1P(GroupsLeaveAction);
 DEF_ACTION_1P(GroupsLeaveAllAction);
-/* DEF_ACTION_1P(GroupsGetAction); */
+DEF_ACTION_2P(GroupsGetAction);
+DEF_ACTION_2P(GroupsGetSizeAction);
 /* DEF_ACTION_1P(GroupsGetMembersAction); */
 DEF_ACTION_2P(GroupsPostEventAction);
 

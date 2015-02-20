@@ -21,6 +21,9 @@ Actions:
   groups.postEvent(groupname, var1;var2)  -  post event to groupname with var1 and var2
   groups.postEvent(groupname, var)  -  post event to groupname with all variables
 
+  groups.get(arrayname=groupname)   - get all ltags of troupname in arrayname
+  groups.getSize(varname=groupname)   - get size of group in varname
+ 
 
 Example:
   import(mod_groups);
