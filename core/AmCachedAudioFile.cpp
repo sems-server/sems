@@ -65,6 +65,7 @@ int AmFileCache::load(const std::string& filename) {
   if (fstat(fd,  &sbuf) == -1) {
     ERROR("cannot stat file '%s'.\n", 
 	  name.c_str());
+    close(fd);
     return -2;
   }
 	
@@ -72,10 +73,12 @@ int AmFileCache::load(const std::string& filename) {
 		   fd, 0)) == (caddr_t)(-1)) {
     ERROR("cannot mmap file '%s'.\n", 
 	  name.c_str());
+    close(fd);
     return -3;
   }
 
   data_size = sbuf.st_size;
+  close(fd);
 
   return 0;
 }
