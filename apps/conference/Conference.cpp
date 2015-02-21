@@ -168,7 +168,7 @@ int ConferenceFactory::onLoad()
 
   /* Get default audio from MySQL */
 
-  string mysql_server, mysql_user, mysql_passwd, mysql_db;
+  string mysql_server, mysql_user, mysql_passwd, mysql_db, mysql_ca_cert;
 
   mysql_server = cfg.getParameter("mysql_server");
   if (mysql_server.empty()) {
@@ -192,6 +192,8 @@ int ConferenceFactory::onLoad()
     mysql_db = "sems";
   }
 
+  mysql_ca_cert = cfg.getParameter("mysql_ca_cert");
+
   try {
 
 #ifdef VERSION2
@@ -199,6 +201,10 @@ int ConferenceFactory::onLoad()
 #else
     Connection.set_option(new mysqlpp::ReconnectOption(true));
 #endif
+    if (!mysql_ca_cert.empty())
+      Connection.set_option(
+	new mysqlpp::SslOption(0, 0, mysql_ca_cert.c_str(), "",
+			       "DHE-RSA-AES256-SHA"));
     Connection.connect(mysql_db.c_str(), mysql_server.c_str(),
 		       mysql_user.c_str(), mysql_passwd.c_str());
     if (!Connection) {
