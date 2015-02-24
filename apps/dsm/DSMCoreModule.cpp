@@ -803,8 +803,7 @@ string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
       if (NULL!=event_params) {
 	if (event_params->find(keyname) != event_params->end()) {
 	  res.replace(rstart, rend-rstart, (*event_params)[keyname]);
-	  if (repl_pos+=(*event_params)[keyname].size())
-	    repl_pos+=(*event_params)[keyname].size()-1; // skip after new string
+	  repl_pos+=(*event_params)[keyname].size()-1; // skip after new string
 	} else {
 	  res.erase(rstart, rend-rstart);
 	  if (repl_pos) repl_pos--; // repl_pos was after #
