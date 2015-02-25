@@ -654,8 +654,14 @@ void AmB2BMedia::clearAudio(bool a_leg)
     // remove streams from AmRtpReceiver first! (always both?)
     i->a.stopStreamProcessing();
     i->b.stopStreamProcessing();
-    if (a_leg) i->a.clear();
-    else i->b.clear();
+    if (a_leg) {
+      i->b.setRelayStream(NULL);
+      i->a.clear();
+    }
+    else {
+      i->a.setRelayStream(NULL);
+      i->b.clear();
+    }
   }
 
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) {
