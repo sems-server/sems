@@ -140,6 +140,9 @@ public:
 
   static unsigned int LonelyUserTimer;
 
+  static bool room_pin_split;
+  static unsigned int room_pin_split_pos;
+
   // P-App-Param parameter to get participant ID from 
   static string participant_id_paramname;
   // if participant_id_paramname not configured:
@@ -154,11 +157,12 @@ public:
 		      AmArg& session_params);
   int onLoad();
 
-  bool isValidConference(const string& conf_id);
+  bool isValidConference(const string& conf_id, const string& participant_id);
   bool newParticipant(const string& conf_id, 
 		      const string& localtag, 
 		      const string& number,
-		      const string& participant_id);
+		      const string& participant_id,
+		      bool check_exisiting=true);
   void updateStatus(const string& conf_id, 
 		    const string& localtag, 
 		    ConferenceRoomParticipant::ParticipantStatus status,
@@ -182,6 +186,7 @@ public:
   void roomInfo(const AmArg& args, AmArg& ret);
   void roomDelete(const AmArg& args, AmArg& ret);
   void changeRoomAdminpin(const AmArg& args, AmArg& ret);
+  void roomAddParticipant(const AmArg& args, AmArg& ret);
 
   void dialout(const AmArg& args, AmArg& ret);
   void kickout(const AmArg& args, AmArg& ret);

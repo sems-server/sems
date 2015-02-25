@@ -98,6 +98,20 @@ void ConferenceRoom::newParticipant(const string& localtag,
 				    const string& participant_id) {
   gettimeofday(&last_access_time, NULL);
 
+  if (!participant_id.empty()) {
+    // search for participant with id and localtag empty
+    for (list<ConferenceRoomParticipant>::iterator it=participants.begin(); 
+	 it != participants.end(); it++) {
+      if (it->participant_id == participant_id && it->localtag.empty()) {
+	DBG("found invited participant with ID '%s'\n", participant_id.c_str());
+	it->localtag = localtag;
+	it->number = number;
+	return;
+      }
+    }
+    
+  }
+
   participants.push_back(ConferenceRoomParticipant());
   participants.back().localtag = localtag;
   participants.back().number = number;
@@ -105,15 +119,22 @@ void ConferenceRoom::newParticipant(const string& localtag,
 }
 
 bool ConferenceRoom::hasParticipant(const string& localtag) {
-  bool res = false;
-  
-  for (list<ConferenceRoomParticipant>::iterator it =participants.begin();
-       it != participants.end();it++) 
-    if (it->localtag == localtag) {
-      res = true;
-      break;
-    }
-  return res;
+  for (list<ConferenceRoomParticipant>::iterator it =
+	 participants.begin(); it != participants.end();it++) { 
+    if (it->localtag == localtag)
+      return true;
+  }
+
+  return false;
+}
+
+bool ConferenceRoom::hasInvitedParticipant(const string& participant_id) {
+  for (list<ConferenceRoomParticipant>::iterator it =
+	 participants.begin(); it != participants.end();it++) { 
+    if (it->participant_id == participant_id)
+      return true;
+  }
+  return false;
 }
 
 void ConferenceRoom::setMuted(const string& localtag, int mute) {

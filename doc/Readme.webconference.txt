@@ -104,6 +104,10 @@ roomInfo(string room, string adminpin):
   code/result:
          0    OK
          1    wrong adminpin
+
+----
+addParticipant(string conf_id, string participant_id, string number)
+  add participant to conf_id and set participant_id. room must be created before!
 ----
 dialout(string room, string adminpin, string callee,
         string from_user, string domain,

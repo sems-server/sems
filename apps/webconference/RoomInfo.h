@@ -80,6 +80,9 @@ struct ConferenceRoom {
 
   bool hasParticipant(const string& localtag);
 
+  /** @returns whether participant is listed (and maybe not joined) */
+  bool hasInvitedParticipant(const string& participant_id);
+
   void setMuted(const string& localtag, int mute);
 
   bool expired(const struct timeval& now);

@@ -363,7 +363,7 @@ void WebConferenceDialog::process(AmEvent* ev)
 
       if (!factory->newParticipant(pin_str, getLocalTag(), dlg->getRemoteParty(),
 				   participant_id)) {
-	DBG("inexisting conference room '%s'\n", pin_str.c_str());
+	DBG("inexisting conference room '%s' or pin wrong\n", pin_str.c_str());
 	state = PlayErrorFinish;
 	setInOut(&play_list,&play_list);
 	prompts.addToPlaylist(WRONG_PIN_BYE, (long)this, play_list);
@@ -430,25 +430,51 @@ void WebConferenceDialog::onDtmf(int event, int duration) {
       play_list.flush();
     } else if (event==10 || event==11) {
       // pound and star key
-      if (!pin_str.length() || !factory->isValidConference(pin_str)) {
+      if (!pin_str.length()) {
 	prompts.addToPlaylist(WRONG_PIN, (long)this, play_list, true);
-	pin_str.clear();
-      } else {
-	state = EnteringConference;
-	setInOut(NULL, NULL);
-	play_list.flush();
-	for (size_t i=0;i<pin_str.length();i++) {
-	  string num = "";
-	  num[0] = pin_str[i];
-	  DBG("adding '%s' to playlist.\n", num.c_str());
+	return;
+      }
+      string orig_pin_str = pin_str;
 
-	  prompts.addToPlaylist(num, (long)this, play_list);
+      if (WebConferenceFactory::room_pin_split) {
+	if (pin_str.length() <= WebConferenceFactory::room_pin_split_pos) {
+	  DBG("short conference room/pin combination ('%s', want at least %d)\n",
+	      pin_str.c_str(), WebConferenceFactory::room_pin_split_pos);
+	  setInOut(&play_list,&play_list);
+	  play_list.flush();
+	  prompts.addToPlaylist(WRONG_PIN, (long)this, play_list);
+	  pin_str ="";
+	  return;
 	}
 
-       	setInOut(&play_list,&play_list);
-	prompts.addToPlaylist(ENTERING_CONFERENCE, (long)this, play_list);
-	play_list.addToPlaylist(new AmPlaylistItem(&separator, NULL));
+	participant_id = pin_str.substr(WebConferenceFactory::room_pin_split_pos);
+	pin_str = pin_str.substr(0, WebConferenceFactory::room_pin_split_pos);
+	DBG("split entered pin into room '%s' and PIN '%s'\n", pin_str.c_str(), participant_id.c_str());
       }
+
+      if (!factory->isValidConference(pin_str, WebConferenceFactory::room_pin_split ?
+				      participant_id : "")) {
+	setInOut(&play_list,&play_list);
+	play_list.flush();
+	prompts.addToPlaylist(WRONG_PIN, (long)this, play_list);
+	pin_str ="";
+	return;	
+      }
+
+      state = EnteringConference;
+      setInOut(NULL, NULL);
+      play_list.flush();
+      for (size_t i=0;i<orig_pin_str.length();i++) {
+	string num = "";
+	num[0] = orig_pin_str[i];
+	DBG("adding '%s' to playlist.\n", num.c_str());
+	prompts.addToPlaylist(num, (long)this, play_list);
+      }
+
+      setInOut(&play_list,&play_list);
+      prompts.addToPlaylist(ENTERING_CONFERENCE, (long)this, play_list);
+      play_list.addToPlaylist(new AmPlaylistItem(&separator, NULL));
+
     }
   }
 }
