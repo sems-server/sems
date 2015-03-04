@@ -94,6 +94,16 @@ extern "C" {
     return PyString_FromString(res.c_str());
   }
 
+  static PyObject* ivr_getHeaders(PyObject*, PyObject* args)
+  {
+    char* headers;
+    char* header_name;
+    if(!PyArg_ParseTuple(args,"ss",&headers,&header_name))
+      return NULL;
+
+    string res = getHeader(headers,header_name);
+    return PyString_FromString(res.c_str());
+  }
 
   static PyObject* ivr_ignoreSigchld(PyObject*, PyObject* args)
   {
@@ -135,6 +145,7 @@ extern "C" {
   static PyMethodDef ivr_methods[] = {
     {"log", (PyCFunction)ivr_log, METH_VARARGS,"Log a message using Sems' logging system"},
     {"getHeader", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeader wrapper"},
+    {"getHeaders", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeaders wrapper"},
     {"createThread", (PyCFunction)ivr_createThread, METH_VARARGS, "Create another interpreter thread"},
     {"setIgnoreSigchld", (PyCFunction)ivr_ignoreSigchld, METH_VARARGS, "ignore SIGCHLD signal"},
     {NULL}  /* Sentinel */
