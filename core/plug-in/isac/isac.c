@@ -33,12 +33,14 @@ int Pcm16_2_iSAC( unsigned char* out_buf, unsigned char* in_buf, unsigned int si
 int iSAC_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 		  unsigned int channels, unsigned int rate, long h_codec );
 
-static long iSAC_create(const char* format_parameters, 
-			amci_codec_fmt_info_t* format_description);
+static long iSAC_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description);
 static void iSAC_destroy(long handle);
 
 static unsigned int iSAC_bytes2samples(long, unsigned int);
 static unsigned int iSAC_samples2bytes(long, unsigned int);
+
+static amci_codec_fmt_info_t isac_fmt_description[] = {{AMCI_FMT_FRAME_SIZE, iSAC_FRAME_MS * iSAC_SAMPLE_RATE / 1000}, {0,0}};
 
 BEGIN_EXPORTS("isac", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
@@ -62,8 +64,8 @@ END_FILE_FORMATS
 
 END_EXPORTS
 
-static long iSAC_create(const char* format_parameters, 
-			amci_codec_fmt_info_t* format_description)
+static long iSAC_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description)
 {
   ISACStruct *iSAC_st=NULL;
   int err = WebRtcIsac_Create(&iSAC_st);
@@ -85,11 +87,7 @@ static long iSAC_create(const char* format_parameters,
     return 0;
   }
 
-  format_description[0].id = AMCI_FMT_FRAME_SIZE;
-  format_description[0].value = iSAC_FRAME_MS * iSAC_SAMPLE_RATE / 1000;
-  DBG("set AMCI_FMT_FRAME_SIZE to %d\n", format_description[0].value);
-    
-  format_description[1].id = 0;
+  *format_description = isac_fmt_description;
 
   return (long)iSAC_st;
 }

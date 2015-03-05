@@ -39,12 +39,17 @@ static int pcm16_2_gsm(unsigned char* out_buf, unsigned char* in_buf, unsigned i
 static int gsm_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size, 
 		       unsigned int channels, unsigned int rate, long h_codec );
 
-static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description); 
+static long gsm_create_if(const char* format_parameters, const char** format_parameters_out,
+			  amci_codec_fmt_info_t** format_description); 
 
 static void gsm_destroy_if(long h_codec);
 
 static unsigned int gsm_bytes2samples(long, unsigned int);
 static unsigned int gsm_samples2bytes(long, unsigned int);
+
+static amci_codec_fmt_info_t gsm_fmt_description[] = { {AMCI_FMT_FRAME_LENGTH, 20},
+						       {AMCI_FMT_FRAME_SIZE, 160},
+						       {AMCI_FMT_ENCODED_FRAME_SIZE, 33}, {0,0}};
 
 BEGIN_EXPORTS( "gsm", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
@@ -126,7 +131,8 @@ static int gsm_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned i
 }
 
 
-static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+static long gsm_create_if(const char* format_parameters, const char** format_parameters_out,
+			  amci_codec_fmt_info_t** format_description)
 { 
   gsm* h_codec=0;
     
@@ -139,15 +145,8 @@ static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* 
   h_codec[0] = gsm_create();
   h_codec[1] = gsm_create();
 
-  format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
-  format_description[0].value = 20;
-  format_description[1].id = AMCI_FMT_FRAME_SIZE;
-  format_description[1].value = 160;
-  format_description[2].id =  AMCI_FMT_ENCODED_FRAME_SIZE;
-  format_description[2].value = 33;
-  format_description[3].id = 0;
+  *format_description = gsm_fmt_description;
 
-    
   return (long)h_codec;
 }
 

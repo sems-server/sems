@@ -36,7 +36,8 @@ int Pcm16_2_G722NB( unsigned char* out_buf, unsigned char* in_buf, unsigned int 
 int G722NB_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 		     unsigned int channels, unsigned int rate, long h_codec );
 
-long G722NB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+long G722NB_create(const char* format_parameters, const char** format_parameters_out,
+		   amci_codec_fmt_info_t** format_description);
 void G722NB_destroy(long handle);
 
 static unsigned int G722NB_bytes2samples(long, unsigned int);
@@ -67,7 +68,8 @@ typedef struct {
 } G722State;
 
 
-long G722NB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long G722NB_create(const char* format_parameters, const char** format_parameters_out,
+		   amci_codec_fmt_info_t** format_description)
 {
   G722State* gs;
         

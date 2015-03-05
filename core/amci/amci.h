@@ -238,8 +238,10 @@ typedef void (*amci_codec_module_destroy_t)(void);
 /**
  * \brief Codec's init function pointer.
  *
- * @param format_parameters  [in] parameters as passed by fmtp tag, 0 if none 
- * @param format_description [out] pointer to describing block, with amci_codec_fmt_info_t array; zero-terminated. 0 if none
+ * @param format_parameters      [in]  parameters as passed by fmtp tag, NULL if none 
+ * @param format_parameters_out  [out] parameters passed back to fmtp, NULL if none 
+ * @param format_description     [out] pointer to describing block, with amci_codec_fmt_info_t array; zero-terminated. 
+        NULL if none
  *   <table><tr><td><b>key</b></td><td><b>value</b></td></tr>
  *     <tr><td>AMCI_FMT_FRAME_LENGTH (1)</td><td>  frame length in ms (for framed codecs; must be multiple of 10)</td></tr>
  *     <tr><td>AMCI_FMT_FRAME_SIZE (2)</td><td>  frame size in samples</td></tr>
@@ -254,7 +256,8 @@ typedef void (*amci_codec_module_destroy_t)(void);
     int value;
   } amci_codec_fmt_info_t;
 
-typedef long (*amci_codec_init_t)(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+  typedef long (*amci_codec_init_t)(const char* format_parameters, const char** format_parameters_out,
+				    amci_codec_fmt_info_t** fmt_info);
 
 /**
  * \brief Codec's destroy function pointer.
@@ -271,6 +274,11 @@ typedef unsigned int (*amci_codec_bytes2samples_t)(long h_codec, unsigned int nu
  * \brief Codec's function for calculating the number of bytes from samples
  */
 typedef unsigned int (*amci_codec_samples2bytes_t)(long h_codec, unsigned int num_samples);
+
+/**
+ * \brief Codec's function for negotiating codec format; this needs to be dry-run, i.e. no codec instantiated
+ */
+typedef int (*amci_codec_negotiate_fmt_t)(int is_offer, const char* params_in, char* params_out, unsigned int params_out_len);
 
 /**
  * \brief Codec description
@@ -302,6 +310,9 @@ struct amci_codec_t {
 
     /** Function for calculating the number of samples from bytes. */
     amci_codec_samples2bytes_t samples2bytes;
+
+    /** function for dry-negotiating codec format - no codec instance is created */
+    amci_codec_negotiate_fmt_t negotiate_fmt;
 };
   
   /** \brief supported subtypes for a file */
@@ -464,7 +475,7 @@ struct amci_exports_t {
  * @hideinitializer
  */
 #define END_CODECS \
-                    { -1, 0, 0, 0, 0, 0, 0, 0 } \
+                    { -1, 0, 0, 0, 0, 0, 0, 0, 0 }			\
                 },
 
 /**
@@ -473,7 +484,14 @@ struct amci_exports_t {
  * @hideinitializer
  */
 #define CODEC(id, intern2type,type2intern,plc,init,destroy,bytes2samples,samples2bytes) \
-                    { id, intern2type, type2intern, plc, init, destroy, bytes2samples, samples2bytes },
+       { id, intern2type, type2intern, plc, init, destroy, bytes2samples, samples2bytes, 0 },
+
+  /**
+     A codec with negotiate_fmt function
+     @hideinitializer
+   */
+#define CODEC_WITH_FMT(id, intern2type,type2intern,plc,init,destroy,bytes2samples,samples2bytes,negotiate_fmt) \
+       { id, intern2type, type2intern, plc, init, destroy, bytes2samples, samples2bytes, negotiate_fmt},
 
 /**
  * Portable export definition macro

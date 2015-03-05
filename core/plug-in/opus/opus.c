@@ -84,7 +84,8 @@ static int opus_plc( unsigned char* out_buf, unsigned int size,
 
 static int pcm16_2_opus( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			 unsigned int channels, unsigned int rate, long h_codec );
-static long opus_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+static long opus_create(const char* format_parameters, const char** format_parameters_out,
+			  amci_codec_fmt_info_t** format_description);
 static void opus_destroy(long h_inst);
 
 #if SYSTEM_SAMPLECLOCK_RATE >= 48000
@@ -98,6 +99,9 @@ static void opus_destroy(long h_inst);
 #else
 #error Minimal sample rate for OPUS codec is 8000.
 #endif
+
+static amci_codec_fmt_info_t opus_fmt_description[] = { {AMCI_FMT_FRAME_LENGTH, 20},
+						       {AMCI_FMT_FRAME_SIZE, 20 * _OPUS_RATE / 1000}, {0,0}};
 
 BEGIN_EXPORTS( "opus" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
@@ -122,19 +126,14 @@ typedef struct {
   OpusDecoder* opus_dec;
 } opus_state_t;
 
-long opus_create(const char* format_parameters, amci_codec_fmt_info_t* format_description) {
+long opus_create(const char* format_parameters, const char** format_parameters_out,
+		 amci_codec_fmt_info_t** format_description) {
   opus_state_t* codec_inst;
   int error;
  
   if (format_parameters) {
     DBG("OPUS params: >>%s<<.\n", format_parameters);
   } 
-
-  format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
-  format_description[0].value = 20;
-  format_description[1].id = AMCI_FMT_FRAME_SIZE;
-  format_description[1].value = 20 * _OPUS_RATE / 1000;
-  format_description[2].id = 0;
     
   codec_inst = (opus_state_t*)malloc(sizeof(opus_state_t));
 
@@ -160,6 +159,8 @@ long opus_create(const char* format_parameters, amci_codec_fmt_info_t* format_de
     opus_encoder_destroy(codec_inst->opus_enc);
     return -1;
   }
+
+  *format_description = opus_fmt_description;
 
   return (long)codec_inst;
 }

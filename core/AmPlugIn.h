@@ -199,6 +199,17 @@ class AmPlugIn : public AmPayloadProvider
    */
   amci_codec_t*    codec(int id);
 
+  /** 
+   * get codec format parameters
+   * @param id Codec ID (see amci/codecs.h).
+   * @param is_offer for an offer?
+   * @param fmt_params_in input parameters for an answer
+   * @return fmt parameters for SDP (offer or answer)
+   */
+  string getSdpFormatParameters(int codec_id, bool is_offer, const string& fmt_params_in);
+
+
+
   /**
    * Application lookup function
    * @param app_name application name

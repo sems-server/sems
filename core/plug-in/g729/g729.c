@@ -56,11 +56,18 @@ static int pcm16_2_g729(unsigned char* out_buf, unsigned char* in_buf, unsigned 
 static int g729_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size, 
 		       unsigned int channels, unsigned int rate, long h_codec );
 
-static long g729_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+static long g729_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description);
 static void g729_destroy(long h_codec);
 
 static unsigned int g729_bytes2samples(long, unsigned int);
 static unsigned int g729_samples2bytes(long, unsigned int);
+
+static amci_codec_fmt_info_t[] gsm_fmt_description = { { AMCI_FMT_FRAME_LENGTH, 20 },
+						       { AMCI_FMT_FRAME_SIZE, 160 },
+						       { AMCI_FMT_ENCODED_FRAME_SIZE, 33 },
+						       { 0, 0 }
+};
 
 #define G729_PAYLOAD_ID          18
 #define G729_BYTES_PER_FRAME     10
@@ -176,7 +183,8 @@ stream_destroy(struct stream *st)
 }
 
 
-long g729_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long g729_create(const char* format_parameters, const char** format_parameters_out,
+		 amci_codec_fmt_info_t** format_description)
 {
     USC_CodecInfo pInfo;  
     struct G729_codec *codec;

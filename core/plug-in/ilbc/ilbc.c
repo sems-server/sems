@@ -73,13 +73,22 @@ static int iLBC_PLC( unsigned char* out_buf, unsigned int size,
 
 static int Pcm16_2_iLBC( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			 unsigned int channels, unsigned int rate, long h_codec );
-static long iLBC_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+static long iLBC_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description);
 static void iLBC_destroy(long h_inst);
 static int iLBC_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec);
 static int iLBC_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec, struct amci_codec_t *codec);
 
 static unsigned int ilbc_bytes2samples(long, unsigned int);
 static unsigned int ilbc_samples2bytes(long, unsigned int);
+
+static amci_codec_fmt_info_t ilbc_fmt_description_30[] = { {AMCI_FMT_FRAME_LENGTH, 30},
+							   {AMCI_FMT_FRAME_SIZE, 240},
+							   {AMCI_FMT_ENCODED_FRAME_SIZE, 50}, {0,0}};
+
+static amci_codec_fmt_info_t ilbc_fmt_description_20[] = { {AMCI_FMT_FRAME_LENGTH, 20},
+							   {AMCI_FMT_FRAME_SIZE, 160},
+							   {AMCI_FMT_ENCODED_FRAME_SIZE, 38}, {0,0}};
 
 BEGIN_EXPORTS( "ilbc" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
@@ -129,7 +138,8 @@ static unsigned int ilbc_samples2bytes(long h_codec, unsigned int num_samples)
     return (num_samples / 160) * 38;
 }
 
-long iLBC_create(const char* format_parameters, amci_codec_fmt_info_t* format_description) {
+long iLBC_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description) {
 
   iLBC_Codec_Inst_t* codec_inst;
   int mode;
@@ -156,14 +166,9 @@ long iLBC_create(const char* format_parameters, amci_codec_fmt_info_t* format_de
       }
     }
   }
-  format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
-  format_description[0].value = mode;
-  format_description[1].id = AMCI_FMT_FRAME_SIZE;
-  format_description[1].value = mode==30 ? 240 : 160;
-  format_description[2].id = AMCI_FMT_ENCODED_FRAME_SIZE;
-  format_description[2].value = mode==30 ? 50 : 38;
-  format_description[3].id = 0;
-    
+
+  *format_description = (mode == 30) ? ilbc_fmt_description_30 : ilbc_fmt_description_20;
+
   if (format_parameters) {
     DBG("ilbc with format parameters : '%s', mode=%d.\n", format_parameters, mode);
   }

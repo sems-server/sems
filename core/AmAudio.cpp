@@ -55,7 +55,8 @@ AmAudioFormat::AmAudioFormat(int codec_id, unsigned int rate)
   : channels(1),
     codec_id(codec_id),
     rate(rate),
-    codec(NULL)
+    codec(NULL),
+    sdp_format_parameters_out(NULL)
 {
   codec = getCodec();
 }
@@ -103,13 +104,18 @@ bool AmAudioFormat::operator != (const AmAudioFormat& r) const
 
 void AmAudioFormat::initCodec()
 {
-  amci_codec_fmt_info_t fmt_i[4];
-  fmt_i[0].id=0;
+  amci_codec_fmt_info_t* fmt_i = NULL;
+  sdp_format_parameters_out    = NULL; // reset
 
   if( codec && codec->init ) {
-    if ((h_codec = (*codec->init)(sdp_format_parameters.c_str(), fmt_i)) == -1) {
+    if ((h_codec = (*codec->init)(sdp_format_parameters.c_str(), 
+				  &sdp_format_parameters_out, &fmt_i)) == -1) {
       ERROR("could not initialize codec %i\n",codec->id);
-    }  
+    } else {
+      if (NULL != sdp_format_parameters_out) {
+	DBG("negotiated fmt parameters '%s'\n", sdp_format_parameters_out);
+      }
+    }
   } 
 }
 

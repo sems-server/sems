@@ -40,7 +40,8 @@
 /* or ATM-AAL packing  -> RFC3551 has the names AAL2-G726-xy for the big-endian packing */
 #define G726_PACK_RFC3551   1 
 
-static long G726_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+static long G726_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description);
 static void G726_destroy(long h_inst);
 
 static int Pcm16_2_G726_16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
@@ -108,7 +109,8 @@ struct G726_twoway {
   struct g72x_state from_g726;  
 };
 
-static long G726_create(const char* format_parameters, amci_codec_fmt_info_t* format_description) {
+static long G726_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description) {
   struct G726_twoway* cinst = calloc(1, sizeof(struct G726_twoway));
   if (!cinst)
     return -1;
@@ -116,7 +118,6 @@ static long G726_create(const char* format_parameters, amci_codec_fmt_info_t* fo
   g72x_init_state(&cinst->to_g726);
   g72x_init_state(&cinst->from_g726);
 
-  format_description[0].id = 0;
   return (long) cinst;
 }
 

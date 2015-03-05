@@ -1391,8 +1391,9 @@ static bool read(const std::string &src, vector<SdpPayload> &codecs)
     if(!payload) {
       ERROR("Ignoring unknown payload found in call profile: '%s/%i'\n",
 	    p.encoding_name.c_str(), p.clock_rate);
-    }
-    else {
+    } else {
+      p.sdp_format_parameters = plugin->getSdpFormatParameters(payload->codec_id, true, "");
+
       if(payload_id < DYNAMIC_PAYLOAD_TYPE_START)
 	p.payload_type = payload->payload_id;
       else

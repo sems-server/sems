@@ -400,6 +400,21 @@ amci_payload_t*  AmPlugIn::payload(int payload_id) const
   return 0;
 }
 
+string AmPlugIn::getSdpFormatParameters(int codec_id, bool is_offer, const string& fmt_params_in) {
+  amci_codec_t* c = codec(codec_id);
+  if (NULL == c)
+    return ""; // empty for unsupported codec
+
+  if (NULL == c->negotiate_fmt)
+    return ""; // empty if codec doesn't know either
+
+  char out_fmt[256] = { '\0' };
+  if ((c->negotiate_fmt)(is_offer ? 1:0, fmt_params_in.c_str(), out_fmt, 256) >=0 )
+    return string(out_fmt);
+
+  return "";
+}
+
 int AmPlugIn::getDynPayload(const string& name, int rate, int encoding_param) const {
   // find a dynamic payload by name/rate and encoding_param (channels, if > 0)
   for(std::map<int, amci_payload_t*>::const_iterator pl_it = payloads.begin();

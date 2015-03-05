@@ -139,6 +139,7 @@ public:
   int channels;
 
   string sdp_format_parameters;
+  const char*  sdp_format_parameters_out;
     
   AmAudioFormat(int codec_id = CODEC_PCM16,
 		unsigned int rate = SYSTEM_SAMPLECLOCK_RATE);

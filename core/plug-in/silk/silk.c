@@ -35,10 +35,14 @@ int Pcm16_2_SILK( unsigned char* out_buf, unsigned char* in_buf, unsigned int si
 int SILK_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 		  unsigned int channels, unsigned int rate, long h_codec );
 
-long SILK_NB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
-long SILK_MB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
-long SILK_WB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
-long SILK_UB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+long SILK_NB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description);
+long SILK_MB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description);
+long SILK_WB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description);
+long SILK_UB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description);
 void SILK_destroy(long handle);
 
 static unsigned int SILK_bytes2samples(long, unsigned int);
@@ -169,9 +173,7 @@ static int create_SILK_decoder(SILK_state* st,
 }
 
 static long SILK_create(unsigned int rtp_Hz,
-			unsigned int avg_bit_rate,
-			const char* format_parameters, 
-			amci_codec_fmt_info_t* format_description)
+			unsigned int avg_bit_rate)
 {
   SILK_state* st = malloc(sizeof(SILK_state));
   if(st == NULL) {
@@ -195,24 +197,28 @@ static long SILK_create(unsigned int rtp_Hz,
   return 0;
 }
 
-long SILK_NB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long SILK_NB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description)
 {
-  return SILK_create(8000,20000,format_parameters,format_description);
+  return SILK_create(8000,20000);
 }
 
-long SILK_MB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long SILK_MB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description)
 {
-  return SILK_create(12000,25000,format_parameters,format_description);
+  return SILK_create(12000,25000);
 }
 
-long SILK_WB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long SILK_WB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description)
 {
-  return SILK_create(16000,30000,format_parameters,format_description);
+  return SILK_create(16000,30000);
 }
 
-long SILK_UB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long SILK_UB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description)
 {
-  return SILK_create(24000,40000,format_parameters,format_description);
+  return SILK_create(24000,40000);
 }
 
 void SILK_destroy(long handle)

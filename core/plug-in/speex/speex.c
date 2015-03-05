@@ -79,9 +79,12 @@ int Pcm16_2_Speex( unsigned char* out_buf, unsigned char* in_buf, unsigned int s
 int Speex_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 		   unsigned int channels, unsigned int rate, long h_codec );
 
-long speexNB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
-long speexWB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
-long speexUB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+long speexNB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description);
+long speexWB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description);
+long speexUB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description);
 void speex_destroy(long handle);
 
 /* static unsigned int speex_bytes2samples(long, unsigned int); */
@@ -130,9 +133,10 @@ typedef struct {
   unsigned int frames_per_packet; /* in samples */
   unsigned int frame_size;
 
+  amci_codec_fmt_info_t fmt_info[3];
 } SpeexState;
 
-#if 0
+#if 0 /* SDP parameters ignored ? */
 
 /*
   Search for a parameter assignement in input string.
@@ -145,7 +149,7 @@ static char* read_param(char* input, const char *param, char** param_value)
   int param_size;
 
   /* Eat spaces and semi-colons */
-  while (*input && *input==' ' && *input==';' && *input!='"')
+  while (*input && (*input==' ' || *input==';' || *input=='"'))
     input++;
 
   *param_value = NULL;
@@ -222,7 +226,7 @@ void decode_format_parameters(const char* format_parameters, SpeexState* ss) {
 
 long speex_create(unsigned int sample_rate, 
 		  const char* format_parameters, 
-		  amci_codec_fmt_info_t* format_description)
+		  amci_codec_fmt_info_t** format_description)
 {
   int speex_mode = 0, on=1, quality=0;
   SpeexState* ss=NULL;
@@ -272,17 +276,19 @@ long speex_create(unsigned int sample_rate,
   ss->decoder.state = speex_decoder_init(speex_lib_get_mode(speex_mode));
   speex_decoder_ctl(ss->decoder.state, SPEEX_SET_ENH, &on);
     
-  format_description[0].id = AMCI_FMT_FRAME_LENGTH;
-  format_description[0].value = SPEEX_FRAME_MS * ss->frames_per_packet;
+  ss->fmt_info[0].id = AMCI_FMT_FRAME_LENGTH;
+  ss->fmt_info[0].value = SPEEX_FRAME_MS * ss->frames_per_packet;
     
   ss->frame_size = SPEEX_FRAME_MS * (sample_rate / 1000);
-  format_description[1].id = AMCI_FMT_FRAME_SIZE;
-  format_description[1].value = ss->frame_size * ss->frames_per_packet;
+  ss->fmt_info[1].id = AMCI_FMT_FRAME_SIZE;
+  ss->fmt_info[1].value = ss->frame_size * ss->frames_per_packet;
     
-  format_description[2].id = 0;
+  ss->fmt_info[2].id = 0;
 
-  DBG("set AMCI_FMT_FRAME_LENGTH to %d\n", format_description[0].value);
-  DBG("set AMCI_FMT_FRAME_SIZE to %d\n", format_description[1].value);
+  *format_description = ss->fmt_info;
+
+  DBG("set AMCI_FMT_FRAME_LENGTH to %d\n", ss->fmt_info[0].value);
+  DBG("set AMCI_FMT_FRAME_SIZE to %d\n",   ss->fmt_info[1].value);
 
   DBG("SpeexState %p inserted with %d frames per packet,\n", 
       ss, ss->frames_per_packet);
@@ -290,20 +296,20 @@ long speex_create(unsigned int sample_rate,
   return (long)ss;
 }
 
-long speexNB_create(const char* format_parameters, 
-		    amci_codec_fmt_info_t* format_description)
+long speexNB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description)
 {
   return speex_create(8000,format_parameters,format_description);
 }
 
-long speexWB_create(const char* format_parameters, 
-		    amci_codec_fmt_info_t* format_description)
+long speexWB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description)
 {
   return speex_create(16000,format_parameters,format_description);
 }
 
-long speexUB_create(const char* format_parameters, 
-		    amci_codec_fmt_info_t* format_description)
+long speexUB_create(const char* format_parameters, const char** format_parameters_out,
+		    amci_codec_fmt_info_t** format_description)
 {
   return speex_create(32000,format_parameters,format_description);
 }
