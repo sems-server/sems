@@ -223,7 +223,7 @@ void log_stacktrace(int ll)
 /**
  * Print a demangled stack backtrace of the caller function
  */
-void log_demangled_stacktrace(int ll, unsigned int max_frames)
+void __lds(int ll, unsigned int max_frames)
 {
   // storage array for stack trace address data
   void* addrlist[max_frames+1];

@@ -186,7 +186,8 @@ void log_stacktrace(int ll);
 
 #ifdef __cplusplus
 /* ...only for C++ */
-void log_demangled_stacktrace(int ll, unsigned int max_frames = 63);
+#define log_demangled_stacktrace __lds
+void __lds(int ll, unsigned int max_frames = 63);
 class AmLoggingFacility;
 void register_log_hook(AmLoggingFacility*);
 #endif
