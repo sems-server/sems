@@ -1368,11 +1368,11 @@ static bool read(const std::string &src, vector<SdpPayload> &codecs)
 
   for (vector<string>::iterator it=elems.begin(); it != elems.end(); ++it) {
     SdpPayload p;
-    if (!readPayload(p, *it)) return false;
+    if (!readPayload(p, trim(*it, " "))) return false;
     int payload_id = plugin->getDynPayload(p.encoding_name, p.clock_rate, 0);
     amci_payload_t* payload = plugin->payload(payload_id);
     if(!payload) {
-      ERROR("Ignoring unknown payload found in call profile: %s/%i\n",
+      ERROR("Ignoring unknown payload found in call profile: '%s/%i'\n",
 	    p.encoding_name.c_str(), p.clock_rate);
     }
     else {
