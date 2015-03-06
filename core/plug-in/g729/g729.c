@@ -63,7 +63,7 @@ static void g729_destroy(long h_codec);
 static unsigned int g729_bytes2samples(long, unsigned int);
 static unsigned int g729_samples2bytes(long, unsigned int);
 
-static amci_codec_fmt_info_t[] gsm_fmt_description = { { AMCI_FMT_FRAME_LENGTH, 20 },
+static amci_codec_fmt_info_t g729_fmt_description[] =  { { AMCI_FMT_FRAME_LENGTH, 20 },
 						       { AMCI_FMT_FRAME_SIZE, 160 },
 						       { AMCI_FMT_ENCODED_FRAME_SIZE, 33 },
 						       { 0, 0 }
@@ -222,6 +222,8 @@ long g729_create(const char* format_parameters, const char** format_parameters_o
       }
 
     codec->pInfo = pInfo;
+
+    *format_description = g729_fmt_description;
     return (long) codec;
 }
 
