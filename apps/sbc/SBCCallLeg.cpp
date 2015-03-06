@@ -66,7 +66,7 @@ static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, co
 
   for (vector<SdpPayload>::const_iterator p = payloads.begin(); p != payloads.end(); ++p) {
     // fix for clients using non-standard names for static payload type (SPA504g: G729a)
-    if (transport == TP_RTPAVP && payload.payload_type < 20) {
+    if (transport == TP_RTPAVP && payload.payload_type >= 0 && payload.payload_type < 20) {
       if (payload.payload_type != p->payload_type) continue;
     }
     else {
