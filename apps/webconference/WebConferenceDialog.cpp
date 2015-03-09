@@ -151,6 +151,26 @@ void WebConferenceDialog::onSessionStart() {
 	prompts.addToPlaylist(ENTER_PIN,  (long)this, play_list);
       } else {
 	DBG("########## direct connect conference '%s'  #########\n", conf_id.c_str());
+
+	string orig_pin_str = conf_id;
+	pin_str = conf_id;
+
+	if (WebConferenceFactory::room_pin_split) {
+	  if (pin_str.length() <= WebConferenceFactory::room_pin_split_pos) {
+	    DBG("short conference room/pin combination ('%s', want at least %d)\n",
+		pin_str.c_str(), WebConferenceFactory::room_pin_split_pos);
+	    setInOut(&play_list,&play_list);
+	    play_list.flush();
+	    prompts.addToPlaylist(WRONG_PIN, (long)this, play_list);
+	    pin_str ="";
+	    return;
+	  }
+
+	  participant_id = pin_str.substr(WebConferenceFactory::room_pin_split_pos);
+	  conf_id = pin_str.substr(0, WebConferenceFactory::room_pin_split_pos);
+	  DBG("split entered pin into room '%s' and PIN '%s'\n", conf_id.c_str(), participant_id.c_str());
+	}
+
 	if (!factory->newParticipant(conf_id, getLocalTag(), dlg->getRemoteParty(),
 				     participant_id)) {
 	  DBG("inexisting conference room '%s\n", conf_id.c_str());
