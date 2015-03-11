@@ -11,6 +11,10 @@
 #include <map>
 using std::map;
 
+#ifndef EXCL_BUFFER_SIZE
+#define EXCL_BUFFER_SIZE 1024*1024 /* 1 MB */
+#endif 
+
 class _excl_file_reg
 {
   struct excl_file_entry
@@ -33,23 +37,27 @@ public:
     map<string,excl_file_entry>::iterator it = files.find(name);
     if(it != files.end()) {
       excl_file_entry& fe = it->second;
+      if(!fe.ref_cnt) {
+        ERROR("trying to re-open a file not yet closed");
+        return NULL;
+      }
+
       fe.ref_cnt++;
       is_new = false;
       return fe.excl_fp;
     }
     else {
       exclusive_file* fp = new exclusive_file(name);
-      if(fp->open() < 0) {
+      if(fp->open(is_new) < 0) {
         ERROR("could not open '%s': %s",name.c_str(),strerror(errno));
         delete fp;
-        is_new = true;
         return NULL;
       }
 
       files[name].excl_fp = fp;
       files[name].ref_cnt++;
-      is_new = true;
-      fp->lock();
+
+      if(is_new) fp->lock();
       return fp;
     }
   }
@@ -60,27 +68,50 @@ public:
     if(it != files.end()) {
       excl_file_entry& fe = it->second;
       if(!(--fe.ref_cnt)) {
+        // async delete
+        //  - call close()
+        //  - wait for notification of close before deleting
+        fe.excl_fp->close();
+      }
+    }
+  }
+
+  bool delete_on_flushed(const string& name) {
+    AmLock l(files_mut);
+    map<string,excl_file_entry>::iterator it = files.find(name);
+    if(it != files.end()) {
+      excl_file_entry& fe = it->second;
+      if(!fe.ref_cnt) {
         delete fe.excl_fp;
         fe.excl_fp = NULL;
         files.erase(it);
+        return true;
       }
     }
+    return false;
   }
 };
 
 typedef singleton<_excl_file_reg> excl_file_reg;
 
 exclusive_file::exclusive_file(const string& name)
-  : name(name),fd(-1)
+  : async_file(EXCL_BUFFER_SIZE),
+    name(name),fd(-1)
 {}
 
 exclusive_file::~exclusive_file()
 {
   if(fd >= 0)
     ::close(fd);
+
+  DBG("just closed %s",name.c_str());
 }
 
-int exclusive_file::open()
+//
+// TODO: add a close() method that closes the underlying async_file
+//
+
+int exclusive_file::open(bool& is_new)
 {
   if(fd != -1) {
     ERROR("file already open\n");
@@ -94,7 +125,33 @@ int exclusive_file::open()
     return -1;
   }
 
+  if(lseek(fd,0,SEEK_END) > 0) {
+    is_new = false;
+  }
+  else {
+    is_new = true;
+  }
+
   return 0;
+}
+
+int exclusive_file::write_to_file(const void* buf, unsigned int len)
+{
+  int res = ::write(fd, buf, len);
+
+  if (res != (int)len) {
+    ERROR("writing to file '%s': %s\n",name.c_str(),strerror(errno));
+  }
+  //else {
+  //DBG("%i bytes written to %s",res,name.c_str());
+  //}
+
+  return res;
+}
+
+void exclusive_file::on_flushed()
+{
+  excl_file_reg::instance()->delete_on_flushed(name);
 }
 
 int exclusive_file::open(const char* filename,
@@ -114,11 +171,17 @@ void exclusive_file::close(const exclusive_file* excl_fp)
 
 int exclusive_file::write(const void *buf, int len)
 {
-  int res = ::write(fd, buf, len);
-  if (res != len) {
-    ERROR("writing to file '%s': %s\n",name.c_str(),strerror(errno));
-  }
-  return res;
+  DBG("async writting %i bytes to %s",len,name.c_str());
+  return (int)async_file::write(buf,len);
 }
 
+int exclusive_file::writev(const struct iovec* iov, int iovcnt)
+{
+  // int len=0;
+  // for(int i=0; i<iovcnt; i++)
+  //   len += iov[i].iov_len;    
+  //DBG("async writting (iov) %i bytes to %s",len,name.c_str());
+
+  return (int)async_file::writev(iov,iovcnt);
+}
 

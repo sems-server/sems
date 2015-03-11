@@ -34,6 +34,8 @@ protected:
   AmMutex  fd_mut;
 
   int write(const void *buf, int len);
+  int writev(const struct iovec *iov, int iovcnt);
+
   virtual int write_file_header() = 0;
 
 public:

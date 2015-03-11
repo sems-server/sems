@@ -1,4 +1,5 @@
 #include "pcap_logger.h"
+#include "exclusive_file.h"
 
 #include "log.h"
 
@@ -140,15 +141,21 @@ int pcap_logger::log(const char *data, int data_len, struct sockaddr *src, struc
 
   hdr.udp.chksum = ipv4_chksum(sum(&hdr.ip.ip_src, 8) + sum(&hdr.udp, 8) + htons(udp_size) + 0x1100 + sum(data, data_len));
 
-  AmLock _l(fd_mut);
+  struct iovec buf_vec[2];
 
-  if (write(&hdr, sizeof(hdr)) != sizeof(hdr)) {
-    // TODO: close the file (is broken anyway)
+  buf_vec[0].iov_base = &hdr;
+  buf_vec[0].iov_len  = sizeof(hdr);
+
+  buf_vec[1].iov_base = (void*)data;
+  buf_vec[1].iov_len  = data_len;
+
+  // no extra locking needed here, as the file
+  // is automatically locked on write
+
+  if (writev(buf_vec, 2) != (int)(sizeof(hdr) + data_len)) {
+    // TODO: check return value (buffer full or error)
     return -1;
   }
-  if (write(data, data_len) != data_len) {
-    // TODO: close the file (is broken anyway)
-    return -1;
-  }
+
   return 0;
 }

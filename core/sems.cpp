@@ -42,6 +42,7 @@
 
 #include "SipCtrlInterface.h"
 #include "sip/trans_table.h"
+#include "sip/async_file_writer.h"
 
 #include "log.h"
 
@@ -602,6 +603,9 @@ int main(int argc, char* argv[])
     goto error;
   }
 
+  // start the asynchronous file writer (sorry, no better place...)
+  async_file_writer::instance()->start();
+
   INFO("Starting RTP receiver\n");
   AmRtpReceiver::instance()->start();
 
@@ -627,6 +631,8 @@ int main(int argc, char* argv[])
   }
   #endif
 
+  INFO("SEMS " SEMS_VERSION " (" ARCH "/" OS") started");
+
   // running the server
   if(sip_ctrl.run() != -1)
     success = true;
@@ -651,6 +657,9 @@ int main(int argc, char* argv[])
  error:
   INFO("Disposing plug-ins\n");
   AmPlugIn::dispose();
+
+  async_file_writer::instance()->stop();
+  async_file_writer::instance()->join();
 
 #ifndef DISABLE_DAEMON_MODE
   if (AmConfig::DaemonMode) {

@@ -49,6 +49,12 @@ int file_msg_logger::write(const void *buf, int len)
   return res;
 }
 
+int file_msg_logger::writev(const struct iovec *iov, int iovcnt)
+{
+  assert(excl_fp != NULL);
+  return excl_fp->writev(iov,iovcnt);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 
 static string addr2str(sockaddr_storage* addr)
