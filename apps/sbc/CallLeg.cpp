@@ -688,6 +688,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   // release old signaling and media session
   clear_other();
   clearRtpReceiverRelay();
+  relayed_req.clear();
 
   // check if we aren't processing INVITE now (BLF ringing call pickup)
   AmSipRequest *invite = dlg->getUASPendingInv();
@@ -800,6 +801,8 @@ void CallLeg::disconnect(bool hold_remote, bool preserve_media_session)
 
   clear_other();
   set_sip_relay_only(false); // we can't relay once disconnected
+  est_invite_cseq = 0; // attempt to invalidate though 0 is valid value
+  relayed_req.clear(); // do not forward anything back any more
 
   if (!hold_remote || isOnHold()) updateCallStatus(Disconnected);
   else {
