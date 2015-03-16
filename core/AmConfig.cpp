@@ -158,7 +158,8 @@ static int readInterfaces(AmConfigReader& cfg);
 
 AmConfig::IP_interface::IP_interface()
   : LocalIP(),
-    PublicIP()
+    PublicIP(),
+    NetIfIdx(0)
 {
 }
 
@@ -166,7 +167,9 @@ AmConfig::SIP_interface::SIP_interface()
   : IP_interface(),
     LocalPort(5060),
     SigSockOpts(0),
-    RtpInterface(-1)
+    RtpInterface(-1),
+    tcp_connect_timeout(DEFAULT_TCP_CONNECT_TIMEOUT),
+    tcp_idle_timeout(DEFAULT_TCP_IDLE_TIMEOUT)
 {
 }
 
