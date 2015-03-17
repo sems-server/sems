@@ -370,14 +370,16 @@ void AmDtmfDetector::reportEvent()
 {
   m_reportLock.lock();
 
-  long duration = (m_lastReportTime.tv_sec - m_startTime.tv_sec) * 1000 +
-    (m_lastReportTime.tv_usec - m_startTime.tv_usec) / 1000;
-  m_dtmfSink->postDtmfEvent(new AmDtmfEvent(m_currentEvent, duration));
-  m_eventPending = false;
-  m_sipEventReceived = false;
-  m_rtpEventReceived = false;
-  m_inbandEventReceived = false;
-  m_current_eventid_i = false;
+  if (m_eventPending) {
+    long duration = (m_lastReportTime.tv_sec - m_startTime.tv_sec) * 1000 +
+      (m_lastReportTime.tv_usec - m_startTime.tv_usec) / 1000;
+    m_dtmfSink->postDtmfEvent(new AmDtmfEvent(m_currentEvent, duration));
+    m_eventPending = false;
+    m_sipEventReceived = false;
+    m_rtpEventReceived = false;
+    m_inbandEventReceived = false;
+    m_current_eventid_i = false;
+  }
 
   m_reportLock.unlock();
 }
