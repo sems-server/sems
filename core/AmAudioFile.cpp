@@ -401,7 +401,13 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
       ret = -2; // eof
     } else {
       // read from file
-      s = fread((void*)((unsigned char*)samples),1,s,fp);
+      int rs = fread((void*)((unsigned char*)samples),1,s,fp);
+      if (rs != s) {
+        DBG("marking data size as invalid as we read %d but should read %d", rs, s);
+        // we read less than we should => data size is probably broken
+        data_size = -1;
+        s = rs;
+      }
     
       ret = (!ferror(fp) ? s : -1);
     }
