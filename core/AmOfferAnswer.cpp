@@ -307,8 +307,9 @@ int AmOfferAnswer::onRequestOut(AmSipRequest& req)
 
   if (!sdp_body &&
       ((req.method == SIP_METH_PRACK) ||
-       (req.method == SIP_METH_ACK))) {
-    generate_sdp = (state == OA_OfferRecved);
+       (req.method == SIP_METH_ACK))
+      && (state == OA_OfferRecved)) {
+    generate_sdp = true;
     sdp_body = req.body.addPart(SIP_APPLICATION_SDP);
   }
 
