@@ -36,6 +36,7 @@
 // the internal delay of the mixer (between put and get)
 #define MIXER_DELAY_MS 20
 
+#define MAX_BUFFER_STATES 50 // 1 sec max @ 20ms
 
 void DEBUG_MIXER_BUFFER_STATE(const MixerBufferState& mbs, const string& context)
 {
@@ -274,8 +275,10 @@ AmMultiPartyMixer::findBufferStateForReading(unsigned int sample_rate,
     }
   }
 
-  //DBG("XXDebugMixerXX: Creating buffer state (from GetChannelPacket)");
-  buffer_state.push_back(MixerBufferState(sample_rate, channelids));
+  if (buffer_state.size() < MAX_BUFFER_STATES) {
+    // DBG("XXDebugMixerXX: Creating buffer state (from GetChannelPacket)\n");
+    buffer_state.push_back(MixerBufferState(sample_rate, channelids));
+  } // else just reuse the last buffer - conference without a speaker
   std::deque<MixerBufferState>::reverse_iterator rit = buffer_state.rbegin();
   //DEBUG_MIXER_BUFFER_STATE(*((rit + 1).base()), "returned to PutChannelPacket");
   return (rit + 1).base();
