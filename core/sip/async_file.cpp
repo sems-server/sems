@@ -21,7 +21,7 @@ Possible issue:
 
 async_file::async_file(unsigned int buf_len)
   : AmMutex(true), fifo_buffer(buf_len),
-    evbase(NULL),closed(false)
+    evbase(NULL),closed(false),error(false)
 {
   evbase = async_file_writer::instance()->get_evbase();
   ev_write = event_new(evbase,-1,0,write_cb,this);
@@ -69,9 +69,7 @@ void async_file::close()
 {
   AmLock _l(*this);
   closed = true;
-
-  if(fifo_buffer::get_buffered_bytes())
-    event_active(ev_write, 0, 0);
+  event_active(ev_write, 0, 0);
 }
 
 void async_file::write_cb(int sd, short what, void* ctx)
@@ -87,7 +85,7 @@ void async_file::write_cycle()
   read_bs = get_read_bs();
   unlock();
 
-  while(read_bs > 0) {
+  while(!error && (read_bs > 0)) {
 
     int bytes = write_to_file(get_read_ptr(),read_bs);
     if(bytes < 0) {
@@ -104,7 +102,7 @@ void async_file::write_cycle()
   }
 
   lock();
-  if(closed || error) {
+  if(closed) {
     if(error || !fifo_buffer::get_buffered_bytes())
       on_flushed();
     else
