@@ -89,7 +89,6 @@ void async_file::write_cycle()
 
     int bytes = write_to_file(get_read_ptr(),read_bs);
     if(bytes < 0) {
-      if(errno == EINTR) continue;
       error  = true;
       ERROR("Error detected: stopped writing");
       break;

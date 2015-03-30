@@ -137,7 +137,15 @@ int exclusive_file::open(bool& is_new)
 
 int exclusive_file::write_to_file(const void* buf, unsigned int len)
 {
-  int res = ::write(fd, buf, len);
+  int res = 0;
+  int retries = 0;
+
+  do {
+    res = ::write(fd, buf, len);
+
+  } while((res < 0) 
+          && (errno == EINTR)
+          && (++retries < 10));
 
   if (res != (int)len) {
     ERROR("writing to file '%s': %s\n",name.c_str(),strerror(errno));
