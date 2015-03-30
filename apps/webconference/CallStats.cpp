@@ -10,7 +10,8 @@
 WCCCallStats::WCCCallStats(const string& stats_dir) 
   : total(0),
     failed(0),
-    seconds(0)
+    seconds(0),
+    write_cnt(0)
 {
   if (stats_dir.empty())
     filename = "";
