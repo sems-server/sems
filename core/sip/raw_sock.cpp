@@ -608,6 +608,7 @@ int raw_iphdr_udp4_send(int rsock, const char* buf, unsigned int len,
 	  ret=sendmsg(rsock, &snd_msg, 0);
 #ifndef RAW_IPHDR_INC_AUTO_FRAG
 	} else {
+	  int bytes_sent;
 	  ip_payload = len + sizeof(hdr.udp);
 	  /* a fragment offset must be a multiple of 8 => its size must
 	     also be a multiple of 8, except for the last fragment */
@@ -635,6 +636,7 @@ int raw_iphdr_udp4_send(int rsock, const char* buf, unsigned int len,
 	  ret=sendmsg(rsock, &snd_msg, 0);
 	  if (unlikely(ret < 0))
 	    goto end;
+	  bytes_sent = ret;
 	  /* all the other fragments, include only the ip header */
 	  iov[0].iov_len = sizeof(hdr.ip);
 	  iov[1].iov_base =  (char*)iov[1].iov_base + iov[1].iov_len;
@@ -651,6 +653,7 @@ int raw_iphdr_udp4_send(int rsock, const char* buf, unsigned int len,
 	    ret=sendmsg(rsock, &snd_msg, 0);
 	    if (unlikely(ret < 0))
 	      goto end;
+	    bytes_sent+=ret;
 	    iov[1].iov_base =  (char*)iov[1].iov_base + iov[1].iov_len;
 	  }
 	  /* last fragment */
@@ -664,6 +667,7 @@ int raw_iphdr_udp4_send(int rsock, const char* buf, unsigned int len,
 	  ret=sendmsg(rsock, &snd_msg, 0);
 	  if (unlikely(ret < 0))
 	    goto end;
+	  ret+=bytes_sent;
 	}
 end:
 #endif /* RAW_IPHDR_INC_AUTO_FRAG */
