@@ -130,7 +130,19 @@ FCTMF_SUITE_BGN(test_uriparser) {
       fct_chk ( URL_decode(dst)==src  );
       fct_chk ( URL_encode(src)==dst  );
       fct_chk ( URL_decode(URL_encode(src))==src  );
-
     } FCT_TEST_END();
 
+    FCT_TEST_BGN(uriparser_params_dname5) {
+      AmUriParser p;
+      size_t end;
+      fct_chk(p.parse_contact("<sip:alice@atlanta.com>;q=\"0.1\";param", 0, end));
+      fct_chk( p.params.size()==2);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(uriparser_params_dname6) {
+      AmUriParser p;
+      size_t end;
+      fct_chk(p.parse_contact("<sip:alice@atlanta.com>;+g.3gpp.icsi-ref=\"urn%3Aurn-7%3A3gpp-service.ims.icsi.mmtel\";video;mobility=\"mobile\"", 0, end));
+      fct_chk( p.params.size()==3);
+    } FCT_TEST_END();
 } FCTMF_SUITE_END();

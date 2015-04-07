@@ -387,6 +387,8 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
       add_param(params, line.substr(p1, p2-p1), line.substr(p2+1, pos-p2 -1));
     else 
       add_param(params, line.substr(p1, p2-p1), line.substr(p2+1, pos-p2));
+  } else if (st == pS1) {
+	  add_param(params, line.substr(p1, pos-p1), "");
   }
   return true;
 }
