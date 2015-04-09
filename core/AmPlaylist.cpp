@@ -116,6 +116,10 @@ AmPlaylist::AmPlaylist(AmEventQueue* q)
   
 }
 
+AmPlaylist::~AmPlaylist() {
+  flush();
+}
+
 void AmPlaylist::addToPlaylist(AmPlaylistItem* item)
 {
   items_mut.lock();

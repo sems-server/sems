@@ -87,6 +87,7 @@ class AmPlaylist: public AmAudio
     
  public:
   AmPlaylist(AmEventQueue* q = NULL);
+  ~AmPlaylist();
 
   bool isEmpty();
 
