@@ -416,10 +416,7 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       while (p<cmd_str.length()) {
 	p2 = cmd_str.find(' ', p);
 	if (p2 == string::npos) {
-	  if (p+1<cmd_str.length())
-	    p2=cmd_str.length();
-	  else 
-	    break;
+	  p2=cmd_str.length();
 	}
 	s_args.push_back(string(cmd_str.substr(p, p2-p)));
 	p=p2+1;
@@ -449,6 +446,12 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
     } catch (const AmDynInvoke::NotImplemented& e) {
       reply = "Exception occured: AmDynInvoke::NotImplemented '"+
 	e.what+"'\n";
+    } catch (const std::exception& e) {
+      reply = "Exception occured: "+
+	string(e.what())+"\n";
+      return 0;
+    } catch (const std::string& e) {
+      reply = "Exception occured: "+e+"\n";
       return 0;
     } catch (...) {
       reply = "Exception occured.\n";
