@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-#include <assert.h>
 
 #include <map>
 using std::map;
@@ -173,8 +172,9 @@ int exclusive_file::open(const char* filename,
 
 void exclusive_file::close(const exclusive_file* excl_fp)
 {
-  assert(excl_fp != NULL);
-  excl_file_reg::instance()->deref(excl_fp->name);
+  if (excl_fp) {
+    excl_file_reg::instance()->deref(excl_fp->name);
+  }
 }
 
 int exclusive_file::write(const void *buf, int len)
