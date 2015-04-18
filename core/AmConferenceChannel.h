@@ -31,6 +31,21 @@
 #include "AmAudio.h"
 #include "AmConferenceStatus.h"
 
+#include "sip/async_file.h"
+class ChannelWritingFile : public async_file
+{
+  FILE* fp;
+ public:
+  ChannelWritingFile(const char* path);
+  ~ChannelWritingFile();
+
+  int write_to_file(const void* buf, unsigned int len);
+
+  void on_flushed();
+
+  AmCondition<bool> finished;
+};
+
 /** 
  * \brief one channel of a conference
  * 
@@ -41,8 +56,16 @@ class AmConferenceChannel: public AmAudio
 {
   bool                own_channel;
   int                 channel_id;
+  string              channel_tag;
   string              conf_id;
   AmConferenceStatus* status;
+
+  string in_file_name;
+  string out_file_name;
+  bool have_in_sr;
+  bool have_out_sr;
+  ChannelWritingFile* in_file;
+  ChannelWritingFile* out_file;
 
  protected:
   // Fake implement AmAudio's pure virtual methods
@@ -57,8 +80,8 @@ class AmConferenceChannel: public AmAudio
 	  int input_sample_rate, unsigned int size);
 
  public:
-  AmConferenceChannel(AmConferenceStatus* status, 
-		      int channel_id, bool own_channel);
+  AmConferenceChannel(AmConferenceStatus* status,
+		      int channel_id, string channel_tag, bool own_channel);
 
   ~AmConferenceChannel();
 

@@ -155,7 +155,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id, int i
   sessions_mut.lock();
   std::map<std::string, unsigned int>::iterator it = sessions.find(sess_id);
   if(it != sessions.end()){
-    ch = new AmConferenceChannel(this,it->second,false);    
+    ch = new AmConferenceChannel(this,it->second,sess_id,false);
   } else {
     if(!sessions.empty()){
       int participants = sessions.size()+1;
@@ -179,7 +179,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id, int i
     sessions[sess_id] = ch_id;
     channels[ch_id] = si;
 
-    ch = new AmConferenceChannel(this,ch_id,true);
+    ch = new AmConferenceChannel(this,ch_id,sess_id, true);
 
   }
   sessions_mut.unlock();

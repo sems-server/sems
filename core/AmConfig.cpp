@@ -131,6 +131,9 @@ string AmConfig::OptionsTranscoderInStatsHdr; // empty by default
 string AmConfig::TranscoderOutStatsHdr; // empty by default
 string AmConfig::TranscoderInStatsHdr; // empty by default
 
+bool AmConfig::DumpConferenceStreams = false;
+string AmConfig::DumpConferencePath = "/tmp";
+
 Am100rel::State AmConfig::rel100 = Am100rel::REL100_SUPPORTED;
 
 vector <string> AmConfig::CodecOrder;
@@ -667,6 +670,9 @@ int AmConfig::readConfiguration()
   OptionsTranscoderInStatsHdr = cfg.getParameter("options_transcoder_in_stats_hdr");
   TranscoderOutStatsHdr = cfg.getParameter("transcoder_out_stats_hdr");
   TranscoderInStatsHdr = cfg.getParameter("transcoder_in_stats_hdr");
+
+  DumpConferenceStreams =  cfg.getParameter("dump_conference_streams")=="true";
+  DumpConferencePath = cfg.getParameter("dump_conference_path");
 
   if (cfg.hasParameter("100rel")) {
     string rel100s = cfg.getParameter("100rel");

@@ -256,6 +256,9 @@ struct AmConfig
    * be present in every message leaving server */
   static string TranscoderInStatsHdr;
 
+  static bool DumpConferenceStreams;
+  static string DumpConferencePath;
+
   static Am100rel::State rel100;
 
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */

@@ -655,3 +655,10 @@ accept_fr_without_totag=yes
 # Default: 4
 #
 # sip_server_threads=8
+
+# dump conference streams - experimental
+# play with: $play -r <samplerate> -c 1 /tmp/123_1_nnnn.s16 
+#  where <samplerate> is in /tmp/123_1_nnnn.s16.samplerate
+#  (if it hasn't changed in-between...)
+#dump_conference_streams=true
+#dump_conference_path=/tmp/
