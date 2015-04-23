@@ -1229,7 +1229,7 @@ void AmRtpStream::setRtpRelayTransparentSSRC(bool transparent) {
 }
 
 void AmRtpStream::setRtpRelayFilterRtpDtmf(bool filter) {
-  DBG("%sabled RTP relay filtering of RTP DTMF (2833 / 3744) for RTP stream instance [%p]\n",
+  DBG("%sabled RTP relay filtering of RTP DTMF (2833 / 4733) for RTP stream instance [%p]\n",
       filter ? "en":"dis", this);
   relay_filter_dtmf = filter;
 }
