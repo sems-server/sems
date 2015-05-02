@@ -438,7 +438,6 @@ int AmAudioFile::getLength()
   if (!data_size || !fmt.get())
     return 0;
 
-  return 
-    fmt->bytes2samples(data_size)*1000
-    / fmt->getRate();
+  float rate = fmt->getRate() / 1000;
+  return (int) (fmt->bytes2samples(data_size)  / rate);
 }
