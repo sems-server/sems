@@ -132,6 +132,8 @@ typedef struct {
 
 } SpeexState;
 
+#if 0
+
 /*
   Search for a parameter assignement in input string.
   If it's not found *param_value is null, otherwise *param_value points to the
@@ -174,7 +176,7 @@ static char* read_param(char* input, const char *param, char** param_value)
 }
 
 #define BLEN 63
-#if 0
+
 void decode_format_parameters(const char* format_parameters, SpeexState* ss) {
   /* See draft-herlein-avt-rtp-speex-00.txt */
   /* TODO: change according to RFC 5574 */
