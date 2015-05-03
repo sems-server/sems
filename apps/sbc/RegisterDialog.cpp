@@ -131,7 +131,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
   if(!star_contact) {
     if(!expires.empty()) {
       // adjust 'expires' from header field according to min value
-      if(requested_expires && (requested_expires < min_reg_expire)) {
+      if(requested_expires && (requested_expires < (long int)min_reg_expire)) {
 	requested_expires = min_reg_expire;
       }
     }
@@ -192,7 +192,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
       }
 
       // use existing 'expires' param if == 0 or greater than min value
-      if(contact_expires && (contact_expires < min_reg_expire)) {
+      if(contact_expires && (contact_expires < (long int)min_reg_expire)) {
 	// else use min value
 	contact_it->params["expires"] = int2str(min_reg_expire);
       }
