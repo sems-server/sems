@@ -131,7 +131,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
   if(!star_contact) {
     if(!expires.empty()) {
       // adjust 'expires' from header field according to min value
-      if(requested_expires && (requested_expires < (long int)min_reg_expire)) {
+      if(requested_expires && (requested_expires < min_reg_expire)) {
 	requested_expires = min_reg_expire;
       }
     }
@@ -214,7 +214,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
       struct timeval now;
       gettimeofday(&now,NULL);
 
-      if(max_ua_expire && (contact_expires > max_ua_expire))
+      if(max_ua_expire && (contact_expires > (long int)max_ua_expire))
 	contact_expires = max_ua_expire;
 
       DBG("min_reg_expire = %u", min_reg_expire);
