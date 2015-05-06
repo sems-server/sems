@@ -707,7 +707,9 @@ void SBCCallLeg::onDtmf(int event, int duration)
   }
 
   AmB2BMedia *ms = getMediaSession();
-  if(ms) {
+
+  // Don't send the DTMF to the other leg unless we are transcoding
+  if (ms && getRtpRelayMode() == RTP_Transcoding) {
     DBG("sending DTMF (%i;%i)\n", event, duration);
     ms->sendDtmf(!a_leg,event,duration);
   }
