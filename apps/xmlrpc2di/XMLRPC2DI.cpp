@@ -634,19 +634,19 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
   if (v.valid()) {
     switch (v.getType()) {
     case XmlRpcValue::TypeInt:   {  /* DBG("X->A INT\n"); */ a = (int)v;    }  break;
-    case XmlRpcValue::TypeDouble:{  /* DBG("X->A DBL\n"); */ a = (double)v; }  break;
-    case XmlRpcValue::TypeString:{  /* DBG("X->A STR\n"); */ a = ((string)v).c_str(); }  break;
-    case XmlRpcValue::TypeBoolean : {  /* DBG("X->A BOL\n"); */ a = (bool)v;  }
-    case XmlRpcValue::TypeInvalid : {  /* DBG("X->A BOL\n"); */ a = AmArg();  }
+    case XmlRpcValue::TypeDouble:{  /*  DBG("X->A DBL\n"); */ a = (double)v; }  break;
+    case XmlRpcValue::TypeString:{  /*  DBG("X->A STR\n"); */ a = ((string)v).c_str(); }  break;
+    case XmlRpcValue::TypeBoolean : { /*   DBG("X->A BOL\n"); */ a = (bool)v;  } break;
+    case XmlRpcValue::TypeInvalid : { /*   DBG("X->A Inv\n"); */  a = AmArg();  } break;
       
     case XmlRpcValue::TypeArray: { 
-      /* DBG("X->A ARR\n"); */ 
+      // DBG("X->A ARR\n");
       a.assertArray();
       xmlrpcval2amargarray(v, a, 0);
     } break;
 #ifdef XMLRPCPP_SUPPORT_STRUCT_ACCESS
     case XmlRpcValue::TypeStruct: {
-      /* DBG("X->A STR\n"); */ 
+       // DBG("X->A STR\n");
       a.assertStruct();
       const XmlRpc::XmlRpcValue::ValueStruct& xvs = 
 	(XmlRpc::XmlRpcValue::ValueStruct)v;
