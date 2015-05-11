@@ -51,8 +51,9 @@ int AmConferenceChannel::put(unsigned long long system_ts, unsigned char* buffer
       }
       have_in_sr = true;
     }
-    if (in_file)
+    if (in_file) {
       in_file->write(buffer, size);
+    }
   }
 
   mixer->lock();
@@ -88,8 +89,9 @@ int AmConferenceChannel::get(unsigned long long system_ts, unsigned char* buffer
       }
       have_out_sr = true;
     }
-    if (out_file)
+    if (out_file) {
       out_file->write(buffer, size);
+    }
   }
 
   size = resampleOutput(buffer,size,mixer_sample_rate,output_sample_rate);
@@ -98,7 +100,7 @@ int AmConferenceChannel::get(unsigned long long system_ts, unsigned char* buffer
 }
 
 ChannelWritingFile::ChannelWritingFile(const char* path) 
-  : async_file(128*1024) // 128k buffer
+  : async_file(256*1024) // 256k buffer
 {
   fp = fopen(path, "w");
   if (!fp) {

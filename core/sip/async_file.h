@@ -25,6 +25,8 @@ class async_file
    */
   void write_cycle();
 
+  unsigned int write_thresh;
+
 protected:
   /**
    * Write to the file itself

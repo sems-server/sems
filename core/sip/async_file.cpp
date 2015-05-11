@@ -2,7 +2,7 @@
 #include "async_file_writer.h"
 #include "log.h"
 
-#define MIN_WRITE_SIZE 128*1024 /* 8 KB */
+#define MIN_WRITE_SIZE 128*1024 /* 128 KB */
 
 #include <event2/event_struct.h>
 
@@ -21,8 +21,14 @@ Possible issue:
 
 async_file::async_file(unsigned int buf_len)
   : AmMutex(true), fifo_buffer(buf_len),
-    evbase(NULL),closed(false),error(false)
+    evbase(NULL),closed(false),error(false),write_thresh(MIN_WRITE_SIZE)
 {
+  if (buf_len <= MIN_WRITE_SIZE) {
+    ERROR("application error: async_file with buffer size <=128k (%u), "
+	  "using %u write threshold\n", buf_len, buf_len/2);
+    write_thresh = buf_len / 2;
+  }
+
   evbase = async_file_writer::instance()->get_evbase();
   ev_write = event_new(evbase,-1,0,write_cb,this);
 }
@@ -40,11 +46,12 @@ int async_file::write(const void* buf, unsigned int len)
   if(error)  return Error;
 
   int ret = fifo_buffer::write(buf,len);
-  if(ret < 0) return BufferFull;
 
-  if(fifo_buffer::get_buffered_bytes() >= MIN_WRITE_SIZE) {
+  if(fifo_buffer::get_buffered_bytes() >= write_thresh) {
     event_active(ev_write, 0, 0);
   }
+
+  if(ret < 0) return BufferFull;
 
   return ret;
 }
@@ -56,11 +63,12 @@ int async_file::writev(const struct iovec *iov, int iovcnt)
   if(error)  return Error;
 
   int ret = fifo_buffer::writev(iov,iovcnt);
-  if(ret < 0) return BufferFull;
 
-  if(fifo_buffer::get_buffered_bytes() >= MIN_WRITE_SIZE) {
+  if(fifo_buffer::get_buffered_bytes() >= write_thresh) {
     event_active(ev_write, 0, 0);
   }
+
+  if(ret < 0) return BufferFull;
 
   return ret;
 }
