@@ -448,20 +448,22 @@ amci_subtype_t* AmPlugIn::subtype(amci_inoutfmt_t* iofmt, int subtype)
   return 0;
 }
 
-int AmPlugIn::subtypeID(amci_inoutfmt_t* iofmt, const string& subtype_name) {
+amci_subtype_t* AmPlugIn::subtype(amci_inoutfmt_t* iofmt, const string& subtype_name) {
   if(!iofmt)
-    return -1;
+    return NULL;
 
+  DBG("looking for subtype '%s'\n", subtype_name.c_str());
   amci_subtype_t* st = iofmt->subtypes;
   if(subtype_name.empty()) // default subtype wanted
-    return st->type;
+    return st;
 
   for(;;st++){
     if(!st || st->type<0) break;
-    if(st->name == subtype_name)
-      return st->type;
+    if(st->name == subtype_name) {
+      return st;
+    }
   }
-  return -1;
+  return NULL;
 }
 
 AmSessionFactory* AmPlugIn::getFactory4App(const string& app_name)

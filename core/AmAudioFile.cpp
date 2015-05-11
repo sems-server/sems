@@ -42,6 +42,21 @@ AmAudioFileFormat::AmAudioFileFormat(const string& name, int subtype)
     channels = p_subtype->channels;
     subtype = p_subtype->type;
   } 
+  DBG("created AmAudioFileFormat of subtype %i, with rate %u, channels %u\n",
+      subtype, rate, channels);
+}
+
+AmAudioFileFormat::AmAudioFileFormat(const string& name, int subtype, amci_subtype_t* p_subtype)
+  : name(name), subtype(subtype), p_subtype(p_subtype)
+{
+  codec = getCodec();
+    
+  if(p_subtype && codec){
+    rate = p_subtype->sample_rate;
+    channels = p_subtype->channels;
+  } 
+  DBG("created AmAudioFileFormat of subtype %i, with rate %u, channels %u\n",
+      subtype, rate, channels);
 }
 
 amci_codec_t* AmAudioFileFormat::getCodec()
@@ -101,15 +116,16 @@ AmAudioFileFormat* AmAudioFile::fileName2Fmt(const string& name, const string& s
     return NULL;
   }
 
-  int subtype_id = -1;
   if (!subtype.empty()) {
-    subtype_id = AmPlugIn::instance()->subtypeID(iofmt, subtype);
-    if (subtype_id<0) {
-      WARN("subtype '%s' for file '%s' not found. Using default subtype\n",
-	   subtype.c_str(), name.c_str());
+    amci_subtype_t* st = AmPlugIn::instance()->subtype(iofmt, subtype);
+    if (st!=NULL) {
+      return new AmAudioFileFormat(iofmt->name, st->type, st);
     }
+    WARN("subtype '%s' for file '%s' not found. Using default subtype\n",
+	 subtype.c_str(), name.c_str());
   }
-  return new AmAudioFileFormat(iofmt->name, subtype_id);
+
+  return new AmAudioFileFormat(iofmt->name, -1);
 }
 
 

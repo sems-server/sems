@@ -54,6 +54,9 @@ public:
    * @param subtype Subtype for the file format (see amci.h).
    */
   AmAudioFileFormat(const string& name, int subtype = -1);
+  /** format with rate & channels, not taken from subtype */
+
+  AmAudioFileFormat(const string& name, int subtype, amci_subtype_t* p_subtype);
 
   virtual ~AmAudioFileFormat()  { }
 
