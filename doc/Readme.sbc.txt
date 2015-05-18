@@ -326,6 +326,9 @@ persist and how short it should be to the UA. E.g. if the UA should periodicly
 re-REGISTER every 60 seconds, but to the upstream registrar the registration should
 persist 1h, min_reg_expires=3600 and max_ua_expires=60 should be set.
 
+A sample configuration with this kind of setup can be found in
+doc/sbc/sample_config_regcache
+
 For a local registrar (i.e. operation without an upstream registrar), see the 'registrar'
 call control module.
 
