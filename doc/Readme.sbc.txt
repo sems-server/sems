@@ -135,7 +135,7 @@ e.g. the request-URI can be set to the user part of the P-Asserted-Identity
 header combined with the host part of the To.
 
 The patterns which can be used are the following:
-
+  $m (or $m. if something follows) - Method
   $r (or $r. if something follows) - R-URI
   $f (or $f. if something follows) - From
   $t (or $t. if something follows) - To
