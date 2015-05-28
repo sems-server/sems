@@ -44,6 +44,15 @@ AmAudioFileFormat::AmAudioFileFormat(const string& name, int subtype)
   } 
 }
 
+amci_codec_t* AmAudioFileFormat::getCodec()
+{
+  if(p_subtype && p_subtype->codec_id != codec_id){
+    codec_id = p_subtype->codec_id;
+    destroyCodec();
+  }
+  return AmAudioFormat::getCodec();
+}
+
 void AmAudioFileFormat::setSubtypeId(int subtype_id)  { 
   if (subtype != subtype_id) {
     DBG("changing file subtype to ID %d\n", subtype_id);

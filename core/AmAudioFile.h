@@ -57,6 +57,8 @@ public:
 
   virtual ~AmAudioFileFormat()  { }
 
+  virtual amci_codec_t* getCodec();
+
   /** @return Format name. */
   string        getName() { return name; }
   /** @return Format subtype. */
