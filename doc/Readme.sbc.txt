@@ -483,7 +483,9 @@ party to choose from more codecs than used in the original SDP.
 In case of another codec preference you can configure codec_preference resp.
 codec_preference_aleg as described above and choose if codecs should be ordered
 before adding transcoder codecs or after using prefer_existing_codecs resp.
-prefer_existing_codecs_aleg call profile options.
+prefer_existing_codecs_aleg call profile options. prefer_existing_codecs and
+prefer_existing_codecs_aleg only has effect if codec_preference/codec_preference_aleg
+is set.
 
 Transcoding related call profile options:
 
