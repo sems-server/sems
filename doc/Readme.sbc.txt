@@ -350,6 +350,11 @@ set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
 
+If codecs in the two legs should be filtered separately, which is useful for
+forcing transcoding codecs, a separate aleg_sdp_filter and aleg_sdpfilter_list
+can be set. If this is not set, the sdp_filter/sdpfilter_list is applied to
+both call legs.
+  
 The s, u and o-lines of the SDP can be anonymized with the setting
 sdp_anonymize=yes.
 
@@ -510,7 +515,8 @@ Transcoding related call profile options:
   prefer_existing_codecs
 
     Describes if codecs present in SDP from caller are preferred to added
-    transcoder codecs.
+    transcoder codecs. This parameter only has effect in case the codec
+    preference is set.
 
     If this parameter is set to "yes" transcoder codecs are added at the end of
     codec lists in SDP body AFTER ordering using codec_preference is done.
@@ -522,7 +528,8 @@ Transcoding related call profile options:
   prefer_existing_codecs_aleg
     
     Describes if codecs present in SDP from callee are preferred to added
-    transcoder codecs.
+    transcoder codecs. This parameter only has effect in case the codec
+    preference is set for the a leg.
 
     If this parameter is set to "yes" transcoder codecs are added at the end of
     codec lists in SDP body AFTER ordering using codec_preference_aleg is done.
@@ -530,6 +537,9 @@ Transcoding related call profile options:
     If this parameter is set to something else, transcoder codecs are
     added BEFORE ordering using codec_preference_aleg is done and thus
     may become preferred ones. 
+
+Use sdp_filter and aleg_sdp_filter together with the transcoder settings
+to force use of transcoded codecs.
 
 Transcoder statistics can be checked via "printCallStats" SBC DI method or can
 be put into additional headers within reply generated to OPTIONS request. To

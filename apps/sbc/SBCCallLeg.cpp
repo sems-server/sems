@@ -1440,9 +1440,10 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
   bool prefer_existing_codecs = call_profile.codec_prefs.preferExistingCodecs(a_leg);
 
   bool needs_normalization =
-          call_profile.codec_prefs.shouldOrderPayloads(a_leg) ||
-          call_profile.transcoder.isActive() ||
-          !call_profile.sdpfilter.empty();
+    call_profile.codec_prefs.shouldOrderPayloads(a_leg) ||
+    call_profile.transcoder.isActive() ||
+    !call_profile.sdpfilter.empty() ||
+    !call_profile.aleg_sdpfilter.empty();
 
   if (needs_normalization) {
     normalizeSDP(sdp, false, ""); // anonymization is done in the other leg to use correct IP address
@@ -1495,10 +1496,16 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
   // => So we wouldn't try to avoid filtering out transcoder codecs what would
   // just complicate things.
 
-  if (call_profile.sdpfilter.size()) {
-    res = filterSDP(sdp, call_profile.sdpfilter);
+  // figure out appropriate SDP filter instance (A leg, or common one)
+  vector<FilterEntry>& sdpfilter = call_profile.sdpfilter;
+  if (!a_leg && call_profile.have_aleg_sdpfilter)
+    sdpfilter = call_profile.aleg_sdpfilter;
+
+  if (sdpfilter.size()) {
+    res = filterSDP(sdp, sdpfilter);
     changed = true;
   }
+
   if (call_profile.sdpalinesfilter.size()) {
     // filter SDP "a=lines"
     filterSDPalines(sdp, call_profile.sdpalinesfilter);

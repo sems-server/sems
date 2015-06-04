@@ -155,6 +155,8 @@ struct SBCCallProfile
 
   bool anonymize_sdp;
   vector<FilterEntry> sdpfilter;
+  vector<FilterEntry> aleg_sdpfilter;
+  bool have_aleg_sdpfilter;
   vector<FilterEntry> sdpalinesfilter;
   vector<FilterEntry> mediafilter;
 
@@ -355,7 +357,8 @@ struct SBCCallProfile
     rtprelay_bw_limit_rate(-1),
     rtprelay_bw_limit_peak(-1),
     outbound_interface_value(-1),
-    contact_hiding(false), 
+    have_aleg_sdpfilter(false),
+    contact_hiding(false),
     reg_caching(false),
     log_rtp(false),
     log_sip(false),
