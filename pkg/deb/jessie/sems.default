@@ -2,8 +2,8 @@
 #
 # this file is sourced by SEMS init script /etc/init.d/sems
 
-# Don't start with default config as we need to deploy the ngcp-templates first
-SEMS_RUN="no"
+# start with default config (even if someone might want to configure an application first)
+SEMS_RUN="yes"
 
 # ser configuration file
 SEMS_CFG_FILE="/etc/sems/sems.conf"
