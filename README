@@ -25,7 +25,7 @@ Introduction:
  complex VoIP services can be realized completely in SEMS. 
  
  SEMS supports all important patent free codecs out of the
- box (g711u, g711a, GSM06.10, speex, G.726, L16 and iLBC).
+ box (g711u, g711a, GSM06.10, speex, G.726, L16, OPUS, iLBC etc).
  There is a wrapper for the IPP G.729 codec implementation
  available. Integrating other codecs in SEMS is very simple
  (patented or not).
@@ -48,11 +48,24 @@ License:
  program is released under the GPL with the additional exemption
  that compiling, linking, and/or using OpenSSL is allowed.
 
+ For a license to use SEMS under non-GPL terms, please contact
+ FRAFOS GmbH at info@frafos.com .
+ 
  See doc/COPYING for details.
 
 Applications:
 
  The following applications are shipped with SEMS :
+
+  Back-to-back User Agent
+  
+  * sbc            flexible SBC application, supports
+                    - identity change
+                    - header manipulation (filter etc)
+                    - (multihomed) RTP relay, NAT handling, transcoding
+                    - SIP authentication 
+                    - Session timer, call timer, prepaid
+                    etc
 
  Announcements (Prompts, Ringbacktones, Pre-call-prompts):
   * announcement   plays an announcement
@@ -103,15 +116,6 @@ Applications:
   * pin_collect    collect a PIN, optionally verify it, and transfer
                    the call into a conference
 
- Back-to-back User Agent
-  
-  * sbc            flexible SBC application, supports
-                    - identity change
-                    - header manipulation (filter etc)
-                    - (multihomed) RTP relay
-                    - SIP authentication 
-                    - Session timer, call timer, prepaid
-                    etc
  App development
 
   * dsm            DSM state machine scripting (use this)
@@ -228,7 +232,7 @@ Creating packages on debian (ubuntu, ...), here for wheezy:
    get the source: 
    $ wget ftp.iptel.org/pub/sems/sems-x.y.z.tar.gz ; tar xzvf sems-x.y.z.tar.gz
    or, for git master:
-   $ git clone git://git.sip-router.org/sems
+   $ git clone https://github.com/sems-server/sems.git
 
    $ cd sems-x.y.z ; ln -s pkg/deb/debian .
 
@@ -297,14 +301,19 @@ Authors:
     B. Oldenburg
     Balint Kovacs
     Bogdan Pintea
+    Carsten Bock
     Greger Viken Teigre
     Grzegorz Stanislawski
     Helmut Kuper
     Jeremy A
     Jiri Kuthan
+    Joe Stusick
+    Jose-Luis Millan
     Juha Heinanen
     Matthew Williams
+    Michael Furmur
     Ovidiu Sas
+    Pavel Kasparek
     Peter Lemenkov
     Peter Loeppky
     Richard Newman
@@ -312,9 +321,10 @@ Authors:
     Rui Jin Zheng
     Tom van der Geer
     Ulrich Abend
+    Vaclav Kubart
    (if you feel you should be on this list, please mail to stefan.sayer@gmail.com)
  
-  Special thanks to IPTEGO GmbH, iptelorg GmbH and TelTech Systems Inc. for 
+  Special thanks to FRAFOS GmbH, sipwise GmbH, IPTEGO GmbH, iptelorg GmbH and TelTech Systems Inc. for 
   sponsoring development of SEMS.
 
 Contributions:
