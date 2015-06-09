@@ -638,9 +638,11 @@ void AmB2BSession::onSessionTimeout() {
 }
 
 void AmB2BSession::onRemoteDisappeared(const AmSipReply& reply) {
-  DBG("remote unreachable, ending other leg\n");
-  terminateOtherLeg();
-  AmSession::onRemoteDisappeared(reply);
+  if (dlg && dlg->getStatus() == AmBasicSipDialog::Connected) {
+    DBG("%c leg: remote unreachable, ending other leg\n", a_leg?'A':'B');
+    terminateOtherLeg();
+    AmSession::onRemoteDisappeared(reply);
+  }
 }
 
 void AmB2BSession::onNoAck(unsigned int cseq)
