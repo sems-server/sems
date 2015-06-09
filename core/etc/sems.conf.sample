@@ -28,13 +28,12 @@
 ############# configuration for single interface ############
 # optional parameter: sip_ip=<ip_address>|<device>
 #
-# - this informs SEMS about the SIP IP where its SIP stack is 
-#   bound to or should be bound to. This also sets 
+# - SIP IP where the SIP stack is bound to. This also sets 
 #   the value used for contact header in outgoing calls and 
 #   registrations.
 # - If neither 'media_ip' nor 'sip_ip' are set, defaults 
-#   to first non-loopback interface. If 'media_ip' is set,
-#   'sip_ip' defaults to 'media_ip.
+#   to first non-loopback interface, and the port configured below
+#   is ignored.
 #
 # Example:
 #  sip_ip=10.0.0.34
@@ -42,16 +41,14 @@
 
 # optional parameter: sip_port=<port_number>
 #
-# - this informs SEMS about the port where its SIP stack should
-#   be bound to.
+# - port where its SIP stack should be bound to, ignored if sip_ip not set.
 #   default: 5060
 #
-sip_port=5080
+#sip_port=5080
 
 # optional parameter: media_ip=<ip_address>|<device>
 #
-# - this informs SEMS about the IP address or interface that
-#   SEMS uses to send and receive media.
+# - IP address or interface that SEMS uses to send and receive media.
 # - If neither 'media_ip' nor 'sip_ip' are set, defaults
 #   to first non-loopback interface. If 'sip_ip' is set,
 #   'media_ip' defaults to 'sip_ip.
@@ -72,10 +69,10 @@ rtp_high_port=60000
 
 # optional parameter: public_ip=<ip_address>
 # 
-# - when running SEMS behind certain simple NAT configurations,
-#   you can use this parameter to inform SEMS of its public IP
+# - near end NAT traversal. when running SEMS behind certain static
+#   NATs, use this parameter to inform SEMS of its public IP
 #   address. If this parameter is set, SEMS will write this value
-#   into SDP bodies.
+#   into SDP bodies and Contact.
 #   If this parameter is not set, the local IP address is used.
 #   N.B., there is no support for port translation; the local 
 #   RTP port is advertised in SDP in either case.
@@ -102,11 +99,10 @@ rtp_high_port=60000
 ############# configuration for multiple interfaces ############
 #   interfaces = <list of interface names>
 #
-# 'interfaces' must be set if more than one
-# interface is to be used for the same purpose (e.g.
-# more than one interface for SIP). Configure additional
-# interfaces if networks should be bridged or separate
-# networks should be served.
+# 'interfaces' must be set if more than one interface is to be used
+# for the same purpose (e.g. more than one interface for SIP).
+# Configure additional interfaces if networks should be bridged or
+# separate networks should be served.
 #
 # For each interface, a set of parameters suffixed with the
 # interface name should be configured.
@@ -142,8 +138,7 @@ rtp_high_port=60000
 # NAT handling for SIP:sip_nat_handling={yes|no}
 #
 # Learn remote next hop address from the source of the address where
-# requests are received from.
-# This option does not apply to the sbc module.
+# requests are received from. This option does not apply to the sbc module.
 #
 # default: no
 #
