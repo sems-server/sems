@@ -69,6 +69,4 @@ DEF_ACTION_1P(MODSBCSetLastReq);
 
 DEF_ACTION_1P(MODSBCtestSDPConnectionAddress);
 
-DEF_ACTION_1P(MODSBCprepareAlterableRequest);
-DEF_ACTION_1P(MODSBCprepareAlterableReply);
 #endif

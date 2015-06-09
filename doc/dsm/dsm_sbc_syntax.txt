@@ -268,6 +268,3 @@ sbc.setLastReq - save a copy of request object for later use by mod_dlg, e.g.
 sbc.testSDPConnectionAddress(string address_list) - test SDP connection address, sets 
     $match_connection_addr = "true" or "false"; only in B2B.otherReply() or sipReply events!
   e.g. sbc.testSDPConnectionAddress("10.0.0.2,10.0.0.1")
-
-sbc.prepareAlterableRequest() - prepare a request object that can be modified. only SimpleRelay! 
-sbc.prepareAlterableReply()   - prepare a reply object that can be modified. only SimpleRelay!

@@ -70,8 +70,6 @@ using std::map;
 
 #define DSM_AVAR_REQUEST "request"
 #define DSM_AVAR_REPLY   "reply"
-#define DSM_AVAR_MUTABLE_REQUEST "mutable_request"
-#define DSM_AVAR_MUTABLE_REPLY   "mutable_reply"
 
 #define DSM_AVAR_JSONRPCREQUESTDATA "JsonRpcRequestParameters"
 #define DSM_AVAR_JSONRPCRESPONSEDATA "JsonRpcResponseParameters"
