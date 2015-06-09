@@ -695,8 +695,7 @@ int AmConfig::readConfiguration()
 
 int AmConfig::insert_SIP_interface(const SIP_interface& intf)
 {
-  if(SIP_If_names.find(intf.name) !=
-     SIP_If_names.end()) {
+  if(SIP_If_names.find(intf.name) != SIP_If_names.end()) {
 
     if(intf.name != "default") {
       ERROR("duplicated interface name '%s'\n",intf.name.c_str());
@@ -705,34 +704,36 @@ int AmConfig::insert_SIP_interface(const SIP_interface& intf)
 
     unsigned int idx = SIP_If_names[intf.name];
     SIP_Ifs[idx] = intf;
-  }
-  else {
-    SIP_Ifs.push_back(intf);
-    unsigned int idx = SIP_Ifs.size()-1;
-    SIP_If_names[intf.name] = idx;
-
-    if(LocalSIPIP2If.find(intf.LocalIP) == 
-       LocalSIPIP2If.end()) {
-
-      LocalSIPIP2If.insert(make_pair(intf.LocalIP,idx));
-    }
-    else {
-      map<string,unsigned short>::iterator it = 
-	LocalSIPIP2If.find(intf.LocalIP);
-
-      const SIP_interface& old_intf = SIP_Ifs[it->second];
-      if(intf.LocalPort == old_intf.LocalPort) {
-	ERROR("duplicated signaling interfaces "
-	      "(%s and %s) detected using %s:%u",
-	      old_intf.name.c_str(),intf.name.c_str(),
-	      intf.LocalIP.c_str(),intf.LocalPort);
-
-	return -1;
-      }
-      //FIXME: what happens now? shouldn't we insert the interface????
-    }
+    return 0;
   }
 
+  SIP_Ifs.push_back(intf);
+  unsigned int idx = SIP_Ifs.size()-1;
+  SIP_If_names[intf.name] = idx;
+  return 0;
+}
+
+int AmConfig::insert_SIP_interface_mapping(const SIP_interface& intf) {
+  unsigned int idx = SIP_If_names[intf.name];
+
+  string if_local_ip = intf.LocalIP;
+
+  if(LocalSIPIP2If.find(if_local_ip) == LocalSIPIP2If.end()) {
+    LocalSIPIP2If.insert(make_pair(if_local_ip,idx));
+  } else {
+    map<string,unsigned short>::iterator it = 
+      LocalSIPIP2If.find(if_local_ip);
+
+    const SIP_interface& old_intf = SIP_Ifs[it->second];
+    if(intf.LocalPort == old_intf.LocalPort) {
+      ERROR("duplicated signaling interfaces  (%s and %s) detected using %s:%u",
+	    old_intf.name.c_str(), intf.name.c_str(), if_local_ip.c_str(), intf.LocalPort);
+      return -1;
+    }
+    // two interfaces on the sample IP - the one on port 5060 has priority
+    if (intf.LocalPort == 5060)
+      LocalSIPIP2If.insert(make_pair(if_local_ip,idx));
+  }
   return 0;
 }
 
@@ -1131,6 +1132,9 @@ int AmConfig::finalizeIPConfig()
 
     if(!it->LocalPort)
       it->LocalPort = 5060;
+
+    if (insert_SIP_interface_mapping(*it)<0)
+      return -1;
 
     setNetInterface(&(*it));
   }
