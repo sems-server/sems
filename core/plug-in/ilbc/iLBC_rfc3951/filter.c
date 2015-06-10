@@ -156,19 +156,11 @@
 
            o=(float)0.0;
 
-           if (i<lengthIn) {
-               Coef_ptr = &Coef[0];
-               In_ptr = &In[i];
-               for (j=0; j<FILTERORDER_DS; j++) {
-                       o += *Coef_ptr++ * (*Out_ptr--);
-               }
-           } else {
-               Coef_ptr = &Coef[i-lengthIn];
-               In_ptr = &In[lengthIn-1];
-               for (j=0; j<FILTERORDER_DS-(i-lengthIn); j++) {
-                       o += *Coef_ptr++ * (*In_ptr--);
-               }
-           }
+	   Coef_ptr = &Coef[i-lengthIn];
+	   In_ptr = &In[lengthIn-1];
+	   for (j=0; j<FILTERORDER_DS-(i-lengthIn); j++) {
+		   o += *Coef_ptr++ * (*In_ptr--);
+	   }
            *Out_ptr++ = o;
        }
    }
