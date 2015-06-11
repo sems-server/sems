@@ -1131,8 +1131,8 @@ bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
       for (g = 1; g < MAX_GROUPS; g++) {
         if (groups[g].rm_so == (int)(size_t)-1) break;
         DBG("group %u: [%2u-%2u]: %.*s\n",
-            g, groups[g].rm_so, groups[g].rm_eo,
-            groups[g].rm_eo - groups[g].rm_so, test_s + groups[g].rm_so);
+            g, (unsigned int)groups[g].rm_so, (unsigned int)groups[g].rm_eo,
+            (int)(groups[g].rm_eo - groups[g].rm_so), test_s + groups[g].rm_so);
 	std::string match(test_s + groups[g].rm_so,
 			  groups[g].rm_eo - groups[g].rm_so);
         ReplaceStringInPlace(result, "\\" + int2str(g), match);

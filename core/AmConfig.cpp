@@ -632,7 +632,7 @@ int AmConfig::readConfiguration()
   }
 
   if(cfg.hasParameter("cps_limit")){ 
-    unsigned int CPSLimit;
+    unsigned int CPSLimit = 0;
     vector<string> limit = explode(cfg.getParameter("cps_limit"), ";");
     if (limit.size() != 3) {
       ERROR("invalid cps_limit specified.\n");
