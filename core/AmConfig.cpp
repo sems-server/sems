@@ -1023,6 +1023,10 @@ static bool fillSysIntfList()
   freeifaddrs(ifap);
   close(fd);
 
+  return true;
+}
+
+static void fillMissingLocalSIPIPfromSysIntfs() {
   // add addresses from SysIntfList, if not present
   for(unsigned int idx = 0; idx < AmConfig::SIP_Ifs.size(); idx++) {
 
@@ -1045,14 +1049,14 @@ static bool fillSysIntfList()
 
       if(AmConfig::LocalSIPIP2If.find(intf_it->addrs.front().addr)
 	 == AmConfig::LocalSIPIP2If.end()) {
-	
+	DBG("mapping unmapped IP address '%s' to interface #%u \n",
+	    intf_it->addrs.front().addr.c_str(), idx);
 	AmConfig::LocalSIPIP2If[intf_it->addrs.front().addr] = idx;
       }
     }
   }
-
-  return true;
 }
+
 
 /** Get the AF_INET[6] address associated with the network interface */
 string fixIface2IP(const string& dev_name, bool v6_for_sip)
@@ -1194,6 +1198,8 @@ int AmConfig::finalizeIPConfig()
     RTP_Ifs.push_back(intf);
     RTP_If_names["default"] = 0;
   }
+
+  fillMissingLocalSIPIPfromSysIntfs();
 
   return 0;
 }
