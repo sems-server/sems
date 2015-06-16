@@ -76,10 +76,13 @@ include ../../Makefile.defs
 %.d : $(SBC_DIR)%.cpp $(SBC_DIR)%.h ../../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
+%.d : $(AUTH_DIR)%.cpp $(SBC_DIR)%.h ../../Makefile.defs
+	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
+
 %.d : ../%.cpp ../%.h ../../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
-$(NAME): $(OBJS) $(CORE_OBJS) $(SBC_OBJS) $(SIP_STACK) $(LIBRESAMPLE) ../../Makefile.defs
+$(NAME): $(OBJS) $(CORE_OBJS) $(SBC_OBJS) $(AUTH_OBJS) $(SIP_STACK) $(LIBRESAMPLE) ../../Makefile.defs
 	-@echo ""
 	-@echo "making $(NAME)"
 	$(LD) -o $(NAME) $(OBJS) $(CORE_OBJS) $(SBC_OBJS) $(SIP_STACK) $(LIBRESAMPLE) $(LDFLAGS) $(EXTRA_LDFLAGS) $(AUTH_OBJS)
