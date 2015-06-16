@@ -1,3 +1,9 @@
+sems (1.7.0~dev) unstable; urgency=medium
+
+  * Devel version
+
+ -- Victor Seva <linuxmaniac@torreviejawireless.org>  Tue, 16 Jun 2015 15:13:18 +0200
+
 sems (1.6.0) unstable; urgency=low
 
   * SEMS 1.6.0 release
