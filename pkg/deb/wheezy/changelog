@@ -1,3 +1,9 @@
+sems (1.6.0) unstable; urgency=low
+
+  * SEMS 1.6.0 release
+
+ -- stefan <stefan.sayer@googlemail.com>  Tue, 16 Jun 2015 13:10:56 +0200
+
 sems (1.6.0~dev) unstable; urgency=medium
 
   * Devel version
