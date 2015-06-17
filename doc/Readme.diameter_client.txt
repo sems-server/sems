@@ -11,7 +11,7 @@ can execute DI functions to add a server connection, or send a
 DIAMETER request.
 
 the DIAMETER base implementation is based on ser-0.9.6 diameter_auth 
-module by Elena-Ramona Modroiu,  Copyright © 2003, 2004 FhG FOKUS.
+module by Elena-Ramona Modroiu,  Copyright Â© 2003, 2004 FhG FOKUS.
 connection pool and asynchronous message handling has been added, 
 together with the CER/CEA handshake and other things.
 
