@@ -127,8 +127,8 @@ load_prompts=${SEMS_CFG_PREFIX}/etc/sems/etc/dsm_in_prompts.conf,${SEMS_CFG_PREF
 
 # conf_dir=<path>
 #
-# <path> is scanned for *.conf files. Every .conf
-# file is loaded, and in the .conf file, the following
+# <path> is scanned for *.conf files configuring application bundles ("app bundles").
+# Every .conf file is loaded as app bundle, and in the .conf file, the following
 # DSM config parameters are processed:
 #   diag_path=
 #   load_diags=

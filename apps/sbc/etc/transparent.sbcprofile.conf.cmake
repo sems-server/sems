@@ -19,10 +19,22 @@
 #force_outbound_proxy=yes
 # destination IP[:port] for outgoing requests
 #next_hop=192.168.5.106:5060
-# set RURI as calculated next_hop
+# set RURI to (calculated) next_hop
 #patch_ruri_next_hop=yes
+# update next_hop from remote destination? (e.g. from SRV)
+#next_hop_fixed=yes
 # outbound interface to use (interface ID)
 #outbound_interface=extern
+
+# registration cache: use local registration cache
+# enable_reg_caching=yes
+#   register upstream every 3600 sec
+#  min_reg_expires=3600
+#   and make UA re-register every 60 sec
+#  max_ua_expires=60
+
+# SIP NAT handling: recommended if dealing with far end NATs
+#dlg_nat_handling=yes
 
 ## RTP relay
 # enable RTP relaying (bridging):
@@ -56,9 +68,16 @@
 ## append extra headers
 #append_headers="P-Source-IP: $si\r\nP-Source-Port: $sp\r\n"
 
+## subscription-less NOTIFY pass through
+#allow_subless_notify=no
+
 ## reply translations
 # translate some 6xx class replies to 4xx class:
 #reply_translations="603=>488 Not acceptable here|600=>406 Not Acceptable"
+
+## fix replaces for call transfers
+# fix_replaces_inv=yes
+# fix_replaces_ref=yes
 
 ## authentication:
 #enable_auth=yes
@@ -69,6 +88,12 @@
 #enable_aleg_auth=yes
 #auth_aleg_user=$P(au)
 #auth_aleg_pwd=$P(ap)
+
+## UAS auth for B leg
+#uas_auth_bleg_enabled=yes
+#uas_auth_bleg_realm=$P(sr)
+#uas_auth_bleg_user=$P(su)
+#uas_auth_bleg_pwd=$P(sp)
 
 ## call timer
 #enable_call_timer=yes
@@ -83,9 +108,8 @@
 
 ## session timer:
 #enable_session_timer=yes
-# if session_expires is not configured here,
-# the values from sbc.conf are used, or the
-# default values
+# if any of the session timer parameters below are not defined here,
+# the values from sbc.conf are used, or the default values
 #session_expires=120
 #minimum_timer=90
 #session_refresh_method=UPDATE_FALLBACK_INVITE

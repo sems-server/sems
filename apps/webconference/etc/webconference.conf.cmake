@@ -29,12 +29,25 @@ star_finishes_pin=yes
 # the conference room, without asking for the PIN. 
 # 
 direct_room_re=000777.*
+
+# room_pin_split=n  - split PIN/room mode, if set split pin in room 
+#                     and pin at position n, makes sense together with private
+#                     rooms mode
+#
+#room_pin_split=4
+
 #
 # direct_room_strip specifies the number of digits to strip 
 # from the user part of the request uri to get the conference
 # room number on direct room dial in.
 # e.g. direct_room_strip=5, called 000777123 => room 123
 direct_room_strip=6
+
+# lonely_user_timer - a caller that is that many seconds in a room alone will be kicked 
+#   
+# Default: disabled (0)
+#
+#lonely_user_timer=120
 
 #
 # master_password sets optionally a master password which can be used to
@@ -140,6 +153,9 @@ stats_dir=/var/log/sems-webconference/
 # or, get participant ID from header:
 #participant_id_header=x-participantid
 
+# Loop the first_participant_prompt? [yes|no]
+# default: no
+#loop_first_participant_prompt=yes
 
 ###############################################################
 # RFC4028 Session Timer
