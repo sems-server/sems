@@ -76,7 +76,7 @@ static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, co
     }
 
     if (p->clock_rate != payload.clock_rate) continue;
-    if ((p->encoding_param >= 0) && (payload.encoding_param >= 0) && 
+    if ((p->encoding_param > 0) && (payload.encoding_param > 0) &&
         (p->encoding_param != payload.encoding_param)) continue;
     return &(*p);
   }
