@@ -47,7 +47,6 @@ int AmAudioRtpFormat::setCurrentPayload(Payload pl)
     DBG("setCurrentPayload({%u, '%s', %u, %u, %u, '%s'})\n",
 	pl.pt, pl.name.c_str(), pl.clock_rate, pl.advertised_clock_rate,
 	pl.codec_id, pl.format_parameters.c_str());
-    log_demangled_stacktrace(3);
     this->codec_id = pl.codec_id;
     DBG("fmt.codec_id = %d", this->codec_id);
     this->channels = 1;
