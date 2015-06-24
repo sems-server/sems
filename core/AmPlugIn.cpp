@@ -526,7 +526,7 @@ int AmPlugIn::loadAudioPlugIn(amci_exports_t* exports)
   }
 
   if (exports->module_load) {
-    if (exports->module_load() < 0) {
+    if (exports->module_load(AmConfig::ModConfigPath.c_str()) < 0) {
       ERROR("initializing audio plug-in!\n");
       return -1;
     }

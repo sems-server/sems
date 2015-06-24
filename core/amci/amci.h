@@ -227,7 +227,7 @@ typedef int (*amci_file_mem_close_t)( unsigned char* mptr,
  * this function initializes the codec module.
  * @return 0 on success, <0 on error
  */
-typedef int (*amci_codec_module_load_t)(void);
+typedef int (*amci_codec_module_load_t)(const char* ModConfigPath);
 
 /**
  * \brief Codec's module's destroy function pointer.
