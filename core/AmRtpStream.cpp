@@ -636,6 +636,7 @@ int AmRtpStream::init(const AmSdp& local,
     p_it->codec_id   = a_pl->codec_id;
     p_it->clock_rate = a_pl->sample_rate;
     p_it->advertised_clock_rate = sdp_it->clock_rate;
+    p_it->format_parameters = sdp_it->sdp_format_parameters;
 
     pl_map[sdp_it->payload_type].index     = i;
     pl_map[sdp_it->payload_type].remote_pt = -1;
