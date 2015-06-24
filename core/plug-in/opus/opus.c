@@ -276,10 +276,7 @@ long opus_create(const char* format_parameters, const char** format_parameters_o
   int stereo = 0;
 
   if (format_parameters) {
-    DBG("\n\n\n");
     DBG("OPUS params: >>%s<<.\n", format_parameters);
-    DBG("\n\n\n");
-
     decode_format_parameters(format_parameters, &maxbandwidth, &useinbandfec, &stereo);
   } 
     
