@@ -145,7 +145,7 @@ extern "C" {
   static PyMethodDef ivr_methods[] = {
     {"log", (PyCFunction)ivr_log, METH_VARARGS,"Log a message using Sems' logging system"},
     {"getHeader", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeader wrapper"},
-    {"getHeaders", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeaders wrapper"},
+    {"getHeaders", (PyCFunction)ivr_getHeaders, METH_VARARGS,"Python getHeaders wrapper"},
     {"createThread", (PyCFunction)ivr_createThread, METH_VARARGS, "Create another interpreter thread"},
     {"setIgnoreSigchld", (PyCFunction)ivr_ignoreSigchld, METH_VARARGS, "ignore SIGCHLD signal"},
     {NULL}  /* Sentinel */
