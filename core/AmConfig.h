@@ -319,7 +319,7 @@ struct AmConfig
 };
 
 /** Get the PF_INET address associated with the network interface */
-string fixIface2IP(const string& dev_name, bool v6_for_sip);
+string fixIface2IP(const string& dev_name, bool v6_for_sip = false);
 
 #endif
 
