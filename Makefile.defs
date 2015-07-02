@@ -76,6 +76,10 @@ USE_INTERNAL_RESAMPLER = yes
 #WITH_ZRTP = yes
 
 #
+# Disable the ability to run sems as daemon
+#DISABLE_DAEMON_MODE = yes
+
+#
 # exclude some modules from compilation?
 # e.g. python modules:
 
@@ -130,6 +134,10 @@ endif
 
 ifeq ($(PROPAGATE_UNPARSED_REPLY_HEADERS),yes)
 CPPFLAGS += -DPROPAGATE_UNPARSED_REPLY_HEADERS
+endif
+
+ifeq ($(DISABLE_DAEMON_MODE),yes)
+CPPFLAGS += -DDISABLE_DAEMON_MODE
 endif
 
 # Additions for Solaris support.
