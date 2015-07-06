@@ -74,6 +74,7 @@ void AmAudioFileFormat::setSubtypeId(int subtype_id)  {
     destroyCodec();
     subtype = subtype_id; 
     p_subtype = 0;
+    getSubtype();
     codec = getCodec();
   }
 }
