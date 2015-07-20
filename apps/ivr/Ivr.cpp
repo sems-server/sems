@@ -227,7 +227,7 @@ void IvrFactory::import_ivr_builtins()
   Py_DECREF(log_mod_name);
 
   if(!log_mod){
-    PyErr_Print();
+    PyErr_PrintEx(0);
     ERROR("IvrFactory: could not find the log python module.\n");
     ERROR("IvrFactory: please check your installation.\n");
     return;
@@ -256,7 +256,7 @@ void IvrFactory::set_sys_path(const string& script_path)
   Py_DECREF(py_mod_name);
     
   if(!py_mod){
-    PyErr_Print();
+    PyErr_PrintEx(0);
     ERROR("IvrFactory: could not import 'sys' module.\n");
     ERROR("IvrFactory: please check your installation.\n");
     return;
@@ -267,13 +267,13 @@ void IvrFactory::set_sys_path(const string& script_path)
   Py_DECREF(sys_path_str);
 
   if(!sys_path){
-    PyErr_Print();
+    PyErr_PrintEx(0);
     Py_DECREF(py_mod);
     return;
   }
 
   if(!PyList_Insert(sys_path,0,PyString_FromString(script_path.c_str()))){
-    PyErr_Print();
+    PyErr_PrintEx(0);
   }
 }
 
@@ -301,7 +301,7 @@ IvrDialog* IvrFactory::newDlg(const string& name)
 
     delete dlg;
 
-    PyErr_Print();
+    PyErr_PrintEx(0);
     ERROR("IvrFactory: while loading \"%s\": could not create instance\n",
 	  name.c_str());
     throw AmSession::Exception(500,"Internal error in IVR plug-in.\n");
@@ -357,7 +357,7 @@ bool IvrFactory::loadScript(const string& path)
   }
     
   if(!mod){
-    PyErr_Print();
+    PyErr_PrintEx(0);
     WARN("IvrFactory: Failed to load \"%s\"\n", path.c_str());
 
     // before python 2.4,
@@ -380,7 +380,7 @@ bool IvrFactory::loadScript(const string& path)
 
   if(!dlg_class){
 
-    PyErr_Print();
+    PyErr_PrintEx(0);
     WARN("IvrFactory: class IvrDialog not found in \"%s\"\n", path.c_str());
     goto error1;
   }
@@ -659,7 +659,7 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
   va_end(va);
 
   if(!o) {
-    if(PyErr_Occurred()) PyErr_Print();
+    if(PyErr_Occurred()) PyErr_PrintEx(0);
   }
   else {
     if(o && PyBool_Check(o) && (o == Py_True)) {
