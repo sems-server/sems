@@ -94,7 +94,7 @@ string str2json(const char* str, size_t len)
 	// (I hope I am not misunderstanding something.)
       default:{
 	if (*c < ' ') 
-	  result += "\\u00" + hex_chars[*c >> 4] + hex_chars[*c & 0xf];
+	  result += "\\u00" + string() + hex_chars[*c >> 4] + string() + hex_chars[*c & 0xf];
 	else 
 	  result += *c;
       } break;
