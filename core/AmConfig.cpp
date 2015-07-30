@@ -632,17 +632,18 @@ int AmConfig::readConfiguration()
   }
 
   if(cfg.hasParameter("cps_limit")){ 
-    unsigned int CPSLimit;
+    unsigned int CPSLimit = 0;
     vector<string> limit = explode(cfg.getParameter("cps_limit"), ";");
     if (limit.size() != 3) {
       ERROR("invalid cps_limit specified.\n");
     } else {
       if (str2i(limit[0], CPSLimit) || str2i(limit[1], CPSLimitErrCode)) {
 	ERROR("invalid cps_limit specified.\n");
+      } else {
+	CPSLimitErrReason = limit[2];
+	AmSessionContainer::instance()->setCPSLimit(CPSLimit);
       }
-      CPSLimitErrReason = limit[2];
     }
-    AmSessionContainer::instance()->setCPSLimit(CPSLimit);
   }
 
   if(cfg.hasParameter("accept_forked_dialogs"))
