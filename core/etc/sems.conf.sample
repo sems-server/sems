@@ -530,10 +530,10 @@ use_default_signature=yes
 
 # SIP timers configuration (in milliseconds)
 #
-# sip_timer_a=<n millisec>
-# sip_timer_b=<n millisec>
+# sip_timer_A=<n millisec>
+# sip_timer_B=<n millisec>
 # ...
-# sip_timer_m=<n millisec>
+# sip_timer_M=<n millisec>
 #
 # timers A to J as in RFC3261.
 # Timer L: handle 200 ACKs automatically in INVITE client trans.
