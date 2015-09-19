@@ -43,6 +43,7 @@ using std::vector;
 using std::map;
 
 #include <netinet/in.h>
+#include <stdlib.h>
 
 #define DNS_CACHE_SIZE 128
 

@@ -165,8 +165,8 @@ ifeq ($(ARCH),sparc)
 endif
 
 # need OS specific for this ?
-CXX = g++
-CC = gcc
+CXX = c++
+CC = cc
 LD = $(CC)
 
 CXXFLAGS += -Wall -Wno-reorder -Wno-unused -fPIC -g $(EXTRA_CXXFLAGS) 
@@ -205,7 +205,10 @@ ifeq ($(OS), linux)
 	CPPFLAGS += -DPROPAGATE_COREDUMP_SETTINGS
 else
 ifeq ($(OS), freebsd)
+	LDFLAGS += -L/usr/local/lib
+	LDFLAGS += -lexecinfo
 	LDFLAGS += $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
+	CPPFLAGS += -I/usr/local/include
 else
 ifeq ($(OS), openbsd)
 	LDFLAGS += $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
