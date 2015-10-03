@@ -30,6 +30,8 @@
 #include <fstream>
 using std::ifstream;
 
+#include <dirent.h>
+
 DSMStateDiagramCollection::DSMStateDiagramCollection() {
 }
 
@@ -74,10 +76,35 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	  current_load_path = r.substr(0, ppos) + "/";
 	} else {
 	  current_load_path = load_path;
-	  include_name = load_path+"/"+r;
+	  include_name = load_path + r;
 	}
-	if (!readFile(include_name, name, current_load_path, s))
-	  return false;
+
+	struct stat status;
+	DIR *dp;
+	struct dirent *ep;
+	string include_dir_name;
+	if ((stat(include_name.c_str(), &status) == 0) &&
+	    (status.st_mode & S_IFDIR)) {
+	  dp = opendir(include_name.c_str());
+	  if (dp != NULL) {
+	    while ((ep = readdir(dp))) {
+	      if (strncmp(ep->d_name, ".", 1) == 0) continue;
+	      include_dir_name = include_name + "/" + std::string(ep->d_name);
+	      if (!readFile(include_dir_name, std::string(ep->d_name),
+			    current_load_path, s)) {
+		(void)closedir(dp);
+		return false;
+	      }
+	    }
+	    (void) closedir(dp);
+	  } else {
+	    ERROR("could not open directory %s", include_name.c_str());
+	    return false;
+	  }
+	} else {
+	  if (!readFile(include_name, name, current_load_path, s))
+	    return false;
+	}
 	continue;
       }
 	

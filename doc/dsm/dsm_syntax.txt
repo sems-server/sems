@@ -7,7 +7,10 @@ Syntax
 # also comment
 
 #include "script.dsm"
+#include "script_dir"
 #include "/path/to/anotherscript.dsm"
+#include "/path/to/script_dir"
+
 import(mod_name);
 
 [initial] state name 
