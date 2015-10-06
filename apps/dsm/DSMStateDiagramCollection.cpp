@@ -88,10 +88,10 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	  dp = opendir(include_name.c_str());
 	  if (dp != NULL) {
 	    while ((ep = readdir(dp))) {
-	      if (strncmp(ep->d_name, ".", 1) == 0) continue;
-	      include_dir_name = include_name + "/" + std::string(ep->d_name);
-	      if (!readFile(include_dir_name, std::string(ep->d_name),
-			    current_load_path, s)) {
+	      string name(ep->d_name);
+	      if (name.rfind(".dsm") != (name.size() - 4)) continue;
+	      include_dir_name = include_name + "/" + name;
+	      if (!readFile(include_dir_name, name, current_load_path, s)) {
 		(void)closedir(dp);
 		return false;
 	      }
