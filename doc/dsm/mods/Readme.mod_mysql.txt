@@ -136,6 +136,7 @@ $errno:
 #define DSM_ERRNO_MY_NORESULT   "result"
 #define DSM_ERRNO_MY_NOROW      "result"
 #define DSM_ERRNO_MY_NOCOLUMN   "result"
+#define DSM_ERRNO_MY_NODATA     "result"
 
 Internals
 =========
