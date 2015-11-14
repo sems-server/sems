@@ -474,6 +474,11 @@ bool playDBAudio(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType e
 	sc_sess->SET_STRERROR("result does not have row");
 	EXEC_ACTION_STOP;
       }
+      if (row.at(0).size() == 0) {
+	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NODATA);
+	sc_sess->SET_STRERROR("result does not have data");
+	EXEC_ACTION_STOP;
+      }
       FILE *t_file = tmpfile();
       if (NULL == t_file) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
