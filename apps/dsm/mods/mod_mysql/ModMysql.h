@@ -58,9 +58,9 @@ class DSMMyConnection
   public DSMDisposable 
 {
  public:
- DSMMyConnection(const char* db, const char* server, const char* user, const char* password)
-   : mysqlpp::Connection(db, server, user, password)
-  { }
+  DSMMyConnection() : mysqlpp::Connection()
+  {
+  }
   ~DSMMyConnection() { }
 };
 

@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <fstream>
+#include <unistd.h>
 
 SC_EXPORT(SCMysqlModule);
 
@@ -195,10 +196,22 @@ EXEC_ACTION_START(SCMyConnectAction) {
   string db_host = str_between(db_url,  '@', '/');
   string db_db   = str_between(db_url,  '/', '\0');
 
+  string db_ca_cert = sc_sess->var["config.mysql_ca_cert"];
+  if (!db_ca_cert.empty() && (access(db_ca_cert.c_str(), R_OK ) != 0)) {
+    ERROR("cannot access mysql_ca_cert file %s\n", db_ca_cert.c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_CONFIG);
+    sc_sess->SET_STRERROR("cannot access mysql_ca_cert file\n");
+    return false;
+  }
+
   DSMMyConnection* conn = NULL;
   try {
-    conn = new DSMMyConnection(db_db.c_str(), db_host.c_str(), db_user.c_str(), db_pwd.c_str());
-
+    conn = new DSMMyConnection();
+    if (!db_ca_cert.empty()) {
+      conn->set_option(new mysqlpp::SslOption(0, 0, db_ca_cert.c_str(), "",
+					      "DHE-RSA-AES256-SHA"));
+    }
+    conn->connect(db_db.c_str(), db_host.c_str(), db_user.c_str(), db_pwd.c_str());
     // save connection for later use
     AmArg c_arg;
     c_arg.setBorrowedPointer(conn);
