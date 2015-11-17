@@ -47,7 +47,6 @@ OPTION(SEMS_USE_TTS           "Build with Text-to-speech support (requires Flite
 OPTION(SEMS_USE_OPENSSL       "Build with OpenSSL" OFF)
 OPTION(SEMS_USE_MONITORING    "Build with monitoring support" OFF)
 OPTION(SEMS_USE_IPV6          "Build with IPv6 support" OFF)
-OPTION(MAX_RTP_SESSIONS:int   "How many rtp sessions SEMS will handle simultaneously? (default 2048)" 2048)
 
 # Fix weird static libs handling in old CMake
 IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} STREQUAL "2.4")

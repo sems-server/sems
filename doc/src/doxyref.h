@@ -88,10 +88,6 @@
  * user. Note that an unlimited open files limit is not possible, but it is sufficient
  * to set it to some very high value (e.g. ulimit -n 100000).</p>
  * 
- * <p>There is a compile-time variable that sets a limit on how many RTP sessions are 
- * supported concurrently, this is MAX_RTP_SESSIONS. You may either add this at compile
- * time to your value, or edit Makefile.defs and adapt the value there.</p>
- * 
  * <p>SEMS normally uses one thread per session (processing of the signaling). This thread
  * sleeps on a mutex (the session's event queue) most of the time 
  * (RTP/audio processing is handled by the AmMediaProcessor
