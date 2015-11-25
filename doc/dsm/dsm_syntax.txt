@@ -82,6 +82,8 @@ DSM flow
  stop(<send bye>)
    e.g. stop(false), stop(true)
 
+ break;    # break execution of current action list and for loop
+
  -- reprocess the current event after transition:
  repost()
 

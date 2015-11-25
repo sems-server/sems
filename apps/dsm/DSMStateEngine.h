@@ -155,7 +155,8 @@ class DSMAction
     Repost, // repost current event
     Jump,   // jump FSM
     Call,   // call FSM
-    Return  // return from FSM call 
+    Return, // return from FSM call 
+    Break   // break execution of current action list
   };
 
   DSMAction() { /* DBG("const action\n"); */ }
@@ -315,7 +316,7 @@ class DSMStateEngine {
   bool runactions(vector<DSMElement*>::iterator from, 
 		  vector<DSMElement*>::iterator to, 
 		  AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
-		  map<string,string>* event_params,  bool& is_consumed);
+		  map<string,string>* event_params, bool& is_consumed, bool& do_break);
 
   vector<DSMModule*> mods;
 

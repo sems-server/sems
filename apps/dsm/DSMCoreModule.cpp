@@ -50,6 +50,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("callFSM", SCCallFSMAction);
   DEF_CMD("returnFSM", SCReturnFSMAction);
 
+  DEF_CMD("break", SCBreakAction);
+
   DEF_CMD("throw", SCThrowAction);
   DEF_CMD("throwOnError", SCThrowOnErrorAction);
 
@@ -580,6 +582,15 @@ DSMAction::SEAction SCJumpFSMAction::getSEAction(string& param,
 						 map<string,string>* event_params) {
   param = resolveVars(arg, sess, sc_sess, event_params);
   return Jump; 
+}
+
+DEF_SCModActionExec(SCBreakAction);
+DSMAction::SEAction SCBreakAction::getSEAction(string& param,
+						 AmSession* sess, DSMSession* sc_sess,
+						 DSMCondition::EventType event,
+						 map<string,string>* event_params) {
+  param = resolveVars(arg, sess, sc_sess, event_params);
+  return Break; 
 }
 
 DEF_SCModActionExec(SCCallFSMAction);

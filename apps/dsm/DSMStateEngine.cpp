@@ -312,7 +312,7 @@ void DSMStateEngine::processSdpAnswer(const AmSdp& offer, AmSdp& answer) {
 bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from, 
 				vector<DSMElement*>::iterator to, 
 				AmSession* sess,  DSMSession* sc_sess, DSMCondition::EventType event,
-				map<string,string>* event_params,  bool& is_consumed) {
+				map<string,string>* event_params,  bool& is_consumed, bool& do_break) {
   DBG("running %zd DSM action elements\n", to - from);
   for (vector<DSMElement*>::iterator it=from; it != to; it++) {
 
@@ -346,6 +346,11 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	    return true; 
 	  }
 	  break;
+	case DSMAction::Break: { 
+	  DBG("breaking execution of current action list and loop\n");
+	  do_break = true;
+	  return true;
+	}
 	default: break;
 	}
       }
@@ -364,11 +369,11 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
       if (con == cond_tree->conditions.end()) {
 	DBG("condition tree matched.\n");
         if (runactions(cond_tree->run_if_true.begin(), cond_tree->run_if_true.end(),
-		       sess, sc_sess, event, event_params, is_consumed))
+		       sess, sc_sess, event, event_params, is_consumed, do_break))
 	  return true;
       } else {
         if(runactions(cond_tree->run_if_false.begin(), cond_tree->run_if_false.end(),
-		      sess, sc_sess, event, event_params, is_consumed))
+		      sess, sc_sess, event, event_params, is_consumed, do_break))
 	  return true;
       }
       continue;
@@ -478,8 +483,12 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	  sc_sess->var[k_name] = int2str(cnt);
 	  DBG("setting $%s=%s\n", k_name.c_str(), sc_sess->var[k_name].c_str());
 
+	  bool break_loop = false;
 	  runactions(array_for->actions.begin(), array_for->actions.end(),
-		     sess, sc_sess, event, event_params, is_consumed);
+		     sess, sc_sess, event, event_params, is_consumed, break_loop);
+
+	  if (break_loop)
+	    break;
 
 	  if (range[1] > range[0])
 	    cnt++;
@@ -500,8 +509,12 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	    DBG("setting $%s=%s\n", k_name.c_str(), f_it->first.c_str());
 	    sc_sess->var[k_name] = f_it->first;
 	  }
+
+	  bool break_loop  = false;
 	  runactions(array_for->actions.begin(), array_for->actions.end(),
-		     sess, sc_sess, event, event_params, is_consumed);
+		     sess, sc_sess, event, event_params, is_consumed, break_loop);
+	  if (break_loop)
+	    break;
 	}
       }
 
@@ -640,22 +653,26 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	  if (current->post_actions.size()) {
 	    DBG(" >>>running %zd post_actions of state '%s'\n",
 		current->post_actions.size(), current->name.c_str());
+	    bool do_break = false;
 	    if (runactions(current->post_actions.begin(), 
 			   current->post_actions.end(), 
-			   sess, sc_sess, active_event, active_params, is_consumed)) {
+			   sess, sc_sess, active_event, active_params, is_consumed, do_break)) {
 	      break;
 	    }
+	    // further semantincs of break here?
 	  }
 	  
 	  // run transition actions
 	  if (tr->actions.size()) {
 	    DBG("  >>>running %zd actions of transition '%s'\n",
 		tr->actions.size(), tr->name.c_str());
+	    bool do_break = false;
 	    if (runactions(tr->actions.begin(), 
 			   tr->actions.end(), 
-			   sess, sc_sess, active_event, active_params, is_consumed)) {
+			   sess, sc_sess, active_event, active_params, is_consumed, do_break)) {
 	      break;
 	    }
+	    // further semantincs of break here?
 	  }
 	  
 	  // go into new state
@@ -686,11 +703,13 @@ void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 	  if (current->pre_actions.size()) {
 	    DBG(" >>>running %zd pre_actions of state '%s'\n",
 		current->pre_actions.size(), current->name.c_str());
+	    bool do_break = false;
 	    if (runactions(current->pre_actions.begin(), 
 			   current->pre_actions.end(), 
-			   sess, sc_sess, active_event, active_params, is_consumed)) {
+			   sess, sc_sess, active_event, active_params, is_consumed, do_break)) {
 	      break;
 	    }
+	    // further semantincs of break here?
 	  }
 	  DBG(" >>o arrived in state '%s'\n", current->name.c_str());
 	  
@@ -757,11 +776,11 @@ bool DSMStateEngine::jumpDiag(const string& diag_name, AmSession* sess, DSMSessi
       DBG("running %zd pre_actions of init state '%s'\n",
 	  current->pre_actions.size(), current->name.c_str());
       
-      bool is_finished;
-      is_finished = true;
+      bool is_finished = true;
+      bool do_break = false;
       runactions(current->pre_actions.begin(), 
 		 current->pre_actions.end(), 
-		 sess, sc_sess, event, event_params, is_finished); 
+		 sess, sc_sess, event, event_params, is_finished, do_break); 
 
       return true;
     }
@@ -782,9 +801,10 @@ bool DSMStateEngine::returnDiag(AmSession* sess, DSMSession* sc_sess,
   stack.pop_back();
 
   bool is_consumed; //?
+  bool do_break = false; // ?
   DBG("executing %zd action elements from stack\n", actions.size());
   if (actions.size()) {
-    runactions(actions.begin(), actions.end(), sess, sc_sess, event, event_params, is_consumed);
+    runactions(actions.begin(), actions.end(), sess, sc_sess, event, event_params, is_consumed, do_break);
   }
 
   MONITORING_LOG2(sess->getLocalTag().c_str(), 
