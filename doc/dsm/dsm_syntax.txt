@@ -4,7 +4,7 @@ DSM quick reference
 Syntax
 ======
 -- comment
-# also comment
+# comment, too
 
 #include "script.dsm"
 #include "script_dir"
@@ -97,6 +97,11 @@ DSM flow
         sets($var="a single at on a date with a single dollar: @@$$")
  var($dstvar=srcvarname)
   e.g.  var($dstvar=$var_counter)
+        # array member access:
+        set($i = 0);
+        sets($v="a[$i]");
+        var($m=$v);
+
  param($dstvar=srcparamname)
   e.g. param($dstvar=$myparam) (like: #($myparam) )
  eval($var=value) 
