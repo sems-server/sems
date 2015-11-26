@@ -43,6 +43,12 @@ function func_name() {
    <actions>
   }
 
+  for ($var in range(start, end)) { action; ... }
+    -- $var gets values from start to end - 1
+  for ($var in $myarray) { action; ... }
+  for ($key,$val in $mystruct) { action; ... }
+  break();
+
   func_name();
   ...
 
