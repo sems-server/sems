@@ -369,6 +369,13 @@ bool curl_run_post(DSMSession* sc_sess, const string& par1, const string& par2,
     return false;
   }
 
+  if (curl_easy_setopt(m_curl_handle, CURLOPT_POST, 1L) != CURLE_OK)  {
+    ERROR("setting curl post option\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    curl_easy_cleanup(m_curl_handle);
+    return false;
+  }
+
   struct curl_httppost *post=NULL;
   struct curl_httppost *last=NULL;
   string post_vars;
@@ -381,6 +388,8 @@ bool curl_run_post(DSMSession* sc_sess, const string& par1, const string& par2,
 		 CURLFORM_COPYNAME, varname.c_str(),
 		 CURLFORM_COPYCONTENTS, sc_sess->var[varname].c_str(), CURLFORM_END);
   }
+
+  curl_easy_setopt(m_curl_handle, CURLOPT_HTTPPOST, post);
 
   CURLcode rescode = curl_easy_perform(m_curl_handle);
 
