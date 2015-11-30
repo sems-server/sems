@@ -53,6 +53,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.add", SCUSAddAction);
   DEF_CMD("utils.sub", SCUSSubAction);
   DEF_CMD("utils.int", SCUIntAction);
+  DEF_CMD("utils.md5", SCUMD5Action);
   DEF_CMD("utils.splitStringCR", SCUSplitStringAction);
   DEF_CMD("utils.escapeCRLF", SCUEscapeCRLFAction);
   DEF_CMD("utils.unescapeCRLF", SCUUnescapeCRLFAction);
@@ -320,7 +321,6 @@ EXEC_ACTION_START(SCUSpellAction) {
 
 } EXEC_ACTION_END;
 
-
 CONST_ACTION_2P(SCUSAddAction, ',', false);
 EXEC_ACTION_START(SCUSAddAction) {
   string n1 = resolveVars(par1, sess, sc_sess, event_params);
@@ -368,6 +368,22 @@ EXEC_ACTION_START(SCUIntAction) {
   sc_sess->var[varname] = int2str((int)atof(val.c_str()));
   DBG("set $%s = %s\n", 
       varname.c_str(), sc_sess->var[varname].c_str());
+
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUMD5Action, ',', false);
+EXEC_ACTION_START(SCUMD5Action) {
+  string n1 = resolveVars(par1, sess, sc_sess, event_params);
+  string n2 = resolveVars(par2, sess, sc_sess, event_params);
+
+  string varname = par1;
+  if (varname.length() && varname[0] == '$')
+    varname = varname.substr(1);
+
+  string res = calculateMD5(n2);
+
+  DBG("setting var[%s] = %s\n", varname.c_str(), res.c_str());
+  sc_sess->var[varname] = res;
 
 } EXEC_ACTION_END;
 

@@ -47,6 +47,9 @@ Actions:
  utils.int($var, val)
    get integer part of val into var
 
+ utils.md5($var, val)
+   calculate md5 hex digest of val to $var
+
  utils.splitStringCR($var [, $dstvar])
  utils.splitStringCR(val, $dstvar])
    split a string on newline (carriage return, \n) 
