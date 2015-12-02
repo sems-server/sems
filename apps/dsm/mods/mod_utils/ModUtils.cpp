@@ -54,6 +54,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.sub", SCUSSubAction);
   DEF_CMD("utils.int", SCUIntAction);
   DEF_CMD("utils.md5", SCUMD5Action);
+  DEF_CMD("utils.replace", SCUReplaceAction);
   DEF_CMD("utils.splitStringCR", SCUSplitStringAction);
   DEF_CMD("utils.escapeCRLF", SCUEscapeCRLFAction);
   DEF_CMD("utils.unescapeCRLF", SCUUnescapeCRLFAction);
@@ -384,6 +385,56 @@ EXEC_ACTION_START(SCUMD5Action) {
 
   DBG("setting var[%s] = %s\n", varname.c_str(), res.c_str());
   sc_sess->var[varname] = res;
+
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUReplaceAction, ',', false);
+EXEC_ACTION_START(SCUReplaceAction) {
+
+  string subject = resolveVars(par1, sess, sc_sess, event_params);
+
+  vector<string> vars = explode(par2, "=>");
+  if (vars.size() != 2) {
+    ERROR("could not parse search=>replace '%s'\n", par2.c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("could not parse search=>replace '" + par2 +"'\n");
+    return false;
+  }
+
+  string search;
+
+  if ((vars[0])[0] != '$') {
+    search = vars[0];
+  } else {
+    search = resolveVars(vars[0], sess, sc_sess, event_params);
+    if (search.length() == 0) {
+      ERROR("search var '%s' value is empty\n", vars[0].c_str());
+      sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+      sc_sess->SET_STRERROR("search var '" + vars[0] + "' value is empty\n");
+      return false;
+    }
+  }
+
+  string replace;
+
+  if ((vars[1])[0] != '$') {
+    replace = vars[1];
+  } else {
+    replace = resolveVars(vars[1], sess, sc_sess, event_params);
+  }
+
+  size_t pos = 0;
+  while ((pos = subject.find(search, pos)) != std::string::npos) {
+    subject.replace(pos, search.length(), replace);
+    pos += replace.length();
+  }
+
+  string varname = par1;
+  if (varname.length() && varname[0] == '$')
+    varname = varname.substr(1);
+
+  INFO("setting var[%s] = %s\n", varname.c_str(), subject.c_str());
+  sc_sess->var[varname] = subject;
 
 } EXEC_ACTION_END;
 

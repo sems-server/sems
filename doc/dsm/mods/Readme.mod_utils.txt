@@ -50,6 +50,9 @@ Actions:
  utils.md5($var, val)
    calculate md5 hex digest of val to $var
 
+ utils.replace($subject, (search|$search)=>(replace|$replace))
+   in $subject, replace each search string with replace string   
+
  utils.splitStringCR($var [, $dstvar])
  utils.splitStringCR(val, $dstvar])
    split a string on newline (carriage return, \n) 
