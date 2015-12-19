@@ -63,8 +63,12 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
+
   if (cmd == "utils.isInList") {
     return new IsInListCondition(params, false);
+  }
+  if (cmd == "utils.startsWith") {
+    return new StartsWithCondition(params, false);
   }
 
 } MOD_CONDITIONEXPORT_END;
@@ -433,7 +437,7 @@ EXEC_ACTION_START(SCUReplaceAction) {
   if (varname.length() && varname[0] == '$')
     varname = varname.substr(1);
 
-  INFO("setting var[%s] = %s\n", varname.c_str(), subject.c_str());
+  DBG("setting var[%s] = %s\n", varname.c_str(), subject.c_str());
   sc_sess->var[varname] = subject;
 
 } EXEC_ACTION_END;
@@ -550,3 +554,19 @@ MATCH_CONDITION_START(IsInListCondition) {
     return res;
   }
  } MATCH_CONDITION_END;
+
+CONST_CONDITION_2P(StartsWithCondition, ',', false);
+MATCH_CONDITION_START(StartsWithCondition) {
+
+  string key = resolveVars(par1, sess, sc_sess, event_params);
+  string prefix = resolveVars(par2, sess, sc_sess, event_params);
+
+  DBG("checking whether '%s' starts with '%s'\n", key.c_str(), prefix.c_str());
+  bool res = false;
+  res = (key.length() >= prefix.length()) &&
+    std::equal(prefix.begin(), prefix.end(), key.begin());
+  DBG("prefix %sfound\n", res?"":"not ");
+
+  return res;
+
+} MATCH_CONDITION_END;

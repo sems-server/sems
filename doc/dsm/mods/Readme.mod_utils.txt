@@ -1,4 +1,6 @@
-Actions: 
+Actions
+-------
+
  utils.getNewId(string varname)
 
  utils.playCountRight(int cnt [, string basedir])
@@ -69,7 +71,7 @@ Actions:
    replace escaped CRLF (\\r\\n) in string with CRLF (\r\n) 
 
 
-utils.playRingTone(length [, on [, off [, f [, f2]]]])
+ utils.playRingTone(length [, on [, off [, f [, f2]]]])
    play a RingTone (ringback tone)
    defaults to length=0 (indefinite), on 1000ms, off 2000ms, f 440Hz, f2 480Hz
 
@@ -79,5 +81,8 @@ utils.playRingTone(length [, on [, off [, f [, f2]]]])
 Conditions
 ----------
 
-utils.isInList(key, cs_list) - match if key is in comma-separated list
+ utils.isInList(key, cs_list) - match if key is in comma-separated list
    e.g. if utils.isInList(#sip_code, "404, 405") { ... }
+
+ utils.startsWith(subject|$subject, prefix|$prefix) - match if subject
+   starts with prefix
