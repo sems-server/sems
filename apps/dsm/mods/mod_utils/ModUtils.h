@@ -53,6 +53,7 @@ DEF_ACTION_2P(SCUSAddAction);
 DEF_ACTION_2P(SCUSSubAction);
 DEF_ACTION_2P(SCUIntAction);
 DEF_ACTION_2P(SCUSplitStringAction);
+DEF_ACTION_2P(SCUGenSplitStringAction);
 DEF_ACTION_2P(SCUMD5Action);
 DEF_ACTION_2P(SCUReplaceAction);
 

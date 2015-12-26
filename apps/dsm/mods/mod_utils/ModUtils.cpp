@@ -56,6 +56,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.md5", SCUMD5Action);
   DEF_CMD("utils.replace", SCUReplaceAction);
   DEF_CMD("utils.splitStringCR", SCUSplitStringAction);
+  DEF_CMD("utils.splitString", SCUGenSplitStringAction);
   DEF_CMD("utils.escapeCRLF", SCUEscapeCRLFAction);
   DEF_CMD("utils.unescapeCRLF", SCUUnescapeCRLFAction);
   DEF_CMD("utils.playRingTone", SCUPlayRingToneAction);
@@ -464,6 +465,45 @@ EXEC_ACTION_START(SCUSplitStringAction) {
     sc_sess->var[dst_array+"["+int2str((unsigned int)cntr++)+"]"] = str.substr(last_p, p-last_p);
 
     last_p = p+1;    
+  }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUGenSplitStringAction, ',', true);
+EXEC_ACTION_START(SCUGenSplitStringAction) {
+  string str = resolveVars(par1, sess, sc_sess, event_params);
+  string delim = resolveVars(par2, sess, sc_sess, event_params);
+
+  string varname = par1;
+  if (varname.length() == 0) {
+    ERROR("varname is empty\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("varname is empty\n");
+    return false;
+  }
+  if (varname[0] == '$')
+    varname = varname.substr(1);
+
+  unsigned int i;
+  if (delim.length() == 0) {
+    for(i = 0; i < str.size(); ++i) {
+      sc_sess->var[varname + "[" + int2str(i) + "]"] = str[i];
+    }
+  } else {
+    size_t p = 0, last_p = 0;
+    i = 0;
+    while (true) {
+      p = str.find(delim, last_p);
+      if (p == string::npos) {
+	if (last_p <= str.length())
+	  sc_sess->var[varname + "[" + int2str((unsigned int)i) + "]"] =
+	    str.substr(last_p);
+	break;
+      }
+      sc_sess->var[varname + "[" + int2str(i) + "]"] =
+	str.substr(last_p, p - last_p);
+      last_p = p + delim.length();
+      i++;
+    }
   }
 } EXEC_ACTION_END;
 

@@ -64,6 +64,9 @@ Actions
     sys.popen($myresult="/bin/ls wav/*");    
     utils.splitStringCR($myresult);
 
+utils.splitString($var, delim|$delim)
+   split string in $var on delim or $delim into array $var[0], ...
+
  utils.escapeCRLF($var)
    replace CRLF (\r\n) in string with escaped CRLF (\\r\\n) 
 
