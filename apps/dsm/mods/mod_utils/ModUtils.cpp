@@ -495,8 +495,7 @@ EXEC_ACTION_START(SCUGenSplitStringAction) {
       p = str.find(delim, last_p);
       if (p == string::npos) {
 	if (last_p <= str.length())
-	  sc_sess->var[varname + "[" + int2str((unsigned int)i) + "]"] =
-	    str.substr(last_p);
+	  sc_sess->var[varname + "[" + int2str(i) + "]"] = str.substr(last_p);
 	break;
       }
       sc_sess->var[varname + "[" + int2str(i) + "]"] =
