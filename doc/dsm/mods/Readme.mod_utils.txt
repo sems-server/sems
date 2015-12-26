@@ -66,6 +66,7 @@ Actions
 
 utils.splitString($var, delim|$delim)
    split string in $var on delim or $delim into array $var[0], ...
+   if delim is empty, splits string on every character
 
  utils.escapeCRLF($var)
    replace CRLF (\r\n) in string with escaped CRLF (\\r\\n) 
