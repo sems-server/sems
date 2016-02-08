@@ -1,6 +1,4 @@
 /*
- * $Id: ModMysql.cpp 1764 2010-04-01 14:33:30Z peter_lemenkov $
- *
  * Copyright (C) 2010 TelTech Systems Inc.
  * 
  * This file is part of SEMS, a free SIP media server.
@@ -238,11 +236,11 @@ int JsonrpcNetstringsConnection::netstringsRead() {
 	  return REMOVE;
 	}
 
-	if ((rcvd_size<0 && errno == EAGAIN) || 
-	    (rcvd_size<0 && errno == EWOULDBLOCK))
+	if (((ssize_t)rcvd_size<0 && errno == EAGAIN) || 
+	    ((ssize_t)rcvd_size<0 && errno == EWOULDBLOCK))
 	  return CONTINUE; // necessary?
 
-	if (rcvd_size<0) {
+	if ((ssize_t)rcvd_size<0) {
 	  INFO("socket error on connection [%p/%d]: %s\n",
 	       this, fd, strerror(errno));
 	  close();
@@ -296,7 +294,7 @@ int JsonrpcNetstringsConnection::netstringsRead() {
 }
 
 int JsonrpcNetstringsConnection::netstringsBlockingWrite() {
-  if (msg_size<0) {
+  if ((ssize_t)msg_size<0) {
     close();
     return REMOVE;
   }
@@ -327,12 +325,12 @@ int JsonrpcNetstringsConnection::netstringsBlockingWrite() {
 			  0
 #endif
 			  );
-    if ((written<0 && (errno==EAGAIN || errno==EWOULDBLOCK)) ||
+    if (((ssize_t)written<0 && (errno==EAGAIN || errno==EWOULDBLOCK)) ||
 	written==0) {
 	usleep(SEND_SLEEP);
 	continue;
     }
-    if (written<0) {
+    if ((ssize_t)written<0) {
       if (errno == ECONNRESET) {
 	DBG("closing connection [%p/%d] on peer hangup\n", this, fd);
 	close();

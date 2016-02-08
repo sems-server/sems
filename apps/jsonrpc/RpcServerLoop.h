@@ -1,6 +1,4 @@
 /*
- * $Id: ModMysql.cpp 1764 2010-04-01 14:33:30Z peter_lemenkov $
- *
  * Copyright (C) 2010 TelTech Systems Inc.
  * 
  * This file is part of SEMS, a free SIP media server.
