@@ -94,16 +94,16 @@ gespeicherte Nachrichten -
 in Ihrer Mailbox.
 Erste neue Nachricht:
 Erste gespeicherte Nachricht:
-Drücken Sie eins, um die Nachricht zu wiederholen, zwei, um die Nachricht zu speichern, und drei um die Nachricht zu löschen.
-Drücken Sie eins, um die Nachricht zu wiederholen, zwei, um die Nachricht zu speichern, drei um die Nachricht zu löschen, und vier um von Vorne zu beginnen.
+DrÃ¼cken Sie eins, um die Nachricht zu wiederholen, zwei, um die Nachricht zu speichern, und drei um die Nachricht zu lÃ¶schen.
+DrÃ¼cken Sie eins, um die Nachricht zu wiederholen, zwei, um die Nachricht zu speichern, drei um die Nachricht zu lÃ¶schen, und vier um von Vorne zu beginnen.
 Nachricht gespeichert.
-Nachricht gelöscht.
-Nächste neue Nachricht:
-Nächste gespeicherte Nachricht:
-Es sind keine weiteren Nachrichten in Ihrer Mailbox vorhanden. Drücken Sie vier, um von vorne zu beginnen.
-Es sind keine Nachrichten in Ihrer Mailbox. Auf Wiederhören.
+Nachricht gelÃ¶scht.
+NÃ¤chste neue Nachricht:
+NÃ¤chste gespeicherte Nachricht:
+Es sind keine weiteren Nachrichten in Ihrer Mailbox vorhanden. DrÃ¼cken Sie vier, um von vorne zu beginnen.
+Es sind keine Nachrichten in Ihrer Mailbox. Auf WiederhÃ¶ren.
 Bitte geben Sie ihre PIN ein.
-Auf Wiederhören.
+Auf WiederhÃ¶ren.
 Eine gespeicherte Nachricht -
 Eine neue Nachricht -
 null -
@@ -111,17 +111,17 @@ eine -
 zwei -
 drei -
 vier -
-fünf -
+fÃ¼nf -
 sechs -
 sieben -
 acht -
 neun -
 zehn -
 elf -
-zwölf -
+zwÃ¶lf -
 dreizehn -
 vierzehn -
-fünfzehn -
+fÃ¼nfzehn -
 sechzehn -
 siebzehn -
 achtzehn -
@@ -129,7 +129,7 @@ neunzehn -
 zwanzig -
 dreissig -
 vierzig -
-fünfzig -
+fÃ¼nfzig -
 sechzig -
 siebzig -
 achtzig -
@@ -138,7 +138,7 @@ einund -
 zweiund -
 dreiund -
 vierund -
-fünfund -
+fÃ¼nfund -
 sechsund -
 siebenund -
 achtund -
