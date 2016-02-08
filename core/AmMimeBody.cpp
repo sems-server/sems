@@ -421,6 +421,7 @@ int AmMimeBody::findNextBoundary(unsigned char** beg, unsigned char** end)
 	break;
       case CR:
 	st = B_CR;
+	*beg = c;
 	break;
       default:
 	st = B_START;
