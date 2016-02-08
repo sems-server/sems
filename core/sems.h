@@ -25,8 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 /** @file sems.h */
-#ifndef _ans_machine_h_
-#define _ans_machine_h_
+#ifndef _sems_h_
+#define _sems_h_
 
 #define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
 #define MOD_CFG_PATH        "/usr/local/etc/sems/etc/"
