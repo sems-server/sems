@@ -1,9 +1,9 @@
 # - Check if the symbol exists in include files
-# CHECK_SYMBOL_EXISTS(SYMBOL FILES VARIABLE)
+# CHECK_SYMBOL_EXISTS(SYMBOL VARIABLE FILES)
 #
 #  SYMBOL   - symbol
-#  FILES    - include files to check
 #  VARIABLE - variable to return result
+#  FILES    - include files to check
 #
 # The following variables may be set before calling this macro to
 # modify the way the check is run:
@@ -26,7 +26,8 @@
 # (To distributed this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-MACRO(CHECK_SYMBOL_EXISTS SYMBOL FILES VARIABLE)
+MACRO(CHECK_SYMBOL_EXISTS SYMBOL VARIABLE)
+  SET(FILES "${ARGN}")
   IF("${VARIABLE}" MATCHES "^${VARIABLE}$")
     SET(CMAKE_CONFIGURABLE_FILE_CONTENT "/* */\n")
     SET(MACRO_CHECK_SYMBOL_EXISTS_FLAGS ${CMAKE_REQUIRED_FLAGS})
