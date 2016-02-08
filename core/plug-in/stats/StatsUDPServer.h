@@ -27,6 +27,7 @@
 #define _StatsUDPServer_h_
 
 #include "AmThread.h"
+#include "sems.h"
 
 #include <string>
 using std::string;
