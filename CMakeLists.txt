@@ -237,11 +237,13 @@ ELSE(RTMP_FOUND)
 	MESSAGE(STATUS "Using librtmp: NO")
 ENDIF(RTMP_FOUND)
 
-# Check for res_search in -lresolv
-include(${CMAKE_SOURCE_DIR}/cmake/CheckSymbolExists.cmake)
-SET(CMAKE_REQUIRED_LIBRARIES resolv)
-CHECK_SYMBOL_EXISTS(res_search HAVE_RES_SEARCH netinet/in.h resolv.h)
-MESSAGE(STATUS "Have res_search: ${HAVE_RES_SEARCH} ")
+IF(NOT ${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
+	# Check for res_search in -lresolv
+	include(${CMAKE_SOURCE_DIR}/cmake/CheckSymbolExists.cmake)
+	SET(CMAKE_REQUIRED_LIBRARIES resolv)
+	CHECK_SYMBOL_EXISTS(res_search HAVE_RES_SEARCH netinet/in.h resolv.h)
+	MESSAGE(STATUS "Have res_search: ${HAVE_RES_SEARCH}")
+ENDIF(NOT ${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
 
 INCLUDE_DIRECTORIES (${SEMS_SOURCE_DIR}/core/ampi)
 INCLUDE_DIRECTORIES (${SEMS_SOURCE_DIR}/core/amci)
