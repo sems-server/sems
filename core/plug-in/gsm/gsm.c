@@ -27,7 +27,7 @@
 
 #include "amci.h"
 #include "codecs.h"
-#include "gsm-1.0-pl10/inc/gsm.h"
+#include <gsm.h>
 #include "../../log.h"
 
 #include <stdlib.h>
