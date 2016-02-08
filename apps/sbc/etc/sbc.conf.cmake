@@ -31,6 +31,13 @@ active_profile=transparent
 # e.g. load_cc_plugins=cc_pcalls;cc_ctl
 #load_cc_plugins=cc_pcalls;cc_ctl
 
+# handle OPTIONS messages in the core? (with limits etc)
+# Default: no
+#core_options_handling=yes
+
+# How many threads to use for processing out-of-dialog messages, default: 1
+# out_of_dialog_threads=4
+
 ## RFC4028 Session Timer
 # default configuration - can be overridden by call profiles
 
