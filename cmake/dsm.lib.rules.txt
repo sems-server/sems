@@ -1,5 +1,7 @@
 # A place for common parts of SEMS DSM modules rules
 
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
+
 # We must add base apps/dsm directory as INCLUDEDIR
 INCLUDE_DIRECTORIES (../..)
 
@@ -23,7 +25,15 @@ TARGET_LINK_LIBRARIES(sems_dsm_${sems_dsm_module_name} ${CMAKE_DL_LIBS} ${sems_d
 SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES OUTPUT_NAME ${sems_dsm_module_name})
 SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES PREFIX "")
 
+ADD_DEFINITIONS(-DMOD_NAME=\\\"${sems_dsm_module_name}\\\")
+
 INSTALL(
 	TARGETS sems_dsm_${sems_dsm_module_name}
 	LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/dsm/
 )
+
+IF(NOT DEFINED ${sems_dsm_module_name}_config_files)
+	SEMS_INSTALL_CONFIGS("${sems_dsm_module_name}")
+ELSE(NOT DEFINED ${sems_dsm_module_name}_config_files)
+	SEMS_INSTALL_CONFIGS("${${sems_dsm_module_name}_config_files}")
+ENDIF(NOT DEFINED ${sems_dsm_module_name}_config_files)
