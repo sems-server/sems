@@ -54,6 +54,7 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -61,7 +62,6 @@
 #include <event2/thread.h>
 
 #ifdef PROPAGATE_COREDUMP_SETTINGS
-#include <sys/resource.h>
 #include <sys/prctl.h>
 #endif
 
