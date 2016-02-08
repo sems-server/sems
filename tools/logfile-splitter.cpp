@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  long int log_offset = -1;
+  long long int log_offset = -1;
   char* endptr;
   log_offset = strtoll(argv[3], &endptr, 10); // offset of thread
   if ((errno == ERANGE && (log_offset == LLONG_MAX || log_offset == LLONG_MIN))
