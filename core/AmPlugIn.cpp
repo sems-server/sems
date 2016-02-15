@@ -78,7 +78,8 @@ amci_codec_t _codec_pcm16 = {
   NULL,
   NULL,
   pcm16_bytes2samples,
-  pcm16_samples2bytes
+  pcm16_samples2bytes,
+  NULL
 };
 
 amci_codec_t _codec_tevent = { 
@@ -89,7 +90,8 @@ amci_codec_t _codec_tevent = {
   NULL,
   NULL,
   tevent_bytes2samples,
-  tevent_samples2bytes
+  tevent_samples2bytes,
+  NULL
 };
 
 amci_payload_t _payload_tevent = { 
