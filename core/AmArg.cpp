@@ -472,7 +472,7 @@ string AmArg::print(const AmArg &a) {
   return "<UNKONWN TYPE>";
 }
 
-const int arg2int(const AmArg &a)
+int arg2int(const AmArg &a)
 {
   if (isArgInt(a)) return a.asInt();
   if (isArgBool(a)) return a.asBool();
