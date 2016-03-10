@@ -64,10 +64,13 @@ Actions
     sys.popen($myresult="/bin/ls wav/*");    
     utils.splitStringCR($myresult);
 
-utils.splitString($var, delim|$delim)
+ utils.splitString($var, delim|$delim)
    split string in $var on delim or $delim into array $var[0], ...
    if delim is empty, splits string on every character
 
+ utils.decodeJson($var, $prefix)
+   decode jSON document string in $var into $prefix struct or array
+   
  utils.escapeCRLF($var)
    replace CRLF (\r\n) in string with escaped CRLF (\\r\\n) 
 

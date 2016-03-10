@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009 Teltech Systems Inc.
+ * Copyright (C) 2015-2016 Juha Heinanen
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -34,6 +35,7 @@
 #include "DSMSession.h"
 #include "AmSession.h"
 #include "AmPlaylist.h"
+#include "jsonArg.h"
 
 SC_EXPORT(MOD_CLS_NAME);
 
@@ -57,6 +59,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.replace", SCUReplaceAction);
   DEF_CMD("utils.splitStringCR", SCUSplitStringAction);
   DEF_CMD("utils.splitString", SCUGenSplitStringAction);
+  DEF_CMD("utils.decodeJson", SCUDecodeJsonAction);
   DEF_CMD("utils.escapeCRLF", SCUEscapeCRLFAction);
   DEF_CMD("utils.unescapeCRLF", SCUUnescapeCRLFAction);
   DEF_CMD("utils.playRingTone", SCUPlayRingToneAction);
@@ -151,6 +154,27 @@ bool utils_play_count(DSMSession* sc_sess, unsigned int cnt,
   }
 
   return false;
+}
+
+void utils_set_session_vars(DSMSession* sc_sess, string prefix, AmArg json) {
+  INFO("go through struct");
+  if (json.getType() == AmArg::Struct) {
+    for (AmArg::ValueStruct::const_iterator it1 = json.begin();
+	 it1 != json.end(); it1++) {
+      INFO("key %s\n", (it1->first).c_str());
+      utils_set_session_vars(sc_sess, prefix + "." + it1->first, it1->second);
+    }
+  } else if (json.getType() == AmArg::Array) {
+    INFO("go through array");
+    for (std::vector<AmArg>::size_type i = 0; i != json.size(); i++) {
+      INFO("index %d\n", (int)i);
+      utils_set_session_vars(sc_sess, prefix + "[" + int2str((int)i) + "]",
+			     json[i]);
+    }
+  } else {
+    INFO("setting %s = %s\n", prefix.c_str(), AmArg::print(json).c_str());
+    sc_sess->var[prefix] = AmArg::print(json).c_str();
+  }
 }
 
 CONST_ACTION_2P(SCUPlayCountRightAction, ',', true);
@@ -504,6 +528,29 @@ EXEC_ACTION_START(SCUGenSplitStringAction) {
       i++;
     }
   }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUDecodeJsonAction, ',', true);
+EXEC_ACTION_START(SCUDecodeJsonAction) {
+  int i;
+  const string json_str = resolveVars(par1, sess, sc_sess, event_params);
+  string struct_name = par2;
+  if (struct_name.length() == 0) {
+    ERROR("struct name is empty\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("struct name is empty\n");
+    return false;
+  }
+  if (struct_name[0] == '$')
+    struct_name = struct_name.substr(1);
+  AmArg json;
+  if (!json2arg(json_str, json)) {
+    ERROR("failed to decode json string '%s'\n", json_str.c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("failed to decode json string\n");
+    return false;
+  }
+  utils_set_session_vars(sc_sess, struct_name, json);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCUEscapeCRLFAction) {
