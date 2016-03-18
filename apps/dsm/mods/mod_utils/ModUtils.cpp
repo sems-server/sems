@@ -157,23 +157,24 @@ bool utils_play_count(DSMSession* sc_sess, unsigned int cnt,
 }
 
 void utils_set_session_vars(DSMSession* sc_sess, string prefix, AmArg json) {
-  INFO("go through struct");
   if (json.getType() == AmArg::Struct) {
     for (AmArg::ValueStruct::const_iterator it1 = json.begin();
 	 it1 != json.end(); it1++) {
-      INFO("key %s\n", (it1->first).c_str());
       utils_set_session_vars(sc_sess, prefix + "." + it1->first, it1->second);
     }
   } else if (json.getType() == AmArg::Array) {
-    INFO("go through array");
     for (std::vector<AmArg>::size_type i = 0; i != json.size(); i++) {
-      INFO("index %d\n", (int)i);
       utils_set_session_vars(sc_sess, prefix + "[" + int2str((int)i) + "]",
 			     json[i]);
     }
   } else {
-    INFO("setting %s = %s\n", prefix.c_str(), AmArg::print(json).c_str());
-    sc_sess->var[prefix] = AmArg::print(json).c_str();
+    string json_string = AmArg::print(json);
+    DBG("setting %s = %s\n", prefix.c_str(), json_string.c_str());
+    if (isArgCStr(json) && (json_string.size() > 1)) {
+      json_string.erase(json_string.end() - 1);
+      json_string.erase(json_string.begin());
+    }
+    sc_sess->var[prefix] = json_string.c_str();      
   }
 }
 
