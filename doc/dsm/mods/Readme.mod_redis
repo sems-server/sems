@@ -1,0 +1,55 @@
+mod_redis - Redis interface
+
+This module sets and retrieves data from a REDIS server.
+
+Actions:
+
+redis.connect(redis://[tcp|unix}host;param=value)
+
+  tcp|unix = connect using TCP or Unix Sockets
+
+  host = hostname
+
+  param=value:
+    port=<int portnum> - Connect to port on host
+    connect_timeout=<int seconds> - Connection Timeout
+    use_transactions = [true|false] - http://redis.io/topics/transactions
+    full_logging = [true|false] - Log all redis commands
+
+  Example:
+    redis.connect(redis://tcp:localhost;port=6379)
+
+redis.disconnect() - Disconnect from redis server
+
+  Example:
+    redis.disconnect();
+
+redis.execCommand(<var> = <command>) - execute redis command and put
+ result into <var>
+
+  Example:
+    sets($cmd="get @(user)");
+    redis.execCommand(r_result=$cmd);
+    log(3,$r_result);
+  same as:
+    redis.execCommand(r_result="get TestUser");
+    log(3,$r_result);
+
+redis.appendCommand(<command>) - Queue <command> into a series of
+  commands to be executed in one call. Used in combination with redis.getReply()
+
+  Example:
+    redis.appendCommand(set 5 "test5");
+    redis.appendCommand(set 2 "test2");
+    redis.getReply($r_result);
+    Possible returned results will be:
+      Single Value: $r_result = "testing"
+      Array values:
+        $r_result[1] = "test1"
+        $r_result[2] = "test1"
+
+redis.getReply(<var>) - Execute queue of commands and get result.
+  If multiple results are returned, they are put into an array.
+  Used in combination with redis.appendCommand()
+
+  Example: See redis.appendCommand();
