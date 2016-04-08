@@ -1,10 +1,4 @@
-set (gateway_SRCS
-GWSession.cpp
-GatewayFactory.cpp
-mISDNChannel.cpp
-mISDNNames.cpp
-mISDNStack.cpp
-)
+FILE (GLOB gateway_SRCS "*.cpp")
 
 ADD_DEFINITIONS(-DGW_VERSION=\\\"0.1\\\")
 INCLUDE_DIRECTORIES(${MISDN_INCLUDE_DIR}/mISDNuser)
