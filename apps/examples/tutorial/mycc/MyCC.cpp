@@ -218,10 +218,10 @@ bool MyCCDialog::onOtherReply(const AmSipReply& reply) {
   return false;
 }
 
-void MyCCDialog::onOtherBye(const AmSipRequest& req) {
+bool MyCCDialog::onOtherBye(const AmSipRequest& req) {
   DBG("onOtherBye\n");
   stopAccounting();
-  AmB2BCallerSession::onOtherBye(req); // will stop the session
+  return AmB2BCallerSession::onOtherBye(req); // will stop the session
 }
 
 void MyCCDialog::onBye(const AmSipRequest& req)

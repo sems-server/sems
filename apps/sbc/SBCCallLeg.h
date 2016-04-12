@@ -224,7 +224,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   void onRemoteDisappeared(const AmSipReply& reply);
   void onBye(const AmSipRequest& req);
-  void onOtherBye(const AmSipRequest& req);
+  bool onOtherBye(const AmSipRequest& req);
 
   void onControlCmd(string& cmd, AmArg& params);
 

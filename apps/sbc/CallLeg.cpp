@@ -1102,10 +1102,10 @@ void CallLeg::onBye(const AmSipRequest& req)
   AmB2BSession::onBye(req);
 }
 
-void CallLeg::onOtherBye(const AmSipRequest& req)
+bool CallLeg::onOtherBye(const AmSipRequest& req)
 {
   updateCallStatus(Disconnected, &req);
-  AmB2BSession::onOtherBye(req);
+  return AmB2BSession::onOtherBye(req);
 }
 
 void CallLeg::onNoAck(unsigned int cseq)

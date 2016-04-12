@@ -141,7 +141,7 @@ public:
   
 protected:
   // AmB2BSession methods
-  void onOtherBye(const AmSipRequest& req);
+  bool onOtherBye(const AmSipRequest& req);
   bool onOtherReply(const AmSipReply& reply);
 public:
   AmB2BCalleeSession* newCalleeSession();

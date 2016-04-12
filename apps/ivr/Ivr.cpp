@@ -714,10 +714,12 @@ void IvrDialog::onDtmf(int event, int duration_msec)
     AmB2BCallerSession::onDtmf(event,duration_msec);
 }
 
-void IvrDialog::onOtherBye(const AmSipRequest& req)
+bool IvrDialog::onOtherBye(const AmSipRequest& req)
 {
   if(callPyEventHandler("onOtherBye",NULL))
-    AmB2BCallerSession::onOtherBye(req);
+    return AmB2BCallerSession::onOtherBye(req);
+  else
+    return true;
 }
 
 bool IvrDialog::onOtherReply(const AmSipReply& r)

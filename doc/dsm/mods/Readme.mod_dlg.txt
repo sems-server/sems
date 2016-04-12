@@ -82,9 +82,10 @@ dlg.refer(string refer_to [, int expires=0])
 dlg.info(content_type, body)
    send INFO request; use \r\n for crlf in body
 
-dlg.relayError(code,reason);  -  relay reply (>=200) to B2B request (sbc)
+dlg.relayReply(code,reason);  -  relay reply (>=200) to B2B request (sbc)
+dlg.relayError(code,reason);  -  (alias) relay reply (>=200) to B2B request (sbc)
   reply to B2B request (in avar[DSM_AVAR_REQUEST]) with code and reason
-  sbc: set(#StopProcessing="true") to prevent B2B request to be relayed
+  sbc: set(#processed=true) to prevent B2B request to be relayed
        after replying from DSM script
 
 Request/Reply Body handling in sipRequest/sipReply events:

@@ -690,11 +690,12 @@ void SBCCallLeg::onBye(const AmSipRequest& req)
     SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye",&call_connect_ts);
 }
 
-void SBCCallLeg::onOtherBye(const AmSipRequest& req)
+bool SBCCallLeg::onOtherBye(const AmSipRequest& req)
 {
-  CallLeg::onOtherBye(req);
+  bool res = CallLeg::onOtherBye(req);
   if(a_leg)
     SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye",&call_connect_ts);
+  return res;
 }
 
 void SBCCallLeg::onDtmf(int event, int duration)

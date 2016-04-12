@@ -493,6 +493,17 @@ B2Bevent(expr)
    BYE on other leg received
     #hdrs    - headers
 
+    set(#processed=true) to handle the BYE in DSM, and e.g. continue the call
+  example:
+    transition "BYE on other leg" conn - B2B.otherBye() / {
+      log(2, "received BYE from callee");
+      set(#processed=true);
+      dlg.relayReply(200, "OK");
+      B2B.sendReinvite(true);
+      connectMedia();
+      playFile("thanks.wav");
+    } -> thanks_for_calling;
+
  sipRequest
    SIP request received - only executed if enable_request_events=="true"
    parameters:

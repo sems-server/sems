@@ -264,7 +264,7 @@ class CallLeg: public AmB2BSession
     virtual void onSessionTimeout();
 
     // @see AmB2BSession
-    virtual void onOtherBye(const AmSipRequest& req);
+    virtual bool onOtherBye(const AmSipRequest& req);
 
     virtual void onSipRequest(const AmSipRequest& req);
     virtual void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);

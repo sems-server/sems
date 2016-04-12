@@ -61,7 +61,7 @@ class MyCCDialog : public AmB2BCallerSession
     void onBye(const AmSipRequest& req);
  protected:
     bool onOtherReply(const AmSipReply& reply);
-    void onOtherBye(const AmSipRequest& req);
+    bool onOtherBye(const AmSipRequest& req);
 };
 
 #endif

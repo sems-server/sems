@@ -834,12 +834,19 @@ void DSMCall::releaseOwnership(DSMDisposable* d) {
 }
 
 // AmB2BSession methods
-void DSMCall::onOtherBye(const AmSipRequest& req) {
+bool DSMCall::onOtherBye(const AmSipRequest& req) {
   DBG("* Got BYE from other leg\n");
+
+  DSMSipRequest sip_req(&req);
+  avar[DSM_AVAR_REQUEST] = AmArg((AmObject*)&sip_req);
 
   map<string, string> params;
   params["hdrs"] = req.hdrs; // todo: optimization - make this configurable
   engine.runEvent(this, this, DSMCondition::B2BOtherBye, &params);
+
+  avar.erase(DSM_AVAR_REQUEST);
+
+  return checkParam(DSM_PROCESSED, DSM_TRUE, &params);
 }
 
 bool DSMCall::onOtherReply(const AmSipReply& reply) {
