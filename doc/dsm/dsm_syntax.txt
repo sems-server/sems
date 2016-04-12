@@ -105,10 +105,13 @@ DSM flow
         sets($var="a single at on a date with a single dollar: @@$$")
  var($dstvar=srcvarname)
   e.g.  var($dstvar=$var_counter)
-        # array member access:
+        # array member set and access
         set($i = 0);
         sets($v="a[$i]");
-        var($m=$v);
+        # set array member to $value
+        setVar($v=$value)
+        # assign array member value to $var
+        var($var=$v);
 
  param($dstvar=srcparamname)
   e.g. param($dstvar=$myparam) (like: #($myparam) )
