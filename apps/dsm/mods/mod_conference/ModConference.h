@@ -89,6 +89,7 @@ DEF_ACTION_1P(ConfLeaveAction);
 DEF_ACTION_2P(ConfRejoinAction); 
 DEF_ACTION_2P(ConfPostEventAction);
 DEF_ACTION_1P(ConfSetPlayoutTypeAction);
+DEF_ACTION_2P(ConfSizeAction);
 
 DEF_ACTION_2P(ConfTeeJoinAction);
 DEF_ACTION_1P(ConfTeeLeaveAction);

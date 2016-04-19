@@ -55,3 +55,6 @@ conference.playMixInList(string filename [, loop=true])
 
 conference.flushMixInList()
     - flush mix-in playlist
+
+conference.size(string roomname, string resultvar)
+    - set size of conference to result variable

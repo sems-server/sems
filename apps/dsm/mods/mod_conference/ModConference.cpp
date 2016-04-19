@@ -47,6 +47,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("conference.setPlayoutType", ConfSetPlayoutTypeAction);
   DEF_CMD("conference.teejoin", ConfTeeJoinAction);
   DEF_CMD("conference.teeleave", ConfTeeLeaveAction);
+  DEF_CMD("conference.size", ConfSizeAction);
 
   DEF_CMD("conference.setupMixIn", ConfSetupMixInAction);
   DEF_CMD("conference.playMixIn",  ConfPlayMixInAction);
@@ -230,6 +231,22 @@ EXEC_ACTION_START(ConfRejoinAction) {
   } else {
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
   }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(ConfSizeAction, ',', true);
+EXEC_ACTION_START(ConfSizeAction) {
+  string channel_id = resolveVars(par1, sess, sc_sess, event_params);
+  string varname = par2;
+
+  if (varname.length() && varname[0] == '$')
+    varname = varname.substr(1);
+
+  size_t res = AmConferenceStatus::getConferenceSize(channel_id);
+
+  sc_sess->var[varname] = int2str((int)res);
+  DBG("set $%s = %s\n", 
+      varname.c_str(), sc_sess->var[varname].c_str());
+
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(ConfSetPlayoutTypeAction) {
