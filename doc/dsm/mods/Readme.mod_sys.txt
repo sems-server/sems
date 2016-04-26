@@ -17,7 +17,7 @@ Actions:
  
  sys.getTimestamp(string varname) - get timestamp in varname.tv_sec/varname.tv_usec
  sys.subTimestamp(ts1, ts2)  - subtract $ts2 from $ts1, save result in
-                               $ts1.sec, $ts1.msec and $ts1.usec
+                               $ts1.tv_sec, $ts1.msec and $ts1.tv_usec
 
 Conditions: 
  sys.file_exists(string fname)

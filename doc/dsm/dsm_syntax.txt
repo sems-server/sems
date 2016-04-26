@@ -328,7 +328,7 @@ B2B call control
 
   DIgetResultArray(factory, function, param,...)
     saves result from DI call to DI_res or DI_res[0], DI_res[1], ..., DI_res[N]
-    and N to DI_res_size; currently result types int, double, string,
+    and N+1 or 0 to DI_res_size; currently result types int, double, string,
     boolean, invalid, and  array are supported
    * sets $errno (arg,config)
 
