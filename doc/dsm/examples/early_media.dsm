@@ -24,6 +24,9 @@ transition FR runinvite - timerTest(#id==1) / {
    stop;
 }  -> FIN;
 
-transition bye runinvite - hangup / stop -> FIN;
+transition bye runinvite - hangup / {
+   dlg.reply(487, "Request Terminated");
+   stop(false);
+} -> FIN;
 
 state FIN;
