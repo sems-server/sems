@@ -1,13 +1,4 @@
-set (ivr_SRCS
-Ivr.cpp
-IvrAudio.cpp
-IvrAudioMixIn.cpp
-IvrDialogBase.cpp
-IvrSipDialog.cpp
-IvrSipReply.cpp
-IvrSipRequest.cpp
-IvrUAC.cpp
-)
+FILE (GLOB ivr_SRCS "*.cpp")
 
 IF(FLITE_FOUND)
 	INCLUDE_DIRECTORIES(${FLITE_INCLUDE_DIR}/flite)

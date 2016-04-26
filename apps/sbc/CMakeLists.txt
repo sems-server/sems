@@ -1,12 +1,4 @@
-set (sbc_SRCS
-HeaderFilter.cpp
-ParamReplacer.cpp
-RTPParameters.cpp
-RegexMapper.cpp
-SBC.cpp
-SBCCallProfile.cpp
-SDPFilter.cpp
-)
+FILE (GLOB sbc_SRCS "*.cpp")
 
 SET(sbc_config_files
 auth_b2b.sbcprofile
