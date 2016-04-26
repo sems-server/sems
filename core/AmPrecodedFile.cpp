@@ -51,7 +51,8 @@ amci_codec_t _codec_precoded = {
   NULL,
   NULL,
   precoded_bytes2samples,
-  precoded_samples2bytes
+  precoded_samples2bytes,
+  NULL
 };
 
 void AmPrecodedFile::initPlugin() {
