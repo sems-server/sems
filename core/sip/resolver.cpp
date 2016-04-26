@@ -823,7 +823,7 @@ dns_entry_map::insert(const dns_entry_map::value_type& x)
 bool dns_entry_map::insert(const string& key, dns_entry* e)
 {
     std::pair<iterator, bool> res =
-    	insert(make_pair<const key_type&,mapped_type>(key,e));
+	insert(make_pair(key,e));
 
     if(res.second) {
 	inc_ref(e);

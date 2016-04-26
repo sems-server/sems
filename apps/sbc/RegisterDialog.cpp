@@ -239,7 +239,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 	continue;
       }
 
-      alias_updates.push_back(make_pair<string,long int>(reg_binding.alias,
+      alias_updates.push_back(make_pair(reg_binding.alias,
 							 contact_expires));
     }
 

@@ -955,7 +955,7 @@ bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
       return false; // fwd
     }
 
-    alias_updates.push_back(make_pair<string,long int>(reg_binding.alias,
+    alias_updates.push_back(make_pair(reg_binding.alias,
 						       contact_expires));
   }
 
