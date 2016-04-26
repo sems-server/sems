@@ -70,7 +70,7 @@ static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, l
 static unsigned int mp3_bytes2samples(long h_codec, unsigned int num_bytes);
 static unsigned int mp3_samples2bytes(long h_codec, unsigned int num_samples);
 
-BEGIN_EXPORTS( "mp3", MP3_ModuleLoad, MP3_ModuleDestroy )
+BEGIN_EXPORTS( "mp3", (amci_codec_module_load_t)MP3_ModuleLoad, MP3_ModuleDestroy )
     BEGIN_CODECS
 CODEC( CODEC_MP3, Pcm16_2_MP3, MP3_2_Pcm16, (amci_plc_t)0, (amci_codec_init_t)MP3_create, (amci_codec_destroy_t)MP3_destroy, mp3_bytes2samples, mp3_samples2bytes)
     END_CODECS
