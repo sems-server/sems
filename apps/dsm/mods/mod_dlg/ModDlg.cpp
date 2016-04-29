@@ -199,7 +199,7 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(DLGByeAction) {
-  string hdrs = resolveVars(arg, sess, sc_sess, event_params);
+  string hdrs = replaceLineEnds(resolveVars(arg, sess, sc_sess, event_params));
 
   if (sess->dlg->bye(hdrs)) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
