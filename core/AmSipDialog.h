@@ -113,6 +113,7 @@ protected:
 
   /** @return 0 on success */
   int cancel();
+  int cancel(const string& hdrs);
 
   /** @return 0 on success */
   int prack(const AmSipReply &reply1xx,

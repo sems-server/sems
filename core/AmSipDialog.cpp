@@ -517,7 +517,7 @@ AmSipRequest* AmSipDialog::getUASPendingInv()
 
 int AmSipDialog::bye(const string& hdrs, int flags)
 {
-    switch(status){
+  switch(status){
 
     case Disconnecting:
     case Connected: {
@@ -545,9 +545,9 @@ int AmSipDialog::bye(const string& hdrs, int flags)
     case Trying:
     case Proceeding:
     case Early:
-	if(getUACInvTransPending())
-	    return cancel();
-	else {  
+      if(getUACInvTransPending())
+	return cancel(hdrs);
+      else {
 	    for (TransMap::iterator it=uas_trans.begin();
 		 it != uas_trans.end(); it++) {
 	      if (it->second.method == SIP_METH_INVITE){
@@ -743,7 +743,7 @@ int AmSipDialog::cancel()
 {
     for(TransMap::reverse_iterator t = uac_trans.rbegin();
 	t != uac_trans.rend(); t++) {
-	
+
 	if(t->second.method == SIP_METH_INVITE){
 
 	  if(getStatus() != Cancelling){
@@ -758,6 +758,29 @@ int AmSipDialog::cancel()
 	}
     }
     
+    ERROR("could not find INVITE transaction to cancel\n");
+    return -1;
+}
+
+int AmSipDialog::cancel(const string& hdrs)
+{
+    for(TransMap::reverse_iterator t = uac_trans.rbegin();
+	t != uac_trans.rend(); t++) {
+
+	if(t->second.method == SIP_METH_INVITE){
+
+	  if(getStatus() != Cancelling){
+	    setStatus(Cancelling);
+	    return SipCtrlInterface::cancel(&t->second.tt, local_tag,
+					    t->first, hdrs);
+	  }
+	  else {
+	    ERROR("INVITE transaction has already been cancelled\n");
+	    return -1;
+	  }
+	}
+    }
+
     ERROR("could not find INVITE transaction to cancel\n");
     return -1;
 }
