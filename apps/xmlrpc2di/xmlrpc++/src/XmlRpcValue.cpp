@@ -25,6 +25,7 @@ namespace XmlRpc {
   static const char I4_TAG[]        = "<i4>";
   static const char I4_ETAG[]       = "</i4>";
   static const char STRING_TAG[]    = "<string>";
+  static const char STRING_ETAG[]    = "</string>";
   static const char DATETIME_TAG[]  = "<dateTime.iso8601>";
   static const char DATETIME_ETAG[] = "</dateTime.iso8601>";
   static const char BASE64_TAG[]    = "<base64>";
@@ -369,9 +370,9 @@ namespace XmlRpc {
   std::string XmlRpcValue::stringToXml() const
   {
     std::string xml = VALUE_TAG;
-    //xml += STRING_TAG; optional
+    xml += STRING_TAG;
     xml += XmlRpcUtil::xmlEncode(*_value.asString);
-    //xml += STRING_ETAG;
+    xml += STRING_ETAG;
     xml += VALUE_ETAG;
     return xml;
   }
