@@ -1473,7 +1473,6 @@ EXEC_ACTION_START(SCDIAction) {
 	}
       } else {
 	// copy results to $DI_res[0]..$DI_res[n] and n to $DI_res_size
-	INFO("======== got '%d' results\n", (int)sc_sess->di_res.size());
 	for (size_t i=0;i<sc_sess->di_res.size();i++) {
 	  switch (sc_sess->di_res.get(i).getType()) {
 	  case AmArg::CStr: {
