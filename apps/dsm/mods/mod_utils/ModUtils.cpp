@@ -54,6 +54,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.srand", SCUSRandomAction);
   DEF_CMD("utils.add", SCUSAddAction);
   DEF_CMD("utils.sub", SCUSSubAction);
+  DEF_CMD("utils.mul", SCUSMulAction);
   DEF_CMD("utils.int", SCUIntAction);
   DEF_CMD("utils.md5", SCUMD5Action);
   DEF_CMD("utils.replace", SCUReplaceAction);
@@ -383,6 +384,24 @@ EXEC_ACTION_START(SCUSSubAction) {
   string res = double2str(atof(n1.c_str()) - atof(n2.c_str()));
 
   DBG("setting var[%s] = %s - %s = %s\n", 
+      varname.c_str(), n1.c_str(), n2.c_str(), res.c_str());
+  sc_sess->var[varname] = res;
+
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUSMulAction, ',', false);
+EXEC_ACTION_START(SCUSMulAction) {
+  string n1 = resolveVars(par1, sess, sc_sess, event_params);
+  string n2 = resolveVars(par2, sess, sc_sess, event_params);
+
+  string varname = par1;
+  if (varname.length() && varname[0] == '$')
+    varname = varname.substr(1);
+
+  // todo: err checking
+  string res = int2str(atoi(n1.c_str()) * atoi(n2.c_str()));
+
+  DBG("setting var[%s] = %s * %s = %s\n", 
       varname.c_str(), n1.c_str(), n2.c_str(), res.c_str());
   sc_sess->var[varname] = res;
 

@@ -46,6 +46,9 @@ Actions
  utils.sub($var, val)
    subtract val from var
 
+ utils.mul($var, val)
+   multiply integer valued var by integer value val
+
  utils.int($var, val)
    get integer part of val into var
 
