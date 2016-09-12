@@ -405,8 +405,7 @@ void SBCCallLeg::applyBProfile()
   if (!call_profile.callid.empty()) 
     dlg->setCallid(call_profile.callid);
 
-  if(!call_profile.bleg_dlg_contact_params.empty())
-    dlg->setContactParams(call_profile.bleg_dlg_contact_params);
+  dlg->setContact(call_profile.bleg_contact);
 }
 
 int SBCCallLeg::relayEvent(AmEvent* ev)

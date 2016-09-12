@@ -69,7 +69,7 @@ struct AmUriParser {
   
   AmUriParser() { }
 
-  string print();
+  string print() const;
 };
 
 #endif

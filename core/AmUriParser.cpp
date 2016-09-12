@@ -545,6 +545,6 @@ string AmUriParser::nameaddr_str() const
   return res;
 }
 
-string AmUriParser::print() {
+string AmUriParser::print() const {
   return nameaddr_str();
 }
