@@ -113,7 +113,13 @@ string AmBasicSipDialog::getContactHdr() {
     tmp_contact.uri_user = local_tag;
   }
 
-  return SIP_HDR_COLSP(SIP_HDR_CONTACT) + tmp_contact.print() += CRLF;
+  string contact_str = tmp_contact.print();
+
+  DBG("[%s] resulting Contact header: %s",
+    local_tag.c_str(),
+    contact_str.c_str());
+
+  return SIP_HDR_COLSP(SIP_HDR_CONTACT) + contact_str += CRLF;
 }
 
 
