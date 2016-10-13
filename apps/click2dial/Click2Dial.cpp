@@ -276,6 +276,21 @@ void C2DCallerDialog::onB2BEvent(B2BEvent* ev)
 }
 
 
+void C2DCallerDialog::onSipReply(const AmSipRequest& req,
+                                 const AmSipReply& reply,
+                                 AmBasicSipDialog::Status old_dlg_status)
+{
+  AmB2BCallerSession::onSipReply(req, reply, old_dlg_status);
+
+  if ((old_dlg_status < AmSipDialog::Connected) &&
+      (dlg->getStatus() == AmSipDialog::Disconnected)) {
+    DBG("Outbound call failed with reply %d %s.\n",
+        reply.code, reply.reason.c_str());
+    setStopped();
+  }
+}
+
+
 C2DCalleeDialog::C2DCalleeDialog(const AmB2BCallerSession* caller, UACAuthCred* credentials)
 : AmB2BCalleeSession(caller), cred(credentials)
 {
