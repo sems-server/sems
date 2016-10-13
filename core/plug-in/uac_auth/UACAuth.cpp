@@ -396,7 +396,7 @@ bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
 		      const string& method, const string& uri, 
 		      const AmMimeBody* body, string& result) 
 {
-  if ((challenge.algorithm.length()) && (challenge.algorithm != "MD5")) {
+  if ((challenge.algorithm.length()) && !(challenge.algorithm == "MD5" || challenge.algorithm == "md5" )) {
     DBG("unsupported algorithm: '%s'\n", challenge.algorithm.c_str());
     return false;
   }
