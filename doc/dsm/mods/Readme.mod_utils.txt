@@ -75,11 +75,10 @@ Actions
    decode jSON document string in $var into $prefix struct or array
    
  utils.escapeCRLF($var)
-   replace CRLF (\r\n) in string with escaped CRLF (\\r\\n) 
+   replace CRLF string in $var with \r\n string
 
  utils.unescapeCRLF($var)
-   replace escaped CRLF (\\r\\n) in string with CRLF (\r\n) 
-
+   replace \r\n string in $var with CRLF string
 
  utils.playRingTone(length [, on [, off [, f [, f2]]]])
    play a RingTone (ringback tone)
