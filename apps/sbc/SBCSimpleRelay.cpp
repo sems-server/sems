@@ -412,8 +412,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
   append_headers = cp.append_headers_req;
   keep_vias = cp.keep_vias;
 
-  if(!cp.bleg_dlg_contact_params.empty())
-    setContactParams(cp.bleg_dlg_contact_params);
+  setContact(cp.bleg_contact);
 
   if(cp.auth_enabled) {
     // adding auth handler
@@ -484,8 +483,7 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
   keep_vias = cp.bleg_keep_vias;
   fix_replaces_ref = cp.fix_replaces_ref=="yes";
 
-  if(!cp.dlg_contact_params.empty())
-    setContactParams(cp.dlg_contact_params);
+  setContactParams(cp.dlg_contact_params);
 
   return 0;
 }

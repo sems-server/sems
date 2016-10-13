@@ -586,6 +586,24 @@ Examples:
  append_headers="P-Source-IP: $si\r\nP-Source-Port: $sp\r\n"
  append_headers="P-Original-URI: $r"
 
+Contact header rewriting
+------------------------
+
+SBC can add/alter Contact header parts
+for the the outgoing initial INVITE by using the following options:
+
+  - bleg_contact_host
+  - bleg_contact_port
+  - bleg_contact_user
+  - bleg_contact_displayname
+  - bleg_contact_params
+  - bleg_contact_uri_params
+
+note: bleg_contact_params and bleg_contact_uri_params
+      are strings with semicolon-separated params list.
+
+not specified or empty after placeholders substitution parts will be left untouched.
+
 Response code translations
 -----------------------
 Response codes and reasons may be translated, e.g. if some 6xx class

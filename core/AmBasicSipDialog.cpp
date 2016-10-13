@@ -100,8 +100,26 @@ const char* AmBasicSipDialog::getStatusStr()
 }
 
 string AmBasicSipDialog::getContactHdr() {
-  return
-    SIP_HDR_COLSP(SIP_HDR_CONTACT) "<"+ getContactUri() += ">" CRLF;
+  AmUriParser tmp_contact = contact;
+  if(tmp_contact.uri_host.empty()) {
+    int oif = getOutboundIf();
+    assert(oif >= 0);
+    assert(oif < (int)AmConfig::SIP_Ifs.size());
+    tmp_contact.uri_host = AmConfig::SIP_Ifs[oif].getIP();
+    tmp_contact.uri_port = int2str(AmConfig::SIP_Ifs[oif].LocalPort);
+  }
+
+  if(tmp_contact.uri_user.empty() && !ext_local_tag.empty()) {
+    tmp_contact.uri_user = local_tag;
+  }
+
+  string contact_str = tmp_contact.print();
+
+  DBG("[%s] resulting Contact header: %s",
+    local_tag.c_str(),
+    contact_str.c_str());
+
+  return SIP_HDR_COLSP(SIP_HDR_CONTACT) + contact_str += CRLF;
 }
 
 
