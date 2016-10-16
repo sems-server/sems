@@ -32,8 +32,7 @@ Exported parameters:
     Call-ID
     outbound_proxy
     force_outbound_proxy  
-    next_hop_ip
-    next_hop_port
+    next_hop
     sst_enabled  ("yes" or "no")
     sst_aleg_enabled  ("yes" or "no")
     append_headers  (incremental)
