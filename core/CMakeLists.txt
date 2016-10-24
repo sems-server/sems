@@ -1,6 +1,6 @@
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
-FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp")
+FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp" "resample/*.cpp")
 
 set (audio_files
 beep.wav
