@@ -484,6 +484,7 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
   fix_replaces_ref = cp.fix_replaces_ref=="yes";
 
   setContactParams(cp.dlg_contact_params);
+  setContact(cp.aleg_contact);
 
   return 0;
 }

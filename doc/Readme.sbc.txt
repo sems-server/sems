@@ -588,18 +588,20 @@ Examples:
 
 Contact header rewriting
 ------------------------
+SBC can add/alter Contact header parts for both legs.
 
-SBC can add/alter Contact header parts
-for the the outgoing initial INVITE by using the following options:
+available variables:
 
-  - bleg_contact_host
-  - bleg_contact_port
-  - bleg_contact_user
-  - bleg_contact_displayname
-  - bleg_contact_params
-  - bleg_contact_uri_params
+  - {leg}_contact_host
+  - {leg}_contact_port
+  - {leg}_contact_user
+  - {leg}_contact_displayname
+  - {leg}_contact_params
+  - {leg}_contact_uri_params
 
-note: bleg_contact_params and bleg_contact_uri_params
+where {leg} is 'aleg' or 'bleg'
+
+note: *_contact_params and *_contact_uri_params
       are strings with semicolon-separated params list.
 
 not specified or empty after placeholders substitution parts will be left untouched.

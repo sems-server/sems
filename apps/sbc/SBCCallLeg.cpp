@@ -279,6 +279,8 @@ void SBCCallLeg::applyAProfile()
 
   if(!call_profile.dlg_contact_params.empty())
     dlg->setContactParams(call_profile.dlg_contact_params);
+
+  dlg->setContact(call_profile.aleg_contact);
 }
 
 int SBCCallLeg::applySSTCfg(AmConfigReader& sst_cfg, 
