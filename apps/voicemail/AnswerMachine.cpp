@@ -894,8 +894,6 @@ void AnswerMachineDialog::onSessionStart()
 
 void AnswerMachineDialog::onBye(const AmSipRequest& req)
 {
-  dlg->reply(req,200,"OK");
-
   setInOut(NULL, NULL);
   saveMessage();
   setStopped();
