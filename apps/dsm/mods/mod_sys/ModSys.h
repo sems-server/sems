@@ -33,6 +33,7 @@
 DECLARE_MODULE(MOD_CLS_NAME);
 
 DEF_SCCondition(FileExistsCondition);
+DEF_SCCondition(SystemCondition);
 DEF_ACTION_1P(SCMkDirAction);
 DEF_ACTION_1P(SCMkDirRecursiveAction);
 DEF_ACTION_2P(SCRenameAction);

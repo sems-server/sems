@@ -63,6 +63,10 @@ MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
     return new FileExistsCondition(params, true);
   }
 
+  if (cmd == "sys.system") {
+    return new SystemCondition(params, false);
+  }
+
 } MOD_CONDITIONEXPORT_END;
 
 MATCH_CONDITION_START(FileExistsCondition) {
@@ -76,6 +80,37 @@ MATCH_CONDITION_START(FileExistsCondition) {
   }  else {
     DBG("returning %s\n", (ex)?"true":"false");
     return ex;
+  }
+} MATCH_CONDITION_END;
+
+MATCH_CONDITION_START(SystemCondition) {
+  DBG("executing system command '%s'\n", arg.c_str());
+  string cmd = resolveVars(arg, sess, sc_sess, event_params);
+  if (cmd.length() == 0) {
+    ERROR("system command is empty\n");
+    return false;
+  }
+  int res = system(cmd.c_str());
+  if (res == -1) {
+    ERROR("system could not create child process for '%s'\n", cmd.c_str());
+    return false;
+  }
+  if (res == 0) {
+    DBG("system command returned 0\n");
+    if (inv)
+      return false;
+    else
+      return true;
+  }  else if (res == 1) {
+    DBG("system command returned 1\n");
+    if (inv)
+      return true;
+    else
+      return false;
+  } else {
+    ERROR("system command '%s' returned value '%d' (%s)\n",
+	  cmd.c_str(), res, strerror(res));
+    return false;
   }
 } MATCH_CONDITION_END;
 

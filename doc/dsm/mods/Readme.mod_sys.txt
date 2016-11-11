@@ -1,4 +1,5 @@
 Actions: 
+
  sys.mkdir(string dirname)
  sys.mkdirRecursive(string dirname)
  sys.rename(string from, string to)
@@ -20,7 +21,11 @@ Actions:
                                $ts1.tv_sec, $ts1.msec and $ts1.tv_usec
 
 Conditions: 
+
  sys.file_exists(string fname)
  sys.file_not_exists(string fname)
 
-
+ sys.system(command)
+   execute a command using system(3)
+   returns true|false if command returns value 0|1
+   otherwise, returns false and prints error message
