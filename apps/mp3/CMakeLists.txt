@@ -7,5 +7,9 @@ mp3.c
 #	module_cflags += -DWITH_MPG123DECODER
 
 SET(sems_module_name mp3)
-SET(sems_module_libs mp3lame)
+IF(MPG123_FOUND)
+	SET(sems_module_libs mp3lame mpg123)
+ELSE(MPG123_FOUND)
+	SET(sems_module_libs mp3lame)
+ENDIF(MPG123_FOUND)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
