@@ -649,7 +649,7 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
       const XmlRpc::XmlRpcValue::ValueStruct& xvs = 
 	(XmlRpc::XmlRpcValue::ValueStruct)v;
       for (XmlRpc::XmlRpcValue::ValueStruct::const_iterator it=
-	     xvs.begin(); it != xvs.end(); it++) {	
+	     xvs.begin(); it != xvs.end(); ++it) {
 	// not nice but cast operators in XmlRpcValue are not const
 	XmlRpcValue& var = const_cast<XmlRpcValue&>(it->second);
 	a[it->first] = AmArg();
@@ -657,7 +657,21 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
       }      
     } break;
 #endif
-      
+
+    case XmlRpcValue::TypeBase64: {
+      ArgBlob ab;
+      const XmlRpcValue::BinaryData& bd = v;
+      ab.len = bd.size();
+      ab.data = malloc(ab.len);
+      int i = 0;
+      for (XmlRpcValue::BinaryData::const_iterator it=
+       bd.begin(); it != bd.end(); ++it) {
+        ((char*)ab.data)[i] = *it;
+        ++i;
+      }
+      a = ab;
+    } break;
+
       // TODO: support more types (datetime, struct, ...)
     default:     throw XmlRpcException("unsupported parameter type", 400);
     };
