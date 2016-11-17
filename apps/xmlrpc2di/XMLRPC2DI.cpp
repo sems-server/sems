@@ -348,6 +348,7 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     setshutdownmode_method(s),
     // register method 'get_shutdownmode'
     getshutdownmode_method(s),
+    getsessioncount_method(s),
     getcallsavg_method(s),
     getcallsmax_method(s),
     getcpsavg_method(s),
@@ -360,6 +361,7 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
   INFO("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
   INFO("XMLRPC Server: enabled builtin method 'get_shutdownmode'\n");
   INFO("XMLRPC Server: enabled builtin method 'set_shutdownmode'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_sessioncount'\n");
   INFO("XMLRPC Server: enabled builtin method 'get_callsavg'\n");
   INFO("XMLRPC Server: enabled builtin method 'get_callsmax'\n");
   INFO("XMLRPC Server: enabled builtin method 'get_cpsavg'\n");
@@ -551,6 +553,7 @@ void XMLRPC2DIServerGetCpsmaxMethod::execute(XmlRpcValue& params, XmlRpcValue& r
   DBG("XMLRPC2DI: " _descr "(): %u\n", res);				\
 }
 
+XMLMETH_EXEC(XMLRPC2DIServerGetSessionCount, getSessionCount, "get_sessioncount");
 XMLMETH_EXEC(XMLRPC2DIServerGetCallsavgMethod, getAvgSessionNum, "get_callsavg");
 XMLMETH_EXEC(XMLRPC2DIServerGetCallsmaxMethod, getMaxSessionNum, "get_callsmax");
 #undef XMLMETH_EXEC

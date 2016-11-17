@@ -294,6 +294,7 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       "version                            -  return SEMS version\n"
       "set_loglevel <loglevel>            -  set log level\n"
       "get_loglevel                       -  get log level\n"
+      "get_sessioncount                   -  get session count (from startup)\n"
       "set_cpslimit <limit>               -  set maximum allowed CPS\n"
       "get_cpslimit                       -  get maximum allowed CPS\n"
       "set_shutdownmode <1 or 0>          -  turns on and off shutdown mode\n"
@@ -364,6 +365,9 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       reply= "loglevel is "+int2str(log_level)+".\n";
     }
 
+    else if (cmd_str.substr(4, 12) == "sessioncount") {
+      reply= "sessioncount is "+int2str(AmSession::getSessionCount())+".\n";
+    }
     else if(cmd_str.substr(4, 8) == "callsavg")
       reply = "Average active calls: " + int2str(AmSession::getAvgSessionNum()) + "\n";
     else if(cmd_str.substr(4, 8) == "callsmax")

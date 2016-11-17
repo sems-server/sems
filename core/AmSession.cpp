@@ -52,6 +52,7 @@
 
 volatile unsigned int AmSession::session_num = 0;
 AmMutex AmSession::session_num_mut;
+volatile unsigned int AmSession::session_count = 0;
 volatile unsigned int AmSession::max_session_num = 0;
 volatile unsigned long long AmSession::avg_session_num = 0;
 
@@ -507,6 +508,9 @@ void AmSession::session_started() {
   //current session number
   session_num++;
 
+  //cumulative session count
+  session_count++;
+
   //maximum session number
   if(session_num > max_session_num) max_session_num = session_num;
 
@@ -530,6 +534,14 @@ unsigned int AmSession::getSessionNum() {
   unsigned int res = 0;
   session_num_mut.lock();
   res = session_num;
+  session_num_mut.unlock();
+  return res;
+}
+
+unsigned int AmSession::getSessionCount() {
+  unsigned int res = 0;
+  session_num_mut.lock();
+  res = session_count;
   session_num_mut.unlock();
   return res;
 }

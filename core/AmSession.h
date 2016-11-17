@@ -116,6 +116,7 @@ private:
   static void session_stopped();
 
   static volatile unsigned int session_num;
+  static volatile unsigned int session_count;
   static volatile unsigned int max_session_num;
   static volatile unsigned long long avg_session_num;
   static AmMutex session_num_mut;
@@ -392,6 +393,10 @@ public:
    * Gets the number of running sessions
    */
   static unsigned int getSessionNum();
+  /**
+   * Gets the number of sessions since last startup
+   */
+  static unsigned int getSessionCount();
   /**
    * Gets the maximum of running sessions since last query
    */

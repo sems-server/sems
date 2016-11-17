@@ -62,6 +62,7 @@ DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetLoglevelMethod, "get_loglevel");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetShutdownmodeMethod, "set_shutdownmode");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetShutdownmodeMethod, "get_shutdownmode");
 
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetSessionCount,   "get_sessioncount");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCallsavgMethod, "get_callsavg");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCallsmaxMethod, "get_callsmax");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCpsavgMethod,   "get_cpsavg");
@@ -113,6 +114,7 @@ class XMLRPC2DIServer
   XMLRPC2DIServerSetShutdownmodeMethod setshutdownmode_method;
   XMLRPC2DIServerGetShutdownmodeMethod getshutdownmode_method;
 
+  XMLRPC2DIServerGetSessionCount    getsessioncount_method;
   XMLRPC2DIServerGetCallsavgMethod  getcallsavg_method;
   XMLRPC2DIServerGetCallsmaxMethod  getcallsmax_method;
   XMLRPC2DIServerGetCpsavgMethod    getcpsavg_method;
