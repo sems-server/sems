@@ -1120,7 +1120,11 @@ static char* parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	  while (is_wsp(*param_end))
 	    param_end--;
 
-	  params = string(attr_line, param_end-attr_line+1);
+	  if(attr_line >= param_end) {
+	    DBG("empty param for fmtp. ignore it");
+	  } else {
+	    params = string(attr_line, param_end-attr_line+1);
+	  }
 	  parsing = 0;
 	}
 	break;
