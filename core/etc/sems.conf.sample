@@ -183,13 +183,13 @@ rtp_high_port=60000
 # Example:
 #   force_outbound_proxy=yes
 
-# optional parameter: next_hop=address[:port]
+# optional parameter: next_hop=address[:port][/transport]
 # - if this is set, all outgoing requests will be sent to
 #   this address (IP address or domain name), regardless of R-URI etc.
 #
 # Examples:
 #   next_hop=192.168.5.1
-#   next_hop=foo.example.com:5080
+#   next_hop=foo.example.com:5080/tcp
 
 # optional parameter: next_hop_1st_req={yes|no}
 # - if set to yes, next_hop behavior (routing without pre-loaded route set)
