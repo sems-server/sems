@@ -1,7 +1,7 @@
 /*
     Copyright (C) Anton Zagorskiy amberovsky@gmail.com
     Oyster-Telecom Laboratory
-    
+
     Published under BSD License
 */
 
@@ -16,15 +16,21 @@ class MWI : public AmDynInvokeFactory, public AmDynInvoke
 private:
     static MWI* _instance;
     static AmDynInvoke* MessageStorage;
-    
+
+    bool use_domain;
+
+    string from_user;
+    string to_user;
+
+    string route_set;
     string presence_server;
-    
+
     typedef struct
     {
 	unsigned int new_msgs;
 	unsigned int saved_msgs;
     } msg_info_struct;
-    
+
     void getMsgInfo (const string& name, const string& domain, msg_info_struct& msg_info);
     void publish (const string& name, const string& domain);
 
