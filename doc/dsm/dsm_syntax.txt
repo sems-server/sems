@@ -528,8 +528,8 @@ B2Bevent(expr)
  sipReply
    SIP reply received - only executed if enable_reply_events=="true"
    parameters:
-    #code          - response code
-    #reason        - reason string
+    #sip_code      - response code
+    #sip_reason    - reason string
     #hdrs          - Headers (apart from dialog-IDs)
     #content_type  - Content-Type
     #body          - body of message
