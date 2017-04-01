@@ -40,6 +40,9 @@ transition "play file failed" play_early_msg - exception; test(#type==file) / {
 transition "early message ended" play_early_msg - noAudioTest -> recording;
 state recording
       enter {
+        -- body of this reply is not result of negotiation like it was
+        -- in 183 reply and results in "Could not set current payload:
+        -- payload XXX unknown to this stream" errors
         dlg.acceptInvite(200, ok);
         recordFile(/tmp/test.wav);
         setTimer(3,10);
