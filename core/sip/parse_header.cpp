@@ -35,7 +35,7 @@
 #include "log.h"
 
 #include <memory>
-using std::auto_ptr;
+using std::unique_ptr;
 
 
 //
@@ -288,7 +288,7 @@ int parse_headers(list<sip_header*>& hdrs, char** c, char* end)
 	return 0;
     }
 
-    auto_ptr<sip_header> hdr(new sip_header());
+    unique_ptr<sip_header> hdr(new sip_header());
 
     for(;(*c < end) && **c;(*c)++){
 

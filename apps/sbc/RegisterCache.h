@@ -14,7 +14,7 @@
 #include <memory>
 using std::string;
 using std::map;
-using std::auto_ptr;
+using std::unique_ptr;
 
 #define REG_CACHE_TABLE_POWER   10
 #define REG_CACHE_TABLE_ENTRIES (1<<REG_CACHE_TABLE_POWER)
@@ -196,7 +196,7 @@ class _RegisterCache
   hash_table<AliasBucket>        id_idx;
   hash_table<ContactBucket>      contact_idx;
 
-  auto_ptr<RegCacheStorageHandler> storage_handler;
+  unique_ptr<RegCacheStorageHandler> storage_handler;
 
   unsigned int gbc_bucket_id;
 

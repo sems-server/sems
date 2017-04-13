@@ -98,12 +98,12 @@ public:
 class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 {
   PlayoutType m_playout_type;
-  auto_ptr<AmPlayoutBuffer> playout_buffer;
+  std::unique_ptr<AmPlayoutBuffer> playout_buffer;
 
 #ifdef USE_SPANDSP_PLC
     plc_state_t* plc_state;
 #else 
-    std::auto_ptr<LowcFE>       fec;
+    std::unique_ptr<LowcFE>       fec;
 #endif
 
   bool         use_default_plc;

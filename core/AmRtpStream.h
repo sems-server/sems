@@ -43,7 +43,7 @@
 #include <queue>
 #include <memory>
 using std::string;
-using std::auto_ptr;
+using std::unique_ptr;
 using std::pair;
 
 // return values of AmRtpStream::receive
@@ -239,8 +239,8 @@ protected:
   bool           monitor_rtp_timeout;
 
   /** Payload type for telephone event */
-  auto_ptr<const SdpPayload> remote_telephone_event_pt;
-  auto_ptr<const SdpPayload> local_telephone_event_pt;
+  unique_ptr<const SdpPayload> remote_telephone_event_pt;
+  unique_ptr<const SdpPayload> local_telephone_event_pt;
 
   /** DTMF sender */
   AmDtmfSender   dtmf_sender;

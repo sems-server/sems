@@ -76,8 +76,8 @@ class SBCFactory: public AmSessionFactory,
 
   bool core_options_handling;
 
-  auto_ptr<CallLegCreator> callLegCreator;
-  auto_ptr<SimpleRelayCreator> simpleRelayCreator;
+  unique_ptr<CallLegCreator> callLegCreator;
+  unique_ptr<SimpleRelayCreator> simpleRelayCreator;
 
   void listProfiles(const AmArg& args, AmArg& ret);
   void reloadProfiles(const AmArg& args, AmArg& ret);

@@ -69,8 +69,8 @@ class SimpleRelayDialog
   std::list<CCModuleInfo> cc_ext;
 
   // auth support
-  std::auto_ptr<UACAuthCred>           auth_cred;
-  std::auto_ptr<AmSessionEventHandler> auth_h;
+  std::unique_ptr<UACAuthCred>           auth_cred;
+  std::unique_ptr<AmSessionEventHandler> auth_h;
 
   UACAuthCred* getCredentials() { return auth_cred.get(); }
   AmBasicSipDialog* getDlg() { return this; }

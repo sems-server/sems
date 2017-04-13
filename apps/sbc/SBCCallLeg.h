@@ -80,7 +80,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   SBCCallProfile call_profile;
 
   // Rate limiting
-  auto_ptr<RateLimit> rtp_relay_rate_limit;
+  unique_ptr<RateLimit> rtp_relay_rate_limit;
   
   // Measurements
   list<atomic_int*> rtp_pegs;

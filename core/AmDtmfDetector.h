@@ -411,7 +411,7 @@ class AmDtmfDetector
   AmDtmfSink *m_dtmfSink;
   AmRtpDtmfDetector m_rtpDetector;
   AmSipDtmfDetector m_sipDetector;
-  std::auto_ptr<AmInbandDtmfDetector> m_inbandDetector;
+  std::unique_ptr<AmInbandDtmfDetector> m_inbandDetector;
   Dtmf::InbandDetectorType m_inband_type;
 
   struct timeval m_startTime;

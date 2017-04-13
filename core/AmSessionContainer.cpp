@@ -207,7 +207,7 @@ void AmSessionContainer::destroySession(AmSession* s)
 
 string AmSessionContainer::startSessionUAC(const AmSipRequest& req, string& app_name, AmArg* session_params) {
 
-  auto_ptr<AmSession> session;
+  unique_ptr<AmSession> session;
   try {
     session.reset(createSession(req, app_name, session_params));
     if(session.get() != 0) {
@@ -280,7 +280,7 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 {
   try {
       // Call-ID and From-Tag are unknown: it's a new session
-      auto_ptr<AmSession> session;
+      unique_ptr<AmSession> session;
       string app_name;
 
       session.reset(createSession(req,app_name));

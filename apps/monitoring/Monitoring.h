@@ -71,7 +71,7 @@ class Monitor
   public AmDynInvoke   
 {
   static Monitor* _instance;
-  std::auto_ptr<MonitorGarbageCollector> gc_thread;
+  std::unique_ptr<MonitorGarbageCollector> gc_thread;
 
   LogBucket logs[NUM_LOG_BUCKETS];
 

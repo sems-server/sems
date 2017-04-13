@@ -256,8 +256,8 @@ AmAudio::AmAudio()
   : fmt(new AmAudioFormat(CODEC_PCM16)),
     max_rec_time(-1),
     rec_time(0),
-    input_resampling_state(NULL),
-    output_resampling_state(NULL)
+    input_resampling_state(nullptr),
+    output_resampling_state(nullptr)
 {
 }
 
@@ -265,8 +265,8 @@ AmAudio::AmAudio(AmAudioFormat *_fmt)
   : fmt(_fmt),
     max_rec_time(-1),
     rec_time(0),
-    input_resampling_state(NULL),
-    output_resampling_state(NULL)
+    input_resampling_state(nullptr),
+    output_resampling_state(nullptr)
 {
 }
 

@@ -235,7 +235,7 @@ struct SIPSubscriptionEvent
   string reason;
   SubscriptionStatus status;
   unsigned int expires;
-  std::auto_ptr<AmMimeBody> notify_body;
+  std::unique_ptr<AmMimeBody> notify_body;
 
   SIPSubscriptionEvent(SubscriptionStatus status, const string& handle,
 		       unsigned int expires = 0,

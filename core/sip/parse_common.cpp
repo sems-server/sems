@@ -34,7 +34,7 @@
 #include <string.h>
 
 #include <memory>
-using std::auto_ptr;
+using std::unique_ptr;
 
 int parse_sip_version(const char* beg, int len)
 {
@@ -83,7 +83,7 @@ static int _parse_gen_params(list<sip_avp*>* params, const char** c,
 
     int st = beg_w_sc ? VP_PARAM_SEP : VP_PARAM_SEP_SWS;
 
-    auto_ptr<sip_avp> avp(new sip_avp());
+    unique_ptr<sip_avp> avp(new sip_avp());
 
     for(;*c!=end;(*c)++){
 

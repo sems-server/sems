@@ -45,7 +45,7 @@ DECLARE_MODULE(MOD_CLS_NAME);
 class DSMConfChannel 
 : public DSMDisposable,
   public AmObject {
-  std::auto_ptr<AmConferenceChannel> chan;
+  std::unique_ptr<AmConferenceChannel> chan;
 
  public:
  DSMConfChannel(AmConferenceChannel* channel) : chan(channel) { }
@@ -58,7 +58,7 @@ class DSMConfChannel
 class DSMTeeConfChannel
 : public DSMDisposable,
   public AmObject {
-  std::auto_ptr<AmConferenceChannel> chan;
+  std::unique_ptr<AmConferenceChannel> chan;
   AmAudioQueue audio_queue;
 
  public:
@@ -73,7 +73,7 @@ class DSMTeeConfChannel
 template<class T> class DSMDisposableT
 : public DSMDisposable,
   public AmObject {
-  std::auto_ptr<T> pobj;
+  std::unique_ptr<T> pobj;
 
  public:
  DSMDisposableT(T* _pobj) : pobj(_pobj) { }

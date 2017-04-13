@@ -36,7 +36,7 @@
 #include <stdio.h>
 
 #include <memory>
-using std::auto_ptr;
+using std::unique_ptr;
 #include <string>
 using std::string;
 #include <map>
@@ -256,11 +256,11 @@ protected:
   DblBuffer samples;
   
   /** Audio format. @see AmAudioFormat */
-  auto_ptr<AmAudioFormat> fmt;
+  unique_ptr<AmAudioFormat> fmt;
   
   /** Resampling states. @see AmResamplingState */
-  auto_ptr<AmResamplingState> input_resampling_state;
-  auto_ptr<AmResamplingState> output_resampling_state;
+  unique_ptr<AmResamplingState> input_resampling_state;
+  unique_ptr<AmResamplingState> output_resampling_state;
 
   AmAudio();
   AmAudio(AmAudioFormat *);

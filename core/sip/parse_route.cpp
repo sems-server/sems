@@ -29,7 +29,7 @@
 #include "parse_common.h"
 
 #include <memory>
-using std::auto_ptr;
+using std::unique_ptr;
 
 route_elmt::~route_elmt() {
   if(addr) delete addr;
@@ -222,7 +222,7 @@ int parse_first_route_uri(sip_header* fr)
     cstring route_str((*route_it)->route);
     const char* c = route_str.s;
 
-    auto_ptr<sip_nameaddr> na(new sip_nameaddr());
+    unique_ptr<sip_nameaddr> na(new sip_nameaddr());
     if(parse_nameaddr(na.get(), &c, route_str.len)<0) {
       
       DBG("Parsing name-addr failed\n");

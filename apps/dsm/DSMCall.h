@@ -41,7 +41,7 @@ class DSMCall : public AmB2BCallerSession,
 		  public DSMSession,
 		  public CredentialHolder
 {
-  std::auto_ptr<UACAuthCred> cred;
+  std::unique_ptr<UACAuthCred> cred;
   
   DSMStateEngine engine;
   AmPromptCollection* prompts;
@@ -162,8 +162,8 @@ public:
 class DSMCallCalleeSession : public AmB2BCalleeSession,
 			     public CredentialHolder
 {
-  std::auto_ptr<UACAuthCred> cred;
-  std::auto_ptr<AmSessionEventHandler> auth;
+  std::unique_ptr<UACAuthCred> cred;
+  std::unique_ptr<AmSessionEventHandler> auth;
 
 
 protected:

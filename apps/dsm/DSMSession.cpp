@@ -28,7 +28,7 @@
 #include "DSMSession.h"
 
 DSMSession::DSMSession() 
-  : last_req(0) {
+  : last_req(nullptr) {
 }
 
 DSMSession::~DSMSession() {

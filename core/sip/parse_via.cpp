@@ -36,7 +36,7 @@
 using std::string;
 
 #include <memory>
-using std::auto_ptr;
+using std::unique_ptr;
 
 #include "AmUtils.h"
 
@@ -563,7 +563,7 @@ int parse_via(sip_via* via, const char* beg, int len)
 
     int saved_st=0, st=V_TRANS;
 
-    auto_ptr<sip_via_parm> parm(new sip_via_parm());
+    unique_ptr<sip_via_parm> parm(new sip_via_parm());
 
     int ret = 0;
     for(;c<end;c++){

@@ -608,18 +608,18 @@ EXEC_ACTION_START(MODSBCSetLastReq) {
 
   AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REQUEST);
   if (it == sc_sess->avar.end()) {
-    ERROR("Could not find "DSM_AVAR_REQUEST" avar for request");
+    ERROR("Could not find " DSM_AVAR_REQUEST " avar for request");
     EXEC_ACTION_STOP;
   }
 
   if (NULL == it->second.asObject()) {
-    ERROR("Could not find "DSM_AVAR_REQUEST" avar as pointer");
+    ERROR("Could not find " DSM_AVAR_REQUEST " avar as pointer");
     EXEC_ACTION_STOP;
   }
 
   AmSipRequest* r = dynamic_cast<AmSipRequest*>(it->second.asObject());
   if (NULL == r)  {
-    ERROR("Could not find "DSM_AVAR_REQUEST" avar as request");
+    ERROR("Could not find " DSM_AVAR_REQUEST " avar as request");
     EXEC_ACTION_STOP;
   }
 
@@ -631,18 +631,18 @@ EXEC_ACTION_START(MODSBCtestSDPConnectionAddress) {
 
   AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REPLY);
   if (it == sc_sess->avar.end()) {
-    ERROR("Could not find "DSM_AVAR_REPLY" avar for reply");
+    ERROR("Could not find " DSM_AVAR_REPLY " avar for reply");
     EXEC_ACTION_STOP;
   }
 
   if (NULL == it->second.asObject()) {
-    ERROR("Could not find "DSM_AVAR_REPLY" avar as pointer");
+    ERROR("Could not find " DSM_AVAR_REPLY " avar as pointer");
     EXEC_ACTION_STOP;
   }
 
   DSMSipReply* r = dynamic_cast<DSMSipReply*>(it->second.asObject());
   if (NULL == r)  {
-    ERROR("Could not find "DSM_AVAR_REPLY" avar as reply");
+    ERROR("Could not find " DSM_AVAR_REPLY " avar as reply");
     EXEC_ACTION_STOP;
   }
 

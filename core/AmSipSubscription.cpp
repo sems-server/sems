@@ -673,7 +673,7 @@ SIPSubscriptionEvent::SIPSubscriptionEvent(SubscriptionStatus status,
 					   const string& reason)
   : AmEvent(E_SIP_SUBSCRIPTION), status(status), 
     handle(handle), expires(expires), code(code), 
-    reason(reason), notify_body(0) 
+    reason(reason), notify_body(nullptr) 
 {}
   
 const char* SIPSubscriptionEvent::getStatusText() 

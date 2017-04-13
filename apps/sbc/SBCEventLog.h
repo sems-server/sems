@@ -34,7 +34,7 @@
 #include <memory>
 #include <string>
 #include <map>
-using std::auto_ptr;
+using std::unique_ptr;
 using std::string;
 using std::map;
 
@@ -46,7 +46,7 @@ struct SBCEventLogHandler
 
 class _SBCEventLog
 {
-  auto_ptr<SBCEventLogHandler> log_handler;
+  unique_ptr<SBCEventLogHandler> log_handler;
 
 protected:
   _SBCEventLog() {}

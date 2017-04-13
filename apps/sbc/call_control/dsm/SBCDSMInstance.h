@@ -49,9 +49,9 @@ class SBCDSMInstance
   std::set<DSMDisposable*> gc_trash;
   vector<AmAudio*> audiofiles;
 
-  auto_ptr<AmSession> dummy_session;  
+  unique_ptr<AmSession> dummy_session;  
 
-  auto_ptr<AmPlaylist> playlist;
+  unique_ptr<AmPlaylist> playlist;
 
   void resetDummySession(SimpleRelayDialog *relay);
 

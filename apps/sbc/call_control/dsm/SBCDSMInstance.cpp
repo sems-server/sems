@@ -52,7 +52,7 @@ SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const VarMapT& values)
     appBundle = it->second;
 
   if (startDiagName.empty()) {
-    throw string("DSM SBC call control "DSM_SBC_CCVAR_START_DIAG" parameter not set (see call profile)'");
+    throw string("DSM SBC call control " DSM_SBC_CCVAR_START_DIAG " parameter not set (see call profile)'");
   }
   
   map<string,string> config_vars;
@@ -203,8 +203,8 @@ void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChange
   VarMapT event_params;
 
   event_params["SBCCallStatus"] = call->getCallStatusStr();
-  auto_ptr<DSMSipRequest> dsm_request;
-  auto_ptr<DSMSipReply> dsm_reply;
+  unique_ptr<DSMSipRequest> dsm_request;
+  unique_ptr<DSMSipReply> dsm_reply;
 
   switch (cause.reason) {
   case CallLeg::StatusChangeCause::SipReply:

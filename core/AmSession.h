@@ -127,7 +127,7 @@ private:
   friend class AmSessionFactory;
   friend class AmSessionProcessorThread;
 
-  auto_ptr<AmRtpAudio> _rtp_str;
+  std::unique_ptr<AmRtpAudio> _rtp_str;
 
   /** Application parameters passed through P-App-Param HF */
   map<string,string> app_params;

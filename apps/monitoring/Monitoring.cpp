@@ -57,7 +57,7 @@ Monitor* Monitor::instance()
 }
 
 Monitor::Monitor(const string& name) 
-  : AmDynInvokeFactory(MOD_NAME), gc_thread(NULL) {
+  : AmDynInvokeFactory(MOD_NAME), gc_thread(nullptr) {
 }
 
 Monitor::~Monitor() {

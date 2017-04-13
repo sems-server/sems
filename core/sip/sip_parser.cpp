@@ -41,7 +41,7 @@
 #include "log.h"
 
 #include <memory>
-using std::auto_ptr;
+using std::unique_ptr;
 
 sip_msg::sip_msg(const char* msg_buf, int msg_len)
     : buf(NULL),
@@ -572,7 +572,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 	return INCOMPLETE_SIP_MSG;
     }
 
-    auto_ptr<sip_via> via(new sip_via());
+    unique_ptr<sip_via> via(new sip_via());
     if(!parse_via(via.get(), 
 		  msg->via1->value.s,
 		  msg->via1->value.len) && 
@@ -586,7 +586,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 	return MALFORMED_SIP_MSG;
     }
 
-    auto_ptr<sip_cseq> cseq(new sip_cseq());
+    unique_ptr<sip_cseq> cseq(new sip_cseq());
     if(!parse_cseq(cseq.get(),
 		   msg->cseq->value.s,
 		   msg->cseq->value.len) &&
@@ -600,7 +600,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 	return MALFORMED_SIP_MSG;
     }
 
-    auto_ptr<sip_from_to> from(new sip_from_to());
+    unique_ptr<sip_from_to> from(new sip_from_to());
     if(parse_from_to(from.get(), msg->from->value.s, msg->from->value.len) != 0) {
 	err_msg = (char*)"could not parse From hf";
 	return MALFORMED_SIP_MSG;
@@ -611,7 +611,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
     }
     msg->from->p = from.release();
 
-    auto_ptr<sip_from_to> to(new sip_from_to());
+    unique_ptr<sip_from_to> to(new sip_from_to());
     if(!parse_from_to(to.get(),
 		      msg->to->value.s,
 		      msg->to->value.len)) {
@@ -624,7 +624,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
     }
 
     if (msg->rack) {
-        auto_ptr<sip_rack> rack(new sip_rack());
+        unique_ptr<sip_rack> rack(new sip_rack());
         if (parse_rack(rack.get(), msg->rack->value.s, msg->rack->value.len)) {
             msg->rack->p = rack.release();
         } else {

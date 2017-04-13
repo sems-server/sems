@@ -185,7 +185,7 @@ class DSMSession {
   AmArg di_res;
 
   /* last received request */
-  std::auto_ptr<AmSipRequest> last_req;
+  std::unique_ptr<AmSipRequest> last_req;
 };
 
 class DSMStateDiagramCollection;

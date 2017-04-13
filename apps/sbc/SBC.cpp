@@ -235,12 +235,12 @@ int SBCFactory::onLoad()
   DBG("OPTIONS messages handled by the core: %s\n", core_options_handling?"yes":"no");
 
   if (!AmPlugIn::registerApplication(MOD_NAME, this)) {
-    ERROR("registering "MOD_NAME" application\n");
+    ERROR("registering " MOD_NAME " application\n");
     return -1;
   }
 
   if (!AmPlugIn::registerDIInterface(MOD_NAME, this)) {
-    ERROR("registering "MOD_NAME" DI interface\n");
+    ERROR("registering " MOD_NAME " DI interface\n");
     return -1;
   }
 
