@@ -15,4 +15,4 @@ PYTHON_DIR = $(shell $(PY_EXE) ./python_inc.py)
 PYTHON_LIBDIR = $(shell $(PY_EXE) ./python_lib.py)
 
 # 
-py-sems-modules-dir?=lib/sems/py_sems
+py-sems-modules_dir?=lib/sems/py_sems

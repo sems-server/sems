@@ -43,7 +43,7 @@ install:
 	@echo ""
 	@echo "*** install complete. Run SEMS with "
 	@echo "*** "
-	@echo "***   $(bin-target)$(NAME) -f $(cfg-target)sems.conf"
+	@echo "***   $(bin_target)$(NAME) -f $(cfg_target)sems.conf"
 
 
 .PHONY: dist

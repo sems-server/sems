@@ -32,9 +32,9 @@ clean: $(extra_clean)
 
 .PHONY: install
 install: $(lib_name) $(extra_install)
-	mkdir -p $(DESTDIR)$(modules-prefix)/$(modules-dir)
-	$(INSTALL-TOUCH) $(DESTDIR)$(modules-prefix)/$(modules-dir)/$(lib_name) ; \
-	$(INSTALL-MODULES) $(lib_name) $(DESTDIR)$(modules-prefix)/$(modules-dir)
+	mkdir -p $(DESTDIR)$(modules_prefix)/$(modules_dir)
+	$(INSTALL_TOUCH) $(DESTDIR)$(modules_prefix)/$(modules_dir)/$(lib_name) ; \
+	$(INSTALL_MODULES) $(lib_name) $(DESTDIR)$(modules_prefix)/$(modules_dir)
 
 .PHONY: install-cfg
 install-cfg : $(extra_install_cfg)

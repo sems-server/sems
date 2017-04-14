@@ -112,16 +112,16 @@ make install TTS="y" exclude_modules="examples %{!?with_ilbc:ilbc} mp3" \
 	DESTDIR=$RPM_BUILD_ROOT \
 	basedir= \
 	prefix=%{_prefix} \
-	modules-prefix= \
-        modules-dir=%{_libdir}/sems/plug-in \
-        modules-target=%{_libdir}/sems/plug-in \
-	ivr-modules-dir=%{_libdir}/sems/ivr \
-	cfg-prefix= \
-	cfg-target=%{_sysconfdir}/sems/ \
-	doc-prefix= \
-	doc-dir=%{_docdir}/sems/ \
-	audio-prefix= \
-	audio-dir=%{_libdir}/sems/audio/
+	modules_prefix= \
+        modules_dir=%{_libdir}/sems/plug-in \
+        modules_target=%{_libdir}/sems/plug-in \
+	ivr-modules_dir=%{_libdir}/sems/ivr \
+	cfg_prefix= \
+	cfg_target=%{_sysconfdir}/sems/ \
+	doc_prefix= \
+	doc_dir=%{_docdir}/sems/ \
+	audio_prefix= \
+	audio_dir=%{_libdir}/sems/audio/
 
 install -D -p -m755 pkg/rpm/sems.init $RPM_BUILD_ROOT/%{_sysconfdir}/init.d/sems
 

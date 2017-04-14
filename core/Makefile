@@ -124,34 +124,34 @@ install: all mk-install-dirs \
 
 
 # note: on solaris 8 sed: ? or \(...\)* (a.s.o) do not work
-install-cfg: $(DESTDIR)$(cfg-target) $(DESTDIR)$(app-cfg-target)
-		sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
-			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
-			-e "s#/usr/.*etc/sems/#$(cfg-target)#g" \
-			< etc/sems.conf.sample > $(DESTDIR)$(cfg-target)sems.conf.default
-		chmod 644 $(DESTDIR)$(cfg-target)sems.conf.default
-		if [ ! -f $(DESTDIR)$(cfg-target)sems.conf ]; then \
-			cp -f $(DESTDIR)$(cfg-target)sems.conf.default \
-				$(DESTDIR)$(cfg-target)sems.conf; \
+install-cfg: $(DESTDIR)$(cfg_target) $(DESTDIR)$(app_cfg_target)
+		sed -e "s#/usr/.*lib/sems/audio/#$(audio_target)#g" \
+			-e "s#/usr/.*lib/sems/plug-in/#$(modules_target)#g" \
+			-e "s#/usr/.*etc/sems/#$(cfg_target)#g" \
+			< etc/sems.conf.sample > $(DESTDIR)$(cfg_target)sems.conf.default
+		chmod 644 $(DESTDIR)$(cfg_target)sems.conf.default
+		if [ ! -f $(DESTDIR)$(cfg_target)sems.conf ]; then \
+			cp -f $(DESTDIR)$(cfg_target)sems.conf.default \
+				$(DESTDIR)$(cfg_target)sems.conf; \
 		fi
 
-		$(INSTALL-CFG) etc/app_mapping.conf.sample $(DESTDIR)$(app-cfg-target)app_mapping.conf
+		$(INSTALL_CFG) etc/app_mapping.conf.sample $(DESTDIR)$(app_cfg_target)app_mapping.conf
 
-install-bin: $(DESTDIR)$(bin-prefix)/$(bin-dir)
-		$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(NAME)
-		$(INSTALL-BIN) $(NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
+install-bin: $(DESTDIR)$(bin_prefix)/$(bin_dir)
+		$(INSTALL_TOUCH) $(DESTDIR)$(bin_prefix)/$(bin_dir)$(NAME)
+		$(INSTALL_BIN) $(NAME) $(DESTDIR)$(bin_prefix)/$(bin_dir)
 
-install-modules: $(PLUGIN_DIR) $(DESTDIR)$(modules-prefix)/$(modules-dir)
+install-modules: $(PLUGIN_DIR) $(DESTDIR)$(modules_prefix)/$(modules_dir)
 	$(MAKE) -C $(PLUGIN_DIR) install
 
 install-modules-cfg: $(PLUGIN_DIR) 
 	$(MAKE) -C $(PLUGIN_DIR) install-cfg
 
-install-audio: $(DESTDIR)$(audio-prefix)/$(audio-dir)
+install-audio: $(DESTDIR)$(audio_prefix)/$(audio_dir)
 	for f in $(AUDIO_FILES) ; do \
 		if [ -n "wav/$$f" ]; then \
-			$(INSTALL-TOUCH) $(DESTDIR)$(audio-prefix)/$(audio-dir)$$f; \
-			$(INSTALL-AUDIO) wav/$$f $(DESTDIR)$(audio-prefix)/$(audio-dir)$$f; \
+			$(INSTALL_TOUCH) $(DESTDIR)$(audio_prefix)/$(audio_dir)$$f; \
+			$(INSTALL_AUDIO) wav/$$f $(DESTDIR)$(audio_prefix)/$(audio_dir)$$f; \
 		fi ; \
 	done
 

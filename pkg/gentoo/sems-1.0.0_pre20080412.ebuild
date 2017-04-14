@@ -52,7 +52,7 @@ src_compile () {
 }
 
 src_install () {
-	emake PREFIX=/usr cfg-target="/etc/sems/" DESTDIR="${D}" install || die
+	emake PREFIX=/usr cfg_target="/etc/sems/" DESTDIR="${D}" install || die
 	newinitd "${FILESDIR}"/sems.rc6 sems
 	newconfd "${FILESDIR}"/sems.confd sems
 	dodoc README

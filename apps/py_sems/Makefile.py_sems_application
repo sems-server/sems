@@ -7,7 +7,7 @@ PYSEMSPATH ?= ../py_sems
 include $(COREPATH)/../Makefile.defs
 include $(PYSEMSPATH)/Makefile.defs
 
-LIB_INSTALLDIR?=$(modules-prefix)/$(py-sems-modules-dir)
+LIB_INSTALLDIR?=$(modules_prefix)/$(py-sems-modules_dir)
 TARBALL_PREFIX=sems-app-${NAME}
 TARBALL="${TARBALL_PREFIX}-${VERSION}.tar.gz"
 
@@ -42,14 +42,14 @@ install: all
 
 .PHONY: install-cfg
 install-cfg: 
-	mkdir -p $(cfg-target)
+	mkdir -p $(cfg_target)
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
-			$(INSTALL-TOUCH) $(cfg-target)$$r ; \
-			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
-			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
-			-e "s#/usr/.*etc/sems/#$(cfg-target)#g" \
-			< etc/$$r > $(DESTDIR)$(cfg-target)$$r; \
+			$(INSTALL_TOUCH) $(cfg_target)$$r ; \
+			sed -e "s#/usr/.*lib/sems/audio/#$(audio_target)#g" \
+			-e "s#/usr/.*lib/sems/plug-in/#$(modules_target)#g" \
+			-e "s#/usr/.*etc/sems/#$(cfg_target)#g" \
+			< etc/$$r > $(DESTDIR)$(cfg_target)$$r; \
 	done
 
 

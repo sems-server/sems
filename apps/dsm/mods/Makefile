@@ -58,7 +58,7 @@ install-bin:
 	done
 
 .PHONY: install-cfg
-install-cfg: $(DESTDIR)$(cfg-target)
+install-cfg: $(DESTDIR)$(cfg_target)
 	-@for r in $(dsm_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \

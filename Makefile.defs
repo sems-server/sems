@@ -267,56 +267,52 @@ prefix ?= $(PREFIX)
 BASEDIR ?=
 basedir = $(BASEDIR)
 
-# Redhat users should use sems.redhat instead of sems
-# the file will be to $(bin-prefix)/$(bin-dir)/sems copied.
-start-script = sems.redhat
-
 # install prefixes for various stuff
-cfg-prefix = $(basedir)$(prefix)
-bin-prefix = $(basedir)$(prefix)
-modules-prefix = $(basedir)$(prefix)
-doc-prefix = $(basedir)$(prefix)
-audio-prefix = $(basedir)$(prefix)
-lib-prefix = $(basedir)$(prefix)
+cfg_prefix = $(basedir)$(prefix)
+bin_prefix = $(basedir)$(prefix)
+modules_prefix = $(basedir)$(prefix)
+doc_prefix = $(basedir)$(prefix)
+audio_prefix = $(basedir)$(prefix)
+lib_prefix = $(basedir)$(prefix)
 
 # dirs
-cfg-dir = etc/$(APP_NAME)/
+cfg_dir = etc/$(APP_NAME)/
 
-bin-dir = sbin/
-modules-dir = lib/$(APP_NAME)/plug-in/
-audio-dir = lib/$(APP_NAME)/audio/
-lib-dir = lib/$(APP_NAME)/
+bin_dir = sbin/
+modules_dir = lib/$(APP_NAME)/plug-in/
+audio_dir = lib/$(APP_NAME)/audio/
+lib_dir = lib/$(APP_NAME)/
 
 ifeq ($(OS), linux)
-	doc-dir = share/doc/$(APP_NAME)/
-	man-dir = share/man/
+	doc_dir = share/doc/$(APP_NAME)/
+	man_dir = share/man/
 else
 ifeq ($(OS), freebsd)
-	doc-dir = share/doc/$(APP_NAME)/
-	man-dir = man/
+	doc_dir = share/doc/$(APP_NAME)/
+	man_dir = man/
 else
 ifeq ($(OS), openbsd)
-	doc-dir = share/doc/$(APP_NAME)/
-	man-dir = man/
+	doc_dir = share/doc/$(APP_NAME)/
+	man_dir = man/
 else
 ifeq ($(OS), netbsd)
-	doc-dir = share/doc/$(APP_NAME)
-	man-dir = man/
+	doc_dir = share/doc/$(APP_NAME)
+	man_dir = man/
 else
-	doc-dir = doc/$(APP_NAME)/
-	man-dir = man/
+	doc_dir = doc/$(APP_NAME)/
+	man_dir = man/
 endif
 endif
 endif
 endif
 
 # target dirs for various stuff
-bin-target = $(prefix)/$(bin-dir)
-cfg-target ?= $(prefix)/$(cfg-dir)
-app-cfg-target = $(cfg-target)etc/
-modules-target = $(prefix)/$(modules-dir)
-audio-target = $(prefix)/$(audio-dir)
-lib-target = $(prefix)/$(lib-dir)
+bin_target = $(prefix)/$(bin_dir)
+cfg_target ?= $(prefix)/$(cfg_dir)
+app_cfg_target = $(cfg_target)etc/
+modules_target = $(prefix)/$(modules_dir)
+audio_target = $(prefix)/$(audio_dir)
+lib_target = $(prefix)/$(lib_dir)
 
 ifeq ($(OS), solaris)
 #use GNU versions
@@ -327,24 +323,23 @@ INSTALL ?= install
 TAR ?= tar
 endif
 
-INSTALL-TOUCH = touch          # used to create the file first (good to 
+INSTALL_TOUCH = touch          # used to create the file first (good to 
                                #  make solaris install work)
-INSTALL-CFG = $(INSTALL) -m 644
-INSTALL-BIN = $(INSTALL) -m 755
-INSTALL-MODULES = $(INSTALL) -m 755
-INSTALL-DOC = $(INSTALL) -m 644
-INSTALL-AUDIO = $(INSTALL) -m 644
+INSTALL_CFG = $(INSTALL) -m 644
+INSTALL_BIN = $(INSTALL) -m 755
+INSTALL_MODULES = $(INSTALL) -m 755
+INSTALL_DOC = $(INSTALL) -m 644
+INSTALL_AUDIO = $(INSTALL) -m 644
 
 #export stuff to sub-makes
 export REL_VERSION RELEASE OS ARCH
 export CPPFLAGS CXXFLAGS LDFLAGS CFLAGS LIB_LDFLAGS
 export CXX CC LD
-export DESTDIR PREFIX prefix basedir ser-prefix
-export start-script
-export cfg-prefix bin-prefix modules-prefix doc-prefix audio-prefix lib-prefix
-export cfg-dir bin-dir modules-dir audio-dir lib-dir doc-dir man-dir
-export bin-target cfg-target app-cfg-target modules-target audio-target lib-target
-export INSTALL TAR INSTALL-TOUCH INSTALL-CFG INSTALL-BIN INSTALL-MODULES INSTALL-DOC INSTALL-AUDIO
+export DESTDIR PREFIX prefix basedir
+export cfg_prefix bin_prefix modules_prefix doc_prefix audio_prefix lib_prefix
+export cfg_dir bin_dir modules_dir audio_dir lib_dir doc_dir man_dir
+export bin_target cfg_target app_cfg_target modules_target audio_target lib_target
+export INSTALL TAR INSTALL_TOUCH INSTALL_CFG INSTALL_BIN INSTALL_MODULES INSTALL_DOC INSTALL_AUDIO
 export APP_NAME
 
 export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR 
@@ -354,27 +349,27 @@ export USE_MONITORING
 export exclude_core_modules exclude_app_modules
 endif  # ifeq ($(makefile_defs, 1)
 
-mk-install-dirs: $(DESTDIR)$(cfg-target) \
-		 $(DESTDIR)$(app-cfg-target) \
-		 $(DESTDIR)$(bin-prefix)/$(bin-dir) \
-		 $(DESTDIR)$(modules-prefix)/$(modules-dir) \
-		 $(DESTDIR)$(audio-prefix)/$(audio-dir) \
-		 $(DESTDIR)$(doc-prefix)/$(doc-dir)
+mk-install-dirs: $(DESTDIR)$(cfg_target) \
+		 $(DESTDIR)$(app_cfg_target) \
+		 $(DESTDIR)$(bin_prefix)/$(bin_dir) \
+		 $(DESTDIR)$(modules_prefix)/$(modules_dir) \
+		 $(DESTDIR)$(audio_prefix)/$(audio_dir) \
+		 $(DESTDIR)$(doc_prefix)/$(doc_dir)
 
-$(DESTDIR)$(cfg-target): 
-	mkdir -p $(DESTDIR)$(cfg-target)
+$(DESTDIR)$(cfg_target): 
+	mkdir -p $(DESTDIR)$(cfg_target)
 
-$(DESTDIR)$(app-cfg-target): 
-	mkdir -p $(DESTDIR)$(app-cfg-target)
+$(DESTDIR)$(app_cfg_target): 
+	mkdir -p $(DESTDIR)$(app_cfg_target)
 
-$(DESTDIR)$(bin-prefix)/$(bin-dir):
-	mkdir -p $(DESTDIR)$(bin-prefix)/$(bin-dir)
+$(DESTDIR)$(bin_prefix)/$(bin_dir):
+	mkdir -p $(DESTDIR)$(bin_prefix)/$(bin_dir)
 
-$(DESTDIR)$(modules-prefix)/$(modules-dir):
-	mkdir -p $(DESTDIR)$(modules-prefix)/$(modules-dir)
+$(DESTDIR)$(modules_prefix)/$(modules_dir):
+	mkdir -p $(DESTDIR)$(modules_prefix)/$(modules_dir)
 
-$(DESTDIR)$(audio-prefix)/$(audio-dir):
-	mkdir -p $(DESTDIR)$(audio-prefix)/$(audio-dir)
+$(DESTDIR)$(audio_prefix)/$(audio_dir):
+	mkdir -p $(DESTDIR)$(audio_prefix)/$(audio_dir)
 
-$(DESTDIR)$(doc-prefix)/$(doc-dir):
-	mkdir -p $(DESTDIR)$(doc-prefix)/$(doc-dir)
+$(DESTDIR)$(doc_prefix)/$(doc_dir):
+	mkdir -p $(DESTDIR)$(doc_prefix)/$(doc_dir)

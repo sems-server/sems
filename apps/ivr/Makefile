@@ -91,12 +91,12 @@ endif
 endif
 
 .PHONY: install_python_files
-install_python_files: $(DESTDIR)$(modules-prefix)/$(modules-dir)
+install_python_files: $(DESTDIR)$(modules_prefix)/$(modules_dir)
 	echo "Installing Python object files..."
 	for f in $(py_obj) ; do \
 		if [ -n "py/$$f" ]; then \
-			$(INSTALL-TOUCH) $(DESTDIR)$(modules-prefix)/$(modules-dir)/$$f; \
-			$(INSTALL-MODULES) py/$$f $(DESTDIR)$(modules-prefix)/$(modules-dir)/$$f; \
+			$(INSTALL_TOUCH) $(DESTDIR)$(modules_prefix)/$(modules_dir)/$$f; \
+			$(INSTALL_MODULES) py/$$f $(DESTDIR)$(modules_prefix)/$(modules_dir)/$$f; \
 		fi ; \
 	done
 

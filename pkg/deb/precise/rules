@@ -20,7 +20,7 @@ export USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)"
 
 override_dh_auto_build:
 	$(MAKE) \
-	cfg-target=/etc/sems/ prefix=/usr \
+	cfg_target=/etc/sems/ prefix=/usr \
 	exclude_app_modules="$(EXCLUDED_MODULES)" \
 	exclude_dsm_modules="$(EXCLUDED_DSM_MODULES)" \
 	DESTDIR=$(CURDIR)/debian/sems
@@ -29,14 +29,14 @@ override_dh_auto_install:
 	$(MAKE) -C core/ install \
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
-		cfg-target=/etc/sems/
+		cfg_target=/etc/sems/
 
 	$(MAKE) -C apps/ install \
 		exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
 		exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
-		cfg-target=/etc/sems/
+		cfg_target=/etc/sems/
 
 override_dh_strip:
 	dh_strip --dbg-package=sems-dbg

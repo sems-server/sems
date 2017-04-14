@@ -19,9 +19,9 @@ include ../Makefile.app_module
 $(QUERY_STATS_NAME): query_stats.o Makefile
 	$(LD) -o $(QUERY_STATS_NAME) query_stats.o $(LDFLAGS) $(EXTRA_LDFLAGS) 
 
-install_query_stats: $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
-	$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(QUERY_STATS_DEST_NAME)
-	$(INSTALL-BIN) $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)/$(QUERY_STATS_DEST_NAME)
+install_query_stats: $(QUERY_STATS_NAME) $(DESTDIR)$(bin_prefix)/$(bin_dir)
+	$(INSTALL_TOUCH) $(DESTDIR)$(bin_prefix)/$(bin_dir)$(QUERY_STATS_DEST_NAME)
+	$(INSTALL_BIN) $(QUERY_STATS_NAME) $(DESTDIR)$(bin_prefix)/$(bin_dir)/$(QUERY_STATS_DEST_NAME)
 
 clean_query_stats: 
 	rm -f $(QUERY_STATS_NAME) query_stats.o query_stats.d
