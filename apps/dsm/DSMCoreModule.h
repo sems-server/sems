@@ -131,6 +131,7 @@ DEF_ACTION_1P(SCB2BAddHeaderAction);
 DEF_ACTION_1P(SCB2BClearHeadersAction);
 DEF_ACTION_2P(SCB2BSetHeadersAction);
 DEF_ACTION_1P(SCB2BRemoveHeaderAction);
+DEF_ACTION_1P(SCB2BSetRelayOnlyAction);
 
 DEF_ACTION_1P(SCRegisterEventQueueAction);
 DEF_ACTION_1P(SCUnregisterEventQueueAction);

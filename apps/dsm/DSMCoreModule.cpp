@@ -153,6 +153,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("B2B.clearHeaders", SCB2BClearHeadersAction);
   DEF_CMD("B2B.setHeaders", SCB2BSetHeadersAction);
   DEF_CMD("B2B.relayEvent", SCRelayB2BEventAction);
+  DEF_CMD("B2B.setRelayOnly", SCB2BSetRelayOnlyAction);
 
   DEF_CMD("trackObject", SCTrackObjectAction);
   DEF_CMD("releaseObject", SCReleaseObjectAction);
@@ -354,6 +355,16 @@ EXEC_ACTION_START(SCRelayB2BEventAction) {
 
   b2b_sess->relayEvent(ev);
 
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCB2BSetRelayOnlyAction) {
+  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
+  if (NULL == b2b_sess) {
+    throw DSMException("script", "cause", "B2B.setRelayOnly used without B2B call");
+  }
+  string true_or_false = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("setting sip_relay_only to '%s'\n", true_or_false.c_str());
+  b2b_sess->set_sip_relay_only(true_or_false == "true");
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCPlayFileAction, ',', true);

@@ -269,6 +269,10 @@ B2B call control
  B2B.relayEvent("var")
    relay B2Bevent to related B2B session with all variables of current DSM session
 
+ B2B.setRelayOnly(true|false)
+   sets or resets relayed INVITE mode; useful before B2B.sendReinvite() when
+   initial INVITE was relayed
+
  Logging
  -------
 
@@ -507,7 +511,8 @@ B2Bevent(expr)
     transition "BYE on other leg" conn - B2B.otherBye() / {
       log(2, "received BYE from callee");
       set(#processed=true);
-      dlg.relayReply(200, "OK");   -- use only relayed INVITE mode
+      dlg.relayReply(200, "OK");   -- use only in relayed INVITE mode
+      B2B.setRelayOnly(false);     -- only needed in relayed INVITE mode
       B2B.sendReinvite(true);
       connectMedia();
       playFile("thanks.wav");
