@@ -507,6 +507,7 @@ B2Bevent(expr)
     transition "BYE on other leg" conn - B2B.otherBye() / {
       log(2, "received BYE from callee");
       set(#processed=true);
+      dlg.relayReply(200, "OK");   -- use only relayed INVITE mode
       B2B.sendReinvite(true);
       connectMedia();
       playFile("thanks.wav");
