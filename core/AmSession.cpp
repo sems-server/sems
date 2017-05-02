@@ -751,6 +751,9 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     dlg->reply(req, 200, "OK");
     // TODO: WARN: only include latest SDP if req.rseq == dlg->rseq (latest 1xx)
   }
+  else if ((req.method == SIP_METH_UPDATE) && req.body.empty()) {
+    dlg->reply(req, 200, "OK");
+  }
   else {
     dlg->reply(req, 501, "Not implemented");
   }
