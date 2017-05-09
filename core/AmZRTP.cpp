@@ -117,10 +117,11 @@ int AmZRTP::init() {
   zrtp_config_defaults(&zrtp_config);
 
   strcpy(zrtp_config.client_id, SEMS_CLIENT_ID);
-  memcpy((char*)zrtp_config.zid, (char*)zrtp_instance_zid, sizeof(zrtp_zid_t));
   zrtp_config.lic_mode = ZRTP_LICENSE_MODE_UNLIMITED;
   
-  strncpy(zrtp_config.cache_file_cfg.cache_path, cache_path.c_str(), 256);
+  strncpy(zrtp_config.def_cache_path.buffer, cache_path.c_str(),
+	  zrtp_config.def_cache_path.max_length);
+  zrtp_config.def_cache_path.length = cache_path.length();
 
   zrtp_config.cb.misc_cb.on_send_packet           = AmZRTP::on_send_packet;
   zrtp_config.cb.event_cb.on_zrtp_secure          = AmZRTP::on_zrtp_secure;
@@ -173,7 +174,7 @@ int AmZRTPSessionState::initSession(AmSession* session) {
   // Allocate zrtp session
   zrtp_status_t status =
     zrtp_session_init( AmZRTP::zrtp_global,
-		       &zrtp_profile,
+		       &zrtp_profile, AmZRTP::zrtp_instance_zid,
 		       ZRTP_SIGNALING_ROLE_UNKNOWN, // fixme
 		       &zrtp_session);
   if (zrtp_status_ok != status) {

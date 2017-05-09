@@ -35,7 +35,7 @@ ZRTP in SEMS
    SDK.
 
    Currrently, the newest version of the ZRTP SDK, and the one that works
-   with SEMS, is available at [15]https://github.com/traviscross/libzrtp.
+   with SEMS, is available at [15]https://github.com/juha-h/libzrtp
 
    To build SEMS with ZRTP support, install the SDK and set WITH_ZRTP=yes
    in Makefile.defs, or build with
@@ -96,7 +96,7 @@ References
   12. http://tools.ietf.org/html/rfc6189
   13. http://en.wikipedia.org/wiki/ZRTP
   14. http://zfoneproject.com/prod_sdk.html
-  15. https://github.com/traviscross/libzrtp
+  15. https://github.com/juha-h/libzrtp
   16. http://cmuflite.org/
   17. http://zfoneproject.com/
   18. http://www.jitsi.org/

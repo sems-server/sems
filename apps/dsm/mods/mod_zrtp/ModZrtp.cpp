@@ -179,18 +179,6 @@ EXEC_ACTION_START(ZRTPGetSessionInfoAction) {
 
 } EXEC_ACTION_END;
 
-bool hex2zid(const string& zid1, char* buffer) {
-  for (size_t i=0;i<zid1.length()/2;i++) {
-    unsigned int h;
-    if (reverse_hex2int(zid1.substr(i*2, 2), h)) {
-      ERROR("in zid: '%s' is no hex number\n", zid1.substr(i*2, 2).c_str());
-      return false;
-    }
-    buffer[i]=h % 0xff;
-  }
-  return true;
-}
-
 CONST_ACTION_2P(ZRTPSetVerifiedAction, ',', false);
 EXEC_ACTION_START(ZRTPSetVerifiedAction) {
   string zid1 = resolveVars(par1, sess, sc_sess, event_params);
@@ -203,15 +191,14 @@ EXEC_ACTION_START(ZRTPSetVerifiedAction) {
 
   DBG("setting as verified zids <%s> and <%s>\n", zid1.c_str(), zid2.c_str());
 
-  zrtp_string16_t _zid1, _zid2;
+  zrtp_string16_t _zid1 = ZSTR_INIT_EMPTY(_zid1);
+  zrtp_string16_t _zid2 = ZSTR_INIT_EMPTY(_zid2);
 
-  if (!hex2zid(zid1, _zid1.buffer)) {
-      EXEC_ACTION_STOP;
-  }
+  str2hex(zid1.c_str(), zid1.length(), _zid1.buffer, _zid1.max_length);
+  _zid1.length = zid1.length() / 2;
 
-  if (!hex2zid(zid2, _zid2.buffer)) {
-      EXEC_ACTION_STOP;
-  }
+  str2hex(zid2.c_str(), zid2.length(), _zid2.buffer, _zid2.max_length);
+  _zid2.length = zid2.length() / 2;
 
   if (zrtp_status_ok != zrtp_verified_set(AmZRTP::zrtp_global, &_zid1, &_zid2, 1)) {
     DBG("zrtp_verified_set failed\n");
@@ -232,15 +219,14 @@ EXEC_ACTION_START(ZRTPSetUnverifiedAction) {
 
   DBG("setting as unverified zids <%s> and <%s>\n", zid1.c_str(), zid2.c_str());
 
-  zrtp_string16_t _zid1, _zid2;
+  zrtp_string16_t _zid1 = ZSTR_INIT_EMPTY(_zid1);
+  zrtp_string16_t _zid2 = ZSTR_INIT_EMPTY(_zid2);
 
-  if (!hex2zid(zid1, _zid1.buffer)) {
-      EXEC_ACTION_STOP;
-  }
+  str2hex(zid1.c_str(), zid1.length(), _zid1.buffer, _zid1.max_length);
+  _zid1.length = zid1.length() / 2;
 
-  if (!hex2zid(zid2, _zid2.buffer)) {
-      EXEC_ACTION_STOP;
-  }
+  str2hex(zid2.c_str(), zid2.length(), _zid2.buffer, _zid2.max_length);
+  _zid2.length = zid2.length() / 2;
 
   if (zrtp_status_ok != zrtp_verified_set(AmZRTP::zrtp_global, &_zid1, &_zid2, 0)) {
     DBG("zrtp_verified_set failed\n");
