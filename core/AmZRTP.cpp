@@ -36,9 +36,10 @@
 #include <stdlib.h>
 
 #define ZRTP_CACHE_SAVE_INTERVAL 1
+#define SEMS_CLIENT_ID "SEMS"
 
 string AmZRTP::cache_path = "zrtp_cache.dat";
-#define SEMS_CLIENT_ID "SEMS"
+string AmZRTP::entropy_path;
 
 int AmZRTP::zrtp_cache_save_cntr = 0;
 AmMutex AmZRTP::zrtp_cache_mut;
@@ -133,32 +134,55 @@ int AmZRTP::init() {
     return -1;
   }
 
-  size_t rand_bytes = cfg.getParameterInt("random_entropy_bytes", 172);
-  if (rand_bytes) {
-    INFO("adding %zd bytes entropy from /dev/random to ZRTP entropy pool\n", rand_bytes);
-    FILE* fd = fopen("/dev/random", "r");
-    if (!fd) {
-      ERROR("opening /dev/random for adding entropy to the pool\n");
-      return -1;
-    }
-    void* p = malloc(rand_bytes);
-    if (p==NULL)
-      return -1;
-
-    size_t read_bytes = fread(p, 1, rand_bytes, fd);
-    if (read_bytes != rand_bytes) {
-      ERROR("reading %zd bytes from /dev/random\n", rand_bytes);
-      return -1;
-    }
-    zrtp_entropy_add(zrtp_global, (const unsigned char*)p, read_bytes);
-    free(p);
+  // Use saved entropy data (if available) when adding more entropy
+  entropy_path = cfg.getParameter("entropy_path");
+  unsigned char entropy_buffer[256];
+  unsigned int read_bytes = 0;
+  FILE* fp = fopen(entropy_path.c_str(), "r");
+  if (fp) {
+    read_bytes = fread(entropy_buffer, 1, 256, fp);
+    DBG("read %u bytes of ZRTP entropy data\n", read_bytes);
+    fclose(fp);
+  } else {
+    DBG("ZRTP entropy data is not available yet\n");
   }
 
-
-  // zrtp_add_entropy(zrtp_global, NULL, 0); // fixme
+  // Add more entroypy
+  int bytes_added;
+  bytes_added = zrtp_entropy_add(zrtp_global, entropy_buffer, read_bytes);
+  if (bytes_added == -1) {
+    ERROR("failed to add ZRTP entropy bytes\n");
+    return -1;
+  } else {
+    DBG("added %u bytes of ZRTP entropy\n", bytes_added);
+  }
+  
   DBG("ZRTP initialized ok.\n");
 
   return 0;
+}
+
+int AmZRTP::shut_down() {
+
+  // Save 256 bytes of entropy to file for use at next start
+
+  FILE* fp = fopen(entropy_path.c_str(), "w");
+  if (fp) {
+    unsigned char entropy_buffer[256];
+    unsigned int write_bytes = 0;
+    write_bytes = zrtp_randstr(zrtp_global, entropy_buffer, 256);
+    if (write_bytes == 256) {
+      fwrite(entropy_buffer, 1, write_bytes, fp);
+      fclose(fp);
+      DBG("saved 256 bytes of ZRTP entropy data\n");
+      return 0;
+    } else {
+      ERROR("failed to generate entropy data\n");
+    }
+  } else {
+    ERROR("failed to open entropy file for writing\n");
+  }
+  return -1;
 }
 
 AmZRTPSessionState::AmZRTPSessionState()

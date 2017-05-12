@@ -56,8 +56,10 @@ struct AmZRTPProtocolEvent : public AmEvent {
 struct AmZRTP { 
   static int zrtp_cache_save_cntr;
   static std::string cache_path;
+  static std::string entropy_path;
   static AmMutex zrtp_cache_mut;
   static int init();
+  static int shut_down();
   static zrtp_global_t* zrtp_global;
   static zrtp_config_t zrtp_config;
   static zrtp_zid_t zrtp_instance_zid;
