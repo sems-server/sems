@@ -188,8 +188,6 @@ int AmZRTP::shut_down() {
 AmZRTPSessionState::AmZRTPSessionState()
   : zrtp_session(NULL), zrtp_audio(NULL)
 {
-  // copy default profile
-  zrtp_profile_defaults(&zrtp_profile, AmZRTP::zrtp_global);
 }
 
 int AmZRTPSessionState::initSession(AmSession* session) {
@@ -198,7 +196,7 @@ int AmZRTPSessionState::initSession(AmSession* session) {
   // Allocate zrtp session
   zrtp_status_t status =
     zrtp_session_init( AmZRTP::zrtp_global,
-		       &zrtp_profile, AmZRTP::zrtp_instance_zid,
+		       NULL, AmZRTP::zrtp_instance_zid,
 		       ZRTP_SIGNALING_ROLE_UNKNOWN, // fixme
 		       &zrtp_session);
   if (zrtp_status_ok != status) {
