@@ -76,21 +76,21 @@ EXEC_ACTION_START(ZRTPSetEnabledAction) {
 EXEC_ACTION_START(ZRTPSetAllowclearAction) {
   bool b = resolveVars(arg, sess, sc_sess, event_params) == DSM_TRUE;
   DBG("setting ZRTP allowclear %sabled\n", b?"en":"dis");
-  sess->zrtp_session_state.zrtp_profile.allowclear = b;
+  sess->zrtp_session_state.zrtp_session->profile.allowclear = b;
 } EXEC_ACTION_END;
 
 
 EXEC_ACTION_START(ZRTPSetAutosecureAction) {
   bool b = resolveVars(arg, sess, sc_sess, event_params) == DSM_TRUE;
   DBG("setting ZRTP autosecure %sabled\n", b?"en":"dis");
-  sess->zrtp_session_state.zrtp_profile.autosecure = b;
+  sess->zrtp_session_state.zrtp_session->profile.autosecure = b;
 } EXEC_ACTION_END;
 
 
 EXEC_ACTION_START(ZRTPSetDisclosebitAction) {
   bool b = resolveVars(arg, sess, sc_sess, event_params) == DSM_TRUE;
   DBG("setting ZRTP disclose_bit %sabled\n", b?"en":"dis");
-  sess->zrtp_session_state.zrtp_profile.disclose_bit = b;
+  sess->zrtp_session_state.zrtp_session->profile.disclose_bit = b;
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(ZRTPGetSASAction, ',', true);

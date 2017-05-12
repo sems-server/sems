@@ -81,7 +81,6 @@ struct AmZRTPSessionState {
   int startStreams(uint32_t ssrc);
   int stopStreams();
 
-  zrtp_profile_t  zrtp_profile;
   zrtp_session_t* zrtp_session; // ZRTP session
   zrtp_stream_t*  zrtp_audio;   // ZRTP stream for audio
 };
