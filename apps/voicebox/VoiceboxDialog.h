@@ -43,7 +43,7 @@ public:
 private:
   AmPlaylist  play_list;
   // we need only one separator in queue
-  auto_ptr<AmPlaylistSeparator> playlist_separator;
+  std::auto_ptr<AmPlaylistSeparator> playlist_separator;
   AmPromptCollection* prompts;
   PromptOptions prompt_options;
 

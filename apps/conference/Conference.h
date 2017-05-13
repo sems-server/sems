@@ -105,22 +105,22 @@ class ConferenceDialog : public AmSession
 {
   AmPlaylist  play_list;
 
-  auto_ptr<AmAudioFile> LonelyUserFile;
-  auto_ptr<AmAudioFile> JoinSound;
-  auto_ptr<AmAudioFile> DropSound;
-  auto_ptr<AmRingTone>  RingTone;
-  auto_ptr<AmRingTone>  ErrorTone;
+  std::auto_ptr<AmAudioFile> LonelyUserFile;
+  std::auto_ptr<AmAudioFile> JoinSound;
+  std::auto_ptr<AmAudioFile> DropSound;
+  std::auto_ptr<AmRingTone>  RingTone;
+  std::auto_ptr<AmRingTone>  ErrorTone;
 
 
   string                        conf_id;
-  auto_ptr<AmConferenceChannel> channel;
+  std::auto_ptr<AmConferenceChannel> channel;
 
   int                           state;
   string                        dtmf_seq;
   bool                          dialedout;
   string                        dialout_suffix;
   string                        dialout_id;
-  auto_ptr<AmConferenceChannel> dialout_channel;
+  std::auto_ptr<AmConferenceChannel> dialout_channel;
 
   bool                          allow_dialout;
 
@@ -130,7 +130,7 @@ class ConferenceDialog : public AmSession
 
   bool                          listen_only;
 
-  auto_ptr<AmSipRequest>        transfer_req;
+  std::auto_ptr<AmSipRequest>        transfer_req;
 
 
   void createDialoutParticipant(const string& uri);
