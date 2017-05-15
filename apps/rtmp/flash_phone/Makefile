@@ -9,13 +9,13 @@
 #
 
 # Change this to your Flex SDK directory
-FLEX_SDK=/opt/flex_sdk_4.5
+FLEX_SDK=/opt/flex_sdk_4.6
 
 MXMLC=$(FLEX_SDK)/bin/mxmlc
 MXMLC_OPTS= \
 	--strict=true \
 	--as3=true \
-	-target-player 11.0 \
+	-target-player 11.1 \
 	-swf-version=13
 
 APP=sono

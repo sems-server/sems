@@ -59,10 +59,10 @@ private:
   AmPromptCollection& prompts;
 
   // our ring tone
-  auto_ptr<AmRingTone> RingTone;
+  std::auto_ptr<AmRingTone> RingTone;
 
   // our connection to the conference
-  auto_ptr<AmConferenceChannel> channel;
+  std::auto_ptr<AmConferenceChannel> channel;
   string  conf_id;
   string pin_str;
 

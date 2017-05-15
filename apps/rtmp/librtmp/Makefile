@@ -40,7 +40,7 @@ SO_INST=$(SOINST_$(SHARED))
 
 DEF=-DRTMPDUMP_VERSION=\"$(VERSION)\" $(CRYPTO_DEF) $(XDEF)
 OPT=-g
-CFLAGS=-Wall $(XCFLAGS) $(INC) $(DEF) $(OPT) $(SO_DEF)
+CFLAGS=-Wall -fPIC $(XCFLAGS) $(INC) $(DEF) $(OPT) $(SO_DEF)
 
 incdir=$(prefix)/include/librtmp
 bindir=$(prefix)/bin
