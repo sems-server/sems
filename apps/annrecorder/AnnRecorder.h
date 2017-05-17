@@ -18,8 +18,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -64,8 +64,8 @@ class AnnRecorderFactory: public AmSessionFactory
   void getAppParams(const AmSipRequest& req, std::map<string, string>& params);
   AmPromptCollection prompts;
 
-public:  
-  static AmDynInvokeFactory* message_storage_fact; 
+public:
+  static AmDynInvokeFactory* message_storage_fact;
 
   static string AnnouncePath;
   static string DefaultAnnounce;
@@ -88,7 +88,7 @@ class AnnRecorderDialog : public AmSession,
   AmPromptCollection& prompts;
   AmPlaylist playlist;
   // we need only one separator in queue
-  auto_ptr<AmPlaylistSeparator> playlist_separator;
+  unique_ptr<AmPlaylistSeparator> playlist_separator;
 
   AmAudioFile wav_file;
   std::map<string, string> params;
@@ -112,7 +112,7 @@ class AnnRecorderDialog : public AmSession,
   void replayRecording();
   void enqueueSeparator(int id);
 
-  FILE* getCurrentMessage(); 
+  FILE* getCurrentMessage();
   void saveMessage(FILE* fp);
 
 public:
@@ -134,4 +134,3 @@ public:
 // Local Variables:
 // mode:C++
 // End:
-

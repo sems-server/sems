@@ -19,7 +19,7 @@ struct Message {
   string name;
   int size;
 
-  int operator<(const Message& b) const 
+  int operator<(const Message& b) const
   { return name < b.name; }
 
   Message() { }
@@ -27,7 +27,7 @@ struct Message {
     : name(n), size(s) { }
 };
 
-class VoiceboxDialog 
+class VoiceboxDialog
   : public AmSession
 {
 public:
@@ -43,7 +43,7 @@ public:
 private:
   AmPlaylist  play_list;
   // we need only one separator in queue
-  auto_ptr<AmPlaylistSeparator> playlist_separator;
+  unique_ptr<AmPlaylistSeparator> playlist_separator;
   AmPromptCollection* prompts;
   PromptOptions prompt_options;
 
@@ -80,11 +80,11 @@ private:
   list<Message> new_msgs;
   list<Message> saved_msgs;
 
-  // list of the messages that come be in the msg list the next round 
-  list<Message> edited_msgs; 
+  // list of the messages that come be in the msg list the next round
+  list<Message> edited_msgs;
 
-  bool userdir_open;       // have we opened the user dir? 
-  bool do_save_cur_msg;    // saving of current message possible? 
+  bool userdir_open;       // have we opened the user dir?
+  bool do_save_cur_msg;    // saving of current message possible?
 
   list<Message>::iterator cur_msg;
   bool in_saved_msgs;
@@ -94,7 +94,7 @@ private:
 public:
   VoiceboxDialog(const string& user,
 		 const string& domain,
-		 const string& pin, 
+		 const string& pin,
 		 AmPromptCollection* prompts,
 		 PromptOptions prompt_options);
   ~VoiceboxDialog();
@@ -110,6 +110,5 @@ public:
 
 
 // Local Variables:
-// mode:C++ // Stroustrup? 
+// mode:C++ // Stroustrup?
 // End:
-

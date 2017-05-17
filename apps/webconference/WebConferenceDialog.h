@@ -21,8 +21,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -37,7 +37,7 @@
 
 class WebConferenceFactory;
 
-class WebConferenceDialog 
+class WebConferenceDialog
   : public AmSession,
     public CredentialHolder
 {
@@ -50,7 +50,7 @@ public:
     InConferenceRinging,
     InConferenceEarly,
     PlayErrorFinish
-  }; 
+  };
 
 private:
   AmPlaylist  play_list;
@@ -59,10 +59,10 @@ private:
   AmPromptCollection& prompts;
 
   // our ring tone
-  auto_ptr<AmRingTone> RingTone;
+  unique_ptr<AmRingTone> RingTone;
 
   // our connection to the conference
-  auto_ptr<AmConferenceChannel> channel;
+  unique_ptr<AmConferenceChannel> channel;
   string  conf_id;
   string pin_str;
 
@@ -75,7 +75,7 @@ private:
   WebConferenceState state;
 
   WebConferenceFactory* factory;
-  bool is_dialout; 
+  bool is_dialout;
   UACAuthCred* cred;
 
   bool muted;
@@ -94,16 +94,16 @@ private:
 
 public:
   WebConferenceDialog(AmPromptCollection& prompts,
-		      WebConferenceFactory* my_f, 
+		      WebConferenceFactory* my_f,
 		      UACAuthCred* cred);
   WebConferenceDialog(AmPromptCollection& prompts,
-		      WebConferenceFactory* my_f, 
+		      WebConferenceFactory* my_f,
 		      const string& room);
   ~WebConferenceDialog();
 
   void process(AmEvent* ev);
   void onSipReply(const AmSipRequest& req,
-		  const AmSipReply& reply, 
+		  const AmSipReply& reply,
 		  AmBasicSipDialog::Status old_dlg_status);
 
   void onInvite(const AmSipRequest& req);
@@ -130,4 +130,3 @@ public:
 // Local Variables:
 // mode:C++
 // End:
-
