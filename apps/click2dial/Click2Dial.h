@@ -62,7 +62,7 @@ class C2DCallerDialog: public AmB2BCallerSession, public CredentialHolder
   AmAudioFile wav_file;
   string filename;
   string callee_uri;
-  std::auto_ptr<UACAuthCred> cred;
+  std::unique_ptr<UACAuthCred> cred;
 
   public:
 
@@ -84,7 +84,7 @@ class C2DCallerDialog: public AmB2BCallerSession, public CredentialHolder
 
 class C2DCalleeDialog : public AmB2BCalleeSession, public CredentialHolder
 {
-  std::auto_ptr<UACAuthCred> cred;
+  std::unique_ptr<UACAuthCred> cred;
   void setAuthHandler();
 
   public:
