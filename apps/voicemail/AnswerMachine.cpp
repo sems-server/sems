@@ -18,8 +18,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -99,7 +99,7 @@ const char* MsgStrError(int e) {
   case MSG_EALREADYCLOSED: return "MSG_EALREADYCLOSED"; break;
   case MSG_EREADERROR: return "MSG_EREADERROR"; break;
   case MSG_ENOSPC: return "MSG_ENOSPC"; break;
-  case MSG_ESTORAGE: return "MSG_ESTORAGE"; break;   
+  case MSG_ESTORAGE: return "MSG_ESTORAGE"; break;
   default: return "Unknown Error";
   }
 }
@@ -119,36 +119,36 @@ int get_audio_file(const string& message, const string& domain, const string& us
   if (!user.empty()) {
     audio_file = string("/tmp/") + domain + "_" + user + "_" +
       MOD_NAME + "_" + message + ".wav";
-    query_string = "select audio from " + string(USER_AUDIO_TABLE) + 
-      " where application='" + MOD_NAME + "' and message='" + message + 
+    query_string = "select audio from " + string(USER_AUDIO_TABLE) +
+      " where application='" + MOD_NAME + "' and message='" + message +
       "' and domain='" + domain + "' and userid='" + user + "'";
   } else {
     if (language.empty()) {
       if (domain.empty()) {
        audio_file = string("/tmp/") + MOD_NAME + "_" + message +
          ".wav";
-       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + 
-	 " where application='" + MOD_NAME + "' and message='" + message + 
+       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) +
+	 " where application='" + MOD_NAME + "' and message='" + message +
 	 "' and language=''";
       } else {
        audio_file = string("/tmp/") + domain + "_" + MOD_NAME +
          "_" + message + ".wav";
-       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + 
-	 " where application='" + MOD_NAME + "' and message='" + message + 
+       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) +
+	 " where application='" + MOD_NAME + "' and message='" + message +
 	 "' and domain='" + domain + "' and language=''";
       }
     } else {
       if (domain.empty()) {
        audio_file = string("/tmp/") + MOD_NAME + "_" + message +
          "_" + language + ".wav";
-       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + 
-	 " where application='" + MOD_NAME + "' and message='" + message + 
+       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) +
+	 " where application='" + MOD_NAME + "' and message='" + message +
 	 "' and language='" + language + "'";
       } else {
        audio_file = string("/tmp/") + domain + "_" + MOD_NAME + "_" +
          message + "_" + language + ".wav";
-       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + 
-	 " where application='" + MOD_NAME + "' and message='" + message + 
+       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) +
+	 " where application='" + MOD_NAME + "' and message='" + message +
 	 "' and domain='" + domain + "' and language='" + language + "'";
       }
     }
@@ -200,9 +200,9 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
     mysqlpp::Query query = AnswerMachineFactory::Connection.query();
 
     string query_string, table;
-    query_string = "select replace(template, '\r', '') as template, " 
-      "language from " + string(DEFAULT_TEMPLATE_TABLE) + 
-      " where application='" + MOD_NAME + 
+    query_string = "select replace(template, '\r', '') as template, "
+      "language from " + string(DEFAULT_TEMPLATE_TABLE) +
+      " where application='" + MOD_NAME +
       "' and message='" + EMAIL_TMPL + "'";
 
     DBG("Query string <%s>\n", query_string.c_str());
@@ -248,7 +248,7 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
     }
 
     query_string = "select domain, replace(template, '\r', '') as template, "
-      "language from " + string(DOMAIN_TEMPLATE_TABLE) + 
+      "language from " + string(DOMAIN_TEMPLATE_TABLE) +
       " where application='" + MOD_NAME +"' and message='" + EMAIL_TMPL + "'";
 
     DBG("Query string <%s>\n", query_string.c_str());
@@ -304,10 +304,10 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
 
 int AnswerMachineFactory::loadEmailTemplates(const string& path)
 {
-  string email_tmpl_file = add2path(path, 1, 
+  string email_tmpl_file = add2path(path, 1,
 				    (DEFAULT_MAIL_TMPL + "."
 				     + DEFAULT_MAIL_TMPL_EXT).c_str());
-    
+
   EmailTemplate& tmpl = email_tmpl[DEFAULT_MAIL_TMPL];
   if(tmpl.load(email_tmpl_file)){
     ERROR("Voicemail: could not load default"
@@ -332,7 +332,7 @@ int AnswerMachineFactory::loadEmailTemplates(const string& path)
     string tmpl_file = add2path(path,1,entry->d_name);
     string tmpl_name = entry->d_name;
 
-    if( (tmpl_name.length() <= file_ext.length()) 
+    if( (tmpl_name.length() <= file_ext.length())
 	|| tmpl_name.substr( tmpl_name.length()
 			     - file_ext.length(),
 			     file_ext.length() )
@@ -370,7 +370,7 @@ int AnswerMachineFactory::onLoad()
 
   // smtp_server
   SmtpServerAddress = cfg.getParameter("smtp_server",SmtpServerAddress);
-  
+
   // smtp_port
   if(cfg.hasParameter("smtp_port")){
     if(sscanf(cfg.getParameter("smtp_port").c_str(),
@@ -379,7 +379,7 @@ int AnswerMachineFactory::onLoad()
       return -1;
     }
   }
-  
+
   DBG("SMTP server set to %s:%u\n",
       SmtpServerAddress.c_str(), SmtpServerPort);
 
@@ -436,7 +436,7 @@ int AnswerMachineFactory::onLoad()
 #else
 
   /* Get email templates from file system */
-  
+
   if(loadEmailTemplates(cfg.getParameter("email_template_path",
 					 DEFAULT_MAIL_TMPL_PATH))){
     ERROR("while loading email templates\n");
@@ -462,10 +462,10 @@ int AnswerMachineFactory::onLoad()
     }
   }
 
-  TryPersonalGreeting = 
+  TryPersonalGreeting =
     cfg.getParameter("try_personal_greeting") == "yes";
 
-  DBG("voicemail will %stry to find a personal greeting.\n", 
+  DBG("voicemail will %stry to find a personal greeting.\n",
       TryPersonalGreeting?"":"not ");
 
   MailHeaderVariables = explode(cfg.getParameter("mail_header_vars"), ";");
@@ -475,16 +475,16 @@ int AnswerMachineFactory::onLoad()
 	   MailHeaderVariables.begin(); it != MailHeaderVariables.end(); it++) {
       DBG("         %s\n", it->c_str());
     }
-  }    
+  }
 
   DBG("Starting SMTP daemon\n");
   AmMailDeamon::instance()->start();
-  
+
   string s_save_empty_msg = cfg.getParameter("box_save_empty_msg");
   if (!s_save_empty_msg.empty()) {
     SaveEmptyMsg = !(s_save_empty_msg == "no");
   }
-  DBG("Voicebox will%s save empty messages.\n", 
+  DBG("Voicebox will%s save empty messages.\n",
       SaveEmptyMsg?"":" not");
 
   // override email address
@@ -509,7 +509,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
 
   EmailTmplDict template_variables;
 
-  int vm_mode = DefaultVMMode; 
+  int vm_mode = DefaultVMMode;
 
   if(SimpleMode) {
     email = EmailAddress;
@@ -520,19 +520,19 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
     typ = DEFAULT_TYPE;
   }
   else {
-  
+
     iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
     mode = get_header_keyvalue(iptel_app_param,"mod", "Mode");
-    
+
     if (!EmailAddress.length()) {
-      
+
       if (!iptel_app_param.length()) {
 	throw AmSession::Exception(500, "voicemail: parameters not found");
       }
-      
+
       language = get_header_keyvalue(iptel_app_param, "lng", "Language");
       email = get_header_keyvalue(iptel_app_param, "eml", "Email-Address");
-      
+
       if (!mode.empty()) {
 	if (mode == "box")
 	  vm_mode = MODE_BOX;
@@ -546,52 +546,52 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
       //vm_mode = MODE_VOICEMAIL;
       email = EmailAddress;
     }
-    
+
     if (((vm_mode == MODE_BOTH) || (vm_mode == MODE_VOICEMAIL)) &&
 	(email.find('@') == string::npos)) {
       ERROR("no @ found in email address '%s' from params '%s'\n",
 	    email.c_str(), iptel_app_param.c_str());
       throw AmSession::Exception(500, "voicemail: no email address");
     }
-    
+
     user = get_header_keyvalue(iptel_app_param,"usr", "User");
     if (!user.length())
       user = req.user;
-    
+
     sender = get_header_keyvalue(iptel_app_param, "snd", "Sender");
-    if (!sender.length()) 
-      sender = req.from;  
-    
+    if (!sender.length())
+      sender = req.from;
+
     domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
     if (!domain.length())
       domain = req.domain;
-    
+
     typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
     if (!typ.length())
       typ = DEFAULT_TYPE;
-    
+
     uid = get_header_keyvalue(iptel_app_param, "uid", "UserID");
     if (uid.empty())
       uid=user;
-    
+
     did = get_header_keyvalue(iptel_app_param, "did", "DomainID");
     if (did.empty())
       did=domain;
   }
-    
+
   // checks
-  if (uid.empty()) 
+  if (uid.empty())
     throw AmSession::Exception(500, "voicemail: user missing");
-  
-  if (sender.empty()) 
+
+  if (sender.empty())
     throw AmSession::Exception(500, "voicemail: sender missing");
-  
+
   if (((vm_mode == MODE_BOX) || (vm_mode == MODE_BOTH))
       && (NULL == MessageStorage)) {
     throw AmSession::Exception(500, "voicemail: no message storage available");
   }
-  
-  
+
+
   DBG("voicemail invocation parameters: \n");
   DBG(" Mode:     <%s> \n", mode.c_str());
   DBG(" Email:    <%s> \n", email.c_str());
@@ -602,7 +602,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
   DBG(" Type:     <%s> \n", typ.c_str());
   DBG(" UID:      <%s> \n", uid.c_str());
   DBG(" DID:      <%s> \n", did.c_str());
-  
+
   FILE* greeting_fp = NULL;
   if (TryPersonalGreeting)
     greeting_fp = getMsgStoreGreeting(typ, uid, did);
@@ -634,28 +634,28 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
 
 #else
 
-  string announce_file = add2path(AnnouncePath,2, 
+  string announce_file = add2path(AnnouncePath,2,
 				  did.c_str(), (uid + ".wav").c_str());
   if (file_exists(announce_file)) goto announce_found;
 
   if (!language.empty()) {
-    announce_file = add2path(AnnouncePath,3, 
+    announce_file = add2path(AnnouncePath,3,
 			     did.c_str(), language.c_str(), DefaultAnnounce.c_str());
     if (file_exists(announce_file)) goto announce_found;
   }
 
-  announce_file = add2path(AnnouncePath,2, 
+  announce_file = add2path(AnnouncePath,2,
 			   did.c_str(), DefaultAnnounce.c_str());
   if (file_exists(announce_file)) goto announce_found;
 
   if (!language.empty()) {
-    announce_file = add2path(AnnouncePath,2, 
+    announce_file = add2path(AnnouncePath,2,
 			     language.c_str(),  DefaultAnnounce.c_str());
     if (file_exists(announce_file)) goto announce_found;
   }
-	
+
   announce_file = add2path(AnnouncePath,1, DefaultAnnounce.c_str());
-  if (!file_exists(announce_file)) 
+  if (!file_exists(announce_file))
     announce_file = "";
 
 #endif
@@ -676,8 +676,8 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
   // VBOX mode does not need email template
   if ((vm_mode == MODE_BOX) || (vm_mode == MODE_ANN))
     return new AnswerMachineDialog(user, sender, domain,
-				   email, announce_file, uid, did, 
-				   greeting_fp, vm_mode, 
+				   email, announce_file, uid, did,
+				   greeting_fp, vm_mode,
 				   template_variables, NULL);
 
   if(email.empty())
@@ -700,13 +700,13 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
     if(tmpl_it == email_tmpl.end())
       tmpl_it = email_tmpl.find(DEFAULT_MAIL_TMPL);
   }
-    
+
   if(tmpl_it == email_tmpl.end()){
     ERROR("Voicemail: unable to find an email template.\n");
     return 0;
   }
   return new AnswerMachineDialog(user, sender, domain,
-				 email, announce_file, 
+				 email, announce_file,
 				 uid, did,
 				 greeting_fp,
 				 vm_mode, template_variables,
@@ -714,19 +714,19 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string&
 }
 
 
-AnswerMachineDialog::AnswerMachineDialog(const string& user, 
-					 const string& sender, 
+AnswerMachineDialog::AnswerMachineDialog(const string& user,
+					 const string& sender,
 					 const string& domain,
-					 const string& email, 
-					 const string& announce_file, 
+					 const string& email,
+					 const string& announce_file,
 					 const string& uid,
 					 const string& did,
-					 FILE* announce_fp, 
+					 FILE* announce_fp,
 					 int vm_mode,
 					 const EmailTmplDict& template_variables,
-					 const EmailTemplate* tmpl) 
+					 const EmailTemplate* tmpl)
   : announce_file(announce_file), announce_fp(announce_fp),
-    tmpl(tmpl), playlist(this), 
+    tmpl(tmpl), playlist(this),
   status(0), vm_mode(vm_mode),
   email_dict(template_variables)
 
@@ -792,7 +792,7 @@ void AnswerMachineDialog::process(AmEvent* event)
 void AnswerMachineDialog::onNoAudio()
 {
   switch(status){
-    
+
   case 0: {
     // announcement mode - no recording
     if (MODE_ANN == vm_mode) {
@@ -800,11 +800,11 @@ void AnswerMachineDialog::onNoAudio()
       setStopped();
       return;
     }
-    
+
     playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
-    
+
     setTimer(RECORD_TIMER, AnswerMachineFactory::MaxRecordTime);
-    
+
     status = 1;
   } break;
 
@@ -813,13 +813,13 @@ void AnswerMachineDialog::onNoAudio()
     playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
     status = 2;
     break;
-    
+
   case 2:
     dlg->bye();
     saveMessage();
     setStopped();
     break;
-    
+
   }
 }
 
@@ -840,7 +840,7 @@ void AnswerMachineDialog::onSessionStart()
 
   if (announce_fp) {
     rewind(announce_fp);
-    if (a_greeting.fpopen(DEFAULT_TYPE"."DEFAULT_AUDIO_EXT, 
+    if (a_greeting.fpopen(DEFAULT_TYPE "." DEFAULT_AUDIO_EXT,
 			  AmAudioFile::Read, announce_fp) ||
 	a_beep.open(beep_file,AmAudioFile::Read)) {
       if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
@@ -854,7 +854,7 @@ void AnswerMachineDialog::onSessionStart()
   }
 #else
   if (announce_fp) {
-    if (a_greeting.fpopen(DEFAULT_TYPE"."DEFAULT_AUDIO_EXT, 
+    if (a_greeting.fpopen(DEFAULT_TYPE "." DEFAULT_AUDIO_EXT,
 			  AmAudioFile::Read, announce_fp) ||
 	a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),
 		    AmAudioFile::Read))
@@ -869,17 +869,17 @@ void AnswerMachineDialog::onSessionStart()
 
   msg_filename = "/tmp/" + getLocalTag() + "."
     + AnswerMachineFactory::RecFileExt;
-    
+
   if (vm_mode != MODE_ANN) {
     if(a_msg.open(msg_filename,AmAudioFile::Write,true))
-      throw string("AnswerMachine: couldn't open ") + 
+      throw string("AnswerMachine: couldn't open ") +
 	msg_filename + string(" for writing");
   }
 
   //a_msg.setRecordTime(AnswerMachineFactory::MaxRecordTime*1000);
-    
+
   playlist.addToPlaylist(new AmPlaylistItem(&a_greeting,NULL));
-  if (vm_mode != MODE_ANN) 
+  if (vm_mode != MODE_ANN)
     playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
   //playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
 
@@ -907,7 +907,7 @@ void AnswerMachineDialog::saveMessage()
 
   int rec_length = a_msg.getLength();
   char rec_len_str[10];
-  snprintf(rec_len_str, sizeof(rec_len_str), 
+  snprintf(rec_len_str, sizeof(rec_len_str),
 	   "%.2f", float(rec_length)/1000.0);
   string rec_len_s = rec_len_str;
 
@@ -919,7 +919,7 @@ void AnswerMachineDialog::saveMessage()
   if(!rec_size){
     // record in box empty messages as well
     if (AnswerMachineFactory::SaveEmptyMsg &&
-	((vm_mode == MODE_BOX) || 
+	((vm_mode == MODE_BOX) ||
 	 (vm_mode == MODE_BOTH))) {
       saveBox(NULL);
     }
@@ -931,7 +931,7 @@ void AnswerMachineDialog::saveMessage()
       a_msg.on_close();
 
       // copy to tmpfile for box msg
-      if ((vm_mode == MODE_BOTH) ||  
+      if ((vm_mode == MODE_BOTH) ||
 	  (vm_mode == MODE_BOX))  {
 	DBG("will save to box...\n");
 	FILE* m_fp = a_msg.getfp();
@@ -956,9 +956,9 @@ void AnswerMachineDialog::saveMessage()
 	}
 	saveBox(m_fp);
       }
-	    
+
       if ((vm_mode == MODE_BOTH) ||
-	  (vm_mode == MODE_VOICEMAIL)) { 
+	  (vm_mode == MODE_VOICEMAIL)) {
 	// send mail
 	AmMail* mail = new AmMail(tmpl->getEmail(email_dict));
 	mail->attachements.push_back(Attachement(a_msg.getfp(),
@@ -975,7 +975,7 @@ void AnswerMachineDialog::saveMessage()
 }
 
 void AnswerMachineDialog::saveBox(FILE* fp) {
-  string msg_name = email_dict["ts"] + MSG_SEPARATOR +  
+  string msg_name = email_dict["ts"] + MSG_SEPARATOR +
     email_dict["sender"] + "." + AnswerMachineFactory::RecFileExt;
   DBG("message name is '%s'\n", msg_name.c_str());
 
@@ -986,16 +986,16 @@ void AnswerMachineDialog::saveBox(FILE* fp) {
   AmArg df;
   MessageDataFile df_arg(fp);
   df.setBorrowedPointer(&df_arg);
-  di_args.push(df);  
-  msg_storage->invoke("msg_new",di_args,ret);  
+  di_args.push(df);
+  msg_storage->invoke("msg_new",di_args,ret);
   // TODO: evaluate ret return value
   if (fp)
     fclose(fp);
 }
 
 
-FILE* AnswerMachineFactory::getMsgStoreGreeting(string msgname, 
-						string user, 
+FILE* AnswerMachineFactory::getMsgStoreGreeting(string msgname,
+						string user,
 						string domain) {
   if (!msg_storage)
     return NULL;
@@ -1010,8 +1010,8 @@ FILE* AnswerMachineFactory::getMsgStoreGreeting(string msgname,
   di_args.push(user.c_str());    // user
   di_args.push(msgname.c_str()); // msg name
 
-  msg_storage->invoke("msg_get",di_args,ret);  
-  if (!ret.size()  
+  msg_storage->invoke("msg_get",di_args,ret);
+  if (!ret.size()
       || !isArgInt(ret.get(0))) {
     ERROR("msg_get for user '%s' domain '%s' msg '%s'"
 	  " returned no (valid) result.\n",
@@ -1028,15 +1028,15 @@ FILE* AnswerMachineFactory::getMsgStoreGreeting(string msgname,
 	  MsgStrError(ret.get(0).asInt()));
 
     if ((ret.size() > 1) && isArgAObject(ret.get(1))) {
-      MessageDataFile* f = 
+      MessageDataFile* f =
 	dynamic_cast<MessageDataFile*>(ret.get(1).asObject());
       if (NULL != f)
 	delete f;
     }
 
     return NULL;
-  } 
-  
+  }
+
   if ((ret.size() < 2) ||
       (!isArgAObject(ret.get(1)))) {
     ERROR("msg_get for user '%s' domain '%s' message '%s': "
@@ -1045,7 +1045,7 @@ FILE* AnswerMachineFactory::getMsgStoreGreeting(string msgname,
 	  msgname.c_str());
     return NULL;
   }
-  MessageDataFile* f = 
+  MessageDataFile* f =
     dynamic_cast<MessageDataFile*>(ret.get(1).asObject());
   if (NULL == f)
     return NULL;
