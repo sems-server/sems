@@ -33,9 +33,10 @@
 struct MonitoringEventLogHandler
   : public SBCEventLogHandler
 {
-  void logEvent(long int timestamp, const string& id, 
+  void logEvent(long int timestamp, const string& id,
 		const string& type, const AmArg& event) {
 
+#ifdef USE_MONITORING
     if(NULL != MONITORING_GLOBAL_INTERFACE) {
       AmArg di_args,ret;
       di_args.push(id);
@@ -49,11 +50,13 @@ struct MonitoringEventLogHandler
       MONITORING_GLOBAL_INTERFACE->
 	invoke("log", di_args, ret);
     }
+#endif
   }
 };
 
 void _SBCEventLog::useMonitoringLog()
 {
+#ifdef USE_MONITORING
   if(NULL != MONITORING_GLOBAL_INTERFACE) {
     setEventLogHandler(new MonitoringEventLogHandler());
     INFO("SBC event log will use the monitoring module\n");
@@ -62,6 +65,7 @@ void _SBCEventLog::useMonitoringLog()
     ERROR("SBC event log cannot use the monitoring module"
 	  " as it is not loaded\n");
   }
+#endif
 }
 
 void _SBCEventLog::setEventLogHandler(SBCEventLogHandler* lh)
@@ -95,7 +99,7 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
 
   if(uri_parser.parse_contact(req.from,0,end))
     start_event["from"] = uri_parser.uri_str();
-  else 
+  else
     start_event["from"] = req.from;
 
   start_event["from-ua"] = from_remote_ua;
@@ -103,7 +107,7 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
 
   if(uri_parser.parse_contact(req.to,0,end))
     start_event["to"] = uri_parser.uri_str();
-  else 
+  else
     start_event["to"] = req.to;
 
   start_event["to-ua"] = to_remote_ua;
@@ -118,7 +122,7 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
 	   start_event);
 }
 
-  
+
 
 void _SBCEventLog::logCallEnd(const AmSipRequest& req,
 			      const string& local_tag,
@@ -132,7 +136,7 @@ void _SBCEventLog::logCallEnd(const AmSipRequest& req,
   end_event["source"]   = req.remote_ip;
   end_event["src-port"] = req.remote_port;
   end_event["r-uri"]    = req.r_uri;
-  
+
   size_t end;
   AmUriParser uri_parser;
   if(uri_parser.parse_contact(req.from,0,end))
@@ -166,7 +170,7 @@ void _SBCEventLog::logCallEnd(const AmBasicSipDialog* dlg,
   end_event["call-id"] = dlg->getCallid();
   end_event["reason"]  = reason;
   end_event["r-uri"]   = dlg->getLocalUri();
-  
+
   size_t end;
   AmUriParser uri_parser;
 

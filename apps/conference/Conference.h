@@ -18,8 +18,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -62,7 +62,7 @@ enum { DoConfConnect = 100,
 struct DialoutConfEvent : public AmEvent {
 
   string conf_id;
-    
+
   DialoutConfEvent(int event_id,
 		   const string& conf_id)
     : AmEvent(event_id),
@@ -105,22 +105,22 @@ class ConferenceDialog : public AmSession
 {
   AmPlaylist  play_list;
 
-  auto_ptr<AmAudioFile> LonelyUserFile;
-  auto_ptr<AmAudioFile> JoinSound;
-  auto_ptr<AmAudioFile> DropSound;
-  auto_ptr<AmRingTone>  RingTone;
-  auto_ptr<AmRingTone>  ErrorTone;
+  unique_ptr<AmAudioFile> LonelyUserFile;
+  unique_ptr<AmAudioFile> JoinSound;
+  unique_ptr<AmAudioFile> DropSound;
+  unique_ptr<AmRingTone>  RingTone;
+  unique_ptr<AmRingTone>  ErrorTone;
 
 
   string                        conf_id;
-  auto_ptr<AmConferenceChannel> channel;
+  unique_ptr<AmConferenceChannel> channel;
 
   int                           state;
   string                        dtmf_seq;
   bool                          dialedout;
   string                        dialout_suffix;
   string                        dialout_id;
-  auto_ptr<AmConferenceChannel> dialout_channel;
+  unique_ptr<AmConferenceChannel> dialout_channel;
 
   bool                          allow_dialout;
 
@@ -130,7 +130,7 @@ class ConferenceDialog : public AmSession
 
   bool                          listen_only;
 
-  auto_ptr<AmSipRequest>        transfer_req;
+  unique_ptr<AmSipRequest>        transfer_req;
 
 
   void createDialoutParticipant(const string& uri);
@@ -161,7 +161,7 @@ public:
 
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipRequest& req,
-		  const AmSipReply& reply, 
+		  const AmSipReply& reply,
 		  AmBasicSipDialog::Status old_dlg_status);
 
 #ifdef WITH_SAS_TTS
@@ -173,4 +173,3 @@ public:
 // Local Variables:
 // mode:C++
 // End:
-
