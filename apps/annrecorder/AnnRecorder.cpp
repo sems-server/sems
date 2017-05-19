@@ -18,8 +18,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -67,7 +67,7 @@ const char* MsgStrError(int e) {
   case MSG_EALREADYCLOSED: return "MSG_EALREADYCLOSED"; break;
   case MSG_EREADERROR: return "MSG_EREADERROR"; break;
   case MSG_ENOSPC: return "MSG_ENOSPC"; break;
-  case MSG_ESTORAGE: return "MSG_ESTORAGE"; break;   
+  case MSG_ESTORAGE: return "MSG_ESTORAGE"; break;
   default: return "Unknown Error";
   }
 }
@@ -87,7 +87,7 @@ int AnnRecorderFactory::onLoad()
   configureModule(cfg);
 
   AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
-  if( !AnnouncePath.empty() 
+  if( !AnnouncePath.empty()
       && AnnouncePath[AnnouncePath.length()-1] != '/' )
     AnnouncePath += "/";
   DefaultAnnounce = cfg.getParameter("default_announce");
@@ -133,35 +133,35 @@ void AnnRecorderFactory::getAppParams(const AmSipRequest& req, map<string, strin
   }
   else {
     string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
-    
+
     if (!iptel_app_param.length()) {
       throw AmSession::Exception(500, MOD_NAME ": parameters not found");
     }
-    
+
     language = get_header_keyvalue(iptel_app_param, "lng", "Language");
-    
+
     user = get_header_keyvalue(iptel_app_param,"uid", "UserID");
     if (user.empty()) {
       user = get_header_keyvalue(iptel_app_param,"usr", "User");
       if (!user.length())
 	user = req.user;
     }
-    
+
     domain = get_header_keyvalue(iptel_app_param, "did", "DomainID");
     if (domain.empty()){
       domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
       if (domain.empty())
 	domain = req.domain;
     }
-    
+
     typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
     if (!typ.length())
       typ = DEFAULT_TYPE;
   }
-  
+
   // checks
-  if (user.empty()) 
-    throw AmSession::Exception(500, MOD_NAME ": user missing");    
+  if (user.empty())
+    throw AmSession::Exception(500, MOD_NAME ": user missing");
 
   string announce_file = add2path(AnnouncePath,2, domain.c_str(), (user + ".wav").c_str());
   if (file_exists(announce_file)) goto announce_found;
@@ -178,9 +178,9 @@ void AnnRecorderFactory::getAppParams(const AmSipRequest& req, map<string, strin
     announce_file = add2path(AnnouncePath,2, language.c_str(),  DefaultAnnounce.c_str());
     if (file_exists(announce_file)) goto announce_found;
   }
-	
+
   announce_file = add2path(AnnouncePath,1, DefaultAnnounce.c_str());
-  if (!file_exists(announce_file)) 
+  if (!file_exists(announce_file))
     announce_file = "";
 
  announce_found:
@@ -213,9 +213,9 @@ AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req, const string& a
 
   map<string, string> params;
   getAppParams(req, params);
-  AmSession* s = new AnnRecorderDialog(params, prompts, cred); 
-  
-  if (NULL == cred) {
+  AmSession* s = new AnnRecorderDialog(params, prompts, cred);
+
+  if (nullptr == cred) {
     WARN("discarding unknown session parameters.\n");
   } else {
     AmUACAuth::enable(s);
@@ -227,7 +227,7 @@ AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req, const string& a
 AnnRecorderDialog::AnnRecorderDialog(const map<string, string>& params,
 				     AmPromptCollection& prompts,
 				     UACAuthCred* credentials)
-  : params(params), 
+  : params(params),
     prompts(prompts), cred(credentials),
     playlist(this)
 {
@@ -256,7 +256,7 @@ void AnnRecorderDialog::onSessionStart()
   enqueueSeparator(SEP_MSG_BEGIN);
 
   // set the playlist as input and output
-  setInOut(&playlist,&playlist);  
+  setInOut(&playlist,&playlist);
   state = S_WAIT_START;
 
   AmSession::onSessionStart();
@@ -270,7 +270,7 @@ void AnnRecorderDialog::enqueueCurrent() {
     if (wav_file.open(params["defaultfile"], AmAudioFile::Read)) {
       ERROR("opening default greeting file '%s'!\n", params["defaultfile"].c_str());
       return;
-    }  
+    }
   } else {
     if (wav_file.fpopen("aa.wav", AmAudioFile::Read, fp)) {
       ERROR("fpopen message file!\n");
@@ -290,14 +290,14 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
   }
 
   switch (state) {
-  case S_WAIT_START: { 
-    DBG("received key %d in state S_WAIT_START: start recording\n", event); 
+  case S_WAIT_START: {
+    DBG("received key %d in state S_WAIT_START: start recording\n", event);
     playlist.flush();
 
     wav_file.close();
     msg_filename = "/tmp/" + getLocalTag() + ".wav";
     if(wav_file.open(msg_filename,AmAudioFile::Write,false)) {
-     ERROR("AnnRecorder: couldn't open %s for writing\n", 
+     ERROR("AnnRecorder: couldn't open %s for writing\n",
 	   msg_filename.c_str());
      dlg->bye();
      setStopped();
@@ -310,15 +310,15 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
   } break;
 
   case S_RECORDING: {
-    DBG("received key %d in state S_RECORDING: replay recording\n", event); 
+    DBG("received key %d in state S_RECORDING: replay recording\n", event);
     prompts.addToPlaylist(BEEP,  (long)this, playlist);
     playlist.flush();
     replayRecording();
-    
+
   } break;
 
-  case S_CONFIRM: { 
-    DBG("received key %d in state S_CONFIRM save or redo\n", event); 
+  case S_CONFIRM: {
+    DBG("received key %d in state S_CONFIRM save or redo\n", event);
     playlist.flush();
 
     wav_file.close();
@@ -331,9 +331,9 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
     }
   } break;
 
-  default: { 
+  default: {
     DBG("ignoring key %d in state %d\n",
-		 event, state); 
+		 event, state);
   }break;
   }
 
@@ -387,21 +387,21 @@ void AnnRecorderDialog::process(AmEvent* event)
       return;
     }
 
-    if (S_RECORDING == state) {      
+    if (S_RECORDING == state) {
       replayRecording();
     }
   }
 
   AmPlaylistSeparatorEvent* pl_ev = dynamic_cast<AmPlaylistSeparatorEvent*>(event);
   if (pl_ev) {
-    if ((pl_ev->event_id == SEP_MSG_BEGIN) && 
+    if ((pl_ev->event_id == SEP_MSG_BEGIN) &&
 	(S_WAIT_START == state)) {
       // start timer
       setTimer(TIMERID_START_TIMER, START_RECORDING_TIMEOUT);
       return;
     }
 
-    if ((pl_ev->event_id == SEP_CONFIRM_BEGIN) && 
+    if ((pl_ev->event_id == SEP_CONFIRM_BEGIN) &&
 	(S_CONFIRM == state)) {
       // start timer
       setTimer(TIMERID_CONFIRM_TIMER, CONFIRM_RECORDING_TIMEOUT);
@@ -437,9 +437,9 @@ void AnnRecorderDialog::saveMessage(FILE* fp) {
   AmArg df;
   MessageDataFile df_arg(fp);
   df.setBorrowedPointer(&df_arg);
-  di_args.push(df);  
+  di_args.push(df);
   try {
-    msg_storage->invoke("msg_new",di_args,ret);  
+    msg_storage->invoke("msg_new",di_args,ret);
   } catch(string& s) {
     ERROR("invoking msg_new: '%s'\n", s.c_str());
   } catch(...) {
@@ -460,8 +460,8 @@ FILE* AnnRecorderDialog::getCurrentMessage() {
   di_args.push(user.c_str());    // user
   di_args.push(msgname.c_str()); // msg name
 
-  msg_storage->invoke("msg_get",di_args,ret);  
-  if (!ret.size()  
+  msg_storage->invoke("msg_get",di_args,ret);
+  if (!ret.size()
       || !isArgInt(ret.get(0))) {
     ERROR("msg_get for user '%s' domain '%s' msg '%s'"
 	  " returned no (valid) result.\n",
@@ -478,15 +478,15 @@ FILE* AnnRecorderDialog::getCurrentMessage() {
 	  MsgStrError(ret.get(0).asInt()));
 
     if ((ret.size() > 1) && isArgAObject(ret.get(1))) {
-      MessageDataFile* f = 
+      MessageDataFile* f =
 	dynamic_cast<MessageDataFile*>(ret.get(1).asObject());
       if (NULL != f)
 	delete f;
     }
 
     return NULL;
-  } 
-  
+  }
+
   if ((ret.size() < 2) ||
       (!isArgAObject(ret.get(1)))) {
     ERROR("msg_get for user '%s' domain '%s' message '%s': "
@@ -495,7 +495,7 @@ FILE* AnnRecorderDialog::getCurrentMessage() {
 	  msgname.c_str());
     return NULL;
   }
-  MessageDataFile* f = 
+  MessageDataFile* f =
     dynamic_cast<MessageDataFile*>(ret.get(1).asObject());
   if (NULL == f)
     return NULL;

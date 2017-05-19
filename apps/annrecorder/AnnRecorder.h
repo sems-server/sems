@@ -97,7 +97,7 @@ class AnnRecorderDialog : public AmSession,
 
   AmDynInvoke* msg_storage;
 
-  std::auto_ptr<UACAuthCred> cred;
+  std::unique_ptr<UACAuthCred> cred;
 
   enum AnnRecorderState {
     S_WAIT_START,
