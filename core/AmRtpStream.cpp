@@ -65,6 +65,10 @@
 #include <set>
 using std::set;
 
+#define RTCP_PAYLOAD_MIN 72
+#define RTCP_PAYLOAD_MAX 76
+#define IS_RTCP_PAYLOAD(p) ((p) >= RTCP_PAYLOAD_MIN && (p) <= RTCP_PAYLOAD_MAX)
+
 void PayloadMask::clear()
 {
   memset(bits, 0, sizeof(bits));
@@ -1062,6 +1066,11 @@ void AmRtpStream::recvPacket(int fd)
       clearRTPTimeout(&p->recv_time);
       mem.freePacket(p);	  
     } else {
+      if(IS_RTCP_PAYLOAD(p->payload)) {
+         recvRtcpPacket(p);
+         mem.freePacket(p);
+         return;
+      }
       bufferPacket(p);
     }
   } else {
@@ -1069,25 +1078,37 @@ void AmRtpStream::recvPacket(int fd)
   }
 }
 
-void AmRtpStream::recvRtcpPacket()
+void AmRtpStream::recvRtcpPacket(AmRtpPacket* p)
 {
   struct sockaddr_storage recv_addr;
   socklen_t recv_addr_len = sizeof(recv_addr);
-  unsigned char buffer[4096];
+  int recved_bytes;
+  unsigned char *buffer;
+  unsigned char local_buffer[4096];
 
-  int recved_bytes = recvfrom(l_rtcp_sd,buffer,sizeof(buffer),0,
-			      (struct sockaddr*)&recv_addr,
-			      &recv_addr_len);
+  if(p) {
+    buffer = p->getBuffer();
+    recved_bytes = p->getBufferSize();
+    p->getAddr(&recv_addr);
+  } else {
+    buffer = local_buffer;
+    recved_bytes = recvfrom(l_rtcp_sd,local_buffer,sizeof(local_buffer),0,
+                            (struct sockaddr*)&recv_addr,
+                            &recv_addr_len);
+    if(recved_bytes < 0) {
+      if((errno != EINTR) &&
+         (errno != EAGAIN))
+      {
+        ERROR("rtcp recv(%d): %s",l_rtcp_sd,strerror(errno));
+      }
+      return;
+    } else if(!recved_bytes) return;
 
-  if(recved_bytes < 0) {
-    if((errno != EINTR) && 
-       (errno != EAGAIN)) {
-      ERROR("rtcp recv(%d): %s",l_rtcp_sd,strerror(errno));
+    if((size_t)recved_bytes > sizeof(local_buffer)) {
+      ERROR("[%p] recved huge RTCP packet (%d/%ld)",this,recved_bytes,sizeof(local_buffer));
+      return;
     }
-    return;
   }
-  else
-    if(!recved_bytes) return;
 
   static const cstring empty;
   if (logger)
