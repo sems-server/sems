@@ -1310,13 +1310,13 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     if(err < 0){
 	ERROR("Error from transport layer\n");
 
-	delete p_msg;
-	p_msg = NULL;
-
 	if(default_bl_ttl) {
 	    tr_blacklist::instance()->insert(&p_msg->remote_ip,
 					     default_bl_ttl,"503");
 	}
+
+	delete p_msg;
+	p_msg = NULL;
 	tt->_bucket->unlock();
 	goto try_next_dest;
     }
