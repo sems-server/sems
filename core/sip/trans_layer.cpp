@@ -1314,7 +1314,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	p_msg = NULL;
 
 	if(default_bl_ttl) {
-	    tr_blacklist::instance()->insert(&tt->_t->msg->remote_ip,
+	    tr_blacklist::instance()->insert(&p_msg->remote_ip,
 					     default_bl_ttl,"503");
 	}
 	tt->_bucket->unlock();
