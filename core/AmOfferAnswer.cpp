@@ -387,7 +387,8 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
 
     string sdp_buf;
     if(getSdpBody(sdp_buf)) {
-      if (reply.code == 183 && reply.cseq_method == SIP_METH_INVITE) {
+      if ((reply.code == 183 && reply.cseq_method == SIP_METH_INVITE) ||
+          (reply.code == 200 && reply.cseq_method == SIP_METH_INVITE && state == OA_Completed)) {
         // just ignore if no SDP is generated (required for B2B)
       }
       else return -1;
