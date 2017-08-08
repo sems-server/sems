@@ -364,7 +364,10 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
     case Trying:
     case Proceeding:
       if(reply.code < 200){
-	if(reply.code == 100 || reply.to_tag.empty())
+	// Do not go to Early state if To tag can still change
+	// Otherwise reply check will fail
+	if (((reply.code == 100) || (reply.code == 181) || (reply.code == 182))
+	    || reply.to_tag.empty())
 	  setStatus(Proceeding);
 	else {
 	  setStatus(Early);
