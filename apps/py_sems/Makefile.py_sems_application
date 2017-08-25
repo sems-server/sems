@@ -43,7 +43,8 @@ install: all
 .PHONY: install-cfg
 install-cfg: 
 	mkdir -p $(cfg_target)
-	-@for r in $(module_conf_files); do \
+	@set -e ; \
+	for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL_TOUCH) $(cfg_target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio_target)#g" \

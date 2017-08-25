@@ -78,7 +78,7 @@ librtmp.pc: librtmp.pc.in Makefile
 install:	install_base $(SO_INST)
 
 install_base:	librtmp.a librtmp.pc
-	-mkdir -p $(INCDIR) $(LIBDIR)/pkgconfig $(MANDIR)/man3
+	mkdir -p $(INCDIR) $(LIBDIR)/pkgconfig $(MANDIR)/man3
 	cp amf.h http.h log.h rtmp.h $(INCDIR)
 	cp librtmp.a $(LIBDIR)
 	cp librtmp.pc $(LIBDIR)/pkgconfig

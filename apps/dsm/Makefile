@@ -12,10 +12,10 @@ COREPATH ?=../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 make_dsm_mods: 
-	-@$(MAKE) -C mods  
+	@$(MAKE) -C mods
 
 install_dsm_mods:
-	-@$(MAKE) -C mods/ install
+	@$(MAKE) -C mods/ install
 
 clean_dsm_mods:
-	-@$(MAKE) -C mods/ clean
+	@$(MAKE) -C mods/ clean

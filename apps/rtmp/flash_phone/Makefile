@@ -28,7 +28,7 @@ endif
 all: $(TARGET)
 
 clean:
-	rm *.swf
+	rm -f *.swf
 
 %.swf: $(SOURCES) Makefile
 	$(MXMLC) $(MXMLC_OPTS) $<

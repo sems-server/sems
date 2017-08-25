@@ -29,21 +29,21 @@ EXTRA_LDFLAGS += -lresolv -levent -levent_pthreads
 
 .PHONY: all
 all: ../../Makefile.defs sip_stack libresample
-	-@$(MAKE) core_deps   && $(MAKE) sbc_deps  && $(MAKE) deps    && \
+	@$(MAKE) core_deps   && $(MAKE) sbc_deps  && $(MAKE) deps    && \
 	  $(MAKE) $(NAME) && \
 	./$(NAME)
 
 .PHONY: sip_stack
 sip_stack:
-	-@echo ""
-	-@echo "making SIP stack"
-	-@cd $(SIP_STACK_DIR); $(MAKE) all
+	@echo ""
+	@echo "making SIP stack"
+	@cd $(SIP_STACK_DIR); $(MAKE) all
 
 .PHONY: libresample
 libresample:
-	-@echo ""
-	-@echo "making libresample"
-	-@cd $(RESAMPLE_DIR); $(MAKE) all
+	@echo ""
+	@echo "making libresample"
+	@cd $(RESAMPLE_DIR); $(MAKE) all
 
 SIP_STACK: sip_stack
 
@@ -83,8 +83,8 @@ include ../../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
 $(NAME): $(OBJS) $(CORE_OBJS) $(SBC_OBJS) $(AUTH_OBJS) $(SIP_STACK) $(LIBRESAMPLE) ../../Makefile.defs
-	-@echo ""
-	-@echo "making $(NAME)"
+	@echo ""
+	@echo "making $(NAME)"
 	$(LD) -o $(NAME) $(OBJS) $(CORE_OBJS) $(SBC_OBJS) $(SIP_STACK) $(LIBRESAMPLE) $(LDFLAGS) $(EXTRA_LDFLAGS) $(AUTH_OBJS)
 
 ifeq '$(NAME)' '$(MAKECMDGOALS)'

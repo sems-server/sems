@@ -52,8 +52,9 @@ all: modules
 
 .PHONY: clean
 clean:
-	-@rm -f *.so
-	-@for r in $(app_modules) "" ; do \
+	@rm -f *.so
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "Cleaning $$r" ; \
@@ -64,7 +65,8 @@ clean:
 
 .PHONY: modules
 modules:
-	-@for r in $(app_modules) "" ; do \
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo "Making $$r" ; \
@@ -78,7 +80,8 @@ install: install-bin install-cfg
 
 .PHONY: install-bin
 install-bin:
-	-@for r in $(app_modules) "" ; do \
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "Installing $$r binaries" ; \
@@ -89,7 +92,8 @@ install-bin:
 
 .PHONY: install-cfg
 install-cfg: $(DESTDIR)$(cfg_target)
-	-@for r in $(app_modules) "" ; do \
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "Installing $$r configuration" ; \
