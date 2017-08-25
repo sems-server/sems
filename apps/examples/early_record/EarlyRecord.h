@@ -30,7 +30,7 @@ class EarlyRecordDialog
     
   string msg_filename;
   AmAudioFile a_msg;
-  std::auto_ptr<UACAuthCred> cred;
+  std::unique_ptr<UACAuthCred> cred;
   
  protected:
   void process(AmEvent* event);

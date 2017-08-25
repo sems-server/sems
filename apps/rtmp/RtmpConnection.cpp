@@ -669,7 +669,7 @@ void RtmpConnection::rxAudio(RTMPPacket *packet)
 
 RtmpSession* RtmpConnection::startSession(const char* uri)
 {
-  auto_ptr<RtmpSession> n_session(new RtmpSession(this));
+  unique_ptr<RtmpSession> n_session(new RtmpSession(this));
   AmSipDialog* dialout_dlg = n_session->dlg;
 
   string dialout_id = AmSession::getNewId();

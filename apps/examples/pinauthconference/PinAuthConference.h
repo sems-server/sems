@@ -84,7 +84,7 @@ private:
   AmPromptCollection& prompts;
 
   // our connection to the conference
-  auto_ptr<AmConferenceChannel> channel;
+  unique_ptr<AmConferenceChannel> channel;
   string  conf_id;
   string pin_str;
 

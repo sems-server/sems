@@ -63,7 +63,7 @@ class AnnouncementDialog : public AmSession,
   AmAudioFile wav_file;
   string filename;
 
-  std::auto_ptr<UACAuthCred> cred;
+  std::unique_ptr<UACAuthCred> cred;
 public:
   AnnouncementDialog(const string& filename, 
 		     UACAuthCred* credentials = NULL);
