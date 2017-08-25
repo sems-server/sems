@@ -21,7 +21,11 @@ MXMLC_OPTS= \
 APP=sono
 SOURCES= $(APP).mxml $(wildcard *.as)
 
-all: $(APP).swf
+ifneq ($(wildcard $(FLEX_SDK)),)
+TARGET=$(APP).swf
+endif
+
+all: $(TARGET)
 
 clean:
 	rm *.swf
