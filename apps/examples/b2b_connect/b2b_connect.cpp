@@ -251,10 +251,11 @@ inline UACAuthCred* b2b_connectCalleeSession::getCredentials() {
   return &credentials;
 }
 
-void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply,
+void b2b_connectCalleeSession::onSipReply(const AmSipRequest& req,
+					  const AmSipReply& reply,
 					  AmSipDialog::Status old_dlg_status) {
 
-  AmB2ABCalleeSession::onSipReply(reply, old_dlg_status);
+  AmB2ABCalleeSession::onSipReply(req, reply, old_dlg_status);
  
   if ((old_dlg_status < AmSipDialog::Connected) &&
       (dlg->getStatus() == AmSipDialog::Disconnected)) {

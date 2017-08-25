@@ -66,13 +66,13 @@ SimpleConferenceDialog::SimpleConferenceDialog()
 SimpleConferenceDialog::~SimpleConferenceDialog()
 {
   // clean playlist items
-  play_list.close(false);
+  play_list.flush();
 }
 
 void SimpleConferenceDialog::onSessionStart()
 {
   // set the conference id ('conference room') to user part of ruri
-  conf_id = dlg->user;
+  conf_id = dlg->getUser();
 
   // open the beep file
   BeepSound.reset(new AmAudioFile());
@@ -81,7 +81,7 @@ void SimpleConferenceDialog::onSessionStart()
   }
 
   // get a channel from the status 
-  channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag()));
+  channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag(),RTPStream()->getSampleRate()));
   
   // add the channel to our playlist
   play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
@@ -100,7 +100,7 @@ void SimpleConferenceDialog::onSessionStart()
 
 void SimpleConferenceDialog::onBye(const AmSipRequest& req)
 {
-  play_list.close();
+  play_list.flush();
   setInOut(NULL,NULL);
   channel.reset(NULL);
   setStopped();
