@@ -33,7 +33,7 @@
 #include "AmCachedAudioFile.h"
 
 #include <memory>
-using std::auto_ptr;
+using std::unique_ptr;
 
 #include <string>
 using std::string;
@@ -56,7 +56,7 @@ public:
 
 class CacheAnnounceDialog : public AmSession
 {
-    auto_ptr<AmCachedAudioFile> wav_file;
+    unique_ptr<AmCachedAudioFile> wav_file;
     AmFileCache* announce;
 
  public:

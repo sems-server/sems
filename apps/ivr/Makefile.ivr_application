@@ -10,9 +10,9 @@ include $(COREPATH)/../Makefile.defs
 include $(IVRPATH)/Makefile.defs
 
 # 
-ivr-modules_dir?=lib/$(APP_NAME)/ivr
+ivr_modules_dir?=lib/$(APP_NAME)/ivr
 
-LIB_INSTALLDIR?=$(modules_prefix)/$(ivr-modules_dir)
+LIB_INSTALLDIR?=$(modules_prefix)/$(ivr_modules_dir)
 TARBALL_PREFIX=sems-app-${NAME}
 TARBALL="${TARBALL_PREFIX}-${VERSION}.tar.gz"
 
@@ -51,7 +51,8 @@ endif
 .PHONY: install-cfg
 install-cfg: 
 	mkdir -p $(DESTDIR)$(app_cfg_target)
-	-@for r in $(module_conf_files); do \
+	@set -e ; \
+	for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL_TOUCH) $(DESTDIR)$(app_cfg_target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio_target)#g" \
@@ -66,7 +67,8 @@ $(DESTDIR)(audio_prefix)/$(audio_dir):
 .PHONY: $(NAME)_audio
 $(NAME)_audio: $(DESTDIR)$(audio_prefix)/$(audio_dir)
 	mkdir -p $(DESTDIR)$(audio_prefix)/$(audio_dir)$(NAME)
-	-@for f in $(AUDIO_FILES) ; do \
+	@set -e ; \
+	for f in $(AUDIO_FILES) ; do \
 		if [ -n "wav/$$f" ]; then \
 			$(INSTALL_TOUCH) $(DESTDIR)$(audio_prefix)/$(audio_dir)$(NAME)/$$f; \
 			$(INSTALL_AUDIO) wav/$$f $(DESTDIR)$(audio_prefix)/$(audio_dir)$(NAME)/$$f; \

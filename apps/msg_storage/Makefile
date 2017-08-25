@@ -9,4 +9,4 @@ COREPATH ?=../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 spooldir:
-	-mkdir -p $(DESTDIR)/var/spool/voicebox
+	mkdir -p $(DESTDIR)/var/spool/voicebox

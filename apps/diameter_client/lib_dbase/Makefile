@@ -25,7 +25,7 @@ RANLIB		= ranlib
 
 .PHONY: clean
 clean:
-	-@rm -f $(objs) $(depends) $(lib_name)
+	@rm -f $(objs) $(depends) $(lib_name)
 
 -include $(depends)
 

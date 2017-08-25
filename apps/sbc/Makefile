@@ -11,15 +11,15 @@ COREPATH ?= ../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 install_tools:
-	-@$(MAKE) -C tools/ install
+	@$(MAKE) -C tools/ install
 
 make_call_control_mods:
-	-@$(MAKE) -C call_control
+	@$(MAKE) -C call_control
 
 install_call_control_mods:
-	-@$(MAKE) -C call_control/ install
+	@$(MAKE) -C call_control/ install
 
 clean_call_control_mods:
-	-@$(MAKE) -C call_control/ clean
+	@$(MAKE) -C call_control/ clean
 
 

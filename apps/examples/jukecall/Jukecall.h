@@ -62,7 +62,7 @@ private:
   JukeLeg1_state state;
   AmAudioFile initial_announcement;
 
-  auto_ptr<AmAudioFile> song;
+  unique_ptr<AmAudioFile> song;
 
 protected:
   AmB2ABCalleeSession* createCalleeSession();
@@ -82,7 +82,7 @@ class JukecalleeSession
   : public AmB2ABCalleeSession {
 	
   void process(AmEvent* event);
-  auto_ptr<AmAudioFile> song;
+  unique_ptr<AmAudioFile> song;
 
 public:
   JukecalleeSession(const string& other_tag, 

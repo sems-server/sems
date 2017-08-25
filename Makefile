@@ -12,8 +12,9 @@ subdirs = core apps tools
 
 .PHONY: clean
 clean:
-	-@rm -f *.so
-	-@for r in $(subdirs) doc "" ; do \
+	@rm -f *.so
+	@set -e ; \
+	for r in $(subdirs) doc "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "making $$r" ; \
@@ -23,7 +24,8 @@ clean:
 
 .PHONY: modules
 modules:
-	-@for r in $(subdirs) "" ; do \
+	@set -e ; \
+	for r in $(subdirs) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo  "making $$r" ; \
@@ -33,7 +35,8 @@ modules:
 
 .PHONY: install
 install:
-	-@for r in $(subdirs) "" ; do \
+	@set -e ; \
+	for r in $(subdirs) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \

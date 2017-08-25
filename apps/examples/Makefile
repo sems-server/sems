@@ -3,7 +3,10 @@ COREPATH ?= ../../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_modules ?= 
+exclude_modules =
+# Do not have a Makefile:
+exclude_modules += ivr_examples
+
 modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
 		$(wildcard Makefile*) $(wildcard Readme*) CVS, \
 		$(wildcard *) )
@@ -13,8 +16,9 @@ all: modules
 
 .PHONY: clean
 clean:
-	-@rm -f *.so
-	-@for r in $(modules) "" ; do \
+	@rm -f *.so
+	@set -e ; \
+	for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -24,7 +28,8 @@ clean:
 
 .PHONY: modules
 modules:
-	-@for r in $(modules) "" ; do \
+	@set -e ; \
+	for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo  "" ; \
@@ -37,7 +42,8 @@ install: install-bin install-cfg
 
 .PHONY: install-bin
 install-bin:
-	-@for r in $(modules) "" ; do \
+	@set -e ; \
+	for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -47,7 +53,8 @@ install-bin:
 
 .PHONY: install-cfg
 install-cfg: $(DESTDIR)$(cfg_target)
-	-@for r in $(modules) "" ; do \
+	@set -e ; \
+	for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \

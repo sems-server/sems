@@ -63,8 +63,14 @@ int UrlCatcherFactory::onLoad()
 AmSession* UrlCatcherFactory::onInvite(const AmSipRequest& req, const string& app_name,
 				       const map<string,string>& app_params)
 {
+  const AmMimeBody* body = req.body.hasContentType(SIP_APPLICATION_SDP);
+  if (!body) {
+    ERROR("Missing MIME body\n");
+    throw AmSession::Exception(404, "Not Found Here (Missing MIME body)");
+  }
+
   AmSdp sdp;
-  if (sdp.parse(req.body.c_str())) {
+  if (sdp.parse((const char *)body->getPayload())) {
     ERROR("SDP parsing error\n");
     throw AmSession::Exception(404, "Not Found Here (SDP parse error)");
   }

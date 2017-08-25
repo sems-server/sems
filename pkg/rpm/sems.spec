@@ -115,7 +115,7 @@ make install TTS="y" exclude_modules="examples %{!?with_ilbc:ilbc} mp3" \
 	modules_prefix= \
         modules_dir=%{_libdir}/sems/plug-in \
         modules_target=%{_libdir}/sems/plug-in \
-	ivr-modules_dir=%{_libdir}/sems/ivr \
+	ivr_modules_dir=%{_libdir}/sems/ivr \
 	cfg_prefix= \
 	cfg_target=%{_sysconfdir}/sems/ \
 	doc_prefix= \

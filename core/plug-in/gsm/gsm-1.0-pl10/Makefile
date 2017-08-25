@@ -276,32 +276,32 @@ TOAST_INSTALL_TARGETS =	\
 
 .c.o:
 		$(CC) $(CFLAGS) $?
-		@-mv `$(BASENAME) $@` $@ > /dev/null 2>&1
+		@mv `$(BASENAME) $@` $@ > /dev/null 2>&1
 
 # Target rules
 
 all:		$(LIBGSM) $(TOAST) $(TCAT) $(UNTOAST)
-		@-echo $(ROOT): Done.
+		@echo $(ROOT): Done.
 
 tst:		$(TST)/lin2cod $(TST)/cod2lin $(TOAST) $(TST)/test-result
-		@-echo tst: Done.
+		@echo tst: Done.
 
 addtst:		$(ADDTST)/add $(ADDTST)/add_test.dta
 		$(ADDTST)/add < $(ADDTST)/add_test.dta > /dev/null
-		@-echo addtst: Done.
+		@echo addtst: Done.
 
 misc:		$(TLS)/sweet $(TLS)/bitter $(TLS)/sour $(TLS)/ginger 	\
 			$(TST)/lin2txt $(TST)/cod2txt $(TST)/gsm2cod
-		@-echo misc: Done.
+		@echo misc: Done.
 
 install:	toastinstall gsminstall
-		@-echo install: Done.
+		@echo install: Done.
 
 
 # The basic API: libgsm
 
 $(LIBGSM):	$(LIB) $(GSM_OBJECTS)
-		-rm -f $(RMFLAGS) $(LIBGSM)
+		rm -f $(RMFLAGS) $(LIBGSM)
 		$(AR) $(ARFLAGS) $(LIBGSM) $(GSM_OBJECTS)
 		$(RANLIB) $(LIBGSM)
 
@@ -312,11 +312,11 @@ $(TOAST):	$(BIN) $(TOAST_OBJECTS) $(LIBGSM)
 		$(LD) $(LFLAGS) -o $(TOAST) $(TOAST_OBJECTS) $(LIBGSM) $(LDLIB)
 
 $(UNTOAST):	$(BIN) $(TOAST)
-		-rm $(RMFLAGS) $(UNTOAST)
+		rm -f $(RMFLAGS) $(UNTOAST)
 		$(LN) $(TOAST) $(UNTOAST)
 
 $(TCAT):	$(BIN) $(TOAST)
-		-rm $(RMFLAGS) $(TCAT)
+		rm -f $(RMFLAGS) $(TCAT)
 		$(LN) $(TOAST) $(TCAT)
 
 
@@ -332,70 +332,70 @@ $(LIB):
 # Installation
 
 gsminstall:
-		-if [ x"$(GSM_INSTALL_ROOT)" != x ] ; then	\
-			make $(GSM_INSTALL_TARGETS) ;	\
+		if [ x"$(GSM_INSTALL_ROOT)" != x ] ; then	\
+			$(MAKE) $(GSM_INSTALL_TARGETS) ;	\
 		fi
 
 toastinstall:
-		-if [ x"$(TOAST_INSTALL_ROOT)" != x ]; then	\
-			make $(TOAST_INSTALL_TARGETS);	\
+		if [ x"$(TOAST_INSTALL_ROOT)" != x ]; then	\
+			$(MAKE) $(TOAST_INSTALL_TARGETS);	\
 		fi
 
 gsmuninstall:
-		-if [ x"$(GSM_INSTALL_ROOT)" != x ] ; then	\
+		if [ x"$(GSM_INSTALL_ROOT)" != x ] ; then	\
 			rm $(RMFLAGS) $(GSM_INSTALL_TARGETS) ;	\
 		fi
 
 toastuninstall:
-		-if [ x"$(TOAST_INSTALL_ROOT)" != x ] ; then 	\
+		if [ x"$(TOAST_INSTALL_ROOT)" != x ] ; then 	\
 			rm $(RMFLAGS) $(TOAST_INSTALL_TARGETS);	\
 		fi
 
 $(TOAST_INSTALL_BIN)/toast:	$(TOAST)
-		-rm $@
+		rm -f $@
 		cp $(TOAST) $@
 		chmod 755 $@
 
 $(TOAST_INSTALL_BIN)/untoast:	$(TOAST_INSTALL_BIN)/toast
-		-rm $@
+		rm -f $@
 		ln $? $@
 
 $(TOAST_INSTALL_BIN)/tcat:	$(TOAST_INSTALL_BIN)/toast
-		-rm $@
+		rm -f $@
 		ln $? $@
 
 $(TOAST_INSTALL_MAN)/toast.1:	$(MAN)/toast.1
-		-rm $@
+		rm -f $@
 		cp $? $@
 		chmod 444 $@
 
 $(GSM_INSTALL_MAN)/gsm.3:	$(MAN)/gsm.3
-		-rm $@
+		rm -f $@
 		cp $? $@
 		chmod 444 $@
 
 $(GSM_INSTALL_MAN)/gsm_option.3:	$(MAN)/gsm_option.3
-		-rm $@
+		rm -f $@
 		cp $? $@
 		chmod 444 $@
 
 $(GSM_INSTALL_MAN)/gsm_explode.3:	$(MAN)/gsm_explode.3
-		-rm $@
+		rm -f $@
 		cp $? $@
 		chmod 444 $@
 
 $(GSM_INSTALL_MAN)/gsm_print.3:	$(MAN)/gsm_print.3
-		-rm $@
+		rm -f $@
 		cp $? $@
 		chmod 444 $@
 
 $(GSM_INSTALL_INC)/gsm.h:	$(INC)/gsm.h
-		-rm $@
+		rm -f $@
 		cp $? $@
 		chmod 444 $@
 
 $(GSM_INSTALL_LIB)/libgsm.a:	$(LIBGSM)
-		-rm $@
+		rm -f $@
 		cp $? $@
 		chmod 444 $@
 
@@ -414,17 +414,17 @@ gsm-1.0.tar.Z:	$(STUFF) $(SOURCES) $(HEADERS) $(MANUALS)
 # Clean
 
 uninstall:	toastuninstall gsmuninstall
-		@-echo uninstall: Done.
+		@echo uninstall: Done.
 
 semi-clean:
-		-@rm -Rf $(RMFLAGS)  */*.o			\
+		@rm -Rf $(RMFLAGS)  */*.o			\
 			$(TST)/lin2cod $(TST)/lin2txt	\
 			$(TST)/cod2lin $(TST)/cod2txt	\
 			$(TST)/gsm2cod 			\
 			$(TST)/*.*.*
 
 clean:	semi-clean
-		-@rm -Rf $(RMFLAGS) $(LIBGSM) $(ADDTST)/add		\
+		@rm -Rf $(RMFLAGS) $(LIBGSM) $(ADDTST)/add		\
 			$(TOAST) $(TCAT) $(UNTOAST)	\
 			$(ROOT)/gsm-1.0.tar.Z
 

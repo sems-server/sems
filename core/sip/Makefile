@@ -48,8 +48,8 @@ endif
 	$(CXX) -MMD -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS)
 
 $(LIBNAME): $(OBJS) $(COREPATH)/../Makefile.defs
-	-@echo ""
-	-@echo "making $(LIBNAME)"
+	@echo ""
+	@echo "making $(LIBNAME)"
 	$(AR) rvs $(LIBNAME) $(OBJS)
 
 -include $(DEPS)

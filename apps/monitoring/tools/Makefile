@@ -7,7 +7,8 @@ all: install_tools
 install: install_tools
 
 install_tools: $(DESTDIR)$(bin_prefix)/$(bin_dir)
-	-@for r in $(monitoring_scripts)  ; do \
+	@set -e ; \
+	for r in $(monitoring_scripts)  ; do \
 		x=`echo $$r | sed s/sems-/$(APP_NAME)-/g` ; \
 		echo "installing $$r -> $$x" ; \
 		$(INSTALL_TOUCH) $(DESTDIR)$(bin_prefix)/$(bin_dir)/$$x ; \

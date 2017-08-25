@@ -33,7 +33,7 @@ module_package: $(extra_target) $(lib_name)
 
 .PHONY: clean
 clean: $(extra_clean)
-	-@rm -f $(objs) $(depends) $(lib_name)
+	@rm -f $(objs) $(depends) $(lib_name)
 
 .PHONY: install
 install: all $(extra_install)
@@ -46,7 +46,8 @@ install: all $(extra_install)
 .PHONY: install-cfg
 install-cfg: 
 	mkdir -p $(DESTDIR)$(cfg_target)
-	-@for r in $(module_conf_files); do \
+	@set -e ; \
+	for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL_TOUCH) $(DESTDIR)$(cfg_target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio_target)#g" \
@@ -64,7 +65,8 @@ $(DESTDIR)(audio_prefix)/$(audio_dir):
 .PHONY: $(plug_in_name)_audio
 $(plug_in_name)_audio: $(DESTDIR)$(audio_prefix)/$(audio_dir)
 	mkdir -p $(DESTDIR)$(audio_prefix)/$(audio_dir)$(plug_in_name)
-	-@for f in $(AUDIO_FILES) ; do \
+	@set -e ; \
+	for f in $(AUDIO_FILES) ; do \
 		if [ -n "wav/$$f" ]; then \
 			$(INSTALL_TOUCH) $(DESTDIR)$(audio_prefix)/$(audio_dir)$(plug_in_name)/$$f; \
 			$(INSTALL_AUDIO) wav/$$f $(DESTDIR)$(audio_prefix)/$(audio_dir)$(plug_in_name)/$$f; \
@@ -74,7 +76,8 @@ $(plug_in_name)_audio: $(DESTDIR)$(audio_prefix)/$(audio_dir)
 .PHONY: $(plug_in_name)_lib
 $(plug_in_name)_lib: 
 	mkdir -p $(DESTDIR)$(lib_prefix)/$(lib_dir)/$(plug_in_name)
-	-@for f in $(EXTRA_LIB_FILES) ; do \
+	@set -e ; \
+	for f in $(EXTRA_LIB_FILES) ; do \
 		if [ -n "$(EXTRA_LIB_DIR)/$$f" ]; then \
 			$(INSTALL_TOUCH) $(DESTDIR)$(lib_prefix)/$(lib_dir)/$(plug_in_name)/$$f; \
 			$(INSTALL_AUDIO) $(EXTRA_LIB_DIR)$$f $(DESTDIR)$(lib_prefix)/$(lib_dir)/$(plug_in_name)/$$f; \

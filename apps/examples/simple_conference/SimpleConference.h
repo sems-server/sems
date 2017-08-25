@@ -58,14 +58,14 @@ class SimpleConferenceDialog : public AmSession
 {
   string                        conf_id;
   // our connection to the conference
-  auto_ptr<AmConferenceChannel> channel;
+  unique_ptr<AmConferenceChannel> channel;
 
   // we use a playlist so we can put e.g. 
   // announcement files to be played to the 
   // user in front and after its finished we will 
   // be connected back to conference automatically 
   AmPlaylist  play_list;
-  auto_ptr<AmAudioFile> BeepSound;
+  unique_ptr<AmAudioFile> BeepSound;
 
 
 public:

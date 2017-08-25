@@ -128,10 +128,10 @@ void JukecallSession::process(AmEvent* event)
     switch(state) {
     case JC_initial_announcement: {
       state = JC_connect;
-      string callee = "sip:" + dlg->user.substr(3) + "@" + dlg->domain;
+      string callee = "sip:" + dlg->getUser().substr(3) + "@" + dlg->getDomain();
       DBG("-------------------------- connecting %s ------------------------\n", callee.c_str());
       connectCallee(callee, callee, 
-		    dlg->remote_party, dlg->remote_uri);
+		    dlg->getRemoteParty(), dlg->getRemoteUri());
 
       return;
 

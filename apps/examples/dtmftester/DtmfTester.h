@@ -66,7 +66,7 @@ class DtmfTesterDialog : public AmSession,
 
   AmPlaylist play_list;
 
-  std::auto_ptr<UACAuthCred> cred;
+  std::unique_ptr<UACAuthCred> cred;
 
   vector<AmAudioFile*> del_files;
 

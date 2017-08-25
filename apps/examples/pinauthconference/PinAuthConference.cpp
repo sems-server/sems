@@ -123,7 +123,7 @@ void PinAuthConferenceDialog::connectConference(const string& room) {
   changeCallgroup(conf_id);
 
   // get a channel from the status 
-  channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag()));
+  channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag(),RTPStream()->getSampleRate()));
 
   // clear the playlist
   play_list.flush();

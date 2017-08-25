@@ -9,4 +9,4 @@ COREPATH ?=../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 install_tools:
-	-@$(MAKE) -C tools/ install
+	@$(MAKE) -C tools/ install

@@ -20,29 +20,29 @@ all: ../Makefile.defs $(NAME) modules
 
 .PHONY: clean
 clean:
-	-@rm -f $(OBJS) $(DEPS) $(NAME)
-	-@rm -f lib/*.so compat/getos compat/getarch
-	-@$(MAKE) -C $(SIP_STACK_DIR) clean
-	-@$(MAKE) -C $(RESAMPLE_DIR) clean
-	-@$(MAKE) -C $(PLUGIN_DIR) clean
+	@rm -f $(OBJS) $(DEPS) $(NAME)
+	@rm -f lib/*.so compat/getos compat/getarch
+	@$(MAKE) -C $(SIP_STACK_DIR) clean
+	@$(MAKE) -C $(RESAMPLE_DIR) clean
+	@$(MAKE) -C $(PLUGIN_DIR) clean
 
 .PHONY: sip_stack
 sip_stack:
-	-@echo ""
-	-@echo "making SIP stack"
-	-@cd $(SIP_STACK_DIR); $(MAKE) all
+	@echo ""
+	@echo "making SIP stack"
+	@cd $(SIP_STACK_DIR); $(MAKE) all
 
 .PHONY: modules
 modules:
-	-@echo ""
-	-@echo "making core modules"
-	-@cd $(PLUGIN_DIR); $(MAKE) modules
+	@echo ""
+	@echo "making core modules"
+	@cd $(PLUGIN_DIR); $(MAKE) modules
 
 .PHONY: test
 test:
-	-@echo ""
-	-@echo "making tests"
-	-@cd $(TEST_DIR); $(MAKE)
+	@echo ""
+	@echo "making tests"
+	@cd $(TEST_DIR); $(MAKE)
 
 .PHONY: core
 core: $(OBJS) ../Makefile.defs
@@ -78,9 +78,9 @@ OBJS += $(RESAMPLE_DIR)/libresample.a
 
 .PHONY: resample_lib
 resample_lib:
-	-@echo ""
-	-@echo "making internal resampler"
-	-@cd $(RESAMPLE_DIR); $(MAKE) all
+	@echo ""
+	@echo "making internal resampler"
+	@cd $(RESAMPLE_DIR); $(MAKE) all
 
 else
 
@@ -110,8 +110,8 @@ endif
 	$(CXX) -MMD -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS)
 
 $(NAME): sip_stack resample_lib core ../Makefile.defs
-	-@echo ""
-	-@echo "making $(NAME) executable"
+	@echo ""
+	@echo "making $(NAME) executable"
 	$(LD) -o $(NAME) $(OBJS) $(LDFLAGS) $(EXTRA_LDFLAGS)
 
 

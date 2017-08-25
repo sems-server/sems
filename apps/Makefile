@@ -1,7 +1,18 @@
 COREPATH ?= ../core
 .DEFAULT_GOAL := all
 
-local_exclude_app_modules=$(exclude_app_modules)
+local_exclude_app_modules =
+# Do not have a Makefile:
+local_exclude_app_modules += confpin
+local_exclude_app_modules += early_dbprompt
+local_exclude_app_modules += mobile_push
+# Have external dependencies:
+local_exclude_app_modules += db_reg_agent
+local_exclude_app_modules += gateway
+local_exclude_app_modules += jsonrpc
+local_exclude_app_modules += mp3
+local_exclude_app_modules += py_sems
+local_exclude_app_modules += twit
 
 include $(COREPATH)/../Makefile.defs
 
@@ -12,28 +23,22 @@ include $(COREPATH)/../Makefile.defs
 #   make $(app_modules)
 # else 
 #   if exclude_app_modules is set
-#     make * - $(exclude_app_modules)
+#     make * - $(exclude_app_modules) + local excludes
 #   else
 #     make * - Makefile.defs:exclude_app_modules +  local excludes
 #   
 
-ifneq ($(app_modules),)
- app_modules = $(app_modules)
-else
- ifneq ($(local_exclude_app_modules),)
-   exclude_app_modules = $(local_exclude_app_modules)
- else
-   exclude_app_modules += mp3 examples py_sems gateway jsonrpc twit db_reg_agent
+ifeq ($(app_modules),)
+ exclude_modules = $(exclude_app_modules)
+ exclude_modules += $(local_exclude_app_modules)
 
-   ifneq ($(USE_MONITORING), yes)
-   exclude_app_modules += monitoring
-   endif
-
+ ifneq ($(USE_MONITORING), yes)
+ exclude_modules += monitoring
  endif
 
  $(info local_exclude_app_modules: $(local_exclude_app_modules))
  $(info exclude_app_modules: $(exclude_app_modules))
- app_modules = $(filter-out $(subst ;, ,$(exclude_app_modules))\
+ app_modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
 		$(wildcard Makefile*) CVS CMakeLists.txt, \
 		$(wildcard *) examples/tutorial/cc_acc )
 
@@ -47,8 +52,9 @@ all: modules
 
 .PHONY: clean
 clean:
-	-@rm -f *.so
-	-@for r in $(app_modules) "" ; do \
+	@rm -f *.so
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "Cleaning $$r" ; \
@@ -59,7 +65,8 @@ clean:
 
 .PHONY: modules
 modules:
-	-@for r in $(app_modules) "" ; do \
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo "Making $$r" ; \
@@ -73,7 +80,8 @@ install: install-bin install-cfg
 
 .PHONY: install-bin
 install-bin:
-	-@for r in $(app_modules) "" ; do \
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "Installing $$r binaries" ; \
@@ -84,7 +92,8 @@ install-bin:
 
 .PHONY: install-cfg
 install-cfg: $(DESTDIR)$(cfg_target)
-	-@for r in $(app_modules) "" ; do \
+	@set -e ; \
+	for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "Installing $$r configuration" ; \
