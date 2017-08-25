@@ -74,7 +74,7 @@ long tcp_ssl_dbg_cb(BIO *bio, int oper, const char *argp,
   switch (oper) {
   case BIO_CB_WRITE: {
     char buf[256];
-    snprintf(buf, 256, "%s: %s", argp, bio->method->name);
+    snprintf(buf, 256, "%s: %s", argp, BIO_method_name(bio));
     INFO("%s", buf);
   } break;
 
