@@ -3,7 +3,10 @@ COREPATH ?= ../../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_modules ?= 
+exclude_modules =
+# Do not have a Makefile:
+exclude_modules += ivr_examples
+
 modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
 		$(wildcard Makefile*) $(wildcard Readme*) CVS, \
 		$(wildcard *) )
