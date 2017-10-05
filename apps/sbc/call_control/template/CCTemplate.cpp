@@ -81,7 +81,7 @@ int CCTemplate::onLoad() {
   //   return 0;
   // }
 
-  // syslog_prefix = cfg.hasParameter("cdr_prefix") ? 
+  // syslog_prefix = cfg.hasParameter("cdr_prefix") ?
   //   cfg.getParameter("cdr_prefix") : syslog_prefix;
 
   return 0;
@@ -149,7 +149,7 @@ void CCTemplate::invoke(const string& method, const AmArg& args, AmArg& ret)
     // INFO("--------------------------------------------------------------\n");
 
     // cc_name, ltag, call_profile, end_ts_sec, end_ts_usec
-    // args.assertArrayFmt("ssoa"); 
+    // args.assertArrayFmt("ssoa");
     // args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
 
     SBCCallProfile* call_profile =
@@ -189,7 +189,7 @@ void CCTemplate::start(const string& cc_name, const string& ltag,
 
   // res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
   // res_cmd[SBC_CC_REFUSE_CODE] = 404;
-  // res_cmd[SBC_CC_REFUSE_REASON] = "No, not here";  
+  // res_cmd[SBC_CC_REFUSE_REASON] = "No, not here";
 
   // Set Timer:
   // DBG("my timer ID will be %i\n", timer_id);
@@ -215,7 +215,7 @@ void CCTemplate::end(const string& cc_name, const string& ltag,
 // ------- extended call control interface -------------------
 
 
-
+/*
 bool CCTemplate::init(SBCCallLeg *call, const map<string, string> &values)
 {
   DBG("ExtCC: init - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
@@ -243,8 +243,10 @@ CCChainProcessing CCTemplate::onBLegRefused(SBCCallLeg *call, const AmSipReply& 
 void CCTemplate::onDestroyLeg(SBCCallLeg *call) {
   DBG("ExtCC: onDestroyLeg - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
 }
+*/
 
 /** called from A/B leg when in-dialog request comes in */
+/*
 CCChainProcessing CCTemplate::onInDialogRequest(SBCCallLeg *call, const AmSipRequest &req) {
   DBG("ExtCC: onInDialogRequest - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
   return ContinueProcessing;
@@ -254,20 +256,24 @@ CCChainProcessing CCTemplate::onInDialogReply(SBCCallLeg *call, const AmSipReply
   DBG("ExtCC: onInDialogReply - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
   return ContinueProcessing;
 }
+*/
 
 /** called before any other processing for the event is done */
+/*
 CCChainProcessing CCTemplate::onEvent(SBCCallLeg *call, AmEvent *e) {
   DBG("ExtCC: onEvent - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
   return ContinueProcessing;
 }
 
-CCChainProcessing CCTemplate::onDtmf(SBCCallLeg *call, int event, int duration) { 
+CCChainProcessing CCTemplate::onDtmf(SBCCallLeg *call, int event, int duration) {
   DBG("ExtCC: onDtmf(%i;%i) - call instance: '%p' isAleg==%s\n",
       event, duration, call, call->isALeg()?"true":"false");
   return ContinueProcessing;
 }
+*/
 
 // hold related functionality
+/*
 CCChainProcessing CCTemplate::putOnHold(SBCCallLeg *call) {
   DBG("ExtCC: putOnHold - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
   return ContinueProcessing;
@@ -287,6 +293,7 @@ CCChainProcessing CCTemplate::handleHoldReply(SBCCallLeg *call, bool succeeded) 
   DBG("ExtCC: handleHoldReply - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
   return ContinueProcessing;
 }
+*/
 
 /** Possibility to influence messages relayed to the B2B peer leg.
     return value:
@@ -294,13 +301,15 @@ CCChainProcessing CCTemplate::handleHoldReply(SBCCallLeg *call, bool succeeded) 
     returning error is responsible for destrying the event instance)
     - greater than 0 means "stop processing and return 0 upstream"
     - equal to 0 means "continue processing" */
-int CCTemplate::relayEvent(SBCCallLeg *call, AmEvent *e) {
+/*int CCTemplate::relayEvent(SBCCallLeg *call, AmEvent *e) {
 
   return 0;
 }
+*/
 
 // using extended CC modules with simple relay - non-call relay
 
+/*
 bool CCTemplate::init(SBCCallProfile& profile, SimpleRelayDialog *relay, void *&user_data) {
   DBG("init simple relay\n");
   return true;
@@ -336,3 +345,4 @@ void CCTemplate::onB2BRequest(const AmSipRequest& req, void *user_data) {
 void CCTemplate::onB2BReply(const AmSipReply& reply, void *user_data) {
   DBG("onB2BReply simple relay\n");
 }
+*/

@@ -1,0 +1,39 @@
+# A place for common parts of SEMS sbc call_controle rules
+
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
+
+# We must add base apps/sbc directory as INCLUDEDIR
+INCLUDE_DIRECTORIES (../..)
+
+# We adding sems_sbc_ prefix to the internal name of the library to avoid nasty
+# issue then this name is equals to external library, our module links to.
+# E.g. the issue, then speex module should be linked to -lspeex
+
+ADD_LIBRARY(sems_sbc_${sems_sbc_call_control_name} MODULE ${${sems_sbc_call_control_name}_SRCS})
+
+IF(APPLE)
+	SET(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
+		"${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress")
+	SET(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
+		"${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress")
+ENDIF(APPLE)
+
+# all modules should be linked against ${CMAKE_DL_LIBS} at least
+# and with additional ${sems_sbc_module_libs} if they exists
+TARGET_LINK_LIBRARIES(sems_sbc_${sems_sbc_call_control_name} ${CMAKE_DL_LIBS} ${sems_sbc_module_libs})
+
+SET_TARGET_PROPERTIES(sems_sbc_${sems_sbc_call_control_name} PROPERTIES OUTPUT_NAME ${sems_sbc_call_control_name})
+SET_TARGET_PROPERTIES(sems_sbc_${sems_sbc_call_control_name} PROPERTIES PREFIX "")
+
+ADD_DEFINITIONS(-DMOD_NAME=\\\"${sems_sbc_call_control_name}\\\")
+
+INSTALL(
+	TARGETS sems_sbc_${sems_sbc_call_control_name}
+	LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in/
+)
+
+IF(NOT DEFINED ${sems_sbc_call_control_name}_config_files)
+	SEMS_INSTALL_CONFIGS("${sems_sbc_call_control_name}")
+ELSE(NOT DEFINED ${sems_sbc_call_control_name}_config_files)
+	SEMS_INSTALL_CONFIGS("${${sems_sbc_call_control_name}_config_files}")
+ENDIF(NOT DEFINED ${sems_sbc_call_control_name}_config_files)

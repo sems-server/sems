@@ -1,5 +1,8 @@
 FILE (GLOB sbc_SRCS "*.cpp")
 
+ADD_SUBDIRECTORY (call_control)
+
+SET(sems_module_name sbc)
 SET(sbc_config_files
 auth_b2b.sbcprofile
 call_timer.sbcprofile
@@ -26,5 +29,4 @@ tools/sems-sbc-set-regex-map
 	DESTINATION ${SEMS_EXEC_PREFIX}/sbin
 	)
 
-SET(sems_module_name sbc)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
