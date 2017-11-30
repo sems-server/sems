@@ -314,19 +314,18 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
       }
     }
 
-    // minimum limit of both
-    if (i_minse > min_se)
-      min_se = i_minse;
+    // the greates minimum limit of both
+    if (i_minse > min_se) min_se = i_minse;
 
     // calculate actual se
     session_interval = session_timer_conf.getSessionExpires();
 
     if (rem_has_sess_expires) {
-      if (rem_sess_expires <= min_se) {
-	session_interval = min_se;
-      } else {
-	if (rem_sess_expires < session_interval)
-	  session_interval = rem_sess_expires;
+      if (rem_sess_expires < session_interval) {
+        session_interval = rem_sess_expires;
+      }
+      if (session_interval < min_se) {
+        session_interval = min_se;
       }
     }
      
