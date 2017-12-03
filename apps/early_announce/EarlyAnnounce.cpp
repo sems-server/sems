@@ -365,6 +365,7 @@ void EarlyAnnounceDialog::onBye(const AmSipRequest& req)
 void EarlyAnnounceDialog::onCancel(const AmSipRequest& req)
 {
   dlg->reply(invite_req,487,"Call terminated");
+  AmB2BCallerSession::terminateOtherLeg();
   setStopped();
 }
 
