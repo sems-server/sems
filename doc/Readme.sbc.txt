@@ -40,6 +40,7 @@ SBC profiles may be loaded at startup (load_profiles), and can be
 selected with the active_profile configuration option. The
 active_profile option is a comma-separated list, the first profile that
 matches, i.e. is non-empty, will be used.
+Optional a profiles_path ca be set in the config to load the profiles from a special folder.
 
 In this list a profile may be selected
 
