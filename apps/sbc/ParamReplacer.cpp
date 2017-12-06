@@ -54,45 +54,54 @@ int replaceParsedParam(const string& s, size_t p,
   case 'p': res+=parsed.uri_port; break; // port
   case 'H': res+=parsed.uri_headers; break; // Headers
   case 'P': { // Params
-    if((s.length() > p+3) && (s[p+2] == '(')) {
-      size_t skip_p = p+3;
-      for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
-      if (skip_p==s.length()) {
-	WARN("Error parsing $%cP() param replacement (unclosed brackets)\n",s[p]);
-	break;
+    if (s.length() > p + 3 && s[p + 2] == '(') {
+      size_t begin = p + 3;
+      size_t skip_p = begin;
+      for (; skip_p < s.length() && s[skip_p] != ')'; skip_p++) { }
+      if (skip_p == s.length()) {
+        WARN("Error parsing $%cP() param replacement (unclosed brackets)\n", s[p]);
+        break;
       }
-      string param_name = s.substr(p+3,skip_p-p-3);
-      if(param_name.empty()) {
-	res+=parsed.uri_param;
-	skip_chars = skip_p-p;
-	break;
+
+      if (s[p] == 'H' && s.length() > skip_p + 2 && s[skip_p + 1] == '(') {
+        begin = skip_p + 2;
+        skip_p = begin;
+        for (; skip_p<s.length() && s[skip_p] != ')'; skip_p++) { }
+        if (skip_p == s.length()) {
+          WARN("Error parsing $%cP() param replacement (unclosed brackets)\n",s[p]);
+          break;
+        }
       }
-      
+
+      string param_name = s.substr(begin, skip_p - begin);
+      if (param_name.empty()) {
+        res += parsed.uri_param;
+        skip_chars = skip_p - p;
+        break;
+      }
+
       const string& uri_params = parsed.uri_param;
       const char* c = uri_params.c_str();
       list<sip_avp*> params;
-      if(parse_gen_params(&params,&c,uri_params.length(),0) < 0) {
-	DBG("could not parse URI parameters");
-	free_gen_params(&params);
-	break;
+      if (parse_gen_params(&params, &c, uri_params.length(), 0) < 0) {
+        DBG("could not parse URI parameters");
+        free_gen_params(&params);
+        break;
       }
 
       string param;
-      for(list<sip_avp*>::iterator it = params.begin(); 
-	  it != params.end(); it++) {
-
-	if(lower_cmp_n((*it)->name.s,(*it)->name.len,
-		       param_name.c_str(),param_name.length()))
-	  continue;
-
-	param = c2stlstr((*it)->value);
+      for (list<sip_avp*>::iterator it = params.begin(); it != params.end(); it++) {
+        if(lower_cmp_n((*it)->name.s, (*it)->name.len, param_name.c_str(), param_name.length())) {
+          continue;
+        }
+        param = c2stlstr((*it)->value);
       }
       free_gen_params(&params);
-      res+=param;
-      skip_chars = skip_p-p;
+      res += param;
+      skip_chars = skip_p - begin + 3;
     }
     else {
-      res+=parsed.uri_param; 
+      res += parsed.uri_param;
     }
   } break;
   case 'n': res+=parsed.display_name; break; // Params
@@ -118,7 +127,7 @@ string replaceParameters(const string& s,
 			 const AmSipRequest& req,
 			 const SBCCallProfile* call_profile,
 			 const string& app_param,
-			 AmUriParser& ruri_parser, 
+			 AmUriParser& ruri_parser,
 			 AmUriParser& from_parser,
 			 AmUriParser& to_parser,
 			 bool rebuild_ruri,
@@ -131,7 +140,7 @@ string replaceParameters(const string& s,
   const string& used_hdrs = req.hdrs; //(hdrs == NULL) ? req.hdrs : *hdrs;
 
   // char last_char=' ';
-  
+
   while (p<s.length()) {
     size_t skip_chars = 1;
 
@@ -349,7 +358,7 @@ string replaceParameters(const string& s,
 	    WARN("reg-cache: User '%s' not found",alias.c_str());
 	    break;
 	  }
-	  
+
 	  if(s[p+1] == 'c') {
 	    res += alias_entry.contact_uri;
 	    break;
@@ -364,7 +373,7 @@ string replaceParameters(const string& s,
 	    res += AmConfig::SIP_Ifs[alias_entry.local_if].name;
 	    break;
 	  }
-	  
+
 	  WARN("unknown replacement $u%c\n", s[p+1]);
 	} break;
 
@@ -399,7 +408,7 @@ string replaceParameters(const string& s,
 	    map<string,string> alias_map;
 	    if(reg_cache->getAorAliasMap(aor, alias_map) && !alias_map.empty()) {
 
-	      bool is_registered = false;  
+	      bool is_registered = false;
 	      for(map<string,string>::iterator it = alias_map.begin();
 		  it != alias_map.end(); it++) {
 
@@ -408,7 +417,7 @@ string replaceParameters(const string& s,
 		  if((alias_entry.source_ip == req.remote_ip) &&
 		     (alias_entry.source_port == req.remote_port)) {
 		    DBG("matching entry for alias '%s' found (src=%s:%i)",
-			it->first.c_str(), 
+			it->first.c_str(),
 			alias_entry.source_ip.c_str(),
 			alias_entry.source_port);
 		    is_registered = true;
@@ -517,8 +526,8 @@ string replaceParameters(const string& s,
 		if (isArgStruct(it->second)) {
 		  // recursive replacement for call variable name (defined via GUI)
 		  if (vn.find('$') != string::npos)
-		    vn = replaceParameters(vn, "CallVar Subname", req, 
-					   call_profile, app_param, 
+		    vn = replaceParameters(vn, "CallVar Subname", req,
+					   call_profile, app_param,
 					   ruri_parser, from_parser, to_parser,
 					   rebuild_ruri, rebuild_from, rebuild_to);
 		  val = &it->second[vn];
@@ -541,50 +550,55 @@ string replaceParameters(const string& s,
 	  skip_chars = skip_p-p;
 	} break;
 
-	case 'H': { // header
-	  size_t name_offset = 2;
-	  if (s[p+1] != '(') {
-	    if (s[p+2] != '(') {
-	      WARN("Error parsing H header replacement (missing '(')\n");
-	      break;
-	    }
-	    name_offset = 3;
-	  }
-	  if (s.length()<name_offset+1) {
-	    WARN("Error parsing H header replacement (short string)\n");
-	    break;
-	  }
+  case 'H': { // header
+    size_t name_offset = 2;
 
-	  size_t skip_p = p+name_offset;
-	  for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
-	  if (skip_p==s.length()) {
-	    WARN("Error parsing H header replacement (unclosed brackets)\n");
-	    break;
-	  }
-	  string hdr_name = s.substr(p+name_offset, skip_p-p-name_offset);
-	  // DBG("param_name = '%s' (skip-p - p = %d)\n", param_name.c_str(), skip_p-p);
-	  if (name_offset == 2) {
-	    // full header
-	    res += getHeader(used_hdrs, hdr_name);
-	  } else {
-	    // parse URI and use component
-	    AmUriParser uri_parser;
-	    uri_parser.uri = getHeader(used_hdrs, hdr_name);
-	    if ((s[p+1] == '.')) {
-	      res += uri_parser.uri;
-	      break;
-	    }
+    if (s[p + 1] != '(') {
+      if (s[p + 2] != '(') {
+        WARN("Error parsing H header replacement (missing '(')\n");
+        break;
+      }
+      name_offset = 3;
+    }
 
-	    if (!uri_parser.parse_uri()) {
-	      WARN("Error parsing header %s URI '%s'\n",
-		   hdr_name.c_str(), uri_parser.uri.c_str());
-	      break;
-	    }
-	    //TODO: find out how to correct skip_chars correctly
-	    replaceParsedParam(s, p, uri_parser, res);
-	  }
-	  skip_chars = skip_p-p;
-	} break;
+    if (s.length() < name_offset + 1) {
+      WARN("Error parsing H header replacement (short string)\n");
+      break;
+    }
+
+    size_t skip_p = p + name_offset;
+
+    for (; skip_p < s.length() && s[skip_p] != ')'; skip_p++) { }
+    if (skip_p == s.length()) {
+      WARN("Error parsing H header replacement (unclosed brackets)\n");
+      break;
+    }
+
+    string hdr_name = s.substr(p + name_offset, skip_p - p - name_offset);
+    // DBG("param_name = '%s' (skip-p - p = %d)\n", param_name.c_str(), skip_p-p);
+    if (name_offset == 2) {
+      // full header
+      res += getHeader(used_hdrs, hdr_name);
+      skip_chars = skip_p - p;
+    } else {
+      // parse URI and use component
+      AmUriParser uri_parser;
+      uri_parser.uri = getHeader(used_hdrs, hdr_name);
+      if (s[p + 1] == '.') {
+        res += uri_parser.uri;
+        skip_chars = skip_p - p;
+        break;
+      }
+
+      if (!uri_parser.parse_uri()) {
+        WARN("Error parsing header %s URI '%s'\n",
+          hdr_name.c_str(), uri_parser.uri.c_str());
+        break;
+      }
+
+      skip_chars = skip_p - p + replaceParsedParam(s, p, uri_parser, res) - 1;
+    }
+  } break;
 
 	case 'M': { // regex map
 	  if (s[p+1] != '(') {
@@ -615,15 +629,15 @@ string replaceParameters(const string& s,
 	  }
 
 	  string map_val = map_str.substr(0, spos);
-	  string map_val_replaced = 
-	    replaceParameters(map_val, r_type, req, 
+	  string map_val_replaced =
+	    replaceParameters(map_val, r_type, req,
 			      call_profile, app_param,
 			      ruri_parser, from_parser, to_parser,
 			      rebuild_ruri, rebuild_from, rebuild_to);
 
 	  string mapping_name = map_str.substr(spos+2);
 
-	  string map_res; 
+	  string map_res;
 	  if (SBCFactory::instance()->regex_mappings.
 	      mapRegex(mapping_name, map_val_replaced.c_str(), map_res)) {
 	    DBG("matched regex mapping '%s' (orig '%s) in '%s'\n",
@@ -633,7 +647,7 @@ string replaceParameters(const string& s,
 	    DBG("no match in regex mapping '%s' (orig '%s') in '%s'\n",
 		map_val_replaced.c_str(), map_val.c_str(), mapping_name.c_str());
 	  }
- 
+
 	  skip_chars = skip_p-p;
 	} break;
 
@@ -665,7 +679,7 @@ string replaceParameters(const string& s,
 	  }
 
 	  string br_str = s.substr(p+3, skip_p-p-3);
-	  string br_str_replaced = 
+	  string br_str_replaced =
 	    replaceParameters(br_str, "$_*(...)",
 			      req, call_profile, app_param,
 			      ruri_parser, from_parser, to_parser,
@@ -742,9 +756,9 @@ string replaceParameters(const string& s,
 	  }
 
 	  string expr_str = s.substr(p+2, skip_p-p-2);
-	  string expr_replaced = 
+	  string expr_replaced =
 	    replaceParameters(expr_str, r_type, req,
-			      call_profile, app_param, 
+			      call_profile, app_param,
 			      ruri_parser, from_parser, to_parser,
 			      rebuild_ruri, rebuild_from, rebuild_to);
 
@@ -803,12 +817,12 @@ char *url_encode(const char *str) {
   char* pbuf = buf;
 
   while (*pstr) {
-    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || 
-	*pstr == '.' || *pstr == '~') 
+    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' ||
+	*pstr == '.' || *pstr == '~')
       *pbuf++ = *pstr;
-    else if (*pstr == ' ') 
+    else if (*pstr == ' ')
       *pbuf++ = '+';
-    else 
+    else
       *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
     pstr++;
   }
@@ -826,7 +840,7 @@ char *url_decode(char *str) {
         *pbuf++ = from_hex(pstr[1]) << 4 | from_hex(pstr[2]);
         pstr += 2;
       }
-    } else if (*pstr == '+') { 
+    } else if (*pstr == '+') {
       *pbuf++ = ' ';
     } else {
       *pbuf++ = *pstr;
