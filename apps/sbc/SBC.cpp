@@ -185,12 +185,16 @@ int SBCFactory::onLoad()
 	 "SIP Session Timers will not be supported\n");
   }
 
+  string profiles_path = cfg.getParameter("profiles_path", AmConfig::ModConfigPath);
+  INFO("loading SBC call profiles from '%s'\n", profiles_path.c_str());
+
   vector<string> profiles_names = explode(cfg.getParameter("profiles"), ",");
-  for (vector<string>::iterator it =
-	 profiles_names.begin(); it != profiles_names.end(); it++) {
-    string profile_file_name = AmConfig::ModConfigPath + *it + ".sbcprofile.conf";
+  for (vector<string>::iterator it = profiles_names.begin();
+       it != profiles_names.end(); it++) {
+    string profile_file_name = profiles_path + *it + ".sbcprofile.conf";
     if (!call_profiles[*it].readFromConfiguration(*it, profile_file_name)) {
-      ERROR("configuring SBC call profile from '%s'\n", profile_file_name.c_str());
+      ERROR("configuring SBC call profile from '%s'\n",
+            profile_file_name.c_str());
       return -1;
     }
   }
