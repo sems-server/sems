@@ -63,13 +63,18 @@ int replaceParsedParam(const string& s, size_t p,
 	break;
       }
 
-      if (s[p] == 'H' && s.length() > skip_p + 2 && s[skip_p + 1] == '(') {
-        begin = skip_p + 2;
-        skip_p = begin;
-        for (; skip_p<s.length() && s[skip_p] != ')'; skip_p++) { }
-        if (skip_p == s.length()) {
-          WARN("Error parsing $%cP() param replacement (unclosed brackets)\n",s[p]);
-          break;
+      if (s[p] == 'H') {
+        if (s.length() > skip_p + 2 && s[skip_p + 1] == '(') {
+          begin = skip_p + 2;
+          skip_p = begin;
+          for (; skip_p<s.length() && s[skip_p] != ')'; skip_p++) { }
+          if (skip_p == s.length()) {
+            WARN("Error parsing $%cP() param replacement (unclosed brackets)\n",s[p]);
+            break;
+          }
+        } else {
+          skip_p = begin - 2;
+          begin = skip_p;
         }
       }
 
