@@ -55,13 +55,30 @@ int replaceParsedParam(const string& s, size_t p,
   case 'H': res+=parsed.uri_headers; break; // Headers
   case 'P': { // Params
     if((s.length() > p+3) && (s[p+2] == '(')) {
-      size_t skip_p = p+3;
+      size_t begin = p + 3;
+      size_t skip_p = begin;
       for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
       if (skip_p==s.length()) {
 	WARN("Error parsing $%cP() param replacement (unclosed brackets)\n",s[p]);
 	break;
       }
-      string param_name = s.substr(p+3,skip_p-p-3);
+
+      if (s[p] == 'H') {
+        if (s.length() > skip_p + 2 && s[skip_p + 1] == '(') {
+          begin = skip_p + 2;
+          skip_p = begin;
+          for (; skip_p<s.length() && s[skip_p] != ')'; skip_p++) { }
+          if (skip_p == s.length()) {
+            WARN("Error parsing $%cP() param replacement (unclosed brackets)\n",s[p]);
+            break;
+          }
+        } else {
+          skip_p = begin - 2;
+          begin = skip_p;
+        }
+      }
+
+      string param_name = s.substr(begin, skip_p - begin);
       if(param_name.empty()) {
 	res+=parsed.uri_param;
 	skip_chars = skip_p-p;
@@ -89,7 +106,7 @@ int replaceParsedParam(const string& s, size_t p,
       }
       free_gen_params(&params);
       res+=param;
-      skip_chars = skip_p-p;
+      skip_chars = skip_p - begin + 3;
     }
     else {
       res+=parsed.uri_param; 
@@ -566,6 +583,7 @@ string replaceParameters(const string& s,
 	  if (name_offset == 2) {
 	    // full header
 	    res += getHeader(used_hdrs, hdr_name);
+            skip_chars = skip_p - p;
 	  } else {
 	    // parse URI and use component
 	    AmUriParser uri_parser;
@@ -581,9 +599,8 @@ string replaceParameters(const string& s,
 	      break;
 	    }
 	    //TODO: find out how to correct skip_chars correctly
-	    replaceParsedParam(s, p, uri_parser, res);
+	    skip_chars = skip_p - p + replaceParsedParam(s, p, uri_parser, res) - 1;
 	  }
-	  skip_chars = skip_p-p;
 	} break;
 
 	case 'M': { // regex map

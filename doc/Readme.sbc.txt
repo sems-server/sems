@@ -203,8 +203,10 @@ The patterns which can be used are the following:
        and
       next_hop=$H(P-NextHop)
 
-  $HU(headername) - header <headername> (as URI) User
-  $Hd(headername) - header <headername> (as URI) domain (host:port)
+  $HU(headername)            - header <headername> (as URI) User
+  $Hd(headername)            - header <headername> (as URI) domain (host:port)
+  $HP(headername)            - header <headername> (as URI) Params
+  $HP(headername)(paramname) - header <headername> (as URI) param with paramname
   ...
 
    Example:
