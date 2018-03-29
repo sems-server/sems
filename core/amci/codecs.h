@@ -87,4 +87,6 @@
 
 #define CODEC_OPUS 50
 
+#define CODEC_CODEC2 53
+
 #endif
