@@ -39,19 +39,19 @@ END_EXPORTS
 
 
 static long sems_codec2_create() {
+  printf("Create Codec2\n");
 
-  // For now it is set default.
+  // For now it is hard-coded.
   int mode = CODEC2_MODE_3200;
   struct CODEC2* codec2 = codec2_create(mode);
 
-  printf("Create Codec2\n");
   return (long)codec2; 
 }
 
 
 static int sems_codec2_destroy(long h_inst) {
-
   printf("Destroy Codec2\n");
+
   codec2_destroy(h_inst);
 }
 
@@ -60,6 +60,20 @@ static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigne
                           unsigned int channels, unsigned int rate, long h_codec) {
 
   printf("Codec2 encode\n");
+
+  struct CODEC2* codec2 = (struct CODEC2*)h_codec;
+
+  const int nsam = codec2_samples_per_frame(codec2);
+  const int nbit = codec2_bits_per_frame(codec2);
+  const int nbyte = (nbit + 7) / 8;
+
+  // We do not use --softdec and --natural options.
+  int gray = 1;
+  codec2_set_natural_or_gray(codec2, gray);
+
+  codec2_encode(codec2, out_buf, in_buf);
+
+  return nbyte;
 }
 
 
@@ -67,5 +81,13 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
                           unsigned int channels, unsigned int rate, long h_codec) {
 
   printf("Codec2 decode\n");
+
+  struct CODEC2* codec2 = (struct CODEC2*)h_codec;
+
+  const int nsam = codec2_samples_per_frame(codec2);
+  const int nbit = codec2_bits_per_frame(codec2);
+  const int nbyte = (nbit + 7) / 8;
+
+  return nsam;
 }
 
