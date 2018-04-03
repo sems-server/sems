@@ -4,6 +4,7 @@
 #include <codec2/codec2.h>
 
 #include <stdio.h>
+#include <assert.h>
 
 static long sems_codec2_create();
 
@@ -67,7 +68,7 @@ static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigne
   const int nbit = codec2_bits_per_frame(codec2);
   const int nbyte = (nbit + 7) / 8;
 
-  // We do not use --softdec and --natural options.
+  // We do not use --softdec and --natural codec2 options.
   int gray = 1;
   codec2_set_natural_or_gray(codec2, gray);
 
@@ -87,6 +88,21 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
   const int nsam = codec2_samples_per_frame(codec2);
   const int nbit = codec2_bits_per_frame(codec2);
   const int nbyte = (nbit + 7) / 8;
+
+  // We do not use --softdec and --natural codec2 options.
+  int gray = 1;
+  codec2_set_natural_or_gray(codec2, gray);
+
+  // assert(nbyte == size);
+  /*
+  int ret = (nbyte == size);
+  int frames = 0;
+  float ber_est = 0.0;
+  while (ret) {
+    frames++;
+  } */
+
+  codec2_decode(codec2, out_buf, in_buf);
 
   return nsam;
 }
