@@ -12,7 +12,7 @@
  * Data members:
  * - samples_per_frame: A number of samples per frame.
  * - bits_per_frame: A number of bits per frame.
- * - nbyte: Rounded bits to byte, basically (nbit + 7) / 8;
+ * - nbyte: Rounded bits to byte, basically (bits_per_frame + 7) / 8;
  * - codec2: The main object of codec2, we should free it manually.
  */
 struct codec2_encoder {
