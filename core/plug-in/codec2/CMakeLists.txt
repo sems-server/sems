@@ -3,7 +3,7 @@
 ########################################################################
 
 set(sems_codec2_SRCS
-    sems_codec2.c
+    codec2.c
 )
 
 SET(sems_module_name sems_codec2)

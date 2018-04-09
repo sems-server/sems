@@ -1,9 +1,11 @@
+#include "codec2.h"
 #include "amci.h"
 #include "codecs.h"
 #include "../../log.h"
 #include <codec2/codec2.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
 static long sems_codec2_create();
@@ -40,20 +42,37 @@ END_EXPORTS
 
 
 static long sems_codec2_create() {
-  printf("Create Codec2\n");
 
-  // For now it is hard-coded.
+  struct codec2_encoder* c2enc = (struct codec2_encoder*)malloc(sizeof(struct codec2_encoder));
+  if (c2enc == NULL) {
+    ERROR("CODEC2 codec failed to allocate memory.\n");
+    return 0;
+  }
+
+  // For now mode is hard-coded.
   int mode = CODEC2_MODE_3200;
-  struct CODEC2* codec2 = codec2_create(mode);
 
-  return (long)codec2; 
+  struct CODEC2* codec2 = codec2_create(mode);
+  if (codec2 == NULL) {
+    ERROR("Failed to create CODEC2.\n");
+    return 0;
+  }
+
+  c2enc->nsam = codec2_samples_per_frame(codec2);
+  c2enc->nbit = codec2_bits_per_frame(codec2);
+  c2enc->nbyte = (c2enc->nbit + 7) / 8;
+  c2enc->codec2 = codec2;
+
+  return (long)c2enc;
 }
 
 
 static int sems_codec2_destroy(long h_inst) {
-  printf("Destroy Codec2\n");
 
-  codec2_destroy(h_inst);
+  struct codec2_encoder* c2enc = (struct codec2_encoder*)h_inst;
+
+  codec2_destroy(c2enc->codec2);
+  free(c2enc);
 }
 
 
@@ -92,15 +111,6 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
   // We do not use --softdec and --natural codec2 options.
   int gray = 1;
   codec2_set_natural_or_gray(codec2, gray);
-
-  // assert(nbyte == size);
-  /*
-  int ret = (nbyte == size);
-  int frames = 0;
-  float ber_est = 0.0;
-  while (ret) {
-    frames++;
-  } */
 
   codec2_decode(codec2, out_buf, in_buf);
 
