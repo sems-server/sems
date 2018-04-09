@@ -58,9 +58,9 @@ static long sems_codec2_create() {
     return 0;
   }
 
-  c2enc->nsam = codec2_samples_per_frame(codec2);
-  c2enc->nbit = codec2_bits_per_frame(codec2);
-  c2enc->nbyte = (c2enc->nbit + 7) / 8;
+  c2enc->samples_per_frame = codec2_samples_per_frame(codec2);
+  c2enc->bits_per_frame = codec2_bits_per_frame(codec2);
+  c2enc->nbyte = (c2enc->bits_per_frame + 7) / 8;
   c2enc->codec2 = codec2;
 
   return (long)c2enc;
@@ -79,13 +79,20 @@ static int sems_codec2_destroy(long h_inst) {
 static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
                           unsigned int channels, unsigned int rate, long h_codec) {
 
-  printf("Codec2 encode\n");
+  // Codec2 encode;
 
-  struct CODEC2* codec2 = (struct CODEC2*)h_codec;
+  if (!h_codec) {
+    ERROR("Codec2 codec was not initialized.\n");
+    return 0;
+  }
 
-  const int nsam = codec2_samples_per_frame(codec2);
-  const int nbit = codec2_bits_per_frame(codec2);
-  const int nbyte = (nbit + 7) / 8;
+  if ((channels != 1) || (rate != 8000)) {
+    ERROR("Unsupported input format for Codec2 encoder.\n");
+    return 0;
+  }
+
+  struct codec2_encoder* c2enc = (struct codec2_encoder*)h_codec;
+  struct CODEC2* codec2 = c2enc->codec2;
 
   // We do not use --softdec and --natural codec2 options.
   int gray = 1;
@@ -93,20 +100,25 @@ static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigne
 
   codec2_encode(codec2, out_buf, in_buf);
 
-  return nbyte;
+  return c2enc->nbyte;
 }
 
 
 static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
                           unsigned int channels, unsigned int rate, long h_codec) {
 
-  printf("Codec2 decode\n");
+  // Codec2 decode;
 
-  struct CODEC2* codec2 = (struct CODEC2*)h_codec;
+  if (!h_codec) {
+    ERROR("Codec2 codec was not initialized.\n");
+    return 0;
+  }
 
-  const int nsam = codec2_samples_per_frame(codec2);
-  const int nbit = codec2_bits_per_frame(codec2);
-  const int nbyte = (nbit + 7) / 8;
+  struct codec2_encoder* c2enc = (struct codec2_encoder*)h_codec;
+  struct CODEC2* codec2 = c2enc->codec2;
+
+  // TODO
+  // We need to make sure that the input buffer we get from SEMS contains c2enc->samples_per_frame samples.
 
   // We do not use --softdec and --natural codec2 options.
   int gray = 1;
@@ -114,6 +126,6 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
 
   codec2_decode(codec2, out_buf, in_buf);
 
-  return nsam;
+  return c2enc->samples_per_frame;
 }
 
