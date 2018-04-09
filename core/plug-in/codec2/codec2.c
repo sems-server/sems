@@ -20,7 +20,7 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
 
 
 
-BEGIN_EXPORTS( "sems_codec2" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
+BEGIN_EXPORTS( "codec2" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
   BEGIN_CODECS
     CODEC( CODEC_CODEC2, pcm16_2_codec2, codec2_2_pcm16,
