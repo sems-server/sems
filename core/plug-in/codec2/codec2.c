@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 static long sems_codec2_create();
@@ -63,6 +64,10 @@ static long sems_codec2_create() {
   c2enc->nbyte = (c2enc->bits_per_frame + 7) / 8;
   c2enc->codec2 = codec2;
 
+  // We do not use --softdec and --natural codec2 options.
+  const int gray = 1;
+  codec2_set_natural_or_gray(codec2, gray);
+
   return (long)c2enc;
 }
 
@@ -74,6 +79,7 @@ static int sems_codec2_destroy(long h_inst) {
   codec2_destroy(c2enc->codec2);
   free(c2enc);
 }
+
 
 
 static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
@@ -96,23 +102,18 @@ static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigne
   struct codec2_encoder* c2enc = (struct codec2_encoder*)h_codec;
   struct CODEC2* codec2 = c2enc->codec2;
 
-  const int in_frame_size = (size / 2);
-  if (in_frame_size < c2enc->samples_per_frame) {
+  const int in_sample_count = (size / 2);
+  if (in_sample_count < c2enc->samples_per_frame) {
     ERROR("Size of input buffer's frame is less than size of frame in codec2.\n");
     return 0;
   }
 
-  // We do not use --softdec and --natural codec2 options.
-  int gray = 1;
-  codec2_set_natural_or_gray(codec2, gray);
-
-  for (int i = 0; i < size / (2 * c2enc->nbyte); i++) {
-    codec2_encode(codec2, (out_buf + buffer_offset), (in_buf + buffer_offset));
-    buffer_offset += c2enc->nbyte;
-  }
+  buffer_offset = c2enc->nbyte;
+  codec2_encode_3200(codec2, out_buf, in_buf);
 
   return buffer_offset;
 }
+
 
 
 static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
@@ -131,12 +132,9 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
   // TODO
   // We need to make sure that the input buffer we get from SEMS contains c2enc->samples_per_frame samples.
 
-  // We do not use --softdec and --natural codec2 options.
-  int gray = 1;
-  codec2_set_natural_or_gray(codec2, gray);
+  codec2_decode_3200(codec2, out_buf, in_buf);
 
-  codec2_decode(codec2, out_buf, in_buf);
-
-  return c2enc->samples_per_frame;
+  // We multiply it by two, because size of per frame is 2 bytes.
+  return (2 * c2enc->samples_per_frame);
 }
 
