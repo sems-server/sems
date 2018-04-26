@@ -648,14 +648,12 @@ int AmSipDialog::update(const AmMimeBody* body,
 
 int AmSipDialog::refer(const string& refer_to,
 		       int expires,
-		       const string& referred_by,
-		       const string& extrahdrs)
+		       const string& referred_by)
 {
   if(getStatus() == Connected) {
     string hdrs = SIP_HDR_COLSP(SIP_HDR_REFER_TO) + refer_to + CRLF;
     if (expires>=0) 
       hdrs+= SIP_HDR_COLSP(SIP_HDR_EXPIRES) + int2str(expires) + CRLF;
-    hdrs+= extrahdrs;
     if (!referred_by.empty())
       hdrs+= SIP_HDR_COLSP(SIP_HDR_REFERRED_BY) + referred_by + CRLF;
 

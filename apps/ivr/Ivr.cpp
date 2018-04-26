@@ -510,6 +510,16 @@ void IvrFactory::start_deferred_threads() {
   }
 }
 
+
+int IvrDialog::transfer(const string& target)
+{
+  return dlg->transfer(target);
+}
+
+int IvrDialog::refer(const string& target, int expires) {
+  return dlg->refer(target, expires);
+}
+
 int IvrDialog::drop()
 {
   int res = dlg->drop();

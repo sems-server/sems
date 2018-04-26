@@ -444,7 +444,7 @@ IvrDialogBase_redirect(IvrDialogBase *self, PyObject* args)
   if(!PyArg_ParseTuple(args,"s",&refer_to))
     return NULL;
     
-  if(self->p_dlg->dlg->transfer(refer_to)){
+  if(self->p_dlg->transfer(refer_to)){
     ERROR("redirect failed\n");
     return NULL;
   }
@@ -460,13 +460,11 @@ IvrDialogBase_refer(IvrDialogBase *self, PyObject* args)
   assert(self->p_dlg);
     
   char* refer_to=0;
-  int expires = -1;
-  char * referred_by = "";
-  char * extrahdrs = "";
-  if(!PyArg_ParseTuple(args, "s|iss", &refer_to, &expires, &referred_by, &extrahdrs))
+  int expires;
+  if(!PyArg_ParseTuple(args,"si",&refer_to, &expires))
     return NULL;
     
-  if(self->p_dlg->dlg->refer(refer_to, expires, referred_by, extrahdrs)){
+  if(self->p_dlg->refer(refer_to, expires)){
     ERROR("REFER failed\n");
     return NULL;
   }
