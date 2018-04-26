@@ -5,6 +5,7 @@
 #include <codec2/codec2.h>
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -164,12 +165,34 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
   struct codec2_encoder* c2enc = (struct codec2_encoder*)h_codec;
   struct CODEC2* codec2 = c2enc->codec2;
 
-  // TODO
-  // We need to make sure that the input buffer we get from SEMS contains c2enc->samples_per_frame samples.
+  int frames = 0;
+  int buffer_offset = 0;
+  unsigned char* bits_to_decode = malloc(c2enc->nbyte * sizeof(unsigned char));
 
-  codec2_decode(codec2, out_buf, in_buf);
+  memcpy(bits_to_decode, in_buf + buffer_offset, c2enc->nbyte);
+  frames++;
 
-  // We multiply it by two, because size of per frame is 2 bytes.
-  return (sizeof(short) * c2enc->samples_per_frame);
+  /*
+   * We do not know where frame boundaries are, but the minimum frame size is
+   * c2enc->nbyte.
+   */
+  int frame_sz = size / c2enc->nbyte;
+  while (frame_sz) {
+    codec2_decode(codec2, out_buf + buffer_offset, bits_to_decode);
+
+    buffer_offset += c2enc->nbyte;
+    frame_sz--;
+
+    if (frame_sz) {
+      memcpy(bits_to_decode, in_buf + buffer_offset, c2enc->nbyte);
+      frames++;
+    }
+  }
+
+  // Cleanup.
+  free(bits_to_decode);
+
+  // We multiply it by two (sizeof(short)), because size of per frame is 2 bytes (short).
+  return frames * (sizeof(short) * c2enc->samples_per_frame);
 }
 
