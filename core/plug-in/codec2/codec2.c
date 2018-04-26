@@ -10,6 +10,12 @@
 #include <string.h>
 #include <assert.h>
 
+
+long sems_codec2_3200_create();
+long sems_codec2_2400_create();
+long sems_codec2_1600_create();
+long sems_codec2_1400_create();
+
 static long sems_codec2_create();
 
 static int sems_codec2_destroy(long h_inst);
@@ -25,15 +31,33 @@ static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigne
 BEGIN_EXPORTS( "codec2" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
   BEGIN_CODECS
-    CODEC( CODEC_CODEC2, pcm16_2_codec2, codec2_2_pcm16,
+    CODEC( CODEC_CODEC2_3200, pcm16_2_codec2, codec2_2_pcm16,
            AMCI_NO_CODEC_PLC,
-           sems_codec2_create,
+           sems_codec2_3200_create,
+           sems_codec2_destroy,
+           NULL, NULL )
+    CODEC( CODEC_CODEC2_2400, pcm16_2_codec2, codec2_2_pcm16,
+           AMCI_NO_CODEC_PLC,
+           sems_codec2_2400_create,
+           sems_codec2_destroy,
+           NULL, NULL )
+    CODEC( CODEC_CODEC2_1600, pcm16_2_codec2, codec2_2_pcm16,
+           AMCI_NO_CODEC_PLC,
+           sems_codec2_1600_create,
+           sems_codec2_destroy,
+           NULL, NULL )
+    CODEC( CODEC_CODEC2_1400, pcm16_2_codec2, codec2_2_pcm16,
+           AMCI_NO_CODEC_PLC,
+           sems_codec2_1400_create,
            sems_codec2_destroy,
            NULL, NULL )
   END_CODECS
 
   BEGIN_PAYLOADS
-    PAYLOAD( -1, "CODEC2", 8000, 8000, 1, CODEC_CODEC2, AMCI_PT_AUDIO_FRAME )
+    PAYLOAD( -1, "CODEC2_3200", 8000, 8000, 1, CODEC_CODEC2_3200, AMCI_PT_AUDIO_FRAME )
+    PAYLOAD( -1, "CODEC2_2400", 8000, 8000, 1, CODEC_CODEC2_2400, AMCI_PT_AUDIO_FRAME )
+    PAYLOAD( -1, "CODEC2_1600", 8000, 8000, 1, CODEC_CODEC2_1600, AMCI_PT_AUDIO_FRAME )
+    PAYLOAD( -1, "CODEC2_1400", 8000, 8000, 1, CODEC_CODEC2_1400, AMCI_PT_AUDIO_FRAME )
   END_PAYLOADS
 
   BEGIN_FILE_FORMATS
@@ -42,8 +66,7 @@ BEGIN_EXPORTS( "codec2" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 END_EXPORTS
 
 
-
-static long sems_codec2_create(/*const char* bps*/) {
+static long sems_codec2_create(const int bps) {
 
   struct codec2_encoder* c2enc = (struct codec2_encoder*)malloc(sizeof(struct codec2_encoder));
   if (c2enc == NULL) {
@@ -51,31 +74,18 @@ static long sems_codec2_create(/*const char* bps*/) {
     return -1;
   }
 
-  // For now mode is hard-coded.
-  const char* bps = "3200";
-
   int mode = 0;
-  if (strcmp(bps, "3200") == 0)
+  if (bps == 3200)
     mode = CODEC2_MODE_3200;
-  else if (strcmp(bps, "2400") == 0)
+  else if (bps == 2400)
     mode = CODEC2_MODE_2400;
-  else if (strcmp(bps, "1600") == 0)
+  else if (bps == 1600)
     mode = CODEC2_MODE_1600;
-  else if (strcmp(bps, "1400") == 0)
+  else if (bps == 1400)
     mode = CODEC2_MODE_1400;
-  else if (strcmp(bps, "1300") == 0)
-    mode = CODEC2_MODE_1300;
-  else if (strcmp(bps, "1200") == 0)
-    mode = CODEC2_MODE_1200;
-  else if (strcmp(bps, "700") == 0)
-    mode = CODEC2_MODE_700;
-  else if (strcmp(bps, "700B") == 0)
-    mode = CODEC2_MODE_700B;
-  else if (strcmp(bps, "700C") == 0)
-    mode = CODEC2_MODE_700C;
   else {
         ERROR("Error in mode: %s", bps);
-        ERROR("Mode must be 3200, 2400, 1600, 1400, 1300, 1200, 700, 700B or 700C\n");
+        ERROR("Mode must be 3200, 2400, 1600 or 1400\n");
         return -1;
   }
 
@@ -97,6 +107,22 @@ static long sems_codec2_create(/*const char* bps*/) {
   return (long)c2enc;
 }
 
+
+long sems_codec2_3200_create() {
+  return sems_codec2_create(3200);
+}
+
+long sems_codec2_2400_create() {
+  return sems_codec2_create(2400);
+}
+
+long sems_codec2_1600_create() {
+  return sems_codec2_create(1600);
+}
+
+long sems_codec2_1400_create() {
+  return sems_codec2_create(1400);
+}
 
 
 static int sems_codec2_destroy(long h_inst) {
