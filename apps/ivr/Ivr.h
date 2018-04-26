@@ -139,8 +139,6 @@ class IvrDialog : public AmB2BCallerSession
   // must be called before everything else.
   void setPyPtrs(PyObject *mod, PyObject *dlg);
 
-  int transfer(const string& target);
-  int refer(const string& target, int expires);
   int drop();
     
   void onInvite(const AmSipRequest& req);
