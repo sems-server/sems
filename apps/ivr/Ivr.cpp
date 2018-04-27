@@ -777,12 +777,31 @@ void IvrDialog::process(AmEvent* event)
 
     callPyEventHandler("onEmptyQueue", NULL);
     event->processed = true;
+  } else if(audio_event->event_id == AmAudioEvent::cleared) {
+    callPyEventHandler("onAudioCleared", NULL);
+    event->processed = true;
   }
-    
+
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
   if(plugin_event && plugin_event->name == "timer_timeout") {
     if (plugin_event->data.get(0).asInt() >= 0) {
       callPyEventHandler("onTimer", "(i)", plugin_event->data.get(0).asInt());
+      event->processed = true;
+    }
+  }
+
+  AmSystemEvent* sys_event = dynamic_cast<AmSystemEvent*>(event);
+  if(sys_event) {
+    if(sys_event->sys_event == AmSystemEvent::User1) {
+      callPyEventHandler("onUser1", NULL);
+      event->processed = true;
+    }
+    else if(sys_event->sys_event == AmSystemEvent::User2) {
+      callPyEventHandler("onUser2", NULL);
+      event->processed = true;
+    }
+    else if(sys_event->sys_event == AmSystemEvent::ServerShutdown) {
+      callPyEventHandler("onServerShutdown", NULL);
       event->processed = true;
     }
   }
