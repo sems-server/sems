@@ -32,6 +32,12 @@ class IvrDialogBase:
     def onDtmf(self,key,duration): # received DTMF
         pass
 
+    def onTimer(self, id): # a timer has fired
+        pass
+
+    def onIvrMessage(self, message): # a message has arrived from another session
+        pass
+
 
     # Session control
     def stopSession(self): # stop everything

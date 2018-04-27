@@ -6,7 +6,9 @@
 
 #include "IvrSipDialog.h"
 #include "IvrSipRequest.h"
+#include "IvrEvent.h"
 #include "AmMediaProcessor.h"
+#include "AmEventDispatcher.h"
 
 
 /** \brief python wrapper of IvrDialog, the base class for python IVR sessions */
@@ -484,6 +486,19 @@ IvrDialogBase_getAppParam(IvrDialogBase *self, PyObject* args)
   return PyString_FromString(app_param.c_str());
 }
 
+// Send inter-session message
+static PyObject* IvrDialogBase_sendMessage(IvrDialogBase* self, PyObject* args)
+{
+  char *dest;
+  char *msg;
+  if(!PyArg_ParseTuple(args, "ss", &dest, &msg))
+    return NULL;
+
+  AmEventDispatcher::instance()->post(dest, new IvrEvent(msg));
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 
 static PyMethodDef IvrDialogBase_methods[] = {
     
@@ -598,6 +613,10 @@ static PyMethodDef IvrDialogBase_methods[] = {
   // App params
   {"getAppParam", (PyCFunction)IvrDialogBase_getAppParam, METH_VARARGS,
    "retrieves an application parameter"
+  },
+  // Send inter-session message
+  {"sendMessage", (PyCFunction)IvrDialogBase_sendMessage, METH_VARARGS,
+    "send inter-session message"
   },
 
   {NULL}  /* Sentinel */

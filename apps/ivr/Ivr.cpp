@@ -25,6 +25,7 @@
 #include "IvrAudioMixIn.h"
 #include "IvrUAC.h"
 #include "Ivr.h"
+#include "IvrEvent.h"
 
 #include "AmSessionContainer.h"
 
@@ -785,6 +786,12 @@ void IvrDialog::process(AmEvent* event)
       callPyEventHandler("onTimer", "(i)", plugin_event->data.get(0).asInt());
       event->processed = true;
     }
+  }
+
+  IvrEvent* ivr_event = dynamic_cast<IvrEvent*>(event);
+  if(ivr_event) {
+    callPyEventHandler("onIvrMessage", "(s)", ivr_event->msg.c_str());
+    event->processed = true;
   }
 
   if (!event->processed)
