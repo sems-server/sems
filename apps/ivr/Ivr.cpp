@@ -417,6 +417,13 @@ int IvrFactory::onLoad()
   if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1,MOD_NAME ".conf")))
     return -1;
 
+#ifdef USE_MONITORING
+  if(!AmPlugIn::instance()->getFactory4Di("monitoring")) {
+    ERROR("Monitoring plugin not available, bailing!\n");
+    return -1;
+  }
+#endif
+
   // get application specific global parameters
   configureModule(cfg);
 

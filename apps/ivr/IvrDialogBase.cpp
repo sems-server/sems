@@ -8,6 +8,10 @@
 #include "IvrSipRequest.h"
 #include "AmMediaProcessor.h"
 
+#ifdef USE_MONITORING
+#include "ampi/MonitoringAPI.h"
+#include "AmSessionContainer.h"
+#endif
 
 /** \brief python wrapper of IvrDialog, the base class for python IVR sessions */
 typedef struct {
@@ -484,6 +488,73 @@ IvrDialogBase_getAppParam(IvrDialogBase *self, PyObject* args)
   return PyString_FromString(app_param.c_str());
 }
 
+// Log a line in the monitoring log
+static PyObject*
+IvrDialogBase_monitorLog(IvrDialogBase* self, PyObject* args)
+{
+#ifdef USE_MONITORING
+  char *callid;
+  char *property;
+  char *value;
+  if(!PyArg_ParseTuple(args, "sss", &callid, &property, &value))
+    return NULL;
+
+  try {
+    AmArg di_args,ret;
+    di_args.push(AmArg(callid));
+    di_args.push(AmArg(property));
+    di_args.push(AmArg(value));
+    AmSessionContainer::monitoring_di->invoke("log", di_args, ret);
+  }
+  catch(...) {}
+#endif
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+// Add a log line to the monitoring log
+static PyObject*
+IvrDialogBase_monitorLogAdd(IvrDialogBase* self, PyObject* args)
+{
+#ifdef USE_MONITORING
+  char *callid;
+  char *property;
+  char *value;
+  if(!PyArg_ParseTuple(args, "sss", &callid, &property, &value))
+    return NULL;
+
+  try {
+    AmArg di_args,ret;
+    di_args.push(AmArg(callid));
+    di_args.push(AmArg(property));
+    di_args.push(AmArg(value));
+    AmSessionContainer::monitoring_di->invoke("logAdd", di_args, ret);
+  }
+  catch(...) {}
+#endif
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+// Mark the session finished in the monitoring log
+static PyObject*
+IvrDialogBase_monitorFinish(IvrDialogBase* self, PyObject* args)
+{
+#ifdef USE_MONITORING
+  char *callid;
+  if(!PyArg_ParseTuple(args, "s", &callid))
+    return NULL;
+
+  try {
+    AmArg di_args,ret;
+    di_args.push(AmArg(callid));
+    AmSessionContainer::monitoring_di->invoke("markFinished", di_args, ret);
+  }
+  catch(...) {}
+#endif
+  Py_INCREF(Py_None);
+  return Py_None;
+}
 
 static PyMethodDef IvrDialogBase_methods[] = {
     
@@ -598,6 +669,18 @@ static PyMethodDef IvrDialogBase_methods[] = {
   // App params
   {"getAppParam", (PyCFunction)IvrDialogBase_getAppParam, METH_VARARGS,
    "retrieves an application parameter"
+  },
+  // Log a line in the monitoring log
+  {"monitorLog",  (PyCFunction)IvrDialogBase_monitorLog, METH_VARARGS,
+    "log a line in the monitoring log"
+  },
+  // Add a log line to the monitoring log
+  {"monitorLogAdd",  (PyCFunction)IvrDialogBase_monitorLogAdd, METH_VARARGS,
+    "add a log line to the monitoring log"
+  },
+  // Mark the session finished in the monitoring log
+  {"monitorFinish",  (PyCFunction)IvrDialogBase_monitorFinish, METH_VARARGS,
+    "mark the session finished in the monitoring log"
   },
 
   {NULL}  /* Sentinel */

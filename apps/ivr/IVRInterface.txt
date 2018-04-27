@@ -48,6 +48,17 @@ class IvrDialogBase:
     def flush(self): # flushes playlist
         pass
 
+    # Monitoring interface
+
+    def monitorLog(self, callid, property, value): # Log a line in the monitoring log
+        pass
+
+    def monitorLogAdd(self, callid, property, value): # Add a line in the monitoring log
+        pass
+
+    def monitorFinish(self, callid): # Mark the session finished in the monitoring log
+        pass
+
     # Call datas / control
 
     # get only property wrapping AmSipDialog AmSession::dlg.
