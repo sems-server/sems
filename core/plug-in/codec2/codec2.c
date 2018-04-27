@@ -11,20 +11,25 @@
 #include <assert.h>
 
 
-long sems_codec2_3200_create();
-long sems_codec2_2400_create();
-long sems_codec2_1600_create();
-long sems_codec2_1400_create();
+/**
+ * In order to tell SEMS to buffer the data and invoke the pcm16_2_xyz function only after 20ms
+ * or 40ms we should specify parameters (frame length, frame size and encoded frame size) here.
+ */
+static amci_codec_fmt_info_t codec2_fmt_description_20ms_3200[] = { {AMCI_FMT_FRAME_LENGTH, 20},
+                                                                    {AMCI_FMT_FRAME_SIZE, 160},
+                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 8}, {0,0}};
 
-static long sems_codec2_create();
+static amci_codec_fmt_info_t codec2_fmt_description_20ms_2400[] = { {AMCI_FMT_FRAME_LENGTH, 20},
+                                                                    {AMCI_FMT_FRAME_SIZE, 160},
+                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 6}, {0,0}};
 
-static int sems_codec2_destroy(long h_inst);
+static amci_codec_fmt_info_t codec2_fmt_description_40ms_1600[] = { {AMCI_FMT_FRAME_LENGTH, 40},
+                                                                    {AMCI_FMT_FRAME_SIZE, 320},
+                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 8}, {0,0}};
 
-static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-                          unsigned int channels, unsigned int rate, long h_codec);
-
-static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-                          unsigned int channels, unsigned int rate, long h_codec);
+static amci_codec_fmt_info_t codec2_fmt_description_40ms_1400[] = { {AMCI_FMT_FRAME_LENGTH, 40},
+                                                                    {AMCI_FMT_FRAME_SIZE, 320},
+                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 7}, {0,0}};
 
 
 
@@ -66,7 +71,20 @@ BEGIN_EXPORTS( "codec2" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 END_EXPORTS
 
 
-static long sems_codec2_create(const int bps) {
+
+/**
+ * Function creates/initializes Codec2.
+ *
+ * Arguments:
+ * - bps: Bit rate encoding number, currently we support only 3200, 2400, 1600
+ *        and 1400 bit rate encoding.
+ * - amci_codec_fmt_info_t: Encoding format description info, basically we need
+ *                          frame length, frame size and encoded frame size.
+ *
+ * Returns an address of created codec2 structure.
+ */
+long sems_codec2_create(const int bps,
+                        amci_codec_fmt_info_t** format_description) {
 
   struct codec2_encoder* c2enc = (struct codec2_encoder*)malloc(sizeof(struct codec2_encoder));
   if (c2enc == NULL) {
@@ -104,28 +122,67 @@ static long sems_codec2_create(const int bps) {
   const int gray = 1;
   codec2_set_natural_or_gray(codec2, gray);
 
+
+  if (bps == 3200)
+    *format_description = codec2_fmt_description_20ms_3200;
+  else if (bps == 2400)
+    *format_description = codec2_fmt_description_20ms_2400;
+  else if (bps == 1600)
+    *format_description = codec2_fmt_description_40ms_1600;
+  else if (bps == 1400)
+    *format_description = codec2_fmt_description_40ms_1400;
+
+
   return (long)c2enc;
 }
 
 
-long sems_codec2_3200_create() {
-  return sems_codec2_create(3200);
+
+/**
+ * Below four functions create/initialize Codec2 based on bit rate encoding.
+ * 3200, 2400, 1600 or 1400.
+ *
+ * Arguments:
+ * - format_parameters: For now we do not use format parameters.
+ * - format_parameters_out: For now we do not use output format parameters.
+ * - amci_codec_fmt_info_t: Encoding format description info, basically we need
+ *                          frame length, frame size and encoded frame size.
+ *
+ * Each function returns an address of created codec2 structure.
+ */
+long sems_codec2_3200_create(const char* format_parameters,
+                             const char** format_parameters_out,
+                             amci_codec_fmt_info_t** format_description) {
+  return sems_codec2_create(3200, format_description);
 }
 
-long sems_codec2_2400_create() {
-  return sems_codec2_create(2400);
+long sems_codec2_2400_create(const char* format_parameters,
+                             const char** format_parameters_out,
+                             amci_codec_fmt_info_t** format_description) {
+  return sems_codec2_create(2400, format_description);
 }
 
-long sems_codec2_1600_create() {
-  return sems_codec2_create(1600);
+long sems_codec2_1600_create(const char* format_parameters,
+                             const char** format_parameters_out,
+                             amci_codec_fmt_info_t** format_description) {
+  return sems_codec2_create(1600, format_description);
 }
 
-long sems_codec2_1400_create() {
-  return sems_codec2_create(1400);
+long sems_codec2_1400_create(const char* format_parameters,
+                             const char** format_parameters_out,
+                             amci_codec_fmt_info_t** format_description) {
+  return sems_codec2_create(1400, format_description);
 }
 
 
-static int sems_codec2_destroy(long h_inst) {
+
+/**
+ * Functions destroys/frees Codec2 structure created by sems_codec2_create function.
+ *
+ * Arguments:
+ * - h_inst: An address of created codec2 structure.
+ */
+void sems_codec2_destroy(long h_inst) {
 
   struct codec2_encoder* c2enc = (struct codec2_encoder*)h_inst;
 
@@ -135,8 +192,21 @@ static int sems_codec2_destroy(long h_inst) {
 
 
 
-static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-                          unsigned int channels, unsigned int rate, long h_codec) {
+/**
+ * Function encodes buffer using Codec2 library.
+ *
+ * Arguments:
+ * - out_buf: An output buffer where will be written encoded data.
+ * - in_buf: A raw data, which will be encoded using Codec2's encode function.
+ * - size: Size of in_buf.
+ * - channels: A channel, which must be 1 as we use one channel.
+ * - rate: It must be 8000.
+ * - h_codec: An address of codec2 structure created by sems_codec2_create function.
+ *
+ * Returns a length of encoded data in bytes.
+ */
+int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
+                   unsigned int channels, unsigned int rate, long h_codec) {
 
   // Codec2 encode;
 
@@ -178,7 +248,18 @@ static int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigne
 
 
 
-static int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
+/**
+ * Function decodes received data using Codec2 library.
+ *
+ * Arguments:
+ * - out_buf: An output buffer where will be written decoded data.
+ * - in_buf: An encoded data, which will be decoded using Codec2's decode function.
+ * - size: Size of in_buf.
+ * - channels: A channel, which must be 1 as we use one channel.
+ * - rate: It must be 8000.
+ * - h_codec: An address of codec2 structure created by sems_codec2_create function.
+ */
+int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
                           unsigned int channels, unsigned int rate, long h_codec) {
 
   // Codec2 decode;
