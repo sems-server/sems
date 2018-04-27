@@ -484,6 +484,58 @@ IvrDialogBase_getAppParam(IvrDialogBase *self, PyObject* args)
   return PyString_FromString(app_param.c_str());
 }
 
+static PyObject*
+getSessionParams_helper(AmArg& p)
+{
+  if(isArgInt(p) || isArgLongLong(p)) {
+    return PyInt_FromLong(p.asLong());
+  } else if(isArgDouble(p)) {
+    return PyFloat_FromDouble(p.asDouble());
+  } else if(isArgCStr(p)) {
+    return PyString_FromString(p.asCStr());
+  } else {
+    return NULL;
+  }
+}
+
+static PyObject*
+IvrDialogBase_getSessionParams(IvrDialogBase *self, PyObject*)
+{
+  if(!self->p_dlg->session_params) {
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+  AmArg& sp = *(self->p_dlg->session_params);
+  if(isArgStruct(sp)) {
+    AmArg::ValueStruct* vs = sp.asStruct();
+    AmArg::ValueStruct::iterator it = vs->begin();
+    PyObject* output = PyDict_New(); //New
+    PyObject *k, *v;
+    for(;it != vs->end(); ++it) {
+      if(!(v = getSessionParams_helper(it->second))) continue;
+
+      k = PyString_FromString(it->first.c_str());
+      PyDict_SetItem(output, k, v);
+      Py_DECREF(v);
+      Py_DECREF(k);
+    }
+    return output;
+  } else if (isArgArray(sp)) {
+    size_t i;
+    PyObject* pyList = PyList_New(0);
+    PyObject* v;
+    for(i = 0; i < sp.size(); ++i) {
+      if(!(v = getSessionParams_helper(sp[i]))) continue;
+      PyList_Append(pyList, v);
+      Py_DECREF(v);
+    }
+    return pyList;
+  } else {
+    // Should not happen, see IvrUAC_dialout()
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+}
 
 static PyMethodDef IvrDialogBase_methods[] = {
     
@@ -598,6 +650,10 @@ static PyMethodDef IvrDialogBase_methods[] = {
   // App params
   {"getAppParam", (PyCFunction)IvrDialogBase_getAppParam, METH_VARARGS,
    "retrieves an application parameter"
+  },
+  // Session params - only present in case of UAC session
+  {"getSessionParams", (PyCFunction)IvrDialogBase_getSessionParams, METH_NOARGS,
+    "retrieves the session parameters"
   },
 
   {NULL}  /* Sentinel */
