@@ -225,7 +225,7 @@ int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   }
 
   div_t blocks;
-  blocks = div(size >> 1, c2enc->samples_per_frame);
+  blocks = div(in_sample_count, c2enc->samples_per_frame);
   if (blocks.rem) {
     ERROR("pcm16_2_codec2: not integral number of blocks %d.%d\n", blocks.quot, blocks.rem);
     return -1;
@@ -269,13 +269,9 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   struct codec2_encoder* c2enc = (struct codec2_encoder*)h_codec;
   struct CODEC2* codec2 = c2enc->codec2;
 
-  int frames = 0;
+  int number_of_frames = 0;
   int out_buffer_offset = 0;
   int in_buffer_offset = 0;
-  unsigned char* bits_to_decode = malloc(c2enc->nbyte * sizeof(unsigned char));
-
-  memcpy(bits_to_decode, in_buf + in_buffer_offset, c2enc->nbyte);
-  frames++;
 
   /*
    * We do not know where frame boundaries are, but the minimum frame size is
@@ -283,22 +279,15 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
    */
   int frame_count = size / c2enc->nbyte;
   while (frame_count) {
-    codec2_decode(codec2, out_buf + out_buffer_offset, bits_to_decode);
+    codec2_decode(codec2, out_buf + out_buffer_offset, in_buf + in_buffer_offset);
+    number_of_frames++;
 
     out_buffer_offset += c2enc->samples_per_frame;
     in_buffer_offset += c2enc->nbyte;
     frame_count--;
-
-    if (frame_count) {
-      memcpy(bits_to_decode, in_buf + in_buffer_offset, c2enc->nbyte);
-      frames++;
-    }
   }
 
-  // Cleanup.
-  free(bits_to_decode);
-
   // We multiply it by two (sizeof(short)), because size of per frame is 2 bytes (short).
-  return frames * (sizeof(short) * c2enc->samples_per_frame);
+  return number_of_frames * (sizeof(short) * c2enc->samples_per_frame);
 }
 
