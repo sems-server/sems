@@ -40,6 +40,12 @@ class IvrDialogBase:
     def bye(self [, headers]): # BYEs (or CANCELs) the SIP dialog
         pass
 
+    def sendRequest(self, method, headers): # Send a SIP request
+        pass
+
+    def sendReply(self, code, reason, headers): # Send a SIP reply to the last received request
+        pass
+
 
     # Media control
     def enqueue(self,audio_play,audio_rec): # add something to the playlist

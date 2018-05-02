@@ -473,6 +473,37 @@ IvrDialogBase_refer(IvrDialogBase *self, PyObject* args)
     
 }
 
+// Send SIP request
+static PyObject* IvrDialogBase_sendRequest(IvrDialogBase* self, PyObject* args)
+{
+   char* method=0;
+   char* hdrs=0;
+
+   if(!PyArg_ParseTuple(args, "ss", &method, &hdrs))
+     return NULL;
+
+   assert(self->p_dlg);
+   self->p_dlg->dlg->sendRequest(method, NULL, hdrs);
+   Py_INCREF(Py_None);
+   return Py_None;
+}
+
+// Send SIP reply
+static PyObject* IvrDialogBase_sendReply(IvrDialogBase* self, PyObject* args)
+{
+   int code;
+   char* reason=0;
+   char* hdrs=0;
+
+   if(!PyArg_ParseTuple(args, "iss", &code, &reason, &hdrs))
+     return NULL;
+
+   assert(self->p_dlg);
+   self->p_dlg->dlg->reply(self->p_dlg->mReq, code, reason, NULL, hdrs, 0);
+   Py_INCREF(Py_None);
+   return Py_None;
+}
+
 static PyObject* 
 IvrDialogBase_getAppParam(IvrDialogBase *self, PyObject* args)
 {
@@ -523,6 +554,14 @@ static PyMethodDef IvrDialogBase_methods[] = {
   {"refer", (PyCFunction)IvrDialogBase_refer, METH_VARARGS,
    "Refers the remote party to some third party."
   },   
+  // Send SIP request
+  {"sendRequest", (PyCFunction)IvrDialogBase_sendRequest, METH_VARARGS,
+    "send sip request"
+  },
+  // Send SIP reply
+  {"sendReply", (PyCFunction)IvrDialogBase_sendReply, METH_VARARGS,
+    "send sip reply"
+  },
   {"dropSession", (PyCFunction)IvrDialogBase_dropSession, METH_NOARGS,
    "Drop the session and forget it without replying"
   },
