@@ -270,10 +270,11 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   struct CODEC2* codec2 = c2enc->codec2;
 
   int frames = 0;
-  int buffer_offset = 0;
+  int out_buffer_offset = 0;
+  int in_buffer_offset = 0;
   unsigned char* bits_to_decode = malloc(c2enc->nbyte * sizeof(unsigned char));
 
-  memcpy(bits_to_decode, in_buf + buffer_offset, c2enc->nbyte);
+  memcpy(bits_to_decode, in_buf + in_buffer_offset, c2enc->nbyte);
   frames++;
 
   /*
@@ -282,13 +283,14 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
    */
   int frame_count = size / c2enc->nbyte;
   while (frame_count) {
-    codec2_decode(codec2, out_buf + buffer_offset, bits_to_decode);
+    codec2_decode(codec2, out_buf + out_buffer_offset, bits_to_decode);
 
-    buffer_offset += c2enc->nbyte;
+    out_buffer_offset += c2enc->samples_per_frame;
+    in_buffer_offset += c2enc->nbyte;
     frame_count--;
 
     if (frame_count) {
-      memcpy(bits_to_decode, in_buf + buffer_offset, c2enc->nbyte);
+      memcpy(bits_to_decode, in_buf + in_buffer_offset, c2enc->nbyte);
       frames++;
     }
   }
