@@ -93,23 +93,29 @@ long sems_codec2_create(const int bps,
   }
 
   int mode = 0;
-  if (bps == 3200)
+  if (bps == 3200) {
     mode = CODEC2_MODE_3200;
-  else if (bps == 2400)
+    *format_description = codec2_fmt_description_20ms_3200;
+  } else if (bps == 2400) {
     mode = CODEC2_MODE_2400;
-  else if (bps == 1600)
-    mode = CODEC2_MODE_1600;
-  else if (bps == 1400)
-    mode = CODEC2_MODE_1400;
-  else {
-        ERROR("Error in mode: %s", bps);
-        ERROR("Mode must be 3200, 2400, 1600 or 1400\n");
-        return -1;
-  }
+    *format_description = codec2_fmt_description_20ms_2400;
+    } else if (bps == 1600) {
+      mode = CODEC2_MODE_1600;
+      *format_description = codec2_fmt_description_40ms_1600;
+      } else if (bps == 1400) {
+        mode = CODEC2_MODE_1400;
+        *format_description = codec2_fmt_description_40ms_1400;
+        } else {
+          ERROR("Error in mode: %s", bps);
+          ERROR("Mode must be 3200, 2400, 1600 or 1400\n");
+          free(c2enc);
+          return -1;
+        }
 
   struct CODEC2* codec2 = codec2_create(mode);
   if (codec2 == NULL) {
     ERROR("Failed to create CODEC2.\n");
+    free(c2enc);
     return -1;
   }
 
@@ -121,17 +127,6 @@ long sems_codec2_create(const int bps,
   // We do not use --softdec and --natural codec2 options.
   const int gray = 1;
   codec2_set_natural_or_gray(codec2, gray);
-
-
-  if (bps == 3200)
-    *format_description = codec2_fmt_description_20ms_3200;
-  else if (bps == 2400)
-    *format_description = codec2_fmt_description_20ms_2400;
-  else if (bps == 1600)
-    *format_description = codec2_fmt_description_40ms_1600;
-  else if (bps == 1400)
-    *format_description = codec2_fmt_description_40ms_1400;
-
 
   return (long)c2enc;
 }
@@ -237,13 +232,15 @@ int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   }
 
   // For each chunk of c2enc->samples_per_frame bytes, encode a single frame.
-  int buffer_offset = 0;
+  int out_buffer_offset = 0;
+  int in_buffer_offset = 0;
   while (blocks.quot--) {
-    codec2_encode(codec2, out_buf + buffer_offset, in_buf + buffer_offset);
-    buffer_offset += c2enc->nbyte;
+    codec2_encode(codec2, out_buf + out_buffer_offset, in_buf + in_buffer_offset);
+    out_buffer_offset += c2enc->nbyte;
+    in_buffer_offset += c2enc->samples_per_frame;
   }
 
-  return buffer_offset;
+  return out_buffer_offset;
 }
 
 
@@ -283,14 +280,14 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
    * We do not know where frame boundaries are, but the minimum frame size is
    * c2enc->nbyte.
    */
-  int frame_sz = size / c2enc->nbyte;
-  while (frame_sz) {
+  int frame_count = size / c2enc->nbyte;
+  while (frame_count) {
     codec2_decode(codec2, out_buf + buffer_offset, bits_to_decode);
 
     buffer_offset += c2enc->nbyte;
-    frame_sz--;
+    frame_count--;
 
-    if (frame_sz) {
+    if (frame_count) {
       memcpy(bits_to_decode, in_buf + buffer_offset, c2enc->nbyte);
       frames++;
     }
