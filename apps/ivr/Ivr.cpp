@@ -553,7 +553,7 @@ void IvrFactory::setupSessionTimer(AmSession* s) {
 AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
 				const map<string,string>& app_params)
 {
-  DBG("IvrDialog::onInvite\n");
+  DBG("IvrFactory::onInvite\n");
 
   return newDlg(app_name);
 }
@@ -561,7 +561,7 @@ AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
 AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
             AmArg& session_params)
 {
-  DBG("IvrDialog::onInvite UAC\n");
+  DBG("IvrFactory::onInvite UAC\n");
 
   return newDlg(app_name, &session_params);
 }
