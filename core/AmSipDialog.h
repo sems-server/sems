@@ -136,7 +136,8 @@ protected:
   /** @return 0 on success */
   int refer(const string& refer_to,
 	    int expires = -1,
-	    const string& referred_by = "");
+	    const string& referred_by = "",
+	    const string& extrahdrs = "");
 
   /** @return 0 on success */
   int info(const string& hdrs,  
