@@ -6,7 +6,9 @@
 
 #include "IvrSipDialog.h"
 #include "IvrSipRequest.h"
+#include "IvrEvent.h"
 #include "AmMediaProcessor.h"
+#include "AmEventDispatcher.h"
 
 
 /** \brief python wrapper of IvrDialog, the base class for python IVR sessions */
@@ -540,9 +542,21 @@ IvrDialogBase_getSessionParams(IvrDialogBase *self, PyObject*)
   }
 }
 
-static PyMethodDef IvrDialogBase_methods[] = {
-    
+// Send inter-session message
+static PyObject* IvrDialogBase_sendMessage(IvrDialogBase* self, PyObject* args)
+{
+  char *dest;
+  char *msg;
+  if(!PyArg_ParseTuple(args, "ss", &dest, &msg))
+    return NULL;
 
+  AmEventDispatcher::instance()->post(dest, new IvrEvent(msg));
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static PyMethodDef IvrDialogBase_methods[] = {
+  
   // Event handlers
 
   {"onRtpTimeout", (PyCFunction)IvrDialogBase_onRtpTimeout, METH_NOARGS,
@@ -657,6 +671,11 @@ static PyMethodDef IvrDialogBase_methods[] = {
   // Session params - only present in case of UAC session
   {"getSessionParams", (PyCFunction)IvrDialogBase_getSessionParams, METH_NOARGS,
     "retrieves the session parameters"
+  },
+
+  // Send inter-session message
+  {"sendMessage", (PyCFunction)IvrDialogBase_sendMessage, METH_VARARGS,
+    "send inter-session message"
   },
 
   {NULL}  /* Sentinel */
