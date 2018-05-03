@@ -798,13 +798,14 @@ void IvrDialog::process(AmEvent* event)
   DBG("IvrDialog::process\n");
 
   AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-  if(audio_event && audio_event->event_id == AmAudioEvent::noAudio){
-
-    callPyEventHandler("onEmptyQueue", NULL);
-    event->processed = true;
-  } else if(audio_event->event_id == AmAudioEvent::cleared) {
-    callPyEventHandler("onAudioCleared", NULL);
-    event->processed = true;
+  if(audio_event) {
+    if(audio_event->event_id == AmAudioEvent::noAudio) {
+      callPyEventHandler("onEmptyQueue", NULL);
+      event->processed = true;
+    } else if(audio_event->event_id == AmAudioEvent::cleared) {
+      callPyEventHandler("onAudioCleared", NULL);
+      event->processed = true;
+    }
   }
 
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
