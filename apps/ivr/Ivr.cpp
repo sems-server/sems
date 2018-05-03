@@ -278,7 +278,7 @@ void IvrFactory::set_sys_path(const string& script_path)
   }
 }
 
-IvrDialog* IvrFactory::newDlg(const string& name)
+IvrDialog* IvrFactory::newDlg(const string& name, AmArg* session_params)
 {
   PYLOCK;
 
@@ -310,7 +310,7 @@ IvrDialog* IvrFactory::newDlg(const string& name)
     return NULL;
   }    
 
-  dlg->setPyPtrs(mod_desc.mod,dlg_inst);
+  dlg->setPyPtrs(mod_desc.mod, dlg_inst, session_params);
   Py_DECREF(dlg_inst);
 
   setupSessionTimer(dlg);
@@ -511,16 +511,6 @@ void IvrFactory::start_deferred_threads() {
   }
 }
 
-
-int IvrDialog::transfer(const string& target)
-{
-  return dlg->transfer(target);
-}
-
-int IvrDialog::refer(const string& target, int expires) {
-  return dlg->refer(target, expires);
-}
-
 int IvrDialog::drop()
 {
   int res = dlg->drop();
@@ -553,13 +543,25 @@ void IvrFactory::setupSessionTimer(AmSession* s) {
 AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
 				const map<string,string>& app_params)
 {
+  DBG("IvrDialog::onInvite\n");
+
   return newDlg(app_name);
 }
+
+AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
+            AmArg& session_params)
+{
+  DBG("IvrDialog::onInvite UAC\n");
+
+  return newDlg(app_name, &session_params);
+}
+
 
 IvrDialog::IvrDialog()
   : py_mod(NULL), 
     py_dlg(NULL),
-    playlist(this)
+    playlist(this),
+    session_params(NULL)
 {
   set_sip_relay_only(false);
 }
@@ -568,6 +570,8 @@ IvrDialog::~IvrDialog()
 {
   DBG("----------- IvrDialog::~IvrDialog() ------------- \n");
 
+  if(session_params) delete session_params;
+
   playlist.flush();
   
   PYLOCK;
@@ -575,12 +579,14 @@ IvrDialog::~IvrDialog()
   Py_XDECREF(py_dlg);
 }
 
-void IvrDialog::setPyPtrs(PyObject *mod, PyObject *dlg)
+void IvrDialog::setPyPtrs(PyObject *mod, PyObject *dlg, AmArg *sp)
 {
   assert(py_mod = mod);
   assert(py_dlg = dlg);
   Py_INCREF(py_mod);
   Py_INCREF(py_dlg);
+
+  session_params = sp;
 }
 
 static PyObject *
