@@ -35,6 +35,12 @@ class IvrDialogBase:
     def onDtmf(self,key,duration): # received DTMF
         pass
 
+    def onTimer(self, id): # a timer has fired
+        pass
+
+    def onIvrMessage(self, message): # a message has arrived from another session
+        pass
+
     def onUser1(self): # SIGUSR1 signal received from the OS
         pass
     
@@ -44,7 +50,6 @@ class IvrDialogBase:
     def onServerShutdown(self): # SEMS is shutting down
         pass
     
-
     # Session control
     def stopSession(self): # stop everything
         pass
