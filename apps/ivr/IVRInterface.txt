@@ -29,10 +29,27 @@ class IvrDialogBase:
     def onEmptyQueue(self): # audio queue is empty
         pass
     
+    def onAudioCleared(self): # audio input & output have been cleared
+        pass
+    
     def onDtmf(self,key,duration): # received DTMF
         pass
 
+    def onTimer(self, id): # a timer has fired
+        pass
 
+    def onIvrMessage(self, message): # a message has arrived from another session
+        pass
+
+    def onUser1(self): # SIGUSR1 signal received from the OS
+        pass
+    
+    def onUser2(self): # SIGUSR2 signal received from the OS
+        pass
+    
+    def onServerShutdown(self): # SEMS is shutting down
+        pass
+    
     # Session control
     def stopSession(self): # stop everything
         pass
@@ -52,6 +69,17 @@ class IvrDialogBase:
         pass
 
     def flush(self): # flushes playlist
+        pass
+
+    # Monitoring interface
+
+    def monitorLog(self, callid, property, value): # Log a line in the monitoring log
+        pass
+
+    def monitorLogAdd(self, callid, property, value): # Add a line in the monitoring log
+        pass
+
+    def monitorFinish(self, callid): # Mark the session finished in the monitoring log
         pass
 
     # Call datas / control

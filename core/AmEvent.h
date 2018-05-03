@@ -37,6 +37,7 @@ using std::string;
 #define E_SYSTEM           101
 #define E_SIP_SUBSCRIPTION 102
 #define E_B2B_APP          103
+#define E_IVR              104
 
 
 /** \brief base event class */

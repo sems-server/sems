@@ -25,6 +25,7 @@
 #include "IvrAudioMixIn.h"
 #include "IvrUAC.h"
 #include "Ivr.h"
+#include "IvrEvent.h"
 
 #include "AmSessionContainer.h"
 
@@ -280,7 +281,7 @@ void IvrFactory::set_sys_path(const string& script_path)
   }
 }
 
-IvrDialog* IvrFactory::newDlg(const string& name)
+IvrDialog* IvrFactory::newDlg(const string& name, AmArg* session_params)
 {
   PYLOCK;
 
@@ -312,7 +313,7 @@ IvrDialog* IvrFactory::newDlg(const string& name)
     return NULL;
   }    
 
-  dlg->setPyPtrs(mod_desc.mod,dlg_inst);
+  dlg->setPyPtrs(mod_desc.mod, dlg_inst, session_params);
   Py_DECREF(dlg_inst);
 
   setupSessionTimer(dlg);
@@ -420,6 +421,13 @@ int IvrFactory::onLoad()
   if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1,MOD_NAME ".conf")))
     return -1;
 
+#ifdef USE_MONITORING
+  if(!AmPlugIn::instance()->getFactory4Di("monitoring")) {
+    ERROR("Monitoring plugin not available, bailing!\n");
+    return -1;
+  }
+#endif
+
   // get application specific global parameters
   configureModule(cfg);
 
@@ -513,16 +521,6 @@ void IvrFactory::start_deferred_threads() {
   }
 }
 
-
-int IvrDialog::transfer(const string& target)
-{
-  return dlg->transfer(target);
-}
-
-int IvrDialog::refer(const string& target, int expires) {
-  return dlg->refer(target, expires);
-}
-
 int IvrDialog::drop()
 {
   int res = dlg->drop();
@@ -555,13 +553,25 @@ void IvrFactory::setupSessionTimer(AmSession* s) {
 AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
 				const map<string,string>& app_params)
 {
+  DBG("IvrDialog::onInvite\n");
+
   return newDlg(app_name);
 }
+
+AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
+            AmArg& session_params)
+{
+  DBG("IvrDialog::onInvite UAC\n");
+
+  return newDlg(app_name, &session_params);
+}
+
 
 IvrDialog::IvrDialog()
   : py_mod(NULL), 
     py_dlg(NULL),
-    playlist(this)
+    playlist(this),
+    session_params(NULL)
 {
   set_sip_relay_only(false);
 }
@@ -570,6 +580,8 @@ IvrDialog::~IvrDialog()
 {
   DBG("----------- IvrDialog::~IvrDialog() ------------- \n");
 
+  if(session_params) delete session_params;
+
   playlist.flush();
   
   PYLOCK;
@@ -577,12 +589,14 @@ IvrDialog::~IvrDialog()
   Py_XDECREF(py_dlg);
 }
 
-void IvrDialog::setPyPtrs(PyObject *mod, PyObject *dlg)
+void IvrDialog::setPyPtrs(PyObject *mod, PyObject *dlg, AmArg *sp)
 {
   assert(py_mod = mod);
   assert(py_dlg = dlg);
   Py_INCREF(py_mod);
   Py_INCREF(py_dlg);
+
+  session_params = sp;
 }
 
 static PyObject *
@@ -788,12 +802,35 @@ void IvrDialog::process(AmEvent* event)
 
     callPyEventHandler("onEmptyQueue", NULL);
     event->processed = true;
+  } else if(audio_event->event_id == AmAudioEvent::cleared) {
+    callPyEventHandler("onAudioCleared", NULL);
+    event->processed = true;
   }
-    
+
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
   if(plugin_event && plugin_event->name == "timer_timeout") {
     if (plugin_event->data.get(0).asInt() >= 0) {
       callPyEventHandler("onTimer", "(i)", plugin_event->data.get(0).asInt());
+      event->processed = true;
+    }
+  }
+  
+  IvrEvent* ivr_event = dynamic_cast<IvrEvent*>(event);
+  if(ivr_event) {
+    callPyEventHandler("onIvrMessage", "(s)", ivr_event->msg.c_str());
+    event->processed = true;
+  }
+  
+  AmSystemEvent* sys_event = dynamic_cast<AmSystemEvent*>(event);
+  if(sys_event) {
+    if(sys_event->sys_event == AmSystemEvent::User1) {
+      callPyEventHandler("onUser1", NULL);
+      event->processed = true;
+    } else if(sys_event->sys_event == AmSystemEvent::User2) {
+      callPyEventHandler("onUser2", NULL);
+      event->processed = true;
+    } else if(sys_event->sys_event == AmSystemEvent::ServerShutdown) {
+      callPyEventHandler("onServerShutdown", NULL);
       event->processed = true;
     }
   }
