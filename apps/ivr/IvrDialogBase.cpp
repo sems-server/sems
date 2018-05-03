@@ -375,8 +375,9 @@ static PyObject* IvrDialogBase_setTimer(IvrDialogBase* self, PyObject* args)
 {
   assert(self->p_dlg);
     
-  int id = 0, interval = 0;
-  if(!PyArg_ParseTuple(args,"ii",&id, &interval))
+  int id = 0;
+  double interval = 0.0;
+  if(!PyArg_ParseTuple(args, "id", &id, &interval))
     return NULL;
     
   if (id <= 0) {
