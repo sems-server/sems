@@ -166,6 +166,7 @@ class IvrDialog : public AmB2BCallerSession
   void connectCallee(const string& remote_party, const string& remote_uri,
 		     const string& from_party, const string& from_uri);
 
+  AmSipRequest mReq;
 };
 
 #endif

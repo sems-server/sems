@@ -220,6 +220,9 @@ void IvrFactory::import_ivr_builtins()
   PyModule_AddIntConstant(ivr_module, "AUDIO_READ",AUDIO_READ);
   PyModule_AddIntConstant(ivr_module, "AUDIO_WRITE",AUDIO_WRITE);
 
+  PyModule_AddStringConstant(ivr_module, "LOCAL_SIP_IP", AmConfig::SIP_Ifs[0].LocalIP.c_str());
+  PyModule_AddIntConstant(ivr_module, "LOCAL_SIP_PORT", AmConfig::SIP_Ifs[0].LocalPort);
+
   // add log level for the log module
   PyModule_AddIntConstant(ivr_module, "SEMS_LOG_LEVEL",log_level);
 
@@ -688,8 +691,10 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
 
 void IvrDialog::onInvite(const AmSipRequest& req)
 {
+  invite_req = req;
+  est_invite_cseq = req.cseq;
   if(callPyEventHandler("onInvite","(s)",req.hdrs.c_str()))
-    AmB2BCallerSession::onInvite(req);
+    AmB2BSession::onInvite(req);
 }
 
 void IvrDialog::onSessionStart()
@@ -756,7 +761,8 @@ PyObject * getPySipRequest(const AmSipRequest& r)
   return IvrSipRequest_FromPtr(new AmSipRequest(r));
 }
 
-void safe_Py_DECREF(PyObject* pyo) {
+void safe_Py_DECREF(PyObject* pyo)
+{
   PYLOCK;
   Py_DECREF(pyo);
 }
@@ -765,20 +771,25 @@ void IvrDialog::onSipReply(const AmSipRequest& req,
 			   const AmSipReply& reply, 
 			   AmBasicSipDialog::Status old_dlg_status) 
 {
-  PyObject* pyo = getPySipReply(reply);
-  callPyEventHandler("onSipReply","(O)", pyo);
-  safe_Py_DECREF(pyo);
-  AmB2BCallerSession::onSipReply(req,reply,old_dlg_status);
+  PyObject* pyrp = getPySipReply(reply);
+  PyObject* pyrq = getPySipRequest(req);
+  callPyEventHandler("onSipReply","(OO)", pyrq, pyrp);
+  safe_Py_DECREF(pyrp);
+  safe_Py_DECREF(pyrq);
+  AmB2BCallerSession::onSipReply(req, reply, old_dlg_status);
 }
 
-void IvrDialog::onSipRequest(const AmSipRequest& r){
+void IvrDialog::onSipRequest(const AmSipRequest& r)
+{
+  mReq = r;
   PyObject* pyo = getPySipRequest(r);
   callPyEventHandler("onSipRequest","(O)", pyo);
   safe_Py_DECREF(pyo);
   AmB2BCallerSession::onSipRequest(r);
 }
 
-void IvrDialog::onRtpTimeout() {
+void IvrDialog::onRtpTimeout()
+{
   callPyEventHandler("onRtpTimeout",NULL);
 }
 
@@ -829,7 +840,6 @@ void IvrDialog::process(AmEvent* event)
 
   return;
 }
-
 
 void IvrDialog::connectCallee(const string& remote_party, const string& remote_uri,
 			      const string& from_party, const string& from_uri) {
