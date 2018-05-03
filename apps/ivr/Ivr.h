@@ -99,7 +99,7 @@ class IvrFactory: public AmSessionFactory
   //void setScriptPath(const string& path);
   bool checkCfg();
 
-  IvrDialog* newDlg(const string& name);
+  IvrDialog* newDlg(const string& name, AmArg* session_params = NULL);
 
   std::queue<PyObject*> deferred_threads;
   void start_deferred_threads();
@@ -110,6 +110,10 @@ class IvrFactory: public AmSessionFactory
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);
+
+  /* UAC version */
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+          AmArg& session_params);
 
   void addDeferredThread(PyObject* pyCallable);
 
@@ -132,12 +136,13 @@ class IvrDialog : public AmB2BCallerSession
   void createCalleeSession();
  public:
   AmPlaylist playlist;
+  AmArg     *session_params;
 
   IvrDialog();
   ~IvrDialog();
 
   // must be called before everything else.
-  void setPyPtrs(PyObject *mod, PyObject *dlg);
+  void setPyPtrs(PyObject *mod, PyObject *dlg, AmArg *sp = NULL);
 
   int drop();
     

@@ -44,15 +44,41 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
   char* from;
   char* from_uri;
   char* to;
+  char* local_tag = "";
+  char* hdrs = "";
+  PyObject *sp = NULL;
 
-  if(!PyArg_ParseTuple(args,"ssssss", &user, &app_name, &r_uri, 
-		       &from, &from_uri, &to))
+  if(!PyArg_ParseTuple(args,"ssssss|ssO", &user, &app_name, &r_uri,
+        &from, &from_uri, &to, &local_tag, &hdrs, &sp))
     return NULL;
 
-  string app_name_s(app_name);
+  AmArg* session_params = NULL;
+  if(sp) {
+    if(PyList_Check(sp)) {
+      session_params = new AmArg();
+      session_params->assertArray();
 
-  AmUAC::dialout(user, app_name_s, r_uri, 
-		 from, from_uri, to);
+      int size = PyList_Size(sp);
+      for (int ii = 0; ii < size; ii++) {
+        PyObject *item = PyList_GetItem(sp, ii);
+        char *str = PyString_AsString(item);
+        session_params->push(string(str));
+      }
+    } else if(PyDict_Check(sp)) {
+      session_params = new AmArg();
+      session_params->assertStruct();
+
+      PyObject *key, *value;
+      Py_ssize_t pos = 0;
+      while (PyDict_Next(sp, &pos, &key, &value)) {
+        if(PyString_Check(value))
+          (*session_params)[PyString_AsString(key)] = PyString_AsString(value);
+      }
+    }
+  }
+
+  AmUAC::dialout(user, app_name, r_uri, from, from_uri, to,
+      local_tag, hdrs, session_params);
 
   Py_INCREF(Py_None);
   return Py_None;
