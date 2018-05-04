@@ -12,8 +12,16 @@
 
 
 /**
- * In order to tell SEMS to buffer the data and invoke the pcm16_2_xyz function only after 20ms
- * or 40ms we should specify parameters (frame length, frame size and encoded frame size) here.
+ * In order to tell SEMS to buffer the data and invoke the pcm16_2_xyz function
+ * only after 20ms or 40ms we should specify parameters (frame length, frame size
+ * and encoded frame size) here.
+ * In order to figure out what should be AMCI_FMT_ENCODED_FRAME_SIZE see Codec2's
+ * codec2_bits_per_frame function in ${CODEC2_ROOT}/src/codec2.c file.
+ *
+ * It should be calculated like this (assuming that codec2 was already created):
+ *
+ * const int bits_per_frame = codec2_bits_per_frame(CODEC2);
+ * const int AMCI_FMT_ENCODED_FRAME_SIZE = (bits_per_frame + 7) / 8;
  */
 static amci_codec_fmt_info_t codec2_fmt_description_20ms_3200[] = { {AMCI_FMT_FRAME_LENGTH, 20},
                                                                     {AMCI_FMT_FRAME_SIZE, 160},
@@ -30,7 +38,6 @@ static amci_codec_fmt_info_t codec2_fmt_description_40ms_1600[] = { {AMCI_FMT_FR
 static amci_codec_fmt_info_t codec2_fmt_description_40ms_1400[] = { {AMCI_FMT_FRAME_LENGTH, 40},
                                                                     {AMCI_FMT_FRAME_SIZE, 320},
                                                                     {AMCI_FMT_ENCODED_FRAME_SIZE, 7}, {0,0}};
-
 
 
 BEGIN_EXPORTS( "codec2" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
@@ -218,14 +225,13 @@ int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   struct codec2_encoder* c2enc = (struct codec2_encoder*)h_codec;
   struct CODEC2* codec2 = c2enc->codec2;
 
-  const int in_sample_count = (size / 2);
+  const int in_sample_count = size / 2;
   if (in_sample_count < c2enc->samples_per_frame) {
     ERROR("Size of input buffer's frame is less than size of frame in codec2.\n");
     return -1;
   }
 
-  div_t blocks;
-  blocks = div(in_sample_count, c2enc->samples_per_frame);
+  div_t blocks = div(in_sample_count, c2enc->samples_per_frame);
   if (blocks.rem) {
     ERROR("pcm16_2_codec2: not integral number of blocks %d.%d\n", blocks.quot, blocks.rem);
     return -1;
@@ -234,10 +240,12 @@ int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   // For each chunk of c2enc->samples_per_frame bytes, encode a single frame.
   int out_buffer_offset = 0;
   int in_buffer_offset = 0;
+  const int in_buffer_offset_next = c2enc->samples_per_frame * 2;
+
   while (blocks.quot--) {
     codec2_encode(codec2, out_buf + out_buffer_offset, in_buf + in_buffer_offset);
     out_buffer_offset += c2enc->nbyte;
-    in_buffer_offset += c2enc->samples_per_frame;
+    in_buffer_offset += in_buffer_offset_next;
   }
 
   return out_buffer_offset;
@@ -257,7 +265,7 @@ int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
  * - h_codec: An address of codec2 structure created by sems_codec2_create function.
  */
 int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-                          unsigned int channels, unsigned int rate, long h_codec) {
+                   unsigned int channels, unsigned int rate, long h_codec) {
 
   // Codec2 decode;
 
@@ -269,25 +277,23 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   struct codec2_encoder* c2enc = (struct codec2_encoder*)h_codec;
   struct CODEC2* codec2 = c2enc->codec2;
 
-  int number_of_frames = 0;
-  int out_buffer_offset = 0;
-  int in_buffer_offset = 0;
-
-  /*
-   * We do not know where frame boundaries are, but the minimum frame size is
-   * c2enc->nbyte.
-   */
-  int frame_count = size / c2enc->nbyte;
-  while (frame_count) {
-    codec2_decode(codec2, out_buf + out_buffer_offset, in_buf + in_buffer_offset);
-    number_of_frames++;
-
-    out_buffer_offset += c2enc->samples_per_frame;
-    in_buffer_offset += c2enc->nbyte;
-    frame_count--;
+  div_t blocks = div(size, c2enc->nbyte);
+  if (blocks.rem) {
+    ERROR("pcm16_2_codec2: not integral number of blocks %d.%d\n", blocks.quot, blocks.rem);
+    return -1;
   }
 
-  // We multiply it by two (sizeof(short)), because size of per frame is 2 bytes (short).
-  return number_of_frames * (sizeof(short) * c2enc->samples_per_frame);
+  int out_buffer_offset = 0;
+  int in_buffer_offset = 0;
+  // We multiply it by two (16 bits), because size of per frame is 2 bytes.
+  const int out_buffer_offset_next = c2enc->samples_per_frame * 2;
+
+  while (blocks.quot--) {
+    codec2_decode(codec2, out_buf + out_buffer_offset, in_buf + in_buffer_offset);
+    out_buffer_offset += out_buffer_offset_next;
+    in_buffer_offset += c2enc->nbyte;
+  }
+
+  return out_buffer_offset;
 }
 
