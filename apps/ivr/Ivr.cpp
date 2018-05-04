@@ -115,6 +115,7 @@ extern "C" {
     AmConfig::IgnoreSIGCHLD = ignore;
     DBG("%sgnoring SIGCHLD.\n", ignore?"I":"Not i");
 
+    Py_INCREF(Py_None);
     return Py_None;
   }
 
@@ -140,6 +141,7 @@ extern "C" {
     else 
       ERROR("Could not find __c_ivrFactory in Python state.\n");
 
+    Py_INCREF(Py_None);
     return Py_None;
   }
 
