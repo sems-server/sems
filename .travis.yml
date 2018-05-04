@@ -13,7 +13,7 @@ sudo: required
 before_install:
         - sudo apt-get -qq update
           # bcg729, ilbc, mISDN, sip-dev are missing
-        - sudo apt-get install -y libsamplerate0-dev libevent-dev libgsm1-dev libspandsp-dev flite1-dev libspeex-dev libssl-dev libmysql++-dev librtmp-dev
+        - sudo apt-get install -y libsamplerate0-dev libevent-dev libgsm1-dev libspandsp-dev flite1-dev libspeex-dev libssl-dev libmysql++-dev librtmp-dev codec2
 
 before_script:
         - mkdir build
