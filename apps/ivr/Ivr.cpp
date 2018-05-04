@@ -278,9 +278,11 @@ void IvrFactory::set_sys_path(const string& script_path)
     return;
   }
 
-  if(!PyList_Insert(sys_path,0,PyString_FromString(script_path.c_str()))){
+  PyObject* script_path_str = PyString_FromString(script_path.c_str());
+  if(!PyList_Insert(sys_path, 0, script_path_str)){
     PyErr_PrintEx(0);
   }
+  Py_DECREF(script_path_str);
 }
 
 IvrDialog* IvrFactory::newDlg(const string& name, AmArg* session_params)
@@ -338,19 +340,21 @@ bool IvrFactory::loadScript(const string& path)
   }
 
   if(cfg.loadFile(cfg_file)){
-    WARN("could not load config file at %s\n",cfg_file.c_str());
+    WARN("could not load config file at %s\n", cfg_file.c_str());
   } else {
     for(map<string,string>::const_iterator it = cfg.begin();
 	it != cfg.end(); it++){
-      PyDict_SetItem(config, 
-		     PyString_FromString(it->first.c_str()),
-		     PyString_FromString(it->second.c_str()));
+      PyObject *f = PyString_FromString(it->first.c_str());
+      PyObject *s = PyString_FromString(it->second.c_str());
+      PyDict_SetItem(config, f, s);
+      Py_DECREF(f);
+      Py_DECREF(s);
     }
   }
 
   // set config ivr ivr_module while loading
   Py_INCREF(config);
-  PyObject_SetAttrString(ivr_module,"config",config);
+  PyObject_SetAttrString(ivr_module, "config", config);
   
   // load module
   modName = PyString_FromString(path.c_str());
@@ -371,8 +375,8 @@ bool IvrFactory::loadScript(const string& path)
     // is still in the dictionnary.
     dict = PyImport_GetModuleDict();
     Py_INCREF(dict);
-    if(PyDict_Contains(dict,modName)){
-      PyDict_DelItem(dict,modName);
+    if(PyDict_Contains(dict, modName)){
+      PyDict_DelItem(dict, modName);
     }
     Py_DECREF(dict);
     Py_DECREF(modName);
@@ -400,10 +404,10 @@ bool IvrFactory::loadScript(const string& path)
     goto error2;
   }
 
-  PyObject_SetAttrString(mod,"config",config);
+  PyObject_SetAttrString(mod, "config", config);
 
   mod_reg.insert(std::make_pair(path,
-			        IvrScriptDesc(mod,dlg_class)));
+			        IvrScriptDesc(mod, dlg_class)));
 
   return true;
 
