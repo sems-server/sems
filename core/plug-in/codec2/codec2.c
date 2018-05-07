@@ -18,26 +18,15 @@
  * In order to figure out what should be AMCI_FMT_ENCODED_FRAME_SIZE see Codec2's
  * codec2_bits_per_frame function in ${CODEC2_ROOT}/src/codec2.c file.
  *
- * It should be calculated like this (assuming that codec2 was already created):
- *
- * const int bits_per_frame = codec2_bits_per_frame(CODEC2);
- * const int AMCI_FMT_ENCODED_FRAME_SIZE = (bits_per_frame + 7) / 8;
+ * We set AMCI_FMT_ENCODED_FRAME_SIZE value inside of sems_codec2_create function.
  */
-static amci_codec_fmt_info_t codec2_fmt_description_20ms_3200[] = { {AMCI_FMT_FRAME_LENGTH, 20},
-                                                                    {AMCI_FMT_FRAME_SIZE, 160},
-                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 8}, {0,0}};
+static amci_codec_fmt_info_t codec2_fmt_20ms_3200_2400[] = { {AMCI_FMT_FRAME_LENGTH, 20},
+                                                             {AMCI_FMT_FRAME_SIZE, 160},
+                                                             {AMCI_FMT_ENCODED_FRAME_SIZE, 0}, {0,0}};
 
-static amci_codec_fmt_info_t codec2_fmt_description_20ms_2400[] = { {AMCI_FMT_FRAME_LENGTH, 20},
-                                                                    {AMCI_FMT_FRAME_SIZE, 160},
-                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 6}, {0,0}};
-
-static amci_codec_fmt_info_t codec2_fmt_description_40ms_1600[] = { {AMCI_FMT_FRAME_LENGTH, 40},
-                                                                    {AMCI_FMT_FRAME_SIZE, 320},
-                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 8}, {0,0}};
-
-static amci_codec_fmt_info_t codec2_fmt_description_40ms_1400[] = { {AMCI_FMT_FRAME_LENGTH, 40},
-                                                                    {AMCI_FMT_FRAME_SIZE, 320},
-                                                                    {AMCI_FMT_ENCODED_FRAME_SIZE, 7}, {0,0}};
+static amci_codec_fmt_info_t codec2_fmt_40ms_1600_1400[] = { {AMCI_FMT_FRAME_LENGTH, 40},
+                                                             {AMCI_FMT_FRAME_SIZE, 320},
+                                                             {AMCI_FMT_ENCODED_FRAME_SIZE, 0}, {0,0}};
 
 
 BEGIN_EXPORTS( "codec2" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
@@ -102,16 +91,12 @@ long sems_codec2_create(const int bps,
   int mode = 0;
   if (bps == 3200) {
     mode = CODEC2_MODE_3200;
-    *format_description = codec2_fmt_description_20ms_3200;
   } else if (bps == 2400) {
     mode = CODEC2_MODE_2400;
-    *format_description = codec2_fmt_description_20ms_2400;
   } else if (bps == 1600) {
     mode = CODEC2_MODE_1600;
-    *format_description = codec2_fmt_description_40ms_1600;
   } else if (bps == 1400) {
     mode = CODEC2_MODE_1400;
-    *format_description = codec2_fmt_description_40ms_1400;
   } else {
     ERROR("Error in mode: %s\n", bps);
     ERROR("Mode must be 3200, 2400, 1600 or 1400\n");
@@ -124,6 +109,17 @@ long sems_codec2_create(const int bps,
     ERROR("Failed to create CODEC2.\n");
     free(c2enc);
     return -1;
+  }
+
+  const int encoded_frame_size = codec2_bits_per_frame(c2enc);
+
+  // If we reach here we can make sure that bps is 3200, 2400, 1600 or 1400.
+  if (bps == 3200 || bps == 2400) {
+    codec2_fmt_20ms_3200_2400[2].value = encoded_frame_size;
+    *format_description = codec2_fmt_20ms_3200_2400;
+  } else { // bps == 1600 or bps == 1400
+    codec2_fmt_40ms_1600_1400[2].value = encoded_frame_size;
+    *format_description = codec2_fmt_40ms_1600_1400;
   }
 
   c2enc->samples_per_frame = codec2_samples_per_frame(codec2);
