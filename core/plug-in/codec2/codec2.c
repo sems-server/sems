@@ -106,18 +106,18 @@ long sems_codec2_create(const int bps,
   } else if (bps == 2400) {
     mode = CODEC2_MODE_2400;
     *format_description = codec2_fmt_description_20ms_2400;
-    } else if (bps == 1600) {
-      mode = CODEC2_MODE_1600;
-      *format_description = codec2_fmt_description_40ms_1600;
-      } else if (bps == 1400) {
-        mode = CODEC2_MODE_1400;
-        *format_description = codec2_fmt_description_40ms_1400;
-        } else {
-          ERROR("Error in mode: %s", bps);
-          ERROR("Mode must be 3200, 2400, 1600 or 1400\n");
-          free(c2enc);
-          return -1;
-        }
+  } else if (bps == 1600) {
+    mode = CODEC2_MODE_1600;
+    *format_description = codec2_fmt_description_40ms_1600;
+  } else if (bps == 1400) {
+    mode = CODEC2_MODE_1400;
+    *format_description = codec2_fmt_description_40ms_1400;
+  } else {
+    ERROR("Error in mode: %s\n", bps);
+    ERROR("Mode must be 3200, 2400, 1600 or 1400\n");
+    free(c2enc);
+    return -1;
+  }
 
   struct CODEC2* codec2 = codec2_create(mode);
   if (codec2 == NULL) {
@@ -131,9 +131,8 @@ long sems_codec2_create(const int bps,
   c2enc->nbyte = (c2enc->bits_per_frame + 7) / 8;
   c2enc->codec2 = codec2;
 
-  // We do not use --softdec and --natural codec2 options.
-  const int gray = 1;
-  codec2_set_natural_or_gray(codec2, gray);
+  // We do not use --softdec and --natural codec2 options, we use gray option.
+  codec2_set_natural_or_gray(codec2, 1);
 
   return (long)c2enc;
 }
@@ -279,13 +278,13 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
 
   div_t blocks = div(size, c2enc->nbyte);
   if (blocks.rem) {
-    ERROR("pcm16_2_codec2: not integral number of blocks %d.%d\n", blocks.quot, blocks.rem);
+    ERROR("codec2_2_pcm16: not integral number of blocks %d.%d\n", blocks.quot, blocks.rem);
     return -1;
   }
 
   int out_buffer_offset = 0;
   int in_buffer_offset = 0;
-  // We multiply it by two (16 bits), because size of per frame is 2 bytes.
+  // We multiply it by two (16 bits), because the size of one sample is 2 bytes.
   const int out_buffer_offset_next = c2enc->samples_per_frame * 2;
 
   while (blocks.quot--) {
