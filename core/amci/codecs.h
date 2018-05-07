@@ -87,4 +87,9 @@
 
 #define CODEC_OPUS 50
 
+#define CODEC_CODEC2_3200 53
+#define CODEC_CODEC2_2400 54
+#define CODEC_CODEC2_1600 55
+#define CODEC_CODEC2_1400 56
+
 #endif
