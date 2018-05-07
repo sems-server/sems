@@ -6,8 +6,10 @@
 *.pyo
 *.so
 *~
+*.swp
 /CMakeCache.txt
 CMakeFiles/
+build/
 apps/py_sems/sip/*.cpp
 apps/py_sems/sip/*.h
 apps/py_sems/sip/Makefile.gen
