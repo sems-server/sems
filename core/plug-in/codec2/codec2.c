@@ -111,7 +111,7 @@ long sems_codec2_create(const int bps,
     return -1;
   }
 
-  const int encoded_frame_size = codec2_bits_per_frame(c2enc);
+  const int encoded_frame_size = codec2_bits_per_frame(codec2);
 
   // If we reach here we can make sure that bps is 3200, 2400, 1600 or 1400.
   if (bps == 3200 || bps == 2400) {
@@ -123,7 +123,7 @@ long sems_codec2_create(const int bps,
   }
 
   c2enc->samples_per_frame = codec2_samples_per_frame(codec2);
-  c2enc->bits_per_frame = codec2_bits_per_frame(codec2);
+  c2enc->bits_per_frame = encoded_frame_size;
   c2enc->nbyte = (c2enc->bits_per_frame + 7) / 8;
   c2enc->codec2 = codec2;
 
