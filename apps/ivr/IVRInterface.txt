@@ -12,6 +12,21 @@
 #          createThread(Callable thread)
 #              create a thread
 #
+#          sendMessage(destination, message)
+#              send an event message
+#
+#    Monitoring interface
+#
+#           monitorLog(callid, property, value) 
+#               Log a line in the monitoring log
+#
+#           monitorLogAdd(callid, property, value)i
+#               Add a line in the monitoring log
+#
+#           monitorFinish(callid)
+#               Mark the session finished in the monitoring log
+
+
 
 
 class IvrDialogBase:
@@ -69,17 +84,6 @@ class IvrDialogBase:
         pass
 
     def flush(self): # flushes playlist
-        pass
-
-    # Monitoring interface
-
-    def monitorLog(self, callid, property, value): # Log a line in the monitoring log
-        pass
-
-    def monitorLogAdd(self, callid, property, value): # Add a line in the monitoring log
-        pass
-
-    def monitorFinish(self, callid): # Mark the session finished in the monitoring log
         pass
 
     # Call datas / control

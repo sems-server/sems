@@ -8,12 +8,6 @@
 #include "IvrSipRequest.h"
 #include "IvrEvent.h"
 #include "AmMediaProcessor.h"
-#include "AmEventDispatcher.h"
-
-#ifdef USE_MONITORING
-#include "ampi/MonitoringAPI.h"
-#include "AmSessionContainer.h"
-#endif
 
 /** \brief python wrapper of IvrDialog, the base class for python IVR sessions */
 typedef struct {
@@ -513,74 +507,6 @@ static PyObject* IvrDialogBase_sendReply(IvrDialogBase* self, PyObject* args)
    return Py_None;
 }
 
-// Log a line in the monitoring log
-static PyObject*
-IvrDialogBase_monitorLog(IvrDialogBase* self, PyObject* args)
-{
-#ifdef USE_MONITORING
-  char *callid;
-  char *property;
-  char *value;
-  if(!PyArg_ParseTuple(args, "sss", &callid, &property, &value))
-    return NULL;
-
-  try {
-    AmArg di_args,ret;
-    di_args.push(AmArg(callid));
-    di_args.push(AmArg(property));
-    di_args.push(AmArg(value));
-    AmSessionContainer::monitoring_di->invoke("log", di_args, ret);
-  }
-  catch(...) {}
-#endif
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
-// Add a log line to the monitoring log
-static PyObject*
-IvrDialogBase_monitorLogAdd(IvrDialogBase* self, PyObject* args)
-{
-#ifdef USE_MONITORING
-  char *callid;
-  char *property;
-  char *value;
-  if(!PyArg_ParseTuple(args, "sss", &callid, &property, &value))
-    return NULL;
-
-  try {
-    AmArg di_args,ret;
-    di_args.push(AmArg(callid));
-    di_args.push(AmArg(property));
-    di_args.push(AmArg(value));
-    AmSessionContainer::monitoring_di->invoke("logAdd", di_args, ret);
-  }
-  catch(...) {}
-#endif
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
-// Mark the session finished in the monitoring log
-static PyObject*
-IvrDialogBase_monitorFinish(IvrDialogBase* self, PyObject* args)
-{
-#ifdef USE_MONITORING
-  char *callid;
-  if(!PyArg_ParseTuple(args, "s", &callid))
-    return NULL;
-
-  try {
-    AmArg di_args,ret;
-    di_args.push(AmArg(callid));
-    AmSessionContainer::monitoring_di->invoke("markFinished", di_args, ret);
-  }
-  catch(...) {}
-#endif
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
 static PyObject* 
 IvrDialogBase_getAppParam(IvrDialogBase *self, PyObject* args)
 {
@@ -643,19 +569,6 @@ IvrDialogBase_getSessionParams(IvrDialogBase *self, PyObject*)
     Py_INCREF(Py_None);
     return Py_None;
   }
-}
-
-// Send inter-session message
-static PyObject* IvrDialogBase_sendMessage(IvrDialogBase* self, PyObject* args)
-{
-  char *dest;
-  char *msg;
-  if(!PyArg_ParseTuple(args, "ss", &dest, &msg))
-    return NULL;
-
-  AmEventDispatcher::instance()->post(dest, new IvrEvent(msg));
-  Py_INCREF(Py_None);
-  return Py_None;
 }
 
 static PyMethodDef IvrDialogBase_methods[] = {
@@ -783,24 +696,6 @@ static PyMethodDef IvrDialogBase_methods[] = {
   // Session params - only present in case of UAC session
   {"getSessionParams", (PyCFunction)IvrDialogBase_getSessionParams, METH_NOARGS,
     "retrieves the session parameters"
-  },
-
-  // Log a line in the monitoring log
-  {"monitorLog",  (PyCFunction)IvrDialogBase_monitorLog, METH_VARARGS,
-    "log a line in the monitoring log"
-  },
-  // Add a log line to the monitoring log
-  {"monitorLogAdd",  (PyCFunction)IvrDialogBase_monitorLogAdd, METH_VARARGS,
-    "add a log line to the monitoring log"
-  },
-  // Mark the session finished in the monitoring log
-  {"monitorFinish",  (PyCFunction)IvrDialogBase_monitorFinish, METH_VARARGS,
-    "mark the session finished in the monitoring log"
-  },
-  
-  // Send inter-session message
-  {"sendMessage", (PyCFunction)IvrDialogBase_sendMessage, METH_VARARGS,
-    "send inter-session message"
   },
 
   {NULL}  /* Sentinel */

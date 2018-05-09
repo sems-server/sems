@@ -35,6 +35,12 @@
 #include "AmApi.h"
 #include "AmUtils.h"
 #include "AmPlugIn.h"
+#include "AmEventDispatcher.h"
+
+#ifdef USE_MONITORING
+#include "ampi/MonitoringAPI.h"
+#include "AmSessionContainer.h"
+#endif
 
 #include <unistd.h>
 #include <pthread.h>
@@ -145,12 +151,109 @@ extern "C" {
     return Py_None;
   }
 
+  // Log a line in the monitoring log
+  static PyObject* ivr_monitorLog(PyObject* self, PyObject* args)
+  {
+#ifdef USE_MONITORING
+    char *callid;
+    char *property;
+    char *value;
+    if(!PyArg_ParseTuple(args, "sss", &callid, &property, &value))
+      return NULL;
+
+    try {
+      AmArg di_args,ret;
+      di_args.push(AmArg(callid));
+      di_args.push(AmArg(property));
+      di_args.push(AmArg(value));
+      AmSessionContainer::monitoring_di->invoke("log", di_args, ret);
+    }
+    catch(...) {}
+#endif
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
+  // Add a log line to the monitoring log
+  static PyObject* ivr_monitorLogAdd(PyObject* self, PyObject* args)
+  {
+#ifdef USE_MONITORING
+    char *callid;
+    char *property;
+    char *value;
+    if(!PyArg_ParseTuple(args, "sss", &callid, &property, &value))
+      return NULL;
+
+    try {
+      AmArg di_args,ret;
+      di_args.push(AmArg(callid));
+      di_args.push(AmArg(property));
+      di_args.push(AmArg(value));
+      AmSessionContainer::monitoring_di->invoke("logAdd", di_args, ret);
+    }
+    catch(...) {}
+#endif
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
+  // Mark the session finished in the monitoring log
+  static PyObject* ivr_monitorFinish(PyObject* self, PyObject* args)
+  {
+#ifdef USE_MONITORING
+    char *callid;
+    if(!PyArg_ParseTuple(args, "s", &callid))
+      return NULL;
+
+    try {
+      AmArg di_args,ret;
+      di_args.push(AmArg(callid));
+      AmSessionContainer::monitoring_di->invoke("markFinished", di_args, ret);
+    }
+    catch(...) {}
+#endif
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
+  // Send inter-session message
+  static PyObject* ivr_sendMessage(PyObject* self, PyObject* args)
+  {
+    char *dest;
+    char *msg;
+    if(!PyArg_ParseTuple(args, "ss", &dest, &msg))
+      return NULL;
+
+    AmEventDispatcher::instance()->post(dest, new IvrEvent(msg));
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
   static PyMethodDef ivr_methods[] = {
     {"log", (PyCFunction)ivr_log, METH_VARARGS,"Log a message using Sems' logging system"},
     {"getHeader", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeader wrapper"},
     {"getHeaders", (PyCFunction)ivr_getHeaders, METH_VARARGS,"Python getHeaders wrapper"},
     {"createThread", (PyCFunction)ivr_createThread, METH_VARARGS, "Create another interpreter thread"},
     {"setIgnoreSigchld", (PyCFunction)ivr_ignoreSigchld, METH_VARARGS, "ignore SIGCHLD signal"},
+
+    // Log a line in the monitoring log
+    {"monitorLog",  (PyCFunction)ivr_monitorLog, METH_VARARGS,
+     "log a line in the monitoring log"
+    },
+    // Add a log line to the monitoring log
+    {"monitorLogAdd",  (PyCFunction)ivr_monitorLogAdd, METH_VARARGS,
+     "add a log line to the monitoring log"
+    },
+    // Mark the session finished in the monitoring log
+    {"monitorFinish",  (PyCFunction)ivr_monitorFinish, METH_VARARGS,
+     "mark the session finished in the monitoring log"
+    },
+
+    // Send inter-session message
+    {"sendMessage", (PyCFunction)ivr_sendMessage, METH_VARARGS,
+     "send inter-session message"
+    },
+
     {NULL}  /* Sentinel */
   };
 }
