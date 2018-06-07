@@ -6,6 +6,8 @@
 *.pyo
 *.so
 *~
+*.swp
+build/
 /CMakeCache.txt
 CMakeFiles/
 apps/py_sems/sip/*.cpp
