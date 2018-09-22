@@ -388,7 +388,8 @@ public:
   virtual int sendRequest(const string& method, 
 			  const AmMimeBody* body = NULL,
 			  const string& hdrs = "",
-			  int flags = 0);
+			  int flags = 0,
+			  int max_forwards = -1);
 
   /**
    * Terminates pending UAS/UAC transactions

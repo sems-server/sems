@@ -192,6 +192,11 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  relayError(req_ev->req.method,req_ev->req.cseq,
 		     true,483,SIP_REPLY_TOO_MANY_HOPS);
 	  return;
+	} else {
+	  if (req_ev->req.max_forwards > AmConfig::MaxForwards) {
+	    req_ev->req.max_forwards = AmConfig::MaxForwards;
+	  } else {
+	    req_ev->req.max_forwards--;
 	}
 
 	if (req_ev->req.method == SIP_METH_INVITE &&
@@ -802,7 +807,8 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
     }
 
     DBG("relaying SIP request %s %s\n", req.method.c_str(), req.r_uri.c_str());
-    int err = dlg->sendRequest(req.method, &body, *hdrs, SIP_FLAGS_VERBATIM);
+    int err = dlg->sendRequest(req.method, &body, *hdrs, SIP_FLAGS_VERBATIM,
+			       req.max_forwards);
     if(err < 0){
       ERROR("dlg->sendRequest() failed\n");
       return err;
