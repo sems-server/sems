@@ -197,6 +197,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	    req_ev->req.max_forwards = AmConfig::MaxForwards;
 	  } else {
 	    req_ev->req.max_forwards--;
+	  }
 	}
 
 	if (req_ev->req.method == SIP_METH_INVITE &&
