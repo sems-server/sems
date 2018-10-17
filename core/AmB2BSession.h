@@ -179,7 +179,7 @@ private:
   /** CSeq and Max-Forwards of the INVITE that established this call */
   unsigned int est_invite_cseq;
   unsigned int est_invite_other_cseq;
-  unsigned int est_invite_max_forward;
+  unsigned int est_invite_max_forwards;
 
   /** SUBSCRIBE/NOTIFY handling */
   AmSipSubscription* subs;

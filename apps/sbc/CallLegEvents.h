@@ -21,6 +21,7 @@ struct ConnectLegEvent: public B2BEvent
   string hdrs;
 
   unsigned int r_cseq;
+  unsigned int r_max_forwards;
   bool relayed_invite;
 
   // constructor from relayed INVITE request
@@ -29,15 +30,17 @@ struct ConnectLegEvent: public B2BEvent
     body(_relayed_invite.body),
     hdrs(_relayed_invite.hdrs),
     r_cseq(_relayed_invite.cseq),
+    r_max_forwards(_relayed_invite.max_forwards),
     relayed_invite(true)
   { }
 
   // constructor from generated INVITE (for example blind call transfer)
-  ConnectLegEvent(const string &_hdrs, const AmMimeBody &_body):
+ConnectLegEvent(const string &_hdrs, const AmMimeBody &_body, unsigned int _max_forwards):
     B2BEvent(ConnectLeg),
     body(_body),
     hdrs(_hdrs),
     r_cseq(0),
+    r_max_forwards(_max_forwards),
     relayed_invite(false)
   { }
 };

@@ -76,7 +76,7 @@ AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* p_dlg,
     enable_dtmf_rtp_filtering(false),
     enable_dtmf_rtp_detection(false),
     rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
-    est_invite_cseq(0), est_invite_other_cseq(0), est_invite_max_forward(0),
+    est_invite_cseq(0), est_invite_other_cseq(0), est_invite_max_forwards(0),
     media_session(NULL)
 {
   if(!subs) subs = new AmSipSubscription(dlg,this);
@@ -802,7 +802,7 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
     }
 
     int max_forwards;
-    if (req.max_forwards > AmConfig::MaxForwards) {
+    if (req.max_forwards > (int)AmConfig::MaxForwards) {
       max_forwards = AmConfig::MaxForwards;
     } else {
       max_forwards =  req.max_forwards - 1;
