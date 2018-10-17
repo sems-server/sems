@@ -76,7 +76,7 @@ AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* p_dlg,
     enable_dtmf_rtp_filtering(false),
     enable_dtmf_rtp_detection(false),
     rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
-    est_invite_cseq(0),est_invite_other_cseq(0),
+    est_invite_cseq(0), est_invite_other_cseq(0), est_invite_max_forward(0),
     media_session(NULL)
 {
   if(!subs) subs = new AmSipSubscription(dlg,this);
@@ -192,13 +192,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  relayError(req_ev->req.method,req_ev->req.cseq,
 		     true,483,SIP_REPLY_TOO_MANY_HOPS);
 	  return;
-	} else {
-	  if (req_ev->req.max_forwards > AmConfig::MaxForwards) {
-	    req_ev->req.max_forwards = AmConfig::MaxForwards;
-	  } else {
-	    req_ev->req.max_forwards--;
-	  }
-	}
+	};
 
 	if (req_ev->req.method == SIP_METH_INVITE &&
 	    dlg->getUACInvTransPending()) {
@@ -807,9 +801,17 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
       }
     }
 
-    DBG("relaying SIP request %s %s\n", req.method.c_str(), req.r_uri.c_str());
+    int max_forwards;
+    if (req.max_forwards > AmConfig::MaxForwards) {
+      max_forwards = AmConfig::MaxForwards;
+    } else {
+      max_forwards =  req.max_forwards - 1;
+    }
+    DBG("relaying SIP request %s %s %d\n", req.method.c_str(),
+	req.r_uri.c_str(), max_forwards);
+
     int err = dlg->sendRequest(req.method, &body, *hdrs, SIP_FLAGS_VERBATIM,
-			       req.max_forwards);
+			       max_forwards);
     if(err < 0){
       ERROR("dlg->sendRequest() failed\n");
       return err;

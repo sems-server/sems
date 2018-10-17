@@ -777,6 +777,7 @@ void _SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 	DBG_PARAM(req.from_tag);
 	DBG_PARAM(req.to_tag);
 	DBG("cseq = <%i>\n",req.cseq);
+	DBG("max_forwards = <%i>\n",req.max_forwards);
 	DBG_PARAM(req.route);
 	DBG("hdrs = <%s>\n",req.hdrs.c_str());
 	DBG("body-ct = <%s>\n",req.body.getCTStr().c_str());
