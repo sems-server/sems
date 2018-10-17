@@ -746,7 +746,11 @@ int AmBasicSipDialog::sendRequest(const string& method,
     send_flags |= TR_FLAG_DISABLE_BL;
   }
 
-  req.max_forwards = max_forwards;
+  if (req.max_forwards > (int)AmConfig::MaxForwards) {
+    req.max_forwards = AmConfig::MaxForwards;
+  } else {
+    req.max_forwards = max_forwards;
+  };
 
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ?

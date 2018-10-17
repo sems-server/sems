@@ -801,17 +801,11 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
       }
     }
 
-    int max_forwards;
-    if (req.max_forwards > (int)AmConfig::MaxForwards) {
-      max_forwards = AmConfig::MaxForwards;
-    } else {
-      max_forwards =  req.max_forwards - 1;
-    }
     DBG("relaying SIP request %s %s %d\n", req.method.c_str(),
 	req.r_uri.c_str(), max_forwards);
 
     int err = dlg->sendRequest(req.method, &body, *hdrs, SIP_FLAGS_VERBATIM,
-			       max_forwards);
+			       req.max_forwards - 1);
     if(err < 0){
       ERROR("dlg->sendRequest() failed\n");
       return err;
