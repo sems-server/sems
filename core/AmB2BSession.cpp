@@ -802,7 +802,7 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
     }
 
     DBG("relaying SIP request %s %s %d\n", req.method.c_str(),
-	req.r_uri.c_str(), max_forwards);
+	req.r_uri.c_str(), req.max_forwards - 1);
 
     int err = dlg->sendRequest(req.method, &body, *hdrs, SIP_FLAGS_VERBATIM,
 			       req.max_forwards - 1);
