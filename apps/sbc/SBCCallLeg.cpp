@@ -835,6 +835,10 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   ParamReplacerCtx ctx(&call_profile);
   ctx.app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
+  if (req.max_forwards <= 0) {
+    throw AmSession::Exception(483, SIP_REPLY_TOO_MANY_HOPS);
+  }
+
   // process call control
   if (call_profile.cc_interfaces.size()) {
     gettimeofday(&call_start_ts, NULL);

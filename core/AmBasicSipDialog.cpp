@@ -315,11 +315,6 @@ bool AmBasicSipDialog::onRxReqSanity(const AmSipRequest& req)
     }
   }
 
-  if (req.max_forwards <= 0) {
-    reply_error(req, 483, SIP_REPLY_TOO_MANY_HOPS);
-    return false;
-  };
-
   r_cseq = req.cseq;
   r_cseq_i = true;
 
