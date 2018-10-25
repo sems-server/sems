@@ -31,6 +31,9 @@
 #include "AmSessionContainer.h"
 #include "AmConfig.h"
 
+/* TODO: add max_forwards parameter in order to allow decreasing of
+   Max-Forwards value in DSM and IVR scripts.
+*/
 string AmUAC::dialout(const string& user,
 		      const string& app_name,
 		      const string& r_uri, 
