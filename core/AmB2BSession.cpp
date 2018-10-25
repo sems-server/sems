@@ -76,7 +76,7 @@ AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* p_dlg,
     enable_dtmf_rtp_filtering(false),
     enable_dtmf_rtp_detection(false),
     rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
-    est_invite_cseq(0),est_invite_other_cseq(0),
+    est_invite_cseq(0), est_invite_other_cseq(0), est_invite_max_forwards(0),
     media_session(NULL)
 {
   if(!subs) subs = new AmSipSubscription(dlg,this);
@@ -192,7 +192,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  relayError(req_ev->req.method,req_ev->req.cseq,
 		     true,483,SIP_REPLY_TOO_MANY_HOPS);
 	  return;
-	}
+	};
 
 	if (req_ev->req.method == SIP_METH_INVITE &&
 	    dlg->getUACInvTransPending()) {
@@ -801,8 +801,11 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
       }
     }
 
-    DBG("relaying SIP request %s %s\n", req.method.c_str(), req.r_uri.c_str());
-    int err = dlg->sendRequest(req.method, &body, *hdrs, SIP_FLAGS_VERBATIM);
+    DBG("relaying SIP request %s %s %d\n", req.method.c_str(),
+	req.r_uri.c_str(), req.max_forwards - 1);
+
+    int err = dlg->sendRequest(req.method, &body, *hdrs, SIP_FLAGS_VERBATIM,
+			       req.max_forwards - 1);
     if(err < 0){
       ERROR("dlg->sendRequest() failed\n");
       return err;

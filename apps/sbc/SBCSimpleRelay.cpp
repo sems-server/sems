@@ -91,7 +91,7 @@ int SimpleRelayDialog::relayRequest(const AmSipRequest& req)
   if(keep_vias)
     hdrs = req.vias + hdrs;
 
-  if(sendRequest(req.method,&req.body,hdrs,SIP_FLAGS_VERBATIM)) {
+  if(sendRequest(req.method,&req.body,hdrs,SIP_FLAGS_VERBATIM, req.max_forwards - 1)) {
 
     AmSipReply error;
     error.code = 500;

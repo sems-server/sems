@@ -694,7 +694,8 @@ int AmBasicSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 int AmBasicSipDialog::sendRequest(const string& method, 
 				  const AmMimeBody* body,
 				  const string& hdrs,
-				  int flags)
+				  int flags,
+				  int max_forwards)
 {
   AmSipRequest req;
 
@@ -744,6 +745,12 @@ int AmBasicSipDialog::sendRequest(const string& method,
      !remote_tag.empty()) {
     send_flags |= TR_FLAG_DISABLE_BL;
   }
+
+  if (req.max_forwards > (int)AmConfig::MaxForwards) {
+    req.max_forwards = AmConfig::MaxForwards;
+  } else {
+    req.max_forwards = max_forwards;
+  };
 
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ?
