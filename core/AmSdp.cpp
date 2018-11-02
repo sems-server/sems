@@ -111,6 +111,12 @@ inline string transport_p_2_str(int tp)
   }
 }
 
+SdpConnection::SdpConnection()
+  : address(), network(NT_OTHER), addrType(AT_NONE)  {
+  memset(&ipv4, 0, sizeof(ipv4));
+  memset(&ipv6, 0, sizeof(ipv6));
+}
+
 bool SdpConnection::operator == (const SdpConnection& other) const
 {
   return network == other.network && addrType == other.addrType 
