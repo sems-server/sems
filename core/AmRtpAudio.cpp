@@ -335,14 +335,14 @@ int AmRtpAudio::init(const AmSdp& local,
   if(AmRtpStream::init(local,remote,force_symmetric_rtp)){
     return -1;
   }
-    
-  AmAudioRtpFormat* fmt_p = new AmAudioRtpFormat();
 
   PayloadMappingTable::iterator pl_it = pl_map.find(payload);
   if ((pl_it == pl_map.end()) || (pl_it->second.remote_pt < 0)) {
     DBG("no default payload has been set\n");
     return -1;
   }
+
+  AmAudioRtpFormat* fmt_p = new AmAudioRtpFormat();
   fmt_p->setCurrentPayload(payloads[pl_it->second.index]);
   fmt.reset(fmt_p);
   amci_codec_t* codec = fmt->getCodec();
