@@ -830,14 +830,14 @@ bool DSMFactory::createSystemDSM(const string& config_name, const string& start_
 }
 
 void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
-  DSMStateDiagramCollection* new_diags = new DSMStateDiagramCollection();
-
   AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
       ret.push(500);
       ret.push("loading config file " +AmConfig::ModConfigPath + string(MOD_NAME ".conf"));
       return ;
   }
+
+  DSMStateDiagramCollection* new_diags = new DSMStateDiagramCollection();
 
   string DiagPath = cfg.getParameter("diag_path");
   if (DiagPath.length() && DiagPath[DiagPath.length()-1] != '/')
