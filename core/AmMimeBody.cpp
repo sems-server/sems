@@ -46,22 +46,23 @@ AmMimeBody::~AmMimeBody()
 
 const AmMimeBody& AmMimeBody::operator = (const AmMimeBody& r_body)
 {
-  ct = r_body.ct;
-  hdrs = r_body.hdrs;
+  if (&r_body != this) {
+    ct = r_body.ct;
+    hdrs = r_body.hdrs;
 
-  if(r_body.payload && r_body.content_len) {
-    setPayload(r_body.payload,r_body.content_len);
-  }
-  else {
-    clearPayload();
-  }
+    if(r_body.payload && r_body.content_len) {
+      setPayload(r_body.payload,r_body.content_len);
+    }
+    else {
+      clearPayload();
+    }
 
-  clearParts();
-  for(Parts::const_iterator it = r_body.parts.begin();
-      it != r_body.parts.end(); ++it) {
-    parts.push_back(new AmMimeBody(**it));
+    clearParts();
+    for(Parts::const_iterator it = r_body.parts.begin();
+        it != r_body.parts.end(); ++it) {
+      parts.push_back(new AmMimeBody(**it));
+    }
   }
-
   return r_body;
 }
 

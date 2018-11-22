@@ -223,9 +223,7 @@ int AmOfferAnswer::onRxSdp(unsigned int m_cseq, const AmMimeBody& body, const ch
   if (sdp == NULL) {
     err_code = 400;
     *err_txt = "sdp body part not found";
-  }
- 
-  if (sdp_remote.parse((const char*)sdp->getPayload())) {
+  } else if (sdp_remote.parse((const char*)sdp->getPayload())) {
     err_code = 400;
     *err_txt = "session description parsing failed";
   }

@@ -135,17 +135,17 @@ AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, const string& ap
     return NULL;
   }
 
-  cred = new UACAuthCred(a_realm, a_user, a_pwd);
-  if(cred == NULL) {
-    ERROR("Failed to create authentication handle\n");
-    return NULL;
-  }
-
   if (session_params.get(3).getType() == AmArg::CStr) {
     callee_uri = string(session_params.get(3).asCStr());
   }
   else {
     ERROR("All arguments have to be CStr\n");
+    return NULL;
+  }
+
+  cred = new UACAuthCred(a_realm, a_user, a_pwd);
+  if(cred == NULL) {
+    ERROR("Failed to create authentication handle\n");
     return NULL;
   }
 
