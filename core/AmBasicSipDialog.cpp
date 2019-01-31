@@ -448,14 +448,14 @@ bool AmBasicSipDialog::onRxReplySanity(const AmSipReply& reply)
 {
   if(ext_local_tag.empty()) {
     if(reply.from_tag != local_tag) {
-      ERROR("received reply with wrong From-tag ('%s' vs. '%s')",
+      ERROR("received reply with wrong From-tag ('%s' vs. '%s')\n",
 	    reply.from_tag.c_str(), local_tag.c_str());
       throw string("reply has wrong from-tag");
       //return;
     }
   }
   else if(reply.from_tag != ext_local_tag) {
-    ERROR("received reply with wrong From-tag ('%s' vs. '%s')",
+    ERROR("received reply with wrong From-tag ('%s' vs. '%s')\n",
 	  reply.from_tag.c_str(), ext_local_tag.c_str());
     throw string("reply has wrong from-tag");
     //return;
@@ -466,8 +466,11 @@ bool AmBasicSipDialog::onRxReplySanity(const AmSipReply& reply)
 
 void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
 {
-  if(!onRxReplySanity(reply))
+  if(!onRxReplySanity(reply)) {
+    DBG("onRxReply (rep = %u %s): sanity check failed!\n",
+	reply.code, reply.reason.c_str());
     return;
+  }
 
   TransMap::iterator t_it = uac_trans.find(reply.cseq);
   if(t_it == uac_trans.end()){

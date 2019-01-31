@@ -405,7 +405,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
 	  setRemoteTag(reply.to_tag);
 	  setRouteSet(reply.route);
 	  break;
-	} 
+	}
         //DROP!!!
 	DBG("ignoring provisional reply (%u %s) in Early state\n",
 	    reply.code, reply.reason.c_str());
