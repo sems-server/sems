@@ -339,11 +339,13 @@ bool AmSipDialog::onRxReplySanity(const AmSipReply& reply)
 
     if(status == Early) {
       if(reply.code < 200 && !reply.to_tag.empty()) {
-        return false;// DROP
+	// Provision reply, such as 180, can come from a new UAS
+	return true;
       }
     }
     else {
-      // DROP
+      DBG("dropping reply (%u %s) in non-Early state\n",
+	  reply.code, reply.reason.c_str());
       return false;
     }
   }
@@ -364,10 +366,8 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
     case Trying:
     case Proceeding:
       if(reply.code < 200){
-	// Do not go to Early state if To tag can still change
-	// Otherwise reply check will fail
-	if (((reply.code == 100) ||
-	     ((reply.code >= 180) && (reply.code <= 183)))
+	// Do not go to Early state if reply did not come from an UAS
+	if (((reply.code == 100) || (reply.code == 181) || (reply.code == 182))
 	    || reply.to_tag.empty())
 	  setStatus(Proceeding);
 	else {
@@ -399,8 +399,16 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
 
     case Early:
       if(reply.code < 200){
-        DBG("ignoring provisional reply in Early state");
+	if (!reply.to_tag.empty() && (reply.to_tag != getRemoteTag())) {
+	  DBG("updating dialog based on reply (%u %s) in Early state\n",
+	      reply.code, reply.reason.c_str());
+	  setRemoteTag(reply.to_tag);
+	  setRouteSet(reply.route);
+	  break;
+	} 
         //DROP!!!
+	DBG("ignoring provisional reply (%u %s) in Early state\n",
+	    reply.code, reply.reason.c_str());
       }
       else if(reply.code < 300){
 	setStatus(Connected);
