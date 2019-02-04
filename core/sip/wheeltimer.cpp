@@ -74,6 +74,12 @@ void _wheeltimer::remove_timer(timer* t)
     reqs_m.unlock();
 }
 
+/** return whether interval has elapsed since old_wall_clock */
+bool _wheeltimer::interval_elapsed(u_int32_t old_wall_clock, unsigned int interval_ms) {
+    u_int32_t diff = wall_clock - old_wall_clock;
+    return WALL_CLOCK_TO_MS(diff) >= interval_ms;
+}
+
 void _wheeltimer::run()
 {
   struct timeval now,next_tick,diff,tick;
