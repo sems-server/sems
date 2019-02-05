@@ -30,6 +30,7 @@ Features
  o CDR generation
  o call teardown from external control through RPC
  o transcoding
+ o RTP Multiplexing and header compression
  o ...
 
 SBC Profiles
@@ -578,6 +579,54 @@ Warning:
    codecs can be used in one stream at the same time but only one (the last used
    one) is reported
    
+RTP Multiplexing and header compression
+---------------------------------------
+The SBC can multiplex RTP packets and compress headers in order to save
+bandwidth if RTP packets of multiple calls are sent in one packet with one
+UDP/IP header and a compressed RTP header, or also if multiple RTP packets of
+one call are batched together (introducing some mouth-to-ear delay). For details
+about RTP compression, see doc/rtp_mux/rtp_mux_protocol.txt.
+
+The outgoing (sending) side of RTP mux is configured in the call profile as 
+a_rtp_mux_ip/a_rtp_mux_port for the A leg, and b_rtp_mux_ip/b_rtp_mux_port for the B leg.
+
+The RTP interface used for sending multiplexed RTP packets can be set in sems.conf, e.g.
+rtp_mux_out_interface=extern, if there's multiple RTP interfaces configured for SEMS.
+If no rtp_mux_out_interface interface is set, the default (first) RTP interface is used
+for sending. Note that the source port of multiplexed packets is a port from the RTP range
+configured on the RTP interface.
+
+For receiving multiplexed RTP packets, rtp_mux_ip/rtp_mux_port needs to be set in sems.conf.
+
+The usual application for this would be compression/multiplexed on a low-bandwidth link
+(e.g. sat), with a gateway on each side:
+
+UAsL <---SIP/RTP---> SEMS-SBC1 <===SIP/MUX RTP===> SEMS-SBC2 <---> UAsR
+
+E.g., for calls from UAsL to UAsR, mux would be set on SEMS-SBC1 on the B leg 
+(b_rtp_mux_ip/b_rtp_mux_port) and on SEMS-SBC2 on the A leg (a_rtp_mux_ip/a_rtp_mux_port).
+
+UAsL ---SIP/RTP---> SEMS-SBC1  ===SIP/MUX RTP===  SEMS-SBC2 ---> UAsR
+  sems.conf
+                 rtp_mux_ip=1.1.1.1              rtp_mux_ip=2.2.2.2
+                 rtp_mux_port=5000               rtp_mux_port=5000
+  ltor.sbcprofile.conf:
+                 b_rtp_mux_ip=2.2.2.2            a_rtp_mux_ip=1.1.1.1
+                 b_rtp_mux_port=5000             a_rtp_mux_port=5000
+
+The other direction would require the flipped setup:
+UAsL <---SIP/RTP--- SEMS-SBC1  ===SIP/MUX RTP===  SEMS-SBC2 <--- UAsR
+  sems.conf: as above
+  rtol.sbcprofile.conf:
+                 a_rtp_mux_ip=2.2.2.2            b_rtp_mux_ip=1.1.1.1
+                 a_rtp_mux_port=5000             b_rtp_mux_port=5000
+
+Note: in the gatewaying scenario, it never makes sense to have a_rtp_mux_ip/a_rtp_mux_port
+AND b_rtp_mux_ip/b_rtp_mux_port in one SBC profile.
+
+Configure rtp_mux_mtu_threshold/rtp_mux_max_frame_age_ms for the MTU of that link,
+and the maximum acceptable additional delay.
+
 Adding headers
 --------------
 Additional headers can be added to the outgoing initial INVITE by using the

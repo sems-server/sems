@@ -68,6 +68,10 @@
 
 #define MAX_NET_DEVICES     32
 
+// defaults for RTP MUX
+#define DEFAULT_MUX_MTU_THRESHOLD 1200
+#define DEFAULT_MUX_MAX_FRAME_AGE_MS 60
+
 extern const char* progname;
 
 #endif

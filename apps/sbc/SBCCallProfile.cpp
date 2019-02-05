@@ -377,6 +377,12 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   rtprelay_dtmf_detection =
     cfg.getParameter("rtprelay_dtmf_detection", "no") == "yes";
 
+  a_remote_rtp_mux_ip = cfg.getParameter("a_rtp_mux_ip");
+  a_remote_rtp_mux_port = cfg.getParameterInt("a_rtp_mux_port", 0);
+
+  b_remote_rtp_mux_ip = cfg.getParameter("b_rtp_mux_ip");
+  b_remote_rtp_mux_port = cfg.getParameterInt("b_rtp_mux_port", 0);
+
   outbound_interface = cfg.getParameter("outbound_interface");
   aleg_outbound_interface = cfg.getParameter("aleg_outbound_interface");
 
@@ -519,6 +525,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       INFO("SBC:      RTP Relay RTP DTMF detection %sabled\n",
 	   rtprelay_dtmf_detection?"en":"dis");
     }
+
+    INFO("SBC:      RTP MUX - A: %sabled (%s:%u), B: %sabled (%s:%u)\n",
+	 a_remote_rtp_mux_ip.empty()?"dis":"en", a_remote_rtp_mux_ip.c_str(), a_remote_rtp_mux_port,
+	 b_remote_rtp_mux_ip.empty()?"dis":"en", b_remote_rtp_mux_ip.c_str(), b_remote_rtp_mux_port);
 
     INFO("SBC:      SST on A leg enabled: '%s'\n", sst_aleg_enabled.empty() ?
 	 "no" : sst_aleg_enabled.c_str());

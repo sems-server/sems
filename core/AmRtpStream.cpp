@@ -33,6 +33,7 @@
 #include "AmAudio.h"
 #include "AmUtils.h"
 #include "AmSession.h"
+#include "AmRtpMuxStream.h"
 
 #include "AmDtmfDetector.h"
 #include "rtp/telephone_event.h"
@@ -293,7 +294,7 @@ int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int t
   }
 #endif
 
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr, rtp_mux_remote_ip, rtp_mux_remote_port) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
   }
@@ -332,7 +333,7 @@ int AmRtpStream::send_raw( char* packet, unsigned int length )
   rp.compile_raw((unsigned char*)packet, length);
   rp.setAddr(&r_saddr);
 
-  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr, rtp_mux_remote_ip, rtp_mux_remote_port) < 0){
     ERROR("while sending raw RTP packet.\n");
     return -1;
   }
@@ -432,10 +433,15 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
 
 AmRtpStream::~AmRtpStream()
 {
+  if (!rtp_mux_remote_ip.empty()) {
+    DBG("RTP MUX: closing on RTP stream instance [%p]\n", this);
+    AmRtpMuxSender::instance()->close(rtp_mux_remote_ip, rtp_mux_remote_port, getRPort());
+  }
+
   if(l_sd){
     if (AmRtpReceiver::haveInstance()){
-      AmRtpReceiver::instance()->removeStream(l_sd);
-      AmRtpReceiver::instance()->removeStream(l_rtcp_sd);
+      AmRtpReceiver::instance()->removeStream(l_sd, getLocalPort());
+      AmRtpReceiver::instance()->removeStream(l_rtcp_sd, getLocalRtcpPort());
     }
     close(l_sd);
     close(l_rtcp_sd);
@@ -1024,7 +1030,7 @@ AmRtpPacket *AmRtpStream::reuseBufferedPacket()
   return p;
 }
 
-void AmRtpStream::recvPacket(int fd)
+void AmRtpStream::recvPacket(int fd, unsigned char* pkt, size_t len)
 {
   if(fd == l_rtcp_sd){
     recvRtcpPacket();
@@ -1037,12 +1043,23 @@ void AmRtpStream::recvPacket(int fd)
     DBG("out of buffers for RTP packets, dropping (stream [%p])\n",
 	this);
     // drop received data
-    AmRtpPacket dummy;
-    dummy.recv(l_sd);
+    if (NULL != pkt) {
+      AmRtpPacket dummy;
+      dummy.recv(l_sd);
+    }
     return;
   }
+
+  int recv_res = 0;
+  if (NULL != pkt) {
+    // "receive" from buffer
+    recv_res = p->recv(pkt, len);
+  } else {
+    // receive from network
+    recv_res = p->recv(l_sd);
+  }
   
-  if(p->recv(l_sd) > 0){
+  if(recv_res > 0){
     int parse_res = 0;
 
     if (logger) p->logReceived(logger, &l_saddr);
@@ -1111,6 +1128,7 @@ void AmRtpStream::recvRtcpPacket()
   memcpy(&rtcp_raddr,&relay_stream->r_saddr,sizeof(rtcp_raddr));
   am_set_port(&rtcp_raddr, relay_stream->r_rtcp_port);
 
+  // FIXME: RTCP relay RTP MUX
   int err;
   if(AmConfig::UseRawSockets) {
     err = raw_sender::send((char*)buffer,recved_bytes,
@@ -1150,8 +1168,8 @@ void AmRtpStream::relay(AmRtpPacket* p)
   if (!relay_raw && !relay_transparent_ssrc)
     hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
-
-  if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr) < 0){
+  
+  if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx, &l_saddr, rtp_mux_remote_ip, rtp_mux_remote_port) < 0){
     ERROR("while sending RTP packet to '%s':%i\n",
 	  get_addr_str(&r_saddr).c_str(),am_get_port(&r_saddr));
   }
@@ -1235,12 +1253,22 @@ void AmRtpStream::setRtpRelayFilterRtpDtmf(bool filter) {
   relay_filter_dtmf = filter;
 }
 
+void AmRtpStream::setRtpMuxRemote(const string& remote_ip, unsigned int remote_port) {
+  rtp_mux_remote_ip = remote_ip;
+  rtp_mux_remote_port = remote_port;
+  if (remote_ip.empty() || !remote_port) {
+    DBG("RTP stream [%p]: disabled RTP MUX\n", this);
+  } else {
+    DBG("RTP stream [%p]: set RTP MUX remote to %s:%u\n", this, remote_ip.c_str(), remote_port);
+  }
+}
+
 void AmRtpStream::stopReceiving()
 {
   if (hasLocalSocket()){
     DBG("remove stream [%p] from RTP receiver\n", this);
-    AmRtpReceiver::instance()->removeStream(getLocalSocket());
-    if (l_rtcp_sd > 0) AmRtpReceiver::instance()->removeStream(l_rtcp_sd);
+    AmRtpReceiver::instance()->removeStream(getLocalSocket(), getLocalPort());
+    if (l_rtcp_sd > 0) AmRtpReceiver::instance()->removeStream(l_rtcp_sd, getLocalRtcpPort());
   }
 }
 

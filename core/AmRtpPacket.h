@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include <string>
+
 class AmRtpPacketTracer;
 class msg_logger;
 
@@ -69,8 +71,11 @@ public:
   // returns -1 if error, else 0
   int compile_raw(unsigned char* data_buf, unsigned int size);
 
-  int send(int sd, unsigned int sys_if_idx, sockaddr_storage* l_saddr);
+  int send(int sd, unsigned int sys_if_idx, sockaddr_storage* l_saddr,
+	   const std::string& rtp_mux_remote_ip = "", unsigned int rtp_mux_remote_port=0);
   int recv(int sd);
+  // copy from already received packet
+  int recv(unsigned char* pkt, size_t len);
 
   int parse();
 

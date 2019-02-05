@@ -45,6 +45,8 @@
 
 #include "sip/msg_logger.h"
 
+#include "AmRtpMuxStream.h"
+
 AmRtpPacket::AmRtpPacket()
   : data_offset(0)
 {
@@ -251,8 +253,11 @@ int AmRtpPacket::sendmsg(int sd, unsigned int sys_if_idx)
 }
 
 int AmRtpPacket::send(int sd, unsigned int sys_if_idx,
-		      sockaddr_storage* l_saddr)
+		      sockaddr_storage* l_saddr, const std::string& rtp_mux_remote_ip, unsigned int rtp_mux_remote_port)
 {
+  if (!rtp_mux_remote_ip.empty() && rtp_mux_remote_port)
+    return AmRtpMuxSender::instance()->send(buffer, b_size, rtp_mux_remote_ip, rtp_mux_remote_port, am_get_port(&addr));
+
   if(sys_if_idx && AmConfig::UseRawSockets) {
     return raw_sender::send((char*)buffer,b_size,sys_if_idx,l_saddr,&addr);
   }
@@ -280,6 +285,13 @@ int AmRtpPacket::recv(int sd)
   }
     
   return ret;
+}
+
+int AmRtpPacket::recv(unsigned char* pkt, size_t len)
+{
+  b_size = len > sizeof(buffer) ? sizeof(buffer) : len;
+  memcpy(buffer, pkt, b_size);
+  return b_size;
 }
 
 void AmRtpPacket::logReceived(msg_logger *logger, struct sockaddr_storage *laddr)
