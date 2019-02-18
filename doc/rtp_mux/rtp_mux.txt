@@ -18,7 +18,16 @@ links, see the sbc module and the explanation in Readme.sbc.txt
 
 The max MTU and maximum introduced delay is configured in sems.conf:
 rtp_mux_mtu_threshold/rtp_mux_max_frame_age_ms. They can be read and
-changed in the running SEMS if the stats module is loaded:
+changed in the running SEMS if the stats module is loaded.
+
+If the tools are installed, then the following commands are available:
+
+  sems-rtp-mux-get-max-frame-age-ms
+  sems-rtp-mux-get-mtu-threshold
+  sems-rtp-mux-set-max-frame-age-ms <max_frame_age>
+  sems-rtp-mux-set-mtu-threshold <mtu>
+
+If not, these can be used:
 
 
   $ sems-stats -c get_rtp_mux_mtu_threshold

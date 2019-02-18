@@ -1,0 +1,2 @@
+#!/bin/sh
+sems-stats -c "get_rtp_mux_mtu_threshold"
