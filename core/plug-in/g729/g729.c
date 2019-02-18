@@ -88,13 +88,16 @@ struct G729_codec
 };
 
 
-long g729_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long g729_create(const char* format_parameters, const char** format_parameters_out,
+			amci_codec_fmt_info_t** format_description)
 {
     struct G729_codec *codec;
 
     codec = calloc(sizeof(struct G729_codec), 1);
     codec->enc = initBcg729EncoderChannel();
     codec->dec = initBcg729DecoderChannel();
+
+    *format_description = g729_fmt_description;
 
     return (long) codec;
 }
@@ -131,7 +134,7 @@ static int pcm16_2_g729(unsigned char* out_buf, unsigned char* in_buf, unsigned 
 
     while(size >= PCM_BYTES_PER_FRAME){
         /* Encode a frame  */
-        bcg729Encoder(codec->enc, in_buf, out_buf);
+      bcg729Encoder(codec->enc, (int16_t*)in_buf, (uint8_t*)out_buf);
 
 	size -= PCM_BYTES_PER_FRAME;
 	in_buf += PCM_BYTES_PER_FRAME;
@@ -159,7 +162,7 @@ static int g729_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned 
 
     while(size >= G729_BYTES_PER_FRAME){
         /* Decode a frame  */
-        bcg729Decoder(codec->dec, in_buf, 0, out_buf);
+      bcg729Decoder(codec->dec, in_buf, 0, (int16_t*)out_buf);
 
 	size -= G729_BYTES_PER_FRAME;
 	in_buf += G729_BYTES_PER_FRAME;
