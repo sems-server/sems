@@ -30,7 +30,7 @@ SO_posix=so.0
 SO_mingw=dll
 SO_EXT=$(SO_$(SYS))
 
-SHARED=no
+SHARED=yes
 SODEF_yes=-fPIC
 SOLIB_yes=librtmp.$(SO_EXT)
 SOINST_yes=install_$(SO_EXT)
