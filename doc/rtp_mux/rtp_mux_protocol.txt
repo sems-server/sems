@@ -158,3 +158,6 @@ CRC-4/G-704 generation (pycrc):
   pycrc-0.9.1/pycrc.py --width 4 --poly 0x3 --xor-in 0x0 --reflect-out False --reflect-in False --xor-out 0x00  --generate h  --algorithm=table-driven -o crc.h
   pycrc-0.9.1/pycrc.py --width 4 --poly 0x3 --xor-in 0x0 --reflect-out False --reflect-in False --xor-out 0x00  --generate c  --algorithm=table-driven -o crc.cpp
 
+
+This work was supported by the Shuttleworth Foundation through
+Rhizomatica.

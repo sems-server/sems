@@ -1,6 +1,9 @@
 RTP multiplexing and compression
 --------------------------------
 
+This work was supported by the Shuttleworth Foundation through
+Rhizomatica.
+
 SEMS supports RTP MUX as described in rtp_mux_protocol. 
 
 The receiving and the sending side are handled/configured differently:
