@@ -570,18 +570,23 @@ void tcp_server_worker::run()
 {
   // fake event to prevent the event loop from exiting
   int fake_fds[2];
-  pipe(fake_fds);
-  struct event* ev_default =
-    event_new(evbase,fake_fds[0],
-	      EV_READ|EV_PERSIST,
-	      NULL,NULL);
-  event_add(ev_default,NULL);
+  struct event* ev_default = NULL;
+  int res = pipe(fake_fds);
+  if (res<0) {
+    ERROR("creating pipe to keep event loop running");
+  } else {
+    ev_default = event_new(evbase,fake_fds[0],
+			   EV_READ|EV_PERSIST,
+			   NULL,NULL);
+    event_add(ev_default,NULL);
+  }
 
   /* Start the event loop. */
   int ret = event_base_dispatch(evbase);
 
   // clean-up fake fds/event
-  event_free(ev_default);
+  if (NULL != ev_default)
+    event_free(ev_default);
   close(fake_fds[0]);
   close(fake_fds[1]);
 }
