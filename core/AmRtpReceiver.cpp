@@ -136,7 +136,9 @@ void AmRtpReceiverThread::_rtp_receiver_buf_cb(evutil_socket_t sd,
 
   if (NULL != r_pkt->stream) {
     r_pkt->thread->streams_mut.lock();
-    r_pkt->stream->recvPacket(-1, r_pkt->pkt, r_pkt->len);
+    if (NULL != r_pkt->stream) {
+      r_pkt->stream->recvPacket(-1, r_pkt->pkt, r_pkt->len);
+    }
     r_pkt->thread->streams_mut.unlock();
   }
   delete r_pkt;
