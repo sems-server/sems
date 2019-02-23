@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/time.h>
+#include <netinet/in.h>
 #include <netinet/ip.h>
 
 using namespace std;
