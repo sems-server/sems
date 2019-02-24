@@ -203,7 +203,9 @@ int AmRtpPacket::sendmsg(int sd, unsigned int sys_if_idx)
   struct cmsghdr* cmsg;
     
   union {
+#ifndef __FreeBSD__
     char cmsg4_buf[CMSG_SPACE(sizeof(struct in_pktinfo))];
+#endif
     char cmsg6_buf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
   } cmsg_buf;
 
@@ -223,12 +225,14 @@ int AmRtpPacket::sendmsg(int sd, unsigned int sys_if_idx)
 
   cmsg = CMSG_FIRSTHDR(&hdr);
   if(addr.ss_family == AF_INET) {
+#ifndef __FreeBSD__
     cmsg->cmsg_level = IPPROTO_IP;
     cmsg->cmsg_type = IP_PKTINFO;
     cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
 
     struct in_pktinfo* pktinfo = (struct in_pktinfo*) CMSG_DATA(cmsg);
     pktinfo->ipi_ifindex = sys_if_idx;
+#endif
   }
   else if(addr.ss_family == AF_INET6) {
     cmsg->cmsg_level = IPPROTO_IPV6;

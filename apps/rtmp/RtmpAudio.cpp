@@ -34,6 +34,7 @@
 #define SPEEX_WB_SAMPLE_RATE 16000
 
 #include <fcntl.h>
+#include <sys/stat.h>
 
 static void dump_audio(RTMPPacket *packet)
 {
