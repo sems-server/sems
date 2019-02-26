@@ -692,12 +692,21 @@ If SIP Session Timers are enabled for a profile, the session timers values
 or in the profile configuration, which overrides the sbc.conf configuration.
 
 SIP Session Timers may be configured for each leg individually.
-enable_session_timer overrides enable_aleg_session_timer if that one is
-not set: SST may be disabled on the A (caller) leg by setting
-enable_aleg_session_timer=no.  If enable_session_timer=yes and
-enable_aleg_session_timer not set, SST is enabled for both
-legs. Likewise, if aleg_session_expires etc. is not set, the SST
-configuration of the B leg is used (session_expires, minimum_timer etc).
+
+To enable session timers on both legs:
+  enable_session_timer=yes
+To enable session timers on B leg only:
+  enable_session_timer=yes
+  enable_aleg_session_timer=no
+To enable session timers on A leg only:
+  enable_session_timer=no
+  enable_aleg_session_timer=yes
+To disable session timers on both legs:
+  enable_session_timer=no
+
+enable_session_timer defines bleg value and the default aleg value if
+enable_aleg_session_timer is not set. Likewise, if aleg_session_expires etc. is
+not set, the SST configuration of the B leg is used (session_expires, minimum_timer etc).
 
 
 Call hold configuration
