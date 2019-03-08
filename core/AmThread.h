@@ -65,6 +65,24 @@ public:
 };
 
 /**
+ * \brief  Simple lock class witth ability to release mutex onwership
+ */
+class AmControlledLock
+{
+  AmMutex& m;
+  bool ownership;
+public:
+  AmControlledLock(AmMutex& _m) : m(_m), ownership(true) {
+    m.lock();
+  }
+  ~AmControlledLock(){
+    if(ownership)
+      m.unlock();
+  }
+  void release_ownership() { ownership = false; }
+};
+
+/**
  * \brief Shared variable.
  *
  * Include a variable and its mutex.

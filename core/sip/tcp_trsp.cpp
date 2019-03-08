@@ -303,13 +303,15 @@ void tcp_trsp_socket::on_read(short ev)
 
   {// locked section
 
+    AmControlledLock _l(sock_mut);
+
     if(ev & EV_TIMEOUT) {
       DBG("************ idle timeout: closing connection **********");
       close();
+      _l.release_ownership();
       return;
     }
 
-    AmLock _l(sock_mut);
     DBG("on_read (connected = %i)",connected);
 
     bytes = ::read(sd,get_input(),get_input_free_space());
@@ -322,16 +324,19 @@ void tcp_trsp_socket::on_read(short ev)
       case ENOTCONN:
 	DBG("connection has been closed (sd=%i)",sd);
 	close();
+  _l.release_ownership();
 	return;
 
       case ETIMEDOUT:
 	DBG("transmission timeout (sd=%i)",sd);
 	close();
+  _l.release_ownership();
 	return;
 
       default:
 	DBG("unknown error (%i): %s",errno,strerror(errno));
 	close();
+  _l.release_ownership();
 	return;
       }
     }
@@ -339,6 +344,7 @@ void tcp_trsp_socket::on_read(short ev)
       // connection closed
       DBG("connection has been closed (sd=%i)",sd);
       close();
+      _l.release_ownership();
       return;
     }
   }// end of - locked section
@@ -426,11 +432,12 @@ int tcp_trsp_socket::parse_input()
 
 void tcp_trsp_socket::on_write(short ev)
 {
-  AmLock _l(sock_mut);
+  AmControlledLock _l(sock_mut);
 
   DBG("on_write (connected = %i)",connected);
   if(!connected) {
     if(on_connect(ev) != 0) {
+      _l.release_ownership();
       return;
     }
   }
@@ -458,6 +465,7 @@ void tcp_trsp_socket::on_write(short ev)
 	ERROR("unforseen error: close connection (%i/%s)",
 	      errno,strerror(errno));
 	close();
+  _l.release_ownership();
 	break;
       }
       return;
