@@ -46,11 +46,11 @@ EXPORT_PLUGIN_CLASS_FACTORY(WebConferenceFactory,APP_NAME);
 WebConferenceFactory::WebConferenceFactory(const string& _app_name)
   : AmSessionFactory(_app_name),
     AmDynInvokeFactory(_app_name),
+    session_timer_f(NULL),
     configured(false),
     use_direct_room(false),
     direct_room_strip(0),
-    stats(NULL),
-    session_timer_f(NULL)
+    stats(NULL)
 {
   if (NULL == _instance) {
     _instance = this;

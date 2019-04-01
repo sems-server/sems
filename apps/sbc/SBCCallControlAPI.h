@@ -62,7 +62,7 @@ struct SBCCallTimerEvent : public AmEvent {
 
  SBCCallTimerEvent(TimerAction timer_action, int timer_id, double timeout = 0)
     : AmEvent(SBCCallTimerEvent_ID),
-    timer_id(timer_id), timer_action(timer_action), timeout(timeout) { }
+    timer_action(timer_action), timeout(timeout), timer_id(timer_id) { }
 };
 
 #define SBCControlEvent_ID -564

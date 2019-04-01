@@ -34,8 +34,8 @@ AmAudioMixIn::AmAudioMixIn(AmAudio* A, AmAudio* B,
 			   unsigned int s, double l,
 			   unsigned int flags) 
   :   A(A),B(B), s(s), l(l), 
-      mixing(false), next_start_ts_i(false),
-      flags(flags)
+      flags(flags), mixing(false),
+      next_start_ts_i(false)
 {
 }
 

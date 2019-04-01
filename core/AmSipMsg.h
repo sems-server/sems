@@ -71,7 +71,7 @@ class AmSipReply : public _AmSipMsgInDlg
   list<AmSipHeader> unparsed_headers;
 #endif
 
- AmSipReply() : code(0), _AmSipMsgInDlg() { }
+ AmSipReply() : _AmSipMsgInDlg(), code(0) { }
   ~AmSipReply() { }
   string print() const;
 };

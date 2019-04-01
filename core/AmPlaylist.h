@@ -121,7 +121,7 @@ class AmPlaylistSeparator
   int id;
 public:  
   AmPlaylistSeparator(AmEventQueue* q, int id)
-    : ev_q(q), notified(false), id(id) { }
+    : notified(false), ev_q(q), id(id) { }
   ~AmPlaylistSeparator() { }
 
   int read(unsigned int user_ts, unsigned int size){

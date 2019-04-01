@@ -13,8 +13,8 @@
 SystemDSM::SystemDSM(const DSMScriptConfig& config,
 		     const string& startDiagName,
 		     bool reload) 
-  : stop_requested(false), AmEventQueue(this), 
-    startDiagName(startDiagName), dummy_session(this), 
+  : AmEventQueue(this), dummy_session(this),
+    stop_requested(false), startDiagName(startDiagName),
     reload(reload)
 {
   config.diags->addToEngine(&engine);

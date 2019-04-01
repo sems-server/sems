@@ -61,11 +61,11 @@ static void addTranscoderStats(string &hdrs)
 }
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
-  : AmBasicSipDialog(h),oa(this),rel100(this,h),
-    offeranswer_enabled(true),
+  : AmBasicSipDialog(h),pending_invites(0),sdp_local(),
+    sdp_remote(),
     early_session_started(false),session_started(false),
-    pending_invites(0),
-    sdp_local(), sdp_remote()
+    oa(this),
+    offeranswer_enabled(true), rel100(this,h)
 {
 }
 

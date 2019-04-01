@@ -106,8 +106,8 @@ class MeanArray: public MeanValue
 
  public:
   MeanArray(size_t size)
-    : buf_size(size),
-    MeanValue()
+    : MeanValue(),
+    buf_size(size)
     {
       buffer = new double[size];
       memset(buffer, 0, sizeof(buffer[0])*size);

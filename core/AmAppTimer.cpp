@@ -39,7 +39,7 @@ class app_timer : public timer
 
  public:
   app_timer(const string& q_id, int timer_id, unsigned int expires)
-    : timer(expires), timer_id(timer_id), q_id(q_id) {}
+    : timer(expires), q_id(q_id), timer_id(timer_id) {}
 
   ~app_timer() {}
 

@@ -45,6 +45,7 @@ using std::unique_ptr;
 
 sip_msg::sip_msg(const char* msg_buf, int msg_len)
     : buf(NULL),
+      type(SIP_UNKNOWN),
       hdrs(),
       to(NULL),
       from(NULL),
@@ -58,8 +59,7 @@ sip_msg::sip_msg(const char* msg_buf, int msg_len)
       content_type(NULL),
       content_length(NULL),
       body(),
-      local_socket(NULL),
-      type(SIP_UNKNOWN)
+      local_socket(NULL)
 {
     u.request = 0;
     u.reply   = 0;
@@ -72,6 +72,7 @@ sip_msg::sip_msg(const char* msg_buf, int msg_len)
 
 sip_msg::sip_msg()
     : buf(NULL),
+      type(SIP_UNKNOWN),
       hdrs(),
       to(NULL),
       from(NULL),
@@ -85,8 +86,7 @@ sip_msg::sip_msg()
       content_type(NULL),
       content_length(NULL),
       body(),
-      local_socket(NULL),
-      type(SIP_UNKNOWN)
+      local_socket(NULL)
 {
     u.request = 0;
     u.reply   = 0;

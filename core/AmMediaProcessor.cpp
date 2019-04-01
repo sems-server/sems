@@ -51,7 +51,7 @@ struct SchedRequest :
 AmMediaProcessor* AmMediaProcessor::_instance = NULL;
 
 AmMediaProcessor::AmMediaProcessor()
-  : threads(NULL),num_threads(0)
+  : num_threads(0), threads(NULL)
 {
 }
 

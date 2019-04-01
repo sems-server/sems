@@ -69,14 +69,14 @@ AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* p_dlg,
   : AmSession(p_dlg),
     other_id(other_local_tag),
     sip_relay_only(true),
+    est_invite_cseq(0),
+    est_invite_other_cseq(0),
+    est_invite_max_forwards(0),
     subs(p_subs),
     rtp_relay_mode(RTP_Direct),
     rtp_relay_force_symmetric_rtp(false),
-    enable_dtmf_transcoding(false),
-    enable_dtmf_rtp_filtering(false),
-    enable_dtmf_rtp_detection(false),
     rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
-    est_invite_cseq(0), est_invite_other_cseq(0), est_invite_max_forwards(0),
+    enable_dtmf_transcoding(false), enable_dtmf_rtp_filtering(false), enable_dtmf_rtp_detection(false),
     media_session(NULL)
 {
   if(!subs) subs = new AmSipSubscription(dlg,this);

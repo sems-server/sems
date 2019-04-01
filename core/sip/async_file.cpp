@@ -20,7 +20,7 @@ Possible issue:
 */
 
 async_file::async_file(unsigned int buf_len)
-  : AmMutex(true), fifo_buffer(buf_len),
+  : fifo_buffer(buf_len), AmMutex(true),
     evbase(NULL),closed(false),error(false),write_thresh(MIN_WRITE_SIZE)
 {
   if (buf_len <= MIN_WRITE_SIZE) {

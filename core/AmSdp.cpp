@@ -275,11 +275,11 @@ RtcpAddress::RtcpAddress(const string &attr_value): port(0)
 // class AmSdp: Methods
 //
 AmSdp::AmSdp()
-  : origin(),
+  : version(0),
+    origin(),
     sessionName(),
     conn(),
-    media(),
-    version(0)
+    media()
 {
   origin.user = "sems";
   origin.sessId = get_random();
@@ -291,8 +291,8 @@ AmSdp::AmSdp(const AmSdp& p_sdp_msg)
     origin(p_sdp_msg.origin),
     sessionName(p_sdp_msg.sessionName),
     conn(p_sdp_msg.conn),
-    media(p_sdp_msg.media),
-    attributes(p_sdp_msg.attributes)
+    attributes(p_sdp_msg.attributes),
+    media(p_sdp_msg.media)
 {
 }
 

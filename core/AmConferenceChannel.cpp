@@ -6,7 +6,7 @@
 #include <string.h>
 
 AmConferenceChannel::AmConferenceChannel(AmConferenceStatus* status, int channel_id, string channel_tag, bool own_channel)
-  : status(status), channel_id(channel_id), channel_tag(channel_tag), own_channel(own_channel),
+  : own_channel(own_channel), channel_id(channel_id), channel_tag(channel_tag), status(status),
     have_in_sr(false), have_out_sr(false), in_file(NULL), out_file(NULL)
 {
   assert(status);

@@ -111,7 +111,7 @@ inline const string& AmFileCache::getFilename() {
 
 
 AmCachedAudioFile::AmCachedAudioFile(AmFileCache* cache) 
-  : cache(cache), loop(false), fpos(0), begin(0), good(false)
+  : cache(cache), fpos(0), begin(0), good(false), loop(false)
 {
   if (!cache) {
     ERROR("Need open file cache.\n");

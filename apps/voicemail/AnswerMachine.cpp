@@ -725,10 +725,10 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
 					 int vm_mode,
 					 const EmailTmplDict& template_variables,
 					 const EmailTemplate* tmpl)
-  : announce_file(announce_file), announce_fp(announce_fp),
-    tmpl(tmpl), playlist(this),
-  status(0), vm_mode(vm_mode),
-  email_dict(template_variables)
+  : playlist(this), announce_file(announce_file),
+    announce_fp(announce_fp), tmpl(tmpl),
+  email_dict(template_variables), status(0),
+  vm_mode(vm_mode)
 
 {
   email_dict["user"] = user;

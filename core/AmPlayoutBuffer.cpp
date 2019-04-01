@@ -45,9 +45,9 @@
 #define MAX_DELAY sample_rate*1 /* 1 second */
 
 AmPlayoutBuffer::AmPlayoutBuffer(AmPLCBuffer *plcbuffer, unsigned int sample_rate)
-  : r_ts(0),w_ts(0), sample_rate(sample_rate),
-    last_ts_i(false), recv_offset_i(false), 
-    m_plcbuffer(plcbuffer)
+  : r_ts(0),w_ts(0), m_plcbuffer(plcbuffer),
+    last_ts_i(false), sample_rate(sample_rate),
+    recv_offset_i(false)
 {
   buffer.clear_all();
 }
@@ -163,8 +163,8 @@ AmAdaptivePlayout::AmAdaptivePlayout(AmPLCBuffer *plcbuffer, unsigned int sample
     loss_rate(ORDER_STAT_LOSS_RATE),
     wsola_off(WSOLA_START_OFF),
     shr_threshold(SHR_THRESHOLD),
-    plc_cnt(0),
     short_scaled(WSOLA_SCALED_WIN),
+    plc_cnt(0),
     fec(sample_rate)
 {
   memset(n_stat,0,sizeof(int32_t)*ORDER_STAT_WIN_SIZE);

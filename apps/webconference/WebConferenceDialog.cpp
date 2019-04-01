@@ -51,9 +51,9 @@ WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
 					 WebConferenceFactory* my_f,
 					 const string& room)
   : play_list(this), separator(this, 0), prompts(prompts), state(None),
-    factory(my_f), muted(false),
-    connect_ts(-1), disconnect_ts(-1),
-    local_input(NULL), cred(NULL),
+    factory(my_f), cred(NULL),
+    muted(false), connect_ts(-1),
+    disconnect_ts(-1), local_input(NULL),
     lonely_user(true)
 {
   conf_id = room;

@@ -61,8 +61,8 @@ SIPRegistrarClient* SIPRegistrarClient::instance()
 
 SIPRegistrarClient::SIPRegistrarClient(const string& name)
   : AmEventQueue(this),
-    uac_auth_i(NULL),
     AmDynInvokeFactory(MOD_NAME),
+    uac_auth_i(NULL),
     stop_requested(false)
 { 
 }

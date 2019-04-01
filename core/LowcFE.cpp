@@ -61,7 +61,7 @@ void LowcFE::zeros(short *s, int cnt)
 }
 
 LowcFE::LowcFE(unsigned int sample_rate)
-  : erasecnt(0), pitchbufend(0), sample_rate(sample_rate)
+  : sample_rate(sample_rate), erasecnt(0), pitchbufend(0)
 {
   pitchbuf = new Float[HISTORYLEN];
   lastq = new Float[POVERLAPMAX];

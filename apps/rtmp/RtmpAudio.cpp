@@ -69,8 +69,8 @@ static void dump_audio(unsigned char* buffer, unsigned int size)
 
 RtmpAudio::RtmpAudio(RtmpSender* s)
   : AmAudio(new AmAudioFormat(CODEC_SPEEX_WB,SPEEX_WB_SAMPLE_RATE)),
-    playout_buffer(this,SPEEX_WB_SAMPLE_RATE), 
-    sender(s), play_stream_id(0),
+    sender(s),
+    playout_buffer(this,SPEEX_WB_SAMPLE_RATE), play_stream_id(0),
     recv_offset_i(false), recv_rtp_offset(0), recv_rtmp_offset(0),
     send_offset_i(false), send_rtmp_offset(0)
 {

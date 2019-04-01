@@ -67,19 +67,20 @@ struct timeval avg_first_timestamp = avg_last_timestamp;
 // AmSession methods
 
 AmSession::AmSession(AmSipDialog* p_dlg)
-  : AmEventQueue(this), dlg(p_dlg),
-    input(NULL), output(NULL),
-    sess_stopped(false),
-    m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
+  : AmEventQueue(this), m_dtmfDetector(this),
+    m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
+    processing_status(SESSION_PROCESSING_EVENTS),
+    sess_stopped(false),
     accept_early_session(false),
     rtp_interface(-1),
+    input(NULL), output(NULL),
     refresh_method(REFRESH_UPDATE_FB_REINV),
-    processing_status(SESSION_PROCESSING_EVENTS),
-    remote_rtp_mux_port(0)
+    remote_rtp_mux_port(0),
 #ifdef WITH_ZRTP
-  , enable_zrtp(AmConfig::enable_zrtp)
+    enable_zrtp(AmConfig::enable_zrtp),
 #endif
+    dlg(p_dlg)
 
 #ifdef SESSION_THREADPOOL
   , _pid(this)
