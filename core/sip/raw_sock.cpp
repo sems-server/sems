@@ -100,7 +100,6 @@ int raw_socket(int proto, sockaddr_storage* ip, int iphdr_incl)
 {
 	int sock;
 	int t;
-	sockaddr_storage su;
 
 	sock = socket(PF_INET, SOCK_RAW, proto);
 	if (sock==-1)

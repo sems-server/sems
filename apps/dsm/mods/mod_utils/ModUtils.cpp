@@ -552,7 +552,6 @@ EXEC_ACTION_START(SCUGenSplitStringAction) {
 
 CONST_ACTION_2P(SCUDecodeJsonAction, ',', true);
 EXEC_ACTION_START(SCUDecodeJsonAction) {
-  int i;
   const string json_str = resolveVars(par1, sess, sc_sess, event_params);
   string struct_name = par2;
   if (struct_name.length() == 0) {

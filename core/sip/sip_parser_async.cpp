@@ -233,8 +233,6 @@ int skip_sip_msg_async(parser_state* pst, char* end)
 
   char*& c = pst->c;
   int& stage = pst->stage;
-  int& st = pst->st;
-  int& saved_st = pst->saved_st;
 
   while(c < end) {
 

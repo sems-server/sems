@@ -61,7 +61,7 @@ int RegisterDialog::replyFromCache(const AmSipRequest& req)
 {
   struct timeval now;
   gettimeofday(&now,NULL);
-  RegisterCache* reg_cache = RegisterCache::instance();
+  RegisterCache::instance();
 
   // for each contact, set 'expires' correctly:
   // - either original expires, if <= max_ua_expire

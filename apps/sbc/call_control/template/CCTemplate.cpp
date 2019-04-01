@@ -182,7 +182,7 @@ void CCTemplate::start(const string& cc_name, const string& ltag,
 		       const AmArg& values, int timer_id, AmArg& res) {
   // call start code here
   res.push(AmArg());
-  AmArg& res_cmd = res[0];
+  // AmArg& res_cmd = res[0];
 
   // Drop:
   // res_cmd[SBC_CC_ACTION] = SBC_CC_DROP_ACTION;
