@@ -854,21 +854,6 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
       relay_public_address.c_str(), replaced_ports.c_str());
 }
       
-static const char* 
-_rtp_relay_mode_str(const AmB2BSession::RTPRelayMode& relay_mode)
-{
-  switch(relay_mode){
-  case AmB2BSession::RTP_Direct:
-    return "RTP_Direct";
-  case AmB2BSession::RTP_Relay:
-    return "RTP_Relay";
-  case AmB2BSession::RTP_Transcoding:
-    return "RTP_Transcoding";
-  }
-
-  return "";
-}
-
 void AmB2BMedia::updateStreamPair(AudioStreamPair &pair)
 {
   bool have_a = have_a_leg_local_sdp && have_a_leg_remote_sdp;
