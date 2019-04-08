@@ -1005,7 +1005,7 @@ static bool fillSysIntfList()
       intf_it->flags = p_if->ifa_flags;
 
       struct ifreq ifr;
-      strncpy(ifr.ifr_name,p_if->ifa_name,IFNAMSIZ);
+      strncpy(ifr.ifr_name,p_if->ifa_name,sizeof(ifr.ifr_name)-1);
 
       if (ioctl(fd, SIOCGIFMTU, &ifr) < 0 ) {
 	ERROR("ioctl: %s",strerror(errno));
