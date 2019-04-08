@@ -95,6 +95,11 @@ public:
     unlock();
   }
 
+  const AmSharedVar<T>& operator =(const T& new_val) {
+   set(new_val);
+   return *this;
+  }
+
   void lock() { m.lock(); }
   void unlock() { m.unlock(); }
 
