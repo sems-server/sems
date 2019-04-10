@@ -19,6 +19,9 @@ before_install:
         - wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
         - tar -xvf codec2-0.7.tar.xz
         - pushd codec2-0.7 && mkdir build && pushd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ../ && make && sudo make install && popd && popd
+          # Fix for a very old GCC in Trusty and Xenial
+        - sed -i -e "s,\-Werror=stringop-truncation,,g" CMakeLists.txt
+
 
 before_script:
         - mkdir build
