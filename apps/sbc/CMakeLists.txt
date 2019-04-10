@@ -21,11 +21,13 @@ INSTALL(PROGRAMS
 tools/sems-sbc-get-activeprofile
 tools/sems-sbc-get-regex-map-names
 tools/sems-sbc-list-profiles
+tools/sems-sbc-load-callcontrol-modules
 tools/sems-sbc-load-profile
 tools/sems-sbc-reload-profile
 tools/sems-sbc-reload-profiles
 tools/sems-sbc-set-activeprofile
 tools/sems-sbc-set-regex-map
+tools/sems-sbc-teardown-call
 	DESTINATION ${SEMS_EXEC_PREFIX}/sbin
 	)
 
