@@ -1,7 +1,4 @@
 language: cpp
-compiler:
-        - gcc
-        - clang
 
 notifications:
         email: false
@@ -10,6 +7,17 @@ python:
         - "2.7"
 
 sudo: required
+
+matrix:
+  include:
+  - dist: trusty
+    compiler: gcc
+  - dist: trusty
+    compiler: clang
+  - dist: xenial
+    compiler: gcc
+  - dist: xenial
+    compiler: clang
 
 before_install:
         - sudo apt-get -qq update
