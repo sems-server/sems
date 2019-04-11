@@ -208,7 +208,7 @@ int DBRegAgent::onLoad()
   AmEventDispatcher::instance()->addEventQueue(MOD_NAME,this);
 
   if (!AmPlugIn::registerDIInterface(MOD_NAME, this)) {
-    ERROR("registering "MOD_NAME" DI interface\n");
+    ERROR("registering " MOD_NAME " DI interface\n");
     return -1;
   }
 
@@ -910,7 +910,7 @@ void DBRegAgent::run() {
   }
   registrations_mut.unlock();
 
-  DBG("removing "MOD_NAME" registrations from Event Dispatcher...\n");
+  DBG("removing " MOD_NAME " registrations from Event Dispatcher...\n");
   AmEventDispatcher::instance()->delEventQueue(MOD_NAME);
 
   mysqlpp::Connection::thread_end();
