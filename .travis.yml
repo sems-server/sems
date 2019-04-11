@@ -22,7 +22,7 @@ matrix:
 before_install:
         - sudo apt-get -qq update
           # bcg729, codec2 (available since Xenial), ilbc, mISDN are missing
-        - sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libmysql++-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
+        - sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libmp3lame-dev libmpg123-dev libmysql++-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
           # Manually install codec2
         - wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
         - tar -xvf codec2-0.7.tar.xz
@@ -34,7 +34,7 @@ before_install:
 before_script:
         - mkdir build
         - cd build
-        - cmake .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -DINCLUDE_INSTALL_DIR:PATH=/usr/include -DLIB_INSTALL_DIR:PATH=/usr/lib64 -DSYSCONF_INSTALL_DIR:PATH=/etc -DSHARE_INSTALL_PREFIX:PATH=/usr/share -DLIB_SUFFIX=64 -DBUILD_SHARED_LIBS:BOOL=ON -DSEMS_USE_SPANDSP=yes -DSEMS_USE_LIBSAMPLERATE=yes -DSEMS_USE_ZRTP=NO -DSEMS_USE_MP3=NO -DSEMS_USE_ILBC=no -DSEMS_USE_OPUS=true -DSEMS_USE_TTS=yes -DSEMS_USE_OPENSSL=yes -DSEMS_USE_MONITORING=yes -DSEMS_USE_IPV6=yes -DSEMS_CFG_PREFIX= -DSEMS_AUDIO_PREFIX=/usr/share -DSEMS_EXEC_PREFIX=/usr -DSEMS_LIBDIR=lib64 -DSEMS_DOC_PREFIX=/usr/share/doc
+        - cmake .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -DINCLUDE_INSTALL_DIR:PATH=/usr/include -DLIB_INSTALL_DIR:PATH=/usr/lib64 -DSYSCONF_INSTALL_DIR:PATH=/etc -DSHARE_INSTALL_PREFIX:PATH=/usr/share -DLIB_SUFFIX=64 -DBUILD_SHARED_LIBS:BOOL=ON -DSEMS_USE_SPANDSP=yes -DSEMS_USE_LIBSAMPLERATE=yes -DSEMS_USE_ZRTP=NO -DSEMS_USE_MP3=yes -DSEMS_USE_ILBC=no -DSEMS_USE_OPUS=yes -DSEMS_USE_TTS=yes -DSEMS_USE_OPENSSL=yes -DSEMS_USE_MONITORING=yes -DSEMS_USE_IPV6=yes -DSEMS_CFG_PREFIX= -DSEMS_AUDIO_PREFIX=/usr/share -DSEMS_EXEC_PREFIX=/usr -DSEMS_LIBDIR=lib64 -DSEMS_DOC_PREFIX=/usr/share/doc
 
 script:
         - make
