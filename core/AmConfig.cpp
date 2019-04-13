@@ -966,6 +966,9 @@ static bool fillSysIntfList()
       continue;
 
     if(p_if->ifa_addr->sa_family == AF_INET6) {
+#ifndef SUPPORT_IPV6
+	continue;
+#endif
       
       struct sockaddr_in6 *addr = (struct sockaddr_in6 *)p_if->ifa_addr;
       if(IN6_IS_ADDR_LINKLOCAL(&addr->sin6_addr)){
