@@ -1,6 +1,7 @@
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
-FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp")
+FILE (GLOB sems_core_SRCS "Am*.cpp" LowcFE.cpp SipCtrlInterface.cpp jsonArg.cpp jsonxx.cpp log.cpp md5.cpp)
+FILE (GLOB sems_sip_SRCS "sip/*.cpp")
 
 set (audio_files
 beep.wav
@@ -10,15 +11,18 @@ default_en.wav
 INCLUDE_DIRECTORIES (ampi)
 INCLUDE_DIRECTORIES (amci)
 
-ADD_EXECUTABLE (sems ${sems_SRCS})
+ADD_LIBRARY (sems_core STATIC ${sems_core_SRCS})
+ADD_LIBRARY (sems_sip STATIC ${sems_sip_SRCS})
+
+ADD_EXECUTABLE (sems sems.cpp)
+
+TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} sems_core sems_sip event event_pthreads -rdynamic)
 
 IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 	TARGET_LINK_LIBRARIES(sems execinfo)
 ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 	TARGET_LINK_LIBRARIES(sems resolv)
 ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} event event_pthreads -rdynamic)
-
 
 IF(SPANDSP_FOUND)
 	TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} spandsp)
