@@ -1,6 +1,6 @@
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
-FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp" "resample/*.cpp")
+FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp")
 
 set (audio_files
 beep.wav
@@ -26,6 +26,8 @@ ENDIF(SPANDSP_FOUND)
 
 IF(LIBSAMPLERATE_FOUND)
 	TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} samplerate)
+ELSE(LIBSAMPLERATE_FOUND)
+	TARGET_SOURCES (sems PRIVATE "resample/resample.cpp")
 ENDIF(LIBSAMPLERATE_FOUND)
 
 IF(LIBZRTP_FOUND)
