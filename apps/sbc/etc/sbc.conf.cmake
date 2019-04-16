@@ -1,4 +1,3 @@
-
 # optional path from where to load the profiles if not set mod config path is used
 #profiles_path=/usr/local/etc/sems/profiles/
 

@@ -3,10 +3,10 @@ Monitoring.cpp
 )
 
 INSTALL(PROGRAMS
-tools/sems-list-calls
-tools/sems-list-active-calls
-tools/sems-list-finished-calls
 tools/sems-get-callproperties
+tools/sems-list-active-calls
+tools/sems-list-calls
+tools/sems-list-finished-calls
 	DESTINATION ${SEMS_EXEC_PREFIX}/sbin
 	)
 
