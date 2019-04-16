@@ -168,7 +168,7 @@ CXX = g++
 CC = gcc
 LD = $(CC)
 
-CXXFLAGS += -Wall -Werror=stringop-truncation -Wno-reorder -Wno-unused -fPIC -std=c++11 -g $(EXTRA_CXXFLAGS)
+CXXFLAGS += -Wall -Wno-reorder -Wno-unused -fPIC -std=c++11 -g $(EXTRA_CXXFLAGS)
 CFLAGS   += -Wall -fPIC -g $(EXTRA_CFLAGS)
 
 # only optimize if releasing, as it slows down the build process
