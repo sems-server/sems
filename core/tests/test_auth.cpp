@@ -44,7 +44,14 @@ FCTMF_SUITE_BGN(test_auth) {
     FCT_TEST_BGN(nonce_wrong_nonce2) {
       string secret = "1234secret";
       string nonce = UACAuth::calcNonce();
-      nonce[nonce.size()-1]=nonce[nonce.size()-2];
+      // Invert last char
+      char array[]  = "fedcba9876543210";
+      unsigned char last_char = nonce[nonce.size()-1];
+      if (('a' <= last_char) && (last_char <= 'f'))
+	      last_char = last_char - 'a' + 10;
+      else
+	      last_char = last_char - '0';
+      nonce[nonce.size()-1] = array[last_char];
       fct_chk( !UACAuth::checkNonce(nonce));
     } FCT_TEST_END();
 
