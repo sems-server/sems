@@ -2,6 +2,7 @@ INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
 FILE (GLOB sems_core_SRCS "Am*.cpp" LowcFE.cpp SipCtrlInterface.cpp jsonArg.cpp jsonxx.cpp log.cpp md5.cpp)
 FILE (GLOB sems_sip_SRCS "sip/*.cpp")
+FILE (GLOB sems_tests_SRCS "tests/*.cpp" "plug-in/uac_auth/UACAuth.cpp" "../apps/sbc/*.cpp")
 
 set (audio_files
 beep.wav
@@ -15,51 +16,37 @@ ADD_LIBRARY (sems_core STATIC ${sems_core_SRCS})
 ADD_LIBRARY (sems_sip STATIC ${sems_sip_SRCS})
 
 ADD_EXECUTABLE (sems sems.cpp)
+ADD_EXECUTABLE(sems_tests ${sems_tests_SRCS})
 
-TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} sems_core sems_sip event event_pthreads -rdynamic)
+FOREACH (EXE_TARGET sems sems_tests)
 
-IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-	TARGET_LINK_LIBRARIES(sems execinfo)
-ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-	TARGET_LINK_LIBRARIES(sems resolv)
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+	TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} sems_core sems_sip event event_pthreads -rdynamic)
 
-IF(SPANDSP_FOUND)
-	TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} spandsp)
-ENDIF(SPANDSP_FOUND)
+	IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+		TARGET_LINK_LIBRARIES(${EXE_TARGET} execinfo)
+	ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+		TARGET_LINK_LIBRARIES(${EXE_TARGET} resolv)
+	ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 
-IF(LIBSAMPLERATE_FOUND)
-	TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} samplerate)
-ELSE(LIBSAMPLERATE_FOUND)
-	TARGET_SOURCES (sems PRIVATE "resample/resample.cpp")
-ENDIF(LIBSAMPLERATE_FOUND)
+	IF(SPANDSP_FOUND)
+		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} spandsp)
+	ENDIF(SPANDSP_FOUND)
 
-IF(LIBZRTP_FOUND)
-	TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} zrtp)
-ENDIF(LIBZRTP_FOUND)
+	IF(LIBSAMPLERATE_FOUND)
+		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} samplerate)
+	ELSE(LIBSAMPLERATE_FOUND)
+		TARGET_SOURCES (${EXE_TARGET} PRIVATE "resample/resample.cpp")
+	ENDIF(LIBSAMPLERATE_FOUND)
+
+	IF(LIBZRTP_FOUND)
+		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} zrtp)
+	ENDIF(LIBZRTP_FOUND)
+
+ENDFOREACH (EXE_TARGET)
 
 ADD_SUBDIRECTORY(plug-in)
 
 # Enable testing
-FILE (GLOB sems_tests_SRCS "tests/*.cpp" "plug-in/uac_auth/UACAuth.cpp" "../apps/sbc/*.cpp")
-add_executable(sems_tests ${sems_tests_SRCS})
-TARGET_LINK_LIBRARIES(sems_tests sems_core sems_sip ${CMAKE_DL_LIBS} event event_pthreads -rdynamic)
-IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-	TARGET_LINK_LIBRARIES(sems_tests execinfo)
-ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-	TARGET_LINK_LIBRARIES(sems_tests resolv)
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-IF(SPANDSP_FOUND)
-	TARGET_LINK_LIBRARIES(sems_tests ${CMAKE_DL_LIBS} spandsp)
-ENDIF(SPANDSP_FOUND)
-
-IF(LIBSAMPLERATE_FOUND)
-	TARGET_LINK_LIBRARIES(sems_tests ${CMAKE_DL_LIBS} samplerate)
-ENDIF(LIBSAMPLERATE_FOUND)
-
-IF(LIBZRTP_FOUND)
-	TARGET_LINK_LIBRARIES(sems_tests ${CMAKE_DL_LIBS} zrtp)
-ENDIF(LIBZRTP_FOUND)
 add_test(NAME Tests COMMAND sems_tests)
 
 # Create config-file from template
