@@ -8,4 +8,5 @@ ADD_SUBDIRECTORY (prepaid)
 ADD_SUBDIRECTORY (registrar)
 #ADD_SUBDIRECTORY (rest)
 ADD_SUBDIRECTORY (syslog_cdr)
-ADD_SUBDIRECTORY (template)
+# This one is actually a template and isn't intended for any real use.
+#ADD_SUBDIRECTORY (template)
