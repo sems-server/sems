@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 IF(COMMAND cmake_policy)
 	# Don't do automatic escaping of variables
@@ -303,9 +303,9 @@ ENDIF(HIREDIS_FOUND)
 
 IF(NOT ${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
 	# Check for res_search in -lresolv
-	include(${CMAKE_SOURCE_DIR}/cmake/CheckSymbolExists.cmake)
+	include(CheckSymbolExists)
 	SET(CMAKE_REQUIRED_LIBRARIES resolv)
-	CHECK_SYMBOL_EXISTS(res_search HAVE_RES_SEARCH netinet/in.h resolv.h)
+	CHECK_SYMBOL_EXISTS(res_search "netinet/in.h;resolv.h" HAVE_RES_SEARCH)
 	MESSAGE(STATUS "Have res_search: ${HAVE_RES_SEARCH}")
 ENDIF(NOT ${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
 
