@@ -112,7 +112,7 @@ inline string transport_p_2_str(int tp)
 }
 
 SdpConnection::SdpConnection()
-  : address(), network(NT_OTHER), addrType(AT_NONE)  {
+  : network(NT_OTHER), addrType(AT_NONE), address() {
   memset(&ipv4, 0, sizeof(ipv4));
   memset(&ipv6, 0, sizeof(ipv6));
 }

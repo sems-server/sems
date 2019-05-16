@@ -103,7 +103,7 @@ struct MuxStreamState {
   u_int32_t last_setup_frame_ts;
 
   MuxStreamState()
-  : setup_frame_ctr(0), last_mux_packet_id(0), dstport(0), ts_increment(DEFAULT_TS_INCREMENT), rtp_hdr_len(0) { }
+  : dstport(0), ts_increment(DEFAULT_TS_INCREMENT), rtp_hdr_len(0), setup_frame_ctr(0), last_mux_packet_id(0) { }
 
 };
 
