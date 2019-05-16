@@ -32,19 +32,19 @@
 AmSIPRegistration::AmSIPRegistration(const string& handle,
 				     const SIPRegistrationInfo& info,
 				     const string& sess_link) 
-  : info(info),
-    dlg(this),
+  : dlg(this),
     cred(info.domain, info.auth_user, info.pwd),
-    active(false),
+    info(info),
+    sess_link(sess_link),
+    seh(NULL),
     reg_begin(0),
     reg_expires(0),
-    remove(false),
-    sess_link(sess_link),
     reg_send_begin(0),
+    expires_interval(3600),
+    active(false),
+    remove(false),
     waiting_result(false),
-    unregistering(false),
-    seh(NULL),
-    expires_interval(3600)
+    unregistering(false)
 {
   req.user     = info.user;
   req.method   = "REGISTER";

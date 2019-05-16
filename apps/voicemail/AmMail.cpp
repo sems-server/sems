@@ -41,8 +41,8 @@
 AmMail::AmMail(const string& _from, const string& _subject,
 	       const string& _to, const string& _body, 
 	       const string& _header)
-  : from(_from), subject(_subject), body(_body), header(_header),
-    to(_to), clean_up(0), error_count(0)
+  : from(_from), subject(_subject), body(_body), to(_to),
+    header(_header), clean_up(0), error_count(0)
 {
 }
 

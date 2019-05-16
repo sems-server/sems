@@ -111,7 +111,7 @@ int AmPlaylist::put(unsigned long long system_ts, unsigned char* buffer,
 
 AmPlaylist::AmPlaylist(AmEventQueue* q)
   : AmAudio(new AmAudioFormat(CODEC_PCM16)),
-    ev_q(q), cur_item(0)
+    cur_item(0), ev_q(q)
 {
   
 }

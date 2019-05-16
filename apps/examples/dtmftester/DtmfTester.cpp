@@ -113,7 +113,7 @@ AmSession* DtmfTesterFactory::onInvite(const AmSipRequest& req, const string& ap
 
 DtmfTesterDialog::DtmfTesterDialog(const string& filename, 
 				       UACAuthCred* credentials)
-  : filename(filename), cred(credentials), play_list(this)
+  : filename(filename), play_list(this), cred(credentials)
 {
   // try out this inband detector
   setInbandDetector(Dtmf::SpanDSP);

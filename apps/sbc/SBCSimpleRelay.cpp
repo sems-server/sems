@@ -42,10 +42,10 @@ SimpleRelayDialog::SimpleRelayDialog(SBCCallProfile &profile,
   : AmBasicSipDialog(this),
     AmEventQueue(this),
     parent_obj(parent_obj),
-    finished(false),
     transparent_dlg_id(false),
     keep_vias(false),
-    fix_replaces_ref(false)
+    fix_replaces_ref(false),
+    finished(false)
 {
   if(parent_obj) {
     inc_ref(parent_obj);
@@ -57,10 +57,10 @@ SimpleRelayDialog::SimpleRelayDialog(atomic_ref_cnt* parent_obj)
   : AmBasicSipDialog(this),
     AmEventQueue(this),
     parent_obj(parent_obj),
-    finished(false),
     transparent_dlg_id(false),
     keep_vias(false),
-    fix_replaces_ref(false)
+    fix_replaces_ref(false),
+    finished(false)
 {
   if(parent_obj) {
     inc_ref(parent_obj);

@@ -1,6 +1,6 @@
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
-FILE (GLOB sems_core_SRCS "Am*.cpp" LowcFE.cpp SipCtrlInterface.cpp jsonArg.cpp jsonxx.cpp log.cpp md5.cpp)
+FILE (GLOB sems_core_SRCS "Am*.cpp" LowcFE.cpp SipCtrlInterface.cpp crc4.cpp jsonArg.cpp jsonxx.cpp log.cpp md5.cpp)
 FILE (GLOB sems_sip_SRCS "sip/*.cpp")
 FILE (GLOB sems_tests_SRCS "tests/*.cpp" "plug-in/uac_auth/UACAuth.cpp" "../apps/sbc/*.cpp")
 

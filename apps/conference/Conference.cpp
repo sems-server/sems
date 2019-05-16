@@ -381,11 +381,11 @@ AmSession* ConferenceFactory::onRefer(const AmSipRequest& req, const string& app
 
 ConferenceDialog::ConferenceDialog(const string& conf_id,
 				   AmConferenceChannel* dialout_channel)
-  : conf_id(conf_id),
+  : play_list(this),
+    conf_id(conf_id),
     channel(nullptr),
-    play_list(this),
-    dialout_channel(dialout_channel),
     state(CS_normal),
+    dialout_channel(dialout_channel),
     allow_dialout(false)
 {
   dialedout = this->dialout_channel.get() != 0;

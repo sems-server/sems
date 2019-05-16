@@ -258,7 +258,7 @@ struct SBCCallProfile
     string print() const;
 
     bool isActive() { return enabled; }
-    TranscoderSettings(): enabled(false), transcoder_mode(Never) { }
+    TranscoderSettings(): transcoder_mode(Never), enabled(false) { }
   } transcoder;
 
   struct CodecPreferences {
@@ -355,11 +355,16 @@ struct SBCCallProfile
   const string &get_logger_path() { return msg_logger_path; }
 
   SBCCallProfile()
-  : auth_enabled(false),
-    transparent_dlg_id(false),
+  : transparent_dlg_id(false),
     dlg_nat_handling(false),
-    keep_vias(false),bleg_keep_vias(false),
+    keep_vias(false),
+    bleg_keep_vias(false),
+    next_hop_1st_req(false), patch_ruri_next_hop(false),
+    next_hop_fixed(false),
+    allow_subless_notify(false),
+    have_aleg_sdpfilter(false),
     sst_enabled_value(false),
+    auth_enabled(false),
     rtprelay_enabled_value(false),
     force_symmetric_rtp_value(false),
     aleg_force_symmetric_rtp_value(false),
@@ -370,16 +375,11 @@ struct SBCCallProfile
     rtprelay_bw_limit_rate(-1),
     rtprelay_bw_limit_peak(-1),
     outbound_interface_value(-1),
-    have_aleg_sdpfilter(false),
     contact_hiding(false),
     reg_caching(false),
+    max_491_retry_time(2000),
     log_rtp(false),
-    log_sip(false),
-    patch_ruri_next_hop(false),
-    next_hop_1st_req(false),
-    next_hop_fixed(false),
-    allow_subless_notify(false),
-    max_491_retry_time(2000)
+    log_sip(false)
   { }
 
   ~SBCCallProfile()

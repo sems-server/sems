@@ -129,7 +129,7 @@ void _AmRtpMuxSender::close(const string& remote_ip, unsigned short remote_port,
 }
 
 MuxStreamQueue::MuxStreamQueue()
-  : l_sd(0), end_ptr(buf), is_setup(false), oldest_frame_i(false), mux_packet_id(0)
+  : l_sd(0), end_ptr(buf), oldest_frame_i(false), mux_packet_id(0), is_setup(false)
 {
   memset(&r_saddr,0,sizeof(struct sockaddr_storage));
   memset(&l_saddr,0,sizeof(struct sockaddr_storage));

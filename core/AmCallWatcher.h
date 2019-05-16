@@ -68,11 +68,11 @@ class CallStatusUpdateEvent : public AmEvent {
   };
 
   CallStatusUpdateEvent(UpdateType t, const string& call_id)
-    : call_id(call_id), AmEvent(t)  { }
+    : AmEvent(t), call_id(call_id)  { }
 
   // implicit: initialize
   CallStatusUpdateEvent(const string& call_id, CallStatus* init_status)
-    : call_id(call_id), init_status(init_status), AmEvent(Initialize)  { }
+    : AmEvent(Initialize), call_id(call_id), init_status(init_status)  { }
 
   ~CallStatusUpdateEvent() { }
 

@@ -84,9 +84,9 @@ void PacketAllocator::free(Packet *p)
 }
 
 AmJitterBuffer::AmJitterBuffer()
-  : m_tsInited(false), m_tsDeltaInited(false), m_delayCount(0),m_tsDelta(0),
-    m_jitter(INITIAL_JITTER),m_lastAudioTs(0),m_lastResyncTs(0),m_lastTs(0),
-    m_tail(NULL), m_head(NULL), m_forceResync(false)
+  : m_head(NULL), m_tail(NULL), m_tsInited(false), m_lastTs(0),
+    m_lastResyncTs(0),m_lastAudioTs(0),m_tsDelta(0),m_tsDeltaInited(false),
+    m_delayCount(0), m_jitter(INITIAL_JITTER), m_forceResync(false)
 {
 }
 

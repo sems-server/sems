@@ -64,9 +64,9 @@ const char* __sub_state_str[] = {
 
 SingleSubscription::SingleSubscription(AmSipSubscription* subs, Role role,
 				       const string& event, const string& id)
-    : subs(subs), role(role), event(event), id(id),
-      sub_state(SubState_init), pending_subscribe(0), expires(0),
-      timer_n(this,RFC6665_TIMER_N),timer_expires(this,SUBSCRIPTION_EXPIRE)
+    : sub_state(SubState_init), pending_subscribe(0), expires(0), timer_n(this,RFC6665_TIMER_N), timer_expires(this,SUBSCRIPTION_EXPIRE),
+      subs(subs), event(event),
+      id(id),role(role)
 {
   assert(subs); 
 }
@@ -671,9 +671,9 @@ SIPSubscriptionEvent::SIPSubscriptionEvent(SubscriptionStatus status,
 					   unsigned int expires,
 					   unsigned int code, 
 					   const string& reason)
-  : AmEvent(E_SIP_SUBSCRIPTION), status(status), 
-    handle(handle), expires(expires), code(code), 
-    reason(reason), notify_body(nullptr) 
+  : AmEvent(E_SIP_SUBSCRIPTION), handle(handle),
+    code(code), reason(reason), status(status),
+    expires(expires), notify_body(nullptr)
 {}
   
 const char* SIPSubscriptionEvent::getStatusText() 

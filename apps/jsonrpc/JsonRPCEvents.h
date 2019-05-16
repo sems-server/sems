@@ -53,9 +53,9 @@ struct JsonRpcResponse {
   bool is_error;
   
   JsonRpcResponse(bool is_error, string id, const AmArg& data)
-  : is_error(is_error), id(id), data(data) { }
+  : id(id), data(data), is_error(is_error) { }
   JsonRpcResponse(bool is_error, string id) 
-  : is_error(is_error), id(id) { }
+  : id(id), is_error(is_error) { }
 
   ~JsonRpcResponse() { }
 };
@@ -130,12 +130,12 @@ struct JsonServerEvent
 
  JsonServerEvent(JsonrpcNetstringsConnection* c,
 		 EventType ev_type)
-    : conn(c), AmEvent(ev_type) { }
+    : AmEvent(ev_type), conn(c) { }
 
  JsonServerEvent(const string& connection_id,
 		 EventType ev_type)
-   : connection_id(connection_id), AmEvent(ev_type), 
-    conn(NULL) { }
+   : AmEvent(ev_type), conn(NULL),
+    connection_id(connection_id) { }
 
   ~JsonServerEvent() { }
 };
@@ -159,14 +159,14 @@ struct JsonServerSendMessageEvent
 			     const AmArg& udata = AmArg(),
 			     const string& reply_link = "")
     : JsonServerEvent(connection_id, SendMessage),
-    is_reply(is_reply), reply_link(reply_link),
-    method(method), id(id), params(params), udata(udata) { }
+    is_reply(is_reply), method(method),
+    id(id), params(params), reply_link(reply_link), udata(udata) { }
 
  JsonServerSendMessageEvent(const JsonServerSendMessageEvent& e,
 			    JsonrpcNetstringsConnection* conn)
    : JsonServerEvent(conn, SendMessage),
-    is_reply(e.is_reply),reply_link(e.reply_link),
-    method(e.method), id(e.id), params(e.params), 
+    is_reply(e.is_reply), method(e.method),
+    id(e.id), params(e.params), reply_link(e.reply_link),
     is_error(e.is_error), udata(e.udata) {
     connection_id = e.connection_id;
   }

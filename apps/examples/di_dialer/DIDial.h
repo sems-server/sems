@@ -11,8 +11,8 @@ struct DIDialoutInfo : UACAuthCred {
 	      const string& realm,
 	      const string& user,
 	      const string& pwd) 
-    : userpart(userpart), 
-      UACAuthCred(realm, user, pwd) { }
+    : UACAuthCred(realm, user, pwd),
+      userpart(userpart) { }
 
   DIDialoutInfo() { }
 };

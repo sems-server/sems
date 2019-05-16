@@ -251,10 +251,10 @@ int _SipCtrlInterface::load()
 
 _SipCtrlInterface::_SipCtrlInterface()
     : stopped(false),
-      udp_servers(NULL), udp_sockets(NULL),
-      nr_udp_sockets(0), nr_udp_servers(0),
-      tcp_servers(NULL), tcp_sockets(NULL),
-      nr_tcp_sockets(0), nr_tcp_servers(0)
+      nr_udp_sockets(0), udp_sockets(NULL),
+      nr_udp_servers(0), udp_servers(NULL),
+      nr_tcp_sockets(0), tcp_sockets(NULL),
+      nr_tcp_servers(0), tcp_servers(NULL)
 {
     trans_layer::instance()->register_ua(this);
 }

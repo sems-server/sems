@@ -91,8 +91,8 @@ class AmAudioMixerConnector
  AmAudioMixerConnector(AmMultiPartyMixer& mixer, unsigned int channel,
 		       AmAudio* mix_channel, 
 		       AmMutex* audio_mut = NULL, std::set<AmAudio*>* sinks = NULL) 
-   : mixer(mixer), channel(channel), mix_channel(mix_channel), 
-    audio_mut(audio_mut), sinks(sinks) { }
+   : mixer(mixer), channel(channel), audio_mut(audio_mut),
+    sinks(sinks), mix_channel(mix_channel) { }
   ~AmAudioMixerConnector() { }
 
 };

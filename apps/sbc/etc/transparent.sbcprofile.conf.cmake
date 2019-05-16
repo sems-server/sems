@@ -52,6 +52,17 @@
 # use transparent RTP SSRC? [yes]
 #rtprelay_transparent_ssrc=no
 
+## RTP MUX
+#  MUX A/B leg RTP and send to remote RTP MUX port
+#  (for a MUX gateway usually only one leg is muxed)
+#
+# a_rtp_mux_ip=192.168.1.20
+# a_rtp_mux_port=5000
+#
+# b_rtp_mux_ip=192.168.1.21
+# b_rtp_mux_port=5000
+#
+
 ## filters: 
 #header_filter=blacklist
 #header_list=P-App-Param,P-App-Name

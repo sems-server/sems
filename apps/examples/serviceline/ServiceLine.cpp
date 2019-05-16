@@ -116,10 +116,10 @@ AmSession* ServiceLineFactory::onInvite(const AmSipRequest& req, const string& a
 }
 
 ServiceLineCallerDialog::ServiceLineCallerDialog(const string& filename)
-  : filename(filename), 
+  : AmB2ABCallerSession(),
     playlist(this),
-    started(false),
-    AmB2ABCallerSession()
+    filename(filename),
+    started(false)
 {
 }
 

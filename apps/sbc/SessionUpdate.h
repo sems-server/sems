@@ -69,8 +69,8 @@ class Reinvite: public SessionUpdate
     Reinvite(const std::string& _hdrs, const AmMimeBody& _body,
         bool _establishing = false,
         bool _relayed_invite = false, unsigned int _r_cseq = 0):
-          hdrs(_hdrs), body(_body), establishing(_establishing),
-          relayed_invite(_relayed_invite), r_cseq(_r_cseq) { }
+          hdrs(_hdrs), body(_body), r_cseq(_r_cseq),
+          relayed_invite(_relayed_invite), establishing(_establishing) { }
 };
 
 class SessionUpdateTimer: public DirectAppTimer

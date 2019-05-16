@@ -19,7 +19,7 @@
 
 using namespace XmlRpc; 
 WorkerThread::WorkerThread(MultithreadXmlRpcServer* chief) 
-  : running(true), runcond(false), chief(chief) {
+  : chief(chief), runcond(false), running(true) {
 } 
  
 // call this method before calling run 

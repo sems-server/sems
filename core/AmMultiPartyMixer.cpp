@@ -51,8 +51,8 @@ void DEBUG_MIXER_BUFFER_STATE(const MixerBufferState& mbs, const string& context
 
 AmMultiPartyMixer::AmMultiPartyMixer()
   : sampleratemap(), samplerates(),
-    channelids(), scaling_factor(16),
-    buffer_state(), audio_mut()
+    channelids(), buffer_state(),
+    audio_mut(), scaling_factor(16)
 {
 }
 
