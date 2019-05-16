@@ -236,8 +236,8 @@ AmB2ABCalleeSession* b2b_connectDialog::createCalleeSession()
 b2b_connectCalleeSession::b2b_connectCalleeSession(const string& other_tag,
 						   AmSessionAudioConnector* connector,
 						   const string& user, const string& pwd) 
-  : credentials("", user, pwd), // domain (realm) is unused in credentials 
-    AmB2ABCalleeSession(other_tag, connector) 
+  : AmB2ABCalleeSession(other_tag, connector),
+    credentials("", user, pwd) // domain (realm) is unused in credentials
 {
   RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT); 
   setDtmfDetectionEnabled(false);

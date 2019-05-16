@@ -377,12 +377,13 @@ void CallGenFactory::reportCall(string callid,
 
 CallGenDialog::CallGenDialog(AmPromptCollection& prompts, 
 		int play_rand_digits, int call_time_base, int call_time_rand)
-  : play_list(this), prompts(prompts),
+  : play_list(this),
+    play_file(&CallGenFactory::play_file),
+    prompts(prompts),
     connect_ts(-1), disconnect_ts(-1), 
     play_rand_digits(play_rand_digits), 
     call_time_base(call_time_base), 
     call_time_rand(call_time_rand),
-    play_file(&CallGenFactory::play_file),
     timer_started(false)
 {
 }

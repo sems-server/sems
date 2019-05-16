@@ -68,11 +68,10 @@ AmSession* MyCCFactory::onInvite(const AmSipRequest& req, const string& app_name
 
 
 MyCCDialog::MyCCDialog(AmDynInvoke* cc_acc)
-  : playlist(this), 
+  : AmB2BCallerSession(),
+    playlist(this),
     state(CC_Collecting_PIN),
-    cc_acc(cc_acc),
-    AmB2BCallerSession()
-    
+    cc_acc(cc_acc)
 {
   set_sip_relay_only(false);
   memset(&acc_start, 0, sizeof(struct timeval));
