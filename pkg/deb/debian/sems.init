@@ -17,7 +17,7 @@ fi
 
 
 if test "$SEMS_RUN" = "no" ; then
-    log_failure_msg "Sems start disabled by default file"
+    log_failure_msg "SEMS start disabled by default file"
     exit 0
 fi
 
@@ -81,17 +81,16 @@ case "$1" in
 	;;
   stop)
 	log_daemon_msg "Stopping $DESC: $NAME "
-	start-stop-daemon --oknodo --stop --quiet --pidfile $SEMS_PIDFILE \
+	start-stop-daemon --oknodo --stop --quiet --retry 10 --pidfile $SEMS_PIDFILE \
 		--exec $DAEMON
 	log_end_msg $?
 	;;
   restart|force-reload)
 	log_daemon_msg "Restarting $DESC: $NAME "
-	start-stop-daemon --oknodo --stop --quiet --pidfile \
-		$SEMS_PIDFILE --exec $DAEMON
-	sleep 5
-	start-stop-daemon --start --quiet --pidfile \
-		$SEMS_PIDFILE --exec $DAEMON  -- $PARAMS
+	start-stop-daemon --oknodo --stop --quiet --retry 10 \
+	    --pidfile $SEMS_PIDFILE --exec $DAEMON
+	start-stop-daemon --start --quiet \
+	    --pidfile $SEMS_PIDFILE --exec $DAEMON  -- $PARAMS
 	echo "."
 	;;
   status)
