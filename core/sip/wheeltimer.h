@@ -42,6 +42,9 @@
 // 20 ms == 20000 us
 #define TIMER_RESOLUTION 20000
 
+#define MS_TO_WALL_CLOCK(t) ((t) / (TIMER_RESOLUTION/1000))
+#define WALL_CLOCK_TO_MS(t) ((t) * (TIMER_RESOLUTION/1000))
+
 // do not change
 #define WHEELS 4
 
@@ -127,6 +130,9 @@ public:
 
     void insert_timer(timer* t);
     void remove_timer(timer* t);
+
+    /** return whether interval_ms milliseconds have elapsed since old_wall_clock */
+    bool interval_elapsed(u_int32_t old_wall_clock, unsigned int interval_ms);
 };
 
 typedef singleton<_wheeltimer> wheeltimer;

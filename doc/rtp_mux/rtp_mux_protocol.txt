@@ -1,0 +1,163 @@
+Generalised RTP stream batching, multiplexing and header compression
+--------------------------------------------------------------------
+
+This proposal is for a network protocol that can batch, multiplex
+and compress the header of RTP packets, so that header overhead
+(RTP, UDP, etc) can be reduced. Batching multiple frames from one
+stream in one packet introduces latency, but reduces
+the IP+UDP overhead. Multiplexing just reduces overhead by combining
+frames of different streams. Compression works on the RTP header as
+most of it does not change or can be predicted for simple audio calls.
+
+The goals
+ - completely transparent on any (or most) kind of RTP streams
+ - no extra signaling required
+ - no need for feedback (only forward, in-band signaling)
+ - work over lossy links, recover from forward sync errors
+ - can be implemented in a RTP handling component (e.g. B2BUA for RTP+signaling)
+ - simple to implement
+ - works with SRTP
+
+Non-goals
+- squeeze the last possible bit out of it
+
+Assumptions (compression)
+- codec changes are rare
+- packet loss (i.e. gaps in TS / seqno) is rare (we are close to the
+source, e.g. at the GSM BTS/BSC)
+- TS and seqno increments always in the same steps (e.g. TS+=160,
+seqno+=1)
+- CSRC is rarely used
+- SSRC changes rarely
+-> RTP header is usually very accurately predictable
+
+The idea is to send a full RTP header and some prediction values
+(TS increment) in the beginning and - for robustness - once in a
+while, and usually only send the destination port, some compressed
+values, and payload. This is similar to ROHC (RTP part).
+The source port is usually not interesting (we do not need to
+support NATs), and src IP/dst IP are the same of the actually sent
+IP packet (assuming we are the sending/receiving application).
+
+General working:
+o all multiplexed/batched RTP is sent on a well-known (configured)
+port, e.g. 5000 (or, a number of ports, e.g. 5000-5020)
+o the sender queues RTP packets until either MTU-send-threshold is
+reached or the oldest packet in the buffer is older than e.g. 100ms
+o after demultiplexing and reconstructing the header, the receiver
+acts as if the RTP packet was received on the destination (RTP) port
+o Multiple frames are sent together in one UDP packet, each frame is
+preceded with a header
+
+o For a new stream, a "setup frame" (similar to ROHC IR frame) is sent:
+ It contains the stream ID
+(incrementing with every new stream/encountered destination port),
+destination port, header prediction parameters (TS increment), and a full
+RTP header, plus the full RTP payload.
+ setup frame:
+   1 bit:   T=0 (setup frame)
+   7 bits: stream ID
+   8 bits: length of RTP header + RTP payload (not including 5 octets mux header)
+   16 bits: dest port
+   1 bit:   U  - TS increment mUltiplier
+                     - U=0    40
+                     - U=1    160
+   7 bits:  TS increment
+   12 bytes (or more, if CSRC present): RTP header
+   n bytes: RTP payload
+
+ 0                   1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|0| stream ID   |  length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Destination Port             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|U|TS increment |               |
++-+-+-+-+-+-+-+-+               |
+|  RTP header                   |
+|    ...                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  RTP payload                  |
+|    ...                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      (setup frame) 
+
+ Thus, a setup frame adds 5 octets to a regular RTP packet.
+
+ The TS added from frame to frame is calculated as 
+     TSdiff = 40 * TSincrement    for U=0
+     TSdiff = 160 * TSincrement   for U=1
+ 
+o If the next packet header of a stream can be predicted/reconstructed exactly
+with the last header and the currently set parameters, the RTP header is
+skipped and a compressed frame with only FT/stream ID, Length byte, TS/Seqno prediction
+values and payload is sent:
+  1 bit:  T=1 (header-compressed frame)
+  7 bits: stream ID
+  8 bits: length of payload (not including 3 octets mux header)
+  1 bit: RTP Marker bit
+  3 bits: 3 least significant bits of Seqno
+  4 bits: TS CRC-4 (CRC-4/G-704 width=4 poly=0x3)
+  n bytes: payload
+
+ 0                   1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|1| stream ID   |  length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|M|SNlsb|TS-CRC4|               |
++-+-+-+-+-+-+-+-+               |
+|  RTP payload                  |
+|    ...                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       (compressed frame)
+
+
+o If the next packet header is different than the prediction (e.g.:
+packet loss-> TS/seqno changed; SSRC change; CSRC change; payload
+change etc), a setup frame with the full RTP header plus payload is sent
+	
+o To make it robust against packet loss (setup frame might be lost):
+ - after a new stream setup, in the first three UDP packets where a
+   stream has a packet in, a setup frame is sent
+ - every 5 seconds a setup frame is sent 
+
+o a stream ID + setup frame combination can be forgotten by a receiver
+   after not receiving anything on it for e.g. 600 seconds
+     (FIXME: add a teardown message? maybe as length/streamID magic)
+
+o RTCP is batched/multiplexed, but not compressed and just always sent
+with a setup frame in front (TS/seqno increment ignored)
+
+The sender could learn the TS increase this way: It initially starts
+with the assumption of 20ms frame size @ 8khz (i.e. TS increase of
+160). If the sender encounters three times some other TS increase, it
+switches to that (and tells the receiver with a new setup frame).
+
+On receiving a multiplexed/batched packet, the receiver just
+reconstructs the different RTP packets which are contained, and feeds
+them into the receivers of the streams (i.e. as if received on the
+'destination port'). E.g. if SEMS sbc is the receiver, it can just
+call recvRtpPacket or recvRtcpPacket on the stream corresponding to
+the "dest port" from the setup frame.
+
+For AMR/G729, between 20 and 40 packets would be multiplexed into one.
+
+If more than 128 streams should be transmitted, a second UDP port
+(or, number of RTP ports) can be used.
+
+FIXME: see whether to use better ROHS (rfc3095) RTP part instead of own compression scheme
+https://tools.ietf.org/html/rfc3095
+https://en.wikipedia.org/wiki/Robust_Header_Compression
+http://rohc-lib.org
+
+FIXME: is it working with SRTP?
+
+CRC-4/G-704 generation (pycrc):
+  pycrc-0.9.1/pycrc.py --width 4 --poly 0x3 --xor-in 0x0 --reflect-out False --reflect-in False --xor-out 0x00  --generate h  --algorithm=table-driven -o crc.h
+  pycrc-0.9.1/pycrc.py --width 4 --poly 0x3 --xor-in 0x0 --reflect-out False --reflect-in False --xor-out 0x00  --generate c  --algorithm=table-driven -o crc.cpp
+
+
+This work was supported by the Shuttleworth Foundation through
+Rhizomatica.

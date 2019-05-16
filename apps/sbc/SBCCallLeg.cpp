@@ -146,6 +146,11 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
 				     1000);
     rtp_relay_rate_limit.reset(limit);
   }
+
+  // set RTP MUX setting from profile
+  remote_rtp_mux_ip = call_profile.a_remote_rtp_mux_ip;
+  remote_rtp_mux_port = call_profile.a_remote_rtp_mux_port;
+
 }
 
 // B leg constructor (from SBCCalleeSession)
@@ -183,6 +188,10 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   if(caller->rtp_relay_rate_limit.get()) {
     rtp_relay_rate_limit.reset(new RateLimit(*caller->rtp_relay_rate_limit.get()));
   }
+
+  // set RTP MUX setting from profile
+  remote_rtp_mux_ip = call_profile.b_remote_rtp_mux_ip;
+  remote_rtp_mux_port = call_profile.b_remote_rtp_mux_port;
 
   // CC interfaces and variables should be already "evaluated" by A leg, we just
   // need to load the DI interfaces for us (later they will be initialized with

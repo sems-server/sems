@@ -502,7 +502,9 @@ int main(int argc, char* argv[])
       /* parent process => wait for result from child*/
       for(int i=0;i<2;i++){
         DBG("waiting for child[%d] response\n", i);
-        (void)read(fd[0], &pid, sizeof(int));
+        if (read(fd[0], &pid, sizeof(int))<0) {
+	  DBG("Error reading pid from child.\n");
+	}
         if(pid<0){
           ERROR("Child [%d] return an error: %d\n", i, pid);
           close(fd[0]);
@@ -517,8 +519,9 @@ int main(int argc, char* argv[])
       /* child */
       close(fd[0]);
       main_pid = getpid();
-      DBG("hi world! I'm child [%d]\n", main_pid);
-      (void)write(fd[1], &main_pid, sizeof(int));
+      if (write(fd[1], &main_pid, sizeof(int))<0) {
+	DBG("Error writing pid.\n");
+      }
     }
     /* become session leader to drop the ctrl. terminal */
     if (setsid()<0){
@@ -623,10 +626,14 @@ int main(int argc, char* argv[])
 
   AmSessionContainer::instance()->initMonitoring();
 
+  INFO("Starting RTP MUX receiver\n");
+  AmRtpReceiver::instance()->startRtpMuxReceiver();
+
   #ifndef DISABLE_DAEMON_MODE
   if(fd[1]) {
-    DBG("hi world! I'm main child [%d]\n", main_pid);
-    (void)write(fd[1], &main_pid, sizeof(int));
+    if (write(fd[1], &main_pid, sizeof(int))<0) {
+       DBG("error writing main_pid to parent\n");
+    }
     close(fd[1]); fd[1] = 0;
   }
   #endif
@@ -667,8 +674,9 @@ int main(int argc, char* argv[])
   }
   if(fd[1]){
      main_pid = -1;
-     DBG("send -1 to parent\n");
-     (void)write(fd[1], &main_pid, sizeof(int));
+     if (write(fd[1], &main_pid, sizeof(int))<0) {
+       DBG("error writing -1 to parent\n");
+     }
      close(fd[1]);
   }
 #endif

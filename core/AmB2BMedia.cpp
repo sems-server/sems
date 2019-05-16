@@ -174,6 +174,7 @@ void AudioStreamData::initialize(AmB2BSession *session)
   enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
   session->getLowFiPLs(lowfi_payloads);
   stream->setLocalIP(session->localMediaIP());
+  stream->setRtpMuxRemote(session->getRtpMuxRemoteIP(), session->getRtpMuxRemotePort());
 }
 
 AudioStreamData::AudioStreamData(AmB2BSession *session):
@@ -666,9 +667,9 @@ void AmB2BMedia::clearAudio(bool a_leg)
 
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) {
     if ((*j)->a.hasLocalSocket())
-      AmRtpReceiver::instance()->removeStream((*j)->a.getLocalSocket());
+      AmRtpReceiver::instance()->removeStream((*j)->a.getLocalSocket(), (*j)->a.getLocalPort());
     if ((*j)->b.hasLocalSocket())
-      AmRtpReceiver::instance()->removeStream((*j)->b.getLocalSocket());
+      AmRtpReceiver::instance()->removeStream((*j)->b.getLocalSocket(), (*j)->b.getLocalPort());
   }
 
   // forget sessions to avoid using them once clearAudio is called

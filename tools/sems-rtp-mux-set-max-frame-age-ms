@@ -1,0 +1,7 @@
+#!/bin/sh
+if test "$1" = "" ; then
+  echo "usage: $0 <mux_max_frame_age_ms>"
+  exit 1
+fi
+
+sems-stats -c "set_rtp_mux_max_frame_age_ms $1"

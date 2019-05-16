@@ -3,7 +3,11 @@ all: make_tools
 COREPATH ?= ../core
 include $(COREPATH)/../Makefile.defs
 
-sems_tools = sems-logfile-callextract
+sems_tools = sems-logfile-callextract \
+	sems-rtp-mux-get-max-frame-age-ms \
+	sems-rtp-mux-get-mtu-threshold \
+	sems-rtp-mux-set-max-frame-age-ms \
+	sems-rtp-mux-set-mtu-threshold
 
 install: $(sems_tools) install_tools
 

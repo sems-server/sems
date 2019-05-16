@@ -185,6 +185,12 @@ public:
   AmRtpAudio* RTPStream();
   bool hasRtpStream() { return _rtp_str.get() != NULL; }
 
+  string       remote_rtp_mux_ip;
+  unsigned short remote_rtp_mux_port;
+
+  string getRtpMuxRemoteIP() { return remote_rtp_mux_ip; }
+  unsigned short getRtpMuxRemotePort() { return remote_rtp_mux_port; }
+
 #ifdef WITH_ZRTP
   AmZRTPSessionState zrtp_session_state;
 

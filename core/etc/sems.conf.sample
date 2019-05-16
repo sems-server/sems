@@ -206,6 +206,25 @@ rtp_high_port=60000
 #
 #next_hop_for_replies=yes
 
+# RTP multiplexing configuration - see doc/rtp_mux/
+#
+# IP:port to open an incoming (listening) RTP MUX port
+#rtp_mux_ip=192.168.1.20
+#rtp_mux_port=5000
+#
+# Interface to send outgoing RTP MUX packets from (port is auto-assigned)
+#rtp_mux_out_interface=extern
+#
+# Parameters for outgoing mux:
+#   MTU threshold: frame is sent if over this threshold; leave 1 RTP payload size to actual MTU
+#rtp_mux_mtu_threshold=1200
+#   max frame age: .. or this old (millisec), i.e. max delay introduced
+#rtp_mux_max_frame_age_ms=60
+#
+# For gatewaying, additionally a_rtp_mux_ip/a_rtp_mux_port or b_rtp_mux_ip/
+# b_rtp_mux_port must be configured in the SBC profile.
+#
+
 ############################################################
 # modules and application configuration
 #

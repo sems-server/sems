@@ -79,6 +79,12 @@ struct AmConfig
   
   static unsigned int MaxShutdownTime;
 
+  static unsigned int RtpMuxPort;
+  static string RtpMuxIP;
+  static string RtpMuxOutInterface;
+  static unsigned int RtpMuxMTUThreshold;
+  static unsigned int RtpMuxMaxFrameAgeMs;
+
   struct IP_interface {
 
     string name;

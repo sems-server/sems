@@ -271,6 +271,11 @@ protected:
   /** filter RTP DTMF (2833 / 4733) in relaying */
   bool            relay_filter_dtmf;
 
+  /** remote IP for RTP MUX - empty if disabled */
+  string          rtp_mux_remote_ip;
+  /** remote port for RTP MUX - 0 if disabled*/
+  unsigned int    rtp_mux_remote_port;
+ 
   /** Session owning this stream */
   AmSession*         session;
 
@@ -355,7 +360,7 @@ public:
   int receive( unsigned char* buffer, unsigned int size,
 	       unsigned int& ts, int& payload );
 
-  void recvPacket(int fd);
+  virtual void recvPacket(int fd, unsigned char* pkt = NULL, size_t len = 0);
 
   void recvRtcpPacket();
 
@@ -501,6 +506,9 @@ public:
 
   /** enable or disable filtering of RTP DTMF for relay */
   void setRtpRelayFilterRtpDtmf(bool filter);
+
+  /** set RTP Mux remote IP / port ("" and 0 to disable) */
+  void setRtpMuxRemote(const string& remote_ip, unsigned int remote_port);
 
   /** remove from RTP receiver */
   void stopReceiving();

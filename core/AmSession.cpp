@@ -75,7 +75,8 @@ AmSession::AmSession(AmSipDialog* p_dlg)
     accept_early_session(false),
     rtp_interface(-1),
     refresh_method(REFRESH_UPDATE_FB_REINV),
-    processing_status(SESSION_PROCESSING_EVENTS)
+    processing_status(SESSION_PROCESSING_EVENTS),
+    remote_rtp_mux_port(0)
 #ifdef WITH_ZRTP
   , enable_zrtp(AmConfig::enable_zrtp)
 #endif

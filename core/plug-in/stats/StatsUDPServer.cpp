@@ -303,9 +303,14 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       "get_callsmax                       -  get maximum of active calls since the last query\n"
       "get_cpsavg                         -  get calls per second (5 sec average)\n"
       "get_cpsmax                         -  get maximum of CPS since the last query\n"
-
+      "\n"
+      "get_rtp_mux_mtu_threshold          -  RTP MUX: get MTU queue threshold\n"
+      "set_rtp_mux_mtu_threshold <thresh> -  RTP MUX: set MTU queue threshold\n"
+      "get_rtp_mux_max_frame_age_ms       -  RTP MUX: get max queue delay\n"
+      "set_rtp_mux_max_frame_age_ms <ms>  -  RTP MUX: set max queue delay\n"
+      "\n"
       "dump_transactions                  -  dump transaction table to log (loglevel debug)\n"
-
+      "\n"
       "DI <factory> <function> (<args>)*  -  invoke DI command\n"
       "\n"
       "When in shutdown mode, SEMS will answer with the configured 5xx errorcode to\n"
@@ -357,10 +362,29 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 	}
     }
 
-    else 	reply = "Unknown command: '" + cmd_str + "'\n";
+    else if(cmd_str.substr(4, sizeof("rtp_mux_mtu_threshold")-1) == "rtp_mux_mtu_threshold") {
+      int tmp;
+      if(sscanf(&cmd_str.c_str()[sizeof("set_rtp_mux_mtu_threshold")],"%u",&tmp) != 1)
+        reply= "invalid rtp_mux_mtu_threshold\n";
+      else {
+	AmConfig::RtpMuxMTUThreshold = tmp;
+	reply = "rtp_mux_mtu_threshold=" + int2str(AmConfig::RtpMuxMTUThreshold) +"\n";
+      }
+    }
+    else if(cmd_str.substr(4, sizeof("rtp_mux_max_frame_age_ms")-1/*24*/) == "rtp_mux_max_frame_age_ms") {
+      int tmp;
+      if(sscanf(&cmd_str.c_str()[sizeof("set_rtp_mux_max_frame_age_ms")],"%u",&tmp) != 1)
+        reply= "invalid rtp_mux_max_frame_age_ms\n";
+      else {
+	AmConfig::RtpMuxMaxFrameAgeMs = tmp;
+	reply = "rtp_mux_max_frame_age_ms=" + int2str(AmConfig::RtpMuxMaxFrameAgeMs) +"\n";
+      }
+    }
+
+    else 	reply = "Unknown set command: '" + cmd_str + "'\n";
   }
   else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "get_") {
-    // setters 
+    // getters
     if (cmd_str.substr(4, 8) == "loglevel") {
       reply= "loglevel is "+int2str(log_level)+".\n";
     }
@@ -390,6 +414,12 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 	  reply= "Shutdownmode inactive!\n";
 	}
     }
+
+    else if(cmd_str.substr(4) == "rtp_mux_mtu_threshold")
+      reply = "rtp_mux_mtu_threshold=" + int2str(AmConfig::RtpMuxMTUThreshold) +"\n";
+    else if(cmd_str.substr(4) == "rtp_mux_max_frame_age_ms")
+      reply = "rtp_mux_max_frame_age_ms=" + int2str(AmConfig::RtpMuxMaxFrameAgeMs) +"\n";
+
 
     else 	reply = "Unknown command: '" + cmd_str + "'\n";
   }

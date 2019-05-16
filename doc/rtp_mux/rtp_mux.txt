@@ -1,0 +1,60 @@
+RTP multiplexing and compression
+--------------------------------
+
+This work was supported by the Shuttleworth Foundation through
+Rhizomatica.
+
+SEMS supports RTP MUX as described in rtp_mux_protocol. 
+
+The receiving and the sending side are handled/configured differently:
+
+If in sems.conf rtp_mux_ip/rtp_mux_port is configured, SEMS listens on
+that port as RTP MUX port and delivers received multiplexed packets to
+the correct call/application.
+
+For sending multiplexed packets, AmSession::remote_rtp_mux_ip and
+AmSession::remote_rtp_mux_port need to be set before the RTP streams are
+opened. This is implemented in the sbc application.
+
+To use SEMS as RTP mux compression gateway for low-bandwidth (e.g. sat)
+links, see the sbc module and the explanation in Readme.sbc.txt
+
+The max MTU and maximum introduced delay is configured in sems.conf:
+rtp_mux_mtu_threshold/rtp_mux_max_frame_age_ms. They can be read and
+changed in the running SEMS if the stats module is loaded.
+
+If the tools are installed, then the following commands are available:
+
+  sems-rtp-mux-get-max-frame-age-ms
+  sems-rtp-mux-get-mtu-threshold
+  sems-rtp-mux-set-max-frame-age-ms <max_frame_age>
+  sems-rtp-mux-set-mtu-threshold <mtu>
+
+If not, these can be used:
+
+
+  $ sems-stats -c get_rtp_mux_mtu_threshold
+  $ sems-stats -c get_rtp_mux_max_frame_age_ms
+
+and
+  $ sems-stats -c "set_rtp_mux_mtu_threshold 130"
+  $ sems-stats -c "set_rtp_mux_max_frame_age_ms 40"
+
+  Example:
+$ sems-stats -c get_rtp_mux_mtu_threshold
+sending 'get_rtp_mux_mtu_threshold\n' to 127.0.0.1:5040
+received:
+rtp_mux_mtu_threshold=1200
+$ sems-stats -c get_rtp_mux_max_frame_age_ms
+sending 'get_rtp_mux_max_frame_age_ms\n' to 127.0.0.1:5040
+received:
+rtp_mux_max_frame_age_ms=60
+
+$ sems-stats -c  "set_rtp_mux_max_frame_age_ms 30"
+sending 'set_rtp_mux_max_frame_age_ms 30\n' to 127.0.0.1:5040
+received:
+rtp_mux_max_frame_age_ms=30
+$ sems-stats -c get_rtp_mux_max_frame_age_ms
+sending 'get_rtp_mux_max_frame_age_ms\n' to 127.0.0.1:5040
+received:
+rtp_mux_max_frame_age_ms=30

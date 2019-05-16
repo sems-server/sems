@@ -1,0 +1,64 @@
+*****************************
+* Statistics plug-in README *
+*****************************
+
+Description:
+
+This module enables you to monitor sems. It offers its 
+informations through UDP.
+
+Using sample program:
+
+1. compile sems-stats with: 
+     make 
+       or 
+     g++ -o sems-stats query_stats.c
+
+2. use:
+     sems-stats -s m.y.i.p -p port
+
+
+SIP Express Media Server stats query
+
+Syntax: sems-stats [<options>]
+
+where <options>: 
+ -s <server>  : server name|ip (default: 127.0.0.1)
+ -p <port>    : server port (default: 5040)
+ -c <cmd>     : command (default: calls)
+ -t <seconds> : timeout (default: 5s)
+
+Tips: 
+ o quote the command if it has arguments (e.g. sems-stats -c "set_loglevel 1")
+ o "which" prints available commands
+
+
+ Commands to be used with -c:
+------------------------------------------------------------------------------------------------ 
+calls                              -  number of active sessions/calls (Session Container size) - b2bua call has 2 sessions
+which                              -  print available commands
+version                            -  return SEMS version
+set_loglevel <loglevel>            -  set log level
+get_loglevel                       -  get log level
+get_sessioncount                   -  get session count (from startup)
+set_cpslimit <limit>               -  set maximum allowed CPS
+get_cpslimit                       -  get maximum allowed CPS
+set_shutdownmode <1 or 0>          -  turns on and off shutdown mode
+get_shutdownmode                   -  returns the shutdown mode's current state
+get_callsavg                       -  get number of active calls (average since the last query)
+get_callsmax                       -  get maximum of active calls since the last query
+get_cpsavg                         -  get calls per second (5 sec average)
+get_cpsmax                         -  get maximum of CPS since the last query
+
+get_rtp_mux_mtu_threshold          -  RTP MUX: get MTU queue threshold
+set_rtp_mux_mtu_threshold <thresh> -  RTP MUX: set MTU queue threshold
+get_rtp_mux_max_frame_age_ms       -  RTP MUX: get max queue delay
+set_rtp_mux_max_frame_age_ms <ms>  -  RTP MUX: set max queue delay
+
+dump_transactions                  -  dump transaction table to log (loglevel debug)
+
+DI <factory> <function> (<args>)*  -  invoke DI command
+
+When in shutdown mode, SEMS will answer with the configured 5xx errorcode to
+new INVITE and OPTIONS requests.
+------------------------------------------------------------------------------------------------ 

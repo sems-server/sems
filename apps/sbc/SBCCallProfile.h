@@ -221,6 +221,11 @@ struct SBCCallProfile
   list<atomic_int*> aleg_rtp_counters;
   list<atomic_int*> bleg_rtp_counters;
 
+  string a_remote_rtp_mux_ip;
+  unsigned short a_remote_rtp_mux_port;
+  string b_remote_rtp_mux_ip;
+  unsigned short b_remote_rtp_mux_port;
+
   string outbound_interface;
   int outbound_interface_value;
 
