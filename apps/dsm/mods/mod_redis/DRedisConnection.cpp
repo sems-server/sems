@@ -17,7 +17,7 @@ DRedisConfig::DRedisConfig(const string& host, unsigned int port,
 }
 
 DRedisConnection::DRedisConnection(const DRedisConfig& cfg)
-  : redis_context(NULL), cfg(cfg)
+  : cfg(cfg), redis_context(NULL)
 {
 }
 
