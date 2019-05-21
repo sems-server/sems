@@ -495,7 +495,6 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
     SBCCallLeg* peer = new SBCCallLeg(sbc_call_leg);
 
     SBCCallProfile &p = peer->getCallProfile();
-    AmB2BSession::RTPRelayMode rtp_mode = sbc_call_leg->getRtpRelayMode();
 
     it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_LOCAL_PARTY);
     if (it != sc_sess->var.end())
