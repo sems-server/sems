@@ -1,18 +1,9 @@
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/template.rules.txt)
+
 MACRO(SEMS_INSTALL_CONFIGS config_files)
 	FOREACH (config_file ${config_files})
-		# Check whether we providing a template for this config
-		FIND_PATH(SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE ${config_file}.conf.cmake PATHS ${CMAKE_CURRENT_SOURCE_DIR}/etc)
-
-		IF (SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE)
-			# If we do provide a template, then process it and create real
-			# config
-			CONFIGURE_FILE (
-					${SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE}/${config_file}.conf.cmake
-					${SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE}/${config_file}.conf
-			)
-		ENDIF (SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE)
-
 		IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf )
+			SEMS_GEN_TEMPLATE(${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
 			INSTALL(
 				FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
 			)

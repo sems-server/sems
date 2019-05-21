@@ -1,0 +1,8 @@
+MACRO(SEMS_GEN_TEMPLATE filename)
+	FILE(READ "${filename}" sems_file_template)
+	STRING(REPLACE "/usr/local/etc" "${SEMS_CFG_PREFIX}/etc" sems_file_template "${sems_file_template}")
+	STRING(REPLACE "/usr/local/lib/sems/audio" "${SEMS_AUDIO_PREFIX}/sems/audio" sems_file_template "${sems_file_template}")
+	STRING(REPLACE "/usr/local/lib/sems/plug-in" "${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in" sems_file_template "${sems_file_template}")
+	STRING(REPLACE "/var/local/run" "${SEMS_RUNDIR_PREFIX}" sems_file_template "${sems_file_template}")
+	FILE(WRITE ${filename} "${sems_file_template}")
+ENDMACRO(SEMS_GEN_TEMPLATE)
