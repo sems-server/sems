@@ -143,17 +143,12 @@ static bool parse_args(int argc, char* argv[], std::map<char,string>& args)
 
 static void set_default_interface(const string& iface_name)
 {
-  unsigned int idx=0;
   map<string,unsigned short>::iterator if_it = AmConfig::SIP_If_names.find("default");
   if(if_it == AmConfig::SIP_If_names.end()) {
     AmConfig::SIP_interface intf;
     intf.name = "default";
     AmConfig::SIP_Ifs.push_back(intf);
     AmConfig::SIP_If_names["default"] = AmConfig::SIP_Ifs.size()-1;
-    idx = AmConfig::SIP_Ifs.size()-1;
-  }
-  else {
-    idx = if_it->second;
   }
   AmConfig::SIP_Ifs[if_it->second].LocalIP = iface_name;
 
@@ -163,10 +158,6 @@ static void set_default_interface(const string& iface_name)
     intf.name = "default";
     AmConfig::RTP_Ifs.push_back(intf);
     AmConfig::RTP_If_names["default"] = AmConfig::RTP_Ifs.size()-1;
-    idx = AmConfig::RTP_Ifs.size()-1;
-  }
-  else {
-    idx = if_it->second;
   }
   AmConfig::RTP_Ifs[if_it->second].LocalIP = iface_name;
 }
