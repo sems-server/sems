@@ -18,7 +18,7 @@ default_en.wav
 #	IF(CMAKE_COMPILER_IS_GNUCXX)
 #		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MYSQL -I/usr/include/mysql++ -I/usr/include/mysql")
 #	ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-#	SET(sems_module_libs mysqlpp)
+#	SET(sems_module_libs ${MYSQLPP_LIBRARIES})
 #ENDIF(MYSQLPP_FOUND)
 
 SET(sems_module_name voicemail)

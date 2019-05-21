@@ -10,5 +10,5 @@ add_library(speex SHARED IMPORTED)
 set_property(TARGET speex PROPERTY IMPORTED_LOCATION ${SPEEX_LIBRARIES})
 
 SET(sems_module_name speex)
-SET(sems_module_libs speex)
+SET(sems_module_libs ${SPEEX_LIBRARIES})
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

@@ -6,7 +6,7 @@ IF(MYSQLCPPCONN_FOUND)
 	INCLUDE_DIRECTORIES(/usr/include/mysql)
 	INCLUDE_DIRECTORIES(${MYSQLCPPCONN_INCLUDE_DIR}/cppconn)
 	ADD_DEFINITIONS(-DUSE_MYSQL)
-	SET(sems_module_libs mysqlcppconn)
+	SET(sems_module_libs ${MYSQLCPPCONN_LIBRARIES})
 ENDIF(MYSQLCPPCONN_FOUND)
 
 SET(sems_module_name early_announce)

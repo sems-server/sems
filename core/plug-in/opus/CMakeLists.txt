@@ -5,5 +5,5 @@ opus.c
 #module_cflags  = -ansi # -DNOFPU
 
 SET(sems_module_name opus)
-SET(sems_module_libs opus)
+SET(sems_module_libs ${OPUS_LIBRARIES})
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
