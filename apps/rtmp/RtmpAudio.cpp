@@ -36,37 +36,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static void dump_audio(RTMPPacket *packet)
-{
-  static int dump_fd=0;
-  if(dump_fd == 0){
-    dump_fd = open("speex_in.raw",O_WRONLY|O_CREAT|O_TRUNC,
-		   S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
-    if(dump_fd < 0)
-      ERROR("could not open speex_in.raw: %s\n",strerror(errno));
-  }
-  if(dump_fd < 0) return;
-
-  uint32_t pkg_size = packet->m_nBodySize-1;
-  write(dump_fd,&pkg_size,sizeof(uint32_t));
-  write(dump_fd,packet->m_body+1,pkg_size);
-}
-
-static void dump_audio(unsigned char* buffer, unsigned int size)
-{
-  static int dump_fd=0;
-  if(dump_fd == 0){
-    dump_fd = open("pcm_in.raw",O_WRONLY|O_CREAT|O_TRUNC,
-		   S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
-    if(dump_fd < 0)
-      ERROR("could not open pcm_in.raw: %s\n",strerror(errno));
-  }
-  if(dump_fd < 0) return;
-
-  write(dump_fd,buffer,size);
-}
-
-
 RtmpAudio::RtmpAudio(RtmpSender* s)
   : AmAudio(new AmAudioFormat(CODEC_SPEEX_WB,SPEEX_WB_SAMPLE_RATE)),
     sender(s),
@@ -117,8 +86,6 @@ int RtmpAudio::put(unsigned long long system_ts, unsigned char* buffer,
   if(!size){
     return 0;
   }
-
-  //dump_audio((unsigned char*)buffer,size);
 
   // copy into internal buffer
   memcpy((unsigned char*)samples,buffer,size);
@@ -191,7 +158,6 @@ int RtmpAudio::send(unsigned int user_ts, unsigned int size)
   sender->push_back(packet);
   m_sender.unlock();
 
-  //dump_audio(&packet);
   RTMPPacket_Free(&packet);
 
   return size;
