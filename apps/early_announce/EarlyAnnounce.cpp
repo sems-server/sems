@@ -34,8 +34,6 @@
 #define MOD_NAME "early_announce"
 
 #ifdef USE_MYSQL
-#include <mysql++/mysql++.h>
-#include <stdio.h>
 #define DEFAULT_AUDIO_TABLE "default_audio"
 #define DOMAIN_AUDIO_TABLE "domain_audio"
 #define USER_AUDIO_TABLE "user_audio"
@@ -61,7 +59,9 @@ EarlyAnnounceFactory::EarlyAnnounceFactory(const string& _app_name)
 }
 
 #ifdef USE_MYSQL
-mysqlpp::Connection EarlyAnnounceFactory::Connection(mysqlpp::use_exceptions);
+
+static sql::Driver *driver;
+static sql::Connection *connection;
 
 int get_announce_msg(string application, string message, string user,
 		     string domain, string language, string *audio_file)
@@ -91,48 +91,33 @@ int get_announce_msg(string application, string message, string user,
     }
 
     try {
-
-	mysqlpp::Query query = EarlyAnnounceFactory::Connection.query();
 	    
-	DBG("Query string <%s>\n", query_string.c_str());
+      DBG("Query string <%s>\n", query_string.c_str());
 
-	query << query_string;
+      sql::Statement *stmt;
+      sql::ResultSet *result;
 
-#ifdef VERSION2
-	mysqlpp::Result res = query.store();
-#else
-    	mysqlpp::StoreQueryResult res = query.store();
-#endif
+      stmt = connection->createStatement();
+      result = stmt->executeQuery(query_string);
+      if (result->next()) {
+	FILE *file;
+	file = fopen((*audio_file).c_str(), "wb");
+	string s = result->getString("audio");
+	fwrite(s.data(), 1, s.length(), file);
+	fclose(file);
+	return 1;
+      } else {
+	*audio_file = "";
+	return 1;
+      }
 
-	mysqlpp::Row row;
+      delete stmt;
+      delete result;
 
-	if (res) {
-	    if ((res.num_rows() > 0) && (row = res.at(0))) {
-		FILE *file;
-		file = fopen((*audio_file).c_str(), "wb");
-#ifdef VERSION2
-		unsigned long length = row.raw_string(0).size();
-		fwrite(row.at(0).data(), 1, length, file);
-#else
-		mysqlpp::String s = row[0];
-		fwrite(s.data(), 1, s.length(), file);
-#endif
-		fclose(file);
-		return 1;
-	    } else {
-		*audio_file = "";
-		return 1;
-	    }
-	} else {
-	    ERROR("Database query error\n");
-	    *audio_file = "";
-	    return 0;
-	}
     }
 
-    catch (const mysqlpp::Exception& er) {
-	// Catch-all for any MySQL++ exceptions
-	ERROR("MySQL++ error: %s\n", er.what());
+    catch (sql::SQLException &er) {
+	ERROR("MySQL query error: %s\n", er.what());
 	*audio_file = "";
 	return 0;
     }
@@ -168,7 +153,9 @@ int EarlyAnnounceFactory::onLoad()
   /* Get default audio from MySQL */
 
   string mysql_server, mysql_user, mysql_passwd, mysql_db, mysql_ca_cert;
-
+  bool reconnect_state = true;
+  sql::ConnectOptionsMap connection_properties;
+  
   mysql_server = cfg.getParameter("mysql_server");
   if (mysql_server.empty()) {
     mysql_server = "localhost";
@@ -210,31 +197,33 @@ int EarlyAnnounceFactory::onLoad()
 
   try {
 
-#ifdef VERSION2
-    Connection.set_option(Connection.opt_reconnect, true);
-#else
-    Connection.set_option(new mysqlpp::ReconnectOption(true));
-#endif
-    if (!mysql_ca_cert.empty())
-      Connection.set_option(
-	new mysqlpp::SslOption(0, 0, mysql_ca_cert.c_str(), "",
-			       "DHE-RSA-AES256-SHA"));
-    Connection.connect(mysql_db.c_str(), mysql_server.c_str(),
-		       mysql_user.c_str(), mysql_passwd.c_str());
-    if (!Connection) {
-      ERROR("Database connection failed: %s\n", Connection.error());
-      return -1;
+    connection_properties["hostName"] =
+      sql::ConnectPropertyVal(mysql_server);
+    connection_properties["userName"] =
+      sql::ConnectPropertyVal(mysql_user);
+    connection_properties["password"] =
+      sql::ConnectPropertyVal(mysql_passwd);
+
+    if (!mysql_ca_cert.empty()) {
+      connection_properties["sslCa"] =
+	sql::ConnectPropertyVal(sql::SQLString(mysql_ca_cert));
+      connection_properties["sslCAPath"] =
+	sql::ConnectPropertyVal(sql::SQLString(""));
+      connection_properties["sslCipher"] =
+	sql::ConnectPropertyVal(sql::SQLString("DHE-RSA-AES256-SHA"));
+      connection_properties["sslEnforce"] =
+	sql::ConnectPropertyVal(true);
     }
+
+    driver = get_driver_instance();
+    connection = driver->connect(connection_properties);
+    connection->setClientOption("OPT_RECONNECT", &reconnect_state);
+    connection->setSchema(mysql_db);
+
   }
 
-  catch (const mysqlpp::BadOption& er) {
-    ERROR("MySQL++ set_option error: %s\n", er.what());
-    return -1;
-  }
- 	
-  catch (const mysqlpp::Exception& er) {
-    // Catch-all for any MySQL++ exceptions
-    ERROR("MySQL++ error: %s\n", er.what());
+  catch (sql::SQLException &er) {
+    ERROR("MySQL connection error: %s\n", er.what());
     return -1;
   }
 

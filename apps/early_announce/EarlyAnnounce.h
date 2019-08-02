@@ -26,10 +26,6 @@
 #ifndef _EarlyAnnounce_h_
 #define _EarlyAnnounce_h_
 
-#ifdef USE_MYSQL
-#include <mysql++/mysql++.h>
-#endif
-
 #include "AmB2BSession.h"
 #include "AmAudioFile.h"
 #include "AmConfigReader.h"
@@ -37,13 +33,21 @@
 #include <string>
 using std::string;
 
+#ifdef USE_MYSQL
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
+#include <stdio.h>
+#include <string>
+#endif
+
 /** \brief Factory for early_announce sessions */
 class EarlyAnnounceFactory: public AmSessionFactory
 {
 public:
 
 #ifdef USE_MYSQL
-  static mysqlpp::Connection Connection;
   static string AnnounceApplication;
   static string AnnounceMessage;
   static string DefaultLanguage;
