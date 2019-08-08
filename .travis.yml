@@ -22,7 +22,7 @@ matrix:
 before_install:
         - sudo apt-get -qq update
           # bcg729, codec2 (available since Xenial), ilbc, mISDN are missing
-        - sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev liblibopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
+        - sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
           # Manually install codec2
         - wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
         - tar -xvf codec2-0.7.tar.xz
