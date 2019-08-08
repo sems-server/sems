@@ -10,13 +10,13 @@ sudo: required
 
 matrix:
   include:
-  - dist: trusty
+  - dist: xenial
     compiler: gcc
-  - dist: trusty
+  - dist: xenial
     compiler: clang
-  - dist: xenial
+  - dist: bionic
     compiler: gcc
-  - dist: xenial
+  - dist: bionic
     compiler: clang
 
 before_install:
