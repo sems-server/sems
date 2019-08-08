@@ -2,8 +2,8 @@ plug_in_name = mod_mysql
 
 DSMPATH ?= ../..
 
-module_ldflags = -lmysqlpp
-module_cflags  = -DMOD_NAME=\"$(plug_in_name)\" -I$(DSMPATH) -I/usr/include/mysql++ -I/usr/include/mysql
+module_ldflags = -lmysqlcppconn
+module_cflags  = -DMOD_NAME=\"$(plug_in_name)\" -I$(DSMPATH)
 
 COREPATH ?=$(DSMPATH)/../../core
 lib_full_name = $(DSMPATH)/mods/lib/$(lib_name)

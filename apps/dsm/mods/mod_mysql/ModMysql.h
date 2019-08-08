@@ -29,11 +29,18 @@
 #include "DSMModule.h"
 #include "DSMSession.h"
 
-#include <mysql++/mysql++.h>
+#include <cppconn/sqlstring.h>
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
+#include <mysql_connection.h>
 
+#define MY_AKEY_DRIVER     "db.dri"
 #define MY_AKEY_CONNECTION "db.con"
 #define MY_AKEY_RESULT     "db.res"
 
+#define DSM_ERRNO_MY_DRIVER     "driver"
 #define DSM_ERRNO_MY_CONNECTION "connection"
 #define DSM_ERRNO_MY_QUERY      "query"
 #define DSM_ERRNO_MY_NORESULT   "result"
@@ -50,30 +57,38 @@ class SCMysqlModule
   
   DSMAction* getAction(const string& from_str);
   DSMCondition* getCondition(const string& from_str);
+
 };
 
 class DSMMyConnection 
-: public mysqlpp::Connection,
-  public AmObject,
+: public AmObject,
   public DSMDisposable 
 {
  public:
-  DSMMyConnection() : mysqlpp::Connection()
+ DSMMyConnection() : con(NULL)
   {
   }
-  ~DSMMyConnection() { }
+  ~DSMMyConnection() {
+    if (con) {
+	    if (!con->isClosed()) con->close();
+      delete con;
+    }
+  }
+  sql::Connection* con;
 };
 
 class DSMMyStoreQueryResult 
-: public mysqlpp::StoreQueryResult,
-  public AmObject,
+: public AmObject,
   public DSMDisposable 
 {
- public:
-  DSMMyStoreQueryResult(const StoreQueryResult& other) : 
-  mysqlpp::StoreQueryResult(other)
-  { }
-  ~DSMMyStoreQueryResult() { }
+  public:
+  DSMMyStoreQueryResult() : res(NULL)
+    {
+    }
+  ~DSMMyStoreQueryResult() {
+    if (res) delete res;
+  }
+  sql::ResultSet* res;
 };
 
 DEF_ACTION_1P(SCMyConnectAction);
