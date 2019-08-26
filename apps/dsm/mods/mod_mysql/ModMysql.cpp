@@ -86,41 +86,46 @@ DSMCondition* SCMysqlModule::getCondition(const string& from_str) {
   return NULL;
 }
 
-mysqlpp::Connection* getMyDSMSessionConnection(DSMSession* sc_sess) {
+sql::Connection* getMyDSMSessionConnection(DSMSession* sc_sess) {
   if (sc_sess->avar.find(MY_AKEY_CONNECTION) == sc_sess->avar.end()) {
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
     sc_sess->SET_STRERROR("No connection to database");
     return NULL;
   }
-  AmObject* ao = NULL; mysqlpp::Connection* res = NULL;
+  AmObject* ao = NULL;
+  sql::Connection* res = NULL;
   try {
     if (!isArgAObject(sc_sess->avar[MY_AKEY_CONNECTION])) {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
       sc_sess->SET_STRERROR("No connection to database (not AmObject)");
       return NULL;
     }
-    ao = sc_sess->avar[MY_AKEY_CONNECTION].asObject();
+    ao = (sc_sess->avar[MY_AKEY_CONNECTION]).asObject();
   } catch (...){
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
     sc_sess->SET_STRERROR("No connection to database (not AmObject)");
     return NULL;
   }
-
-  if (NULL == ao || NULL == (res = dynamic_cast<mysqlpp::Connection*>(ao))) {
-    sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
-    sc_sess->SET_STRERROR("No connection to database (not mysqlpp::Connection)");
-    return NULL;
+  if (NULL != ao) {
+    DSMMyConnection* dsm_conn = dynamic_cast<DSMMyConnection*>(ao);
+    if (NULL != dsm_conn) {
+      res = dsm_conn->con;
+      return res;
+    }
   }
-  return res;
+  sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
+  sc_sess->SET_STRERROR("No connection to database (no sql::Connection)");
+  return NULL;
 }
 
-mysqlpp::StoreQueryResult* getMyDSMQueryResult(DSMSession* sc_sess) {
+sql::ResultSet* getMyDSMQueryResult(DSMSession* sc_sess) {
   if (sc_sess->avar.find(MY_AKEY_RESULT) == sc_sess->avar.end()) {
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_NORESULT);
     sc_sess->SET_STRERROR("No result available");
     return NULL;
   }
-  AmObject* ao = NULL; mysqlpp::StoreQueryResult* res = NULL;
+  AmObject* ao = NULL;
+  sql::ResultSet* res = NULL;
   try {
     assertArgAObject(sc_sess->avar[MY_AKEY_RESULT]);
     ao = sc_sess->avar[MY_AKEY_RESULT].asObject();
@@ -130,7 +135,7 @@ mysqlpp::StoreQueryResult* getMyDSMQueryResult(DSMSession* sc_sess) {
     return NULL;
   }
 
-  if (NULL == ao || NULL == (res = dynamic_cast<mysqlpp::StoreQueryResult*>(ao))) {
+  if (NULL == ao || NULL == (res = dynamic_cast<sql::ResultSet*>(ao))) {
     sc_sess->SET_STRERROR("Result object has wrong type");
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_NORESULT);
     return NULL;
@@ -204,48 +209,58 @@ EXEC_ACTION_START(SCMyConnectAction) {
     return false;
   }
 
-  DSMMyConnection* conn = NULL;
   try {
-    conn = new DSMMyConnection();
+    bool reconnect_state = true;
+    sql::ConnectOptionsMap connection_properties;
+    sql::Driver *driver;
+    DSMMyConnection* conn = NULL;
+    connection_properties["hostName"] = sql::ConnectPropertyVal(db_host);
+    connection_properties["userName"] = sql::ConnectPropertyVal(db_user);
+    connection_properties["password"] = sql::ConnectPropertyVal(db_pwd);
     if (!db_ca_cert.empty()) {
-      conn->set_option(new mysqlpp::SslOption(0, 0, db_ca_cert.c_str(), "",
-					      "DHE-RSA-AES256-SHA"));
+      connection_properties["sslCa"] =
+	sql::ConnectPropertyVal(sql::SQLString(db_ca_cert));
+      connection_properties["sslCAPath"] =
+	sql::ConnectPropertyVal(sql::SQLString(""));
+      connection_properties["sslCipher"] =
+	sql::ConnectPropertyVal(sql::SQLString("DHE-RSA-AES256-SHA"));
+      connection_properties["sslEnforce"] =
+	sql::ConnectPropertyVal(true);
     }
-    conn->connect(db_db.c_str(), db_host.c_str(), db_user.c_str(), db_pwd.c_str());
+    driver = get_driver_instance();
+    conn = new DSMMyConnection();
+    conn->con = driver->connect(connection_properties);
+    conn->con->setClientOption("OPT_RECONNECT", &reconnect_state);
+    conn->con->setSchema(db_db);
     // save connection for later use
-    AmArg c_arg;
-    c_arg.setBorrowedPointer(conn);
-    sc_sess->avar[MY_AKEY_CONNECTION] = c_arg;
+    AmArg c_arg_con;
+    c_arg_con.setBorrowedPointer(conn);
+    sc_sess->avar[MY_AKEY_CONNECTION] = c_arg_con;
     // for garbage collection
     sc_sess->transferOwnership(conn);
     sc_sess->CLR_ERRNO;    
-  } catch (const mysqlpp::ConnectionFailed& e) {
-    ERROR("DB connection failed with error %d: '%s'\n",e.errnum(), e.what());
+  } catch (const sql::SQLException& e) {
+    ERROR("DB connection failed with error %d: '%s'\n", e.getErrorCode(),
+	  e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
     sc_sess->SET_STRERROR(e.what());
-    sc_sess->var["db.errno"] = int2str(e.errnum());
-    sc_sess->var["db.ereason"] = e.what();
-  } catch (const mysqlpp::Exception& e) {
-    ERROR("DB connection failed: '%s'\n", e.what());
-    sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);    
-    sc_sess->SET_STRERROR(e.what());
+    sc_sess->var["db.errno"] = int2str(e.getErrorCode());
     sc_sess->var["db.ereason"] = e.what();
   }
 
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCMyDisconnectAction) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
     return false;
 
   try {
-    conn->disconnect();
+    if (!conn->isClosed()) conn->close();
     // connection object might be reused - but its safer to create a new one
     sc_sess->avar[MY_AKEY_CONNECTION] = AmArg();
     sc_sess->CLR_ERRNO;
-  } catch (const mysqlpp::Exception& e) {
+  } catch (const sql::SQLException& e) {
     ERROR("DB disconnect failed: '%s'\n", e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
     sc_sess->SET_STRERROR(e.what());
@@ -258,30 +273,48 @@ EXEC_ACTION_START(SCMyResolveQueryParams) {
     replaceQueryParams(arg, sc_sess, event_params);
 } EXEC_ACTION_END;
 
+unsigned long getInsertId(sql::Connection* conn) {
+  try {
+    sql::Statement* stmt = conn->createStatement();
+    sql::ResultSet* res = stmt->executeQuery("SELECT @@identity AS id");
+    unsigned long retVal = 0;
+    if (res->next()) {
+      retVal = res->getInt64("id");
+    } else {
+      ERROR("DB query 'SELECT @@identity AS id' gave no result'\n");
+    }
+    delete stmt;
+    delete res;
+    return retVal;
+  } catch (const sql::SQLException& e) {
+    ERROR("DB query 'SELECT @@identity AS id' failed: '%s'\n", e.what());
+    return 0;
+  }
+}
+
 EXEC_ACTION_START(SCMyExecuteAction) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
     return false;
   string qstr = replaceQueryParams(arg, sc_sess, event_params);
 
   try {
-    mysqlpp::Query query = conn->query(qstr.c_str());
-    mysqlpp::SimpleResult res = query.execute();
+    sql::Statement* stmt = conn->createStatement();
+    sql::ResultSet* res = stmt->executeQuery(qstr);
     if (res) {
       sc_sess->CLR_ERRNO;
-      sc_sess->var["db.rows"] = int2str((int)res.rows());
-      sc_sess->var["db.info"] = res.info();
-      sc_sess->var["db.insert_id"] = int2str((int)res.insert_id());
+      sc_sess->var["db.rows"] = int2str((int)res->rowsCount());
+      sc_sess->var["db.info"] = "";
+      sc_sess->var["db.insert_id"] = int2str((unsigned int)getInsertId(conn));
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
-      sc_sess->SET_STRERROR(res.info());
-      sc_sess->var["db.info"] = res.info();
+      sc_sess->SET_STRERROR("query did not have a result");
+      sc_sess->var["db.info"] = "";
     }
-
-  } catch (const mysqlpp::Exception& e) {
-    ERROR("DB query '%s' failed: '%s'\n", 
-	  qstr.c_str(), e.what());
+    delete stmt;
+    delete res;
+  } catch (const sql::SQLException& e) {
+    ERROR("DB query '%s' failed: '%s'\n", qstr.c_str(), e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
@@ -289,36 +322,31 @@ EXEC_ACTION_START(SCMyExecuteAction) {
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCMyQueryAction) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
-  if (NULL == conn) 
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
+  if (NULL == conn)
     return false;
   string qstr = replaceQueryParams(arg, sc_sess, event_params);
 
   try {
-    mysqlpp::Query query = conn->query(qstr.c_str());
-    mysqlpp::StoreQueryResult res = query.store();    
-    if (res) {
-      // MySQL++ does not allow working with pointers here, so copy construct it
-      DSMMyStoreQueryResult* m_res = new DSMMyStoreQueryResult(res);
-
-      // save result for later use
+    DSMMyStoreQueryResult* m_res = new DSMMyStoreQueryResult();
+    sql::Statement* stmt = conn->createStatement();
+    m_res->res = stmt->executeQuery(qstr);
+    if (m_res->res) {
       AmArg c_arg;
       c_arg.setBorrowedPointer(m_res);
       sc_sess->avar[MY_AKEY_RESULT] = c_arg;
-
       // for garbage collection
       sc_sess->transferOwnership(m_res);
 
-      sc_sess->CLR_ERRNO;    
-      sc_sess->var["db.rows"] = int2str((unsigned int)res.num_rows());
+      sc_sess->CLR_ERRNO;
+      sc_sess->var["db.rows"] = int2str((unsigned int)m_res->res->rowsCount());
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
       sc_sess->SET_STRERROR("query did not have a result");
     }
-  } catch (const mysqlpp::Exception& e) {
-    ERROR("DB query '%s' failed: '%s'\n", 
-	  qstr.c_str(), e.what());
+    delete stmt;
+  } catch (const sql::SQLException& e) {
+    ERROR("DB query '%s' failed: '%s'\n", qstr.c_str(), e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
@@ -327,15 +355,14 @@ EXEC_ACTION_START(SCMyQueryAction) {
 
 CONST_ACTION_2P(SCMyQueryGetResultAction, ',', true);
 EXEC_ACTION_START(SCMyQueryGetResultAction) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
     return false;
   string qstr = replaceQueryParams(par1, sc_sess, event_params);
 
   try {
-    mysqlpp::Query query = conn->query(qstr.c_str());
-    mysqlpp::StoreQueryResult res = query.store();    
+    sql::Statement* stmt = conn->createStatement();
+    sql::ResultSet* res = stmt->executeQuery(qstr);
     if (res) {
       unsigned int rowindex_i = 0;
       string rowindex = resolveVars(par2, sess, sc_sess, event_params);
@@ -347,26 +374,32 @@ EXEC_ACTION_START(SCMyQueryGetResultAction) {
 	  return false;
 	}
       }
-      if (res.size() <= rowindex_i) {
+      size_t num_rows = res->rowsCount();
+      if (num_rows <= rowindex_i) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
-	sc_sess->SET_STRERROR("row index out of result rows bounds"); 
+	sc_sess->SET_STRERROR("row index out of result rows bounds");
+	delete stmt;
+	delete res;
 	return false;
       }
 
       // get all columns
-      for (size_t i = 0; i < res.field_names()->size(); i++) {
-	sc_sess->var[res.field_name(i)] = 
-	  (string)res[rowindex_i][res.field_name(i).c_str()];
+      sql::ResultSetMetaData* meta = res->getMetaData();
+      for (size_t i = 0; i <= rowindex_i; i++) res->next();
+      for (size_t i = 0; i < meta->getColumnCount(); i++) {
+	sc_sess->var[meta->getColumnLabel(i)] =
+	  (res->getString(i)).asStdString();
       }
 
       sc_sess->CLR_ERRNO;    
-      sc_sess->var["db.rows"] = int2str((unsigned int)res.num_rows());
+      sc_sess->var["db.rows"] = int2str((int)num_rows);
+      delete res;
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
     }
-  } catch (const mysqlpp::Exception& e) {
-    ERROR("DB query '%s' failed: '%s'\n", 
-	  qstr.c_str(), e.what());
+    delete stmt;
+  } catch (const sql::SQLException& e) {
+    ERROR("DB query '%s' failed: '%s'\n", qstr.c_str(), e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
@@ -375,7 +408,7 @@ EXEC_ACTION_START(SCMyQueryGetResultAction) {
 
 CONST_ACTION_2P(SCMyGetResultAction, ',', true);
 EXEC_ACTION_START(SCMyGetResultAction) {
-  mysqlpp::StoreQueryResult* res = getMyDSMQueryResult(sc_sess);
+  sql::ResultSet* res = getMyDSMQueryResult(sc_sess);
   if (NULL == res)
     return false;
 
@@ -398,49 +431,51 @@ EXEC_ACTION_START(SCMyGetResultAction) {
     }
   }
 
-  if (res->size() <= rowindex_i) {
+  if (res->rowsCount() <= rowindex_i) {
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
     sc_sess->SET_STRERROR("row index out of result rows bounds");
     return false;
   }
   DBG("rowindex_i = %d\n", rowindex_i);
   if (colname.length()) {
+    sql::SQLString colLabel = sql::SQLString(colname);
     // get only this column
-    try {      
-      sc_sess->var[colname] = 
-	(string)(*res)[(int)rowindex_i][colname.c_str()];
-    } catch (const mysqlpp::BadFieldName& e) {
+    for (size_t i = 0; i <= rowindex_i; i++) res->next();
+    try {
+      sc_sess->var[colname] = (res->getString(colLabel)).asStdString();
+    } catch (const sql::SQLException& e) {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOCOLUMN);
       sc_sess->SET_STRERROR("bad field name '"+colname+"'");
       return false;
     }
   } else {
     // get all columns
-    for (size_t i = 0; i < res->field_names()->size(); i++) {
-      sc_sess->var[res->field_name(i)] = 
-	(string)(*res)[rowindex_i][res->field_name(i).c_str()];
+    sql::ResultSetMetaData* meta = res->getMetaData();
+    for (size_t i = 0; i <= rowindex_i; i++) res->next();
+    for (size_t i = 0; i < meta->getColumnCount(); i++) {
+      sc_sess->var[(meta->getColumnLabel(i)).asStdString()] =
+	(res->getString(i)).asStdString();
     }
   }
   sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCMyGetClientVersion) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
-  if (NULL == conn) 
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
+  if (NULL == conn)
     return false;
 
   sc_sess->var[resolveVars(arg, sess, sc_sess, event_params)] = 
-    conn->client_version();
+    (conn->getClientInfo()).asStdString();
   sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 MATCH_CONDITION_START(MyHasResultCondition) {
-  mysqlpp::StoreQueryResult* res = getMyDSMQueryResult(sc_sess);
+  sql::ResultSet* res = getMyDSMQueryResult(sc_sess);
   if (NULL == res)
     return false;
 
-  if (!res || !(res->size())) {
+  if (!res || !(res->rowsCount())) {
     return false;
   }
 
@@ -448,12 +483,11 @@ MATCH_CONDITION_START(MyHasResultCondition) {
 } MATCH_CONDITION_END;
 
 MATCH_CONDITION_START(MyConnectedCondition) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
     return false;
 
-  return conn->connected();
+  return conn->isValid() && !conn->isClosed();
 } MATCH_CONDITION_END;
 
 
@@ -469,25 +503,24 @@ EXEC_ACTION_START(SCMyUseResultAction) {
 bool playDBAudio(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 		 map<string,string>* event_params, const string& par1, const string& par2,
 		 bool looped, bool front) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn)
     EXEC_ACTION_STOP;
 
   string qstr = replaceQueryParams(par1, sc_sess, event_params);
 
+  INFO("playDBAudio query '%s'\n", qstr.c_str());
   try {
-    mysqlpp::Query query = conn->query(qstr.c_str());
-    mysqlpp::UseQueryResult res = query.use();    
+    sql::Statement* stmt = conn->createStatement();
+    sql::ResultSet* res = stmt->executeQuery(qstr);
     if (res) {
 
-      mysqlpp::Row row = res.fetch_row();
-      if (!row) {
+      if (!res->next()) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
 	sc_sess->SET_STRERROR("result does not have row");
 	EXEC_ACTION_STOP;
       }
-      if (row.at(0).size() == 0) {
+      if (res->getMetaData()->getColumnCount() == 0) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NODATA);
 	sc_sess->SET_STRERROR("result does not have data");
 	EXEC_ACTION_STOP;
@@ -498,9 +531,10 @@ bool playDBAudio(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType e
 	sc_sess->SET_STRERROR("tmpfile() failed: "+string(strerror(errno)));
 	EXEC_ACTION_STOP;
       }
-
-      fwrite(row.at(0).data(), 1, row.at(0).size(), t_file);
+      string s = res->getString(0);
+      fwrite(s.data(), 1, s.length(), t_file);
       rewind(t_file);
+      delete res;
       
       DSMDisposableAudioFile* a_file = new DSMDisposableAudioFile();
       if (a_file->fpopen(par2, AmAudioFile::Read, t_file)) {
@@ -519,9 +553,9 @@ bool playDBAudio(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType e
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
       sc_sess->SET_STRERROR("query does not have result"); 
     }
-  } catch (const mysqlpp::Exception& e) {
-    ERROR("DB query '%s' failed: '%s'\n", 
-	  qstr.c_str(), e.what());
+    delete stmt;
+  } catch (const sql::SQLException& e) {
+    ERROR("DB query '%s' failed: '%s'\n", qstr.c_str(), e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
@@ -549,41 +583,45 @@ EXEC_ACTION_START(SCMyPlayDBAudioLoopedAction) {
 
 CONST_ACTION_2P(SCMyGetFileFromDBAction, ',', true);
 EXEC_ACTION_START(SCMyGetFileFromDBAction) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
     return false;
   string qstr = replaceQueryParams(par1, sc_sess, event_params);
   string fname = resolveVars(par2, sess, sc_sess, event_params);
 
   try {
-    mysqlpp::Query query = conn->query(qstr.c_str());
-    mysqlpp::UseQueryResult res = query.use();    
+    sql::Statement* stmt = conn->createStatement();
+    sql::ResultSet* res = stmt->executeQuery(qstr);
     if (res) {
-      mysqlpp::Row row = res.fetch_row();
-      if (!row) {
+      if (!res->next()) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
-	sc_sess->SET_STRERROR("result does not have row"); 
+	sc_sess->SET_STRERROR("result does not have row");
+	delete stmt;
+	delete res;
 	return false;
       }
       FILE *t_file = fopen(fname.c_str(), "wb");
       if (NULL == t_file) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
 	sc_sess->SET_STRERROR("fopen() failed for file '"+fname+"': "+string(strerror(errno)));
+	delete stmt;
+	delete res;
 	return false;
       }
 
-      fwrite(row.at(0).data(), 1, row.at(0).size(), t_file);
+      string s = res->getString(0);
+      fwrite(s.data(), 1, s.length(), t_file);
       fclose(t_file);
+      delete res;
 
       sc_sess->CLR_ERRNO;    
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
       sc_sess->SET_STRERROR("query does not have result"); 
     }
-  } catch (const mysqlpp::Exception& e) {
-    ERROR("DB query '%s' failed: '%s'\n", 
-	  qstr.c_str(), e.what());
+    delete stmt;
+  } catch (const sql::SQLException& e) {
+    ERROR("DB query '%s' failed: '%s'\n", qstr.c_str(), e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
@@ -592,8 +630,7 @@ EXEC_ACTION_START(SCMyGetFileFromDBAction) {
 
 CONST_ACTION_2P(SCMyPutFileToDBAction, ',', true);
 EXEC_ACTION_START(SCMyPutFileToDBAction) {
-  mysqlpp::Connection* conn = 
-    getMyDSMSessionConnection(sc_sess);
+  sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
     return false;
   string qstr = replaceQueryParams(par1, sc_sess, event_params);
@@ -629,25 +666,29 @@ EXEC_ACTION_START(SCMyPutFileToDBAction) {
       return false;
     }
 
-    mysqlpp::Query query = conn->query();
-    query << qstr.substr(0, fpos) <<  
-      mysqlpp::escape << file_data << qstr.substr(fpos+8);
+    sql::mysql::MySQL_Connection* mysql_conn =
+      dynamic_cast<sql::mysql::MySQL_Connection*>(conn);
+    string query = qstr.substr(0, fpos) +
+      mysql_conn->escapeString(sql::SQLString(file_data)) +
+      qstr.substr(fpos+8);
 
-    mysqlpp::SimpleResult res = query.execute();
+    sql::Statement* stmt = conn->createStatement();
+    sql::ResultSet* res = stmt->executeQuery(query);
     if (res) {
       sc_sess->CLR_ERRNO;
-      sc_sess->var["db.rows"] = int2str((int)res.rows());
-      sc_sess->var["db.info"] = res.info();
-      sc_sess->var["db.insert_id"] = int2str((int)res.insert_id());
+      sc_sess->var["db.rows"] = int2str((int)res->rowsCount());
+      sc_sess->var["db.info"] = "";
+      sc_sess->var["db.insert_id"] = int2str((unsigned int)getInsertId(conn));
+      delete res;
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
-      sc_sess->SET_STRERROR(res.info());
-      sc_sess->var["db.info"] = res.info();
+      sc_sess->SET_STRERROR("query did not have a result");
+      sc_sess->var["db.info"] = "";
     }
 
-  } catch (const mysqlpp::Exception& e) {
-    ERROR("DB query '%s' failed: '%s'\n", 
-	  par1.c_str(), e.what());
+    delete stmt;
+  } catch (const sql::SQLException& e) {
+    ERROR("DB query '%s' failed: '%s'\n", par1.c_str(), e.what());
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
@@ -656,13 +697,11 @@ EXEC_ACTION_START(SCMyPutFileToDBAction) {
 
 CONST_ACTION_2P(SCMyEscapeAction, '=', false);
 EXEC_ACTION_START(SCMyEscapeAction) {
-  mysqlpp::Connection* conn =
-    getMyDSMSessionConnection(sc_sess);
+  sql::mysql::MySQL_Connection* mysql_conn =
+    dynamic_cast<sql::mysql::MySQL_Connection*>(getMyDSMSessionConnection(sc_sess));
 
-  if (NULL == conn)
+  if (NULL == mysql_conn)
     return false;
-
-  mysqlpp::Query query = conn->query();
 
   string val = resolveVars(par2, sess, sc_sess, event_params);
 
@@ -670,8 +709,7 @@ EXEC_ACTION_START(SCMyEscapeAction) {
   if (dstvar.size() && dstvar[0] == '$') {
     dstvar = dstvar.substr(1);
   }
-  string res;
-  query.escape_string(&res, val.c_str(), val.length());
+  string res = mysql_conn->escapeString(sql::SQLString(val));
   sc_sess->var[dstvar] = res;
   DBG("escaped: $%s = escape(%s) = %s\n",
       dstvar.c_str(), val.c_str(), res.c_str());
