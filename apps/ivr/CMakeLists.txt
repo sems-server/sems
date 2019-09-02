@@ -3,7 +3,7 @@ FILE (GLOB ivr_SRCS "*.cpp")
 IF(FLITE_FOUND)
 	INCLUDE_DIRECTORIES(${FLITE_INCLUDE_DIR}/flite)
 	ADD_DEFINITIONS(-DIVR_WITH_TTS)
-	SET(sems_module_libs flite_cmu_us_kal flite_usenglish flite_cmulex flite)
+	SET(sems_module_libs flite_cmu_us_kal flite_usenglish flite_cmulex ${FLITE_LIBRARIES})
 ENDIF(FLITE_FOUND)
 
 INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})

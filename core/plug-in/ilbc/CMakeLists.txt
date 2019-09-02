@@ -4,7 +4,7 @@ set (ilbc_SRCS
 
 SET(sems_module_name ilbc)
 IF(ILBC_FOUND)
-SET(sems_module_libs ilbc)
+SET(sems_module_libs ${ILBC_LIBRARIES})
 ELSE(ILBC_FOUND)
 ADD_SUBDIRECTORY (iLBC_rfc3951)
 INCLUDE_DIRECTORIES (iLBC_rfc3951)

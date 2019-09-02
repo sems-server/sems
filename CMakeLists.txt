@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 IF(COMMAND cmake_policy)
 	# Don't do automatic escaping of variables
@@ -50,6 +50,7 @@ OPTION(SEMS_USE_ZRTP          "Build with ZRTP" OFF)
 OPTION(SEMS_USE_MP3           "Build with MP3" OFF)
 OPTION(SEMS_USE_ILBC          "Build with iLBC library (fallback to bundled)" ON)
 OPTION(SEMS_USE_G729          "Build with bcg729 library" OFF)
+OPTION(SEMS_USE_CODEC2        "Build with codec2 library" OFF)
 OPTION(SEMS_USE_TTS           "Build with Text-to-speech support (requires Flite)" OFF)
 OPTION(SEMS_USE_OPENSSL       "Build with OpenSSL" OFF)
 OPTION(SEMS_USE_MONITORING    "Build with monitoring support" OFF)
@@ -86,6 +87,11 @@ IF (NOT SEMS_EXEC_PREFIX)
 	SET(SEMS_EXEC_PREFIX "/usr/local")
 ENDIF (NOT SEMS_EXEC_PREFIX)
 MESSAGE(STATUS "SEMS exec prefix was set to: ${SEMS_EXEC_PREFIX}")
+
+IF (NOT SEMS_RUNDIR_PREFIX)
+	SET(SEMS_RUNDIR_PREFIX "/var/local/run")
+ENDIF (NOT SEMS_RUNDIR_PREFIX)
+MESSAGE(STATUS "SEMS run dir prefix was set to: ${SEMS_RUNDIR_PREFIX}")
 
 IF (NOT SEMS_LIBDIR)
 	SET(SEMS_LIBDIR "lib")
@@ -175,6 +181,13 @@ IF(SEMS_USE_G729)
 ELSE(SEMS_USE_G729)
 	MESSAGE(STATUS "Using bcg729 library: NO (default)")
 ENDIF(SEMS_USE_G729)
+
+IF(SEMS_USE_CODEC2)
+	FIND_PACKAGE(Codec2)
+	MESSAGE(STATUS "Using codec2 library: YES")
+ELSE(SEMS_USE_CODEC2)
+	MESSAGE(STATUS "Using codec2 library: NO (default)")
+ENDIF(SEMS_USE_CODEC2)
 
 # build in support for monitoring?
 IF(SEMS_USE_MONITORING)
@@ -290,9 +303,9 @@ ENDIF(HIREDIS_FOUND)
 
 IF(NOT ${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
 	# Check for res_search in -lresolv
-	include(${CMAKE_SOURCE_DIR}/cmake/CheckSymbolExists.cmake)
+	include(CheckSymbolExists)
 	SET(CMAKE_REQUIRED_LIBRARIES resolv)
-	CHECK_SYMBOL_EXISTS(res_search HAVE_RES_SEARCH netinet/in.h resolv.h)
+	CHECK_SYMBOL_EXISTS(res_search "netinet/in.h;resolv.h" HAVE_RES_SEARCH)
 	MESSAGE(STATUS "Have res_search: ${HAVE_RES_SEARCH}")
 ENDIF(NOT ${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
 
@@ -303,8 +316,6 @@ IF(${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
 	INCLUDE_DIRECTORIES (/usr/local/include)
 	LINK_DIRECTORIES(/usr/local/lib)
 ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
-
-CONFIGURE_FILE( ${SEMS_SOURCE_DIR}/core/sems.h.cmake ${SEMS_SOURCE_DIR}/core/sems.h )
 
 IF(CMAKE_COMPILER_IS_GNUCC)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_THREAD_SAFE -D_REENTRANT -Wall -O2")

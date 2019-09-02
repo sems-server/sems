@@ -1,4 +1,5 @@
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/template.rules.txt)
 
 FILE (GLOB sems_core_SRCS "Am*.cpp" LowcFE.cpp SipCtrlInterface.cpp crc4.cpp jsonArg.cpp jsonxx.cpp log.cpp md5.cpp)
 FILE (GLOB sems_sip_SRCS "sip/*.cpp")
@@ -33,13 +34,13 @@ FOREACH (EXE_TARGET sems sems_tests)
 	ENDIF(SPANDSP_FOUND)
 
 	IF(LIBSAMPLERATE_FOUND)
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} samplerate)
+		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} ${LIBSAMPLERATE_LIBRARIES})
 	ELSE(LIBSAMPLERATE_FOUND)
 		TARGET_SOURCES (${EXE_TARGET} PRIVATE "resample/resample.cpp")
 	ENDIF(LIBSAMPLERATE_FOUND)
 
 	IF(LIBZRTP_FOUND)
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} zrtp)
+		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} ${LIBZRTP_LIBRARIES})
 	ENDIF(LIBZRTP_FOUND)
 
 ENDFOREACH (EXE_TARGET)
@@ -51,7 +52,11 @@ add_test(NAME Tests COMMAND sems_tests)
 
 # Create config-file from template
 CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf.sample ${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf)
-CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/sems.conf.cmake ${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
+CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/sems.conf.sample ${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
+
+# We use custom regen instead of *.conf templates to use it for both traditional make and CMake
+SEMS_GEN_TEMPLATE(${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
+SEMS_GEN_TEMPLATE(${CMAKE_SOURCE_DIR}/core/sems.h)
 
 # Installation of main SEMS executable
 INSTALL(TARGETS sems RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
