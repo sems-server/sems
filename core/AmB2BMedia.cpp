@@ -1006,7 +1006,10 @@ void AmB2BMedia::updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &
 
   AudioStreamIterator astream = audio.begin();
   RelayStreamIterator rstream = relay_streams.begin();
+  int local_media_count = std::distance(local_sdp.media.begin(),
+					local_sdp.media.end());
   for (vector<SdpMedia>::const_iterator m = remote_sdp.media.begin(); m != remote_sdp.media.end(); ++m) {
+    if (local_media_count == 0) break;
     const string& connection_address = (m->conn.address.empty() ? remote_sdp.conn.address : m->conn.address);
 
     if (m->type == MT_AUDIO) {
@@ -1039,6 +1042,8 @@ void AmB2BMedia::updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &
       }
       ++rstream;
     }
+
+    local_media_count--;
   }
 
   updateAudioStreams();
