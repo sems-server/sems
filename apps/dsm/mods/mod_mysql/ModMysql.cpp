@@ -135,12 +135,17 @@ sql::ResultSet* getMyDSMQueryResult(DSMSession* sc_sess) {
     return NULL;
   }
 
-  if (NULL == ao || NULL == (res = dynamic_cast<sql::ResultSet*>(ao))) {
-    sc_sess->SET_STRERROR("Result object has wrong type");
-    sc_sess->SET_ERRNO(DSM_ERRNO_MY_NORESULT);
-    return NULL;
+  if (NULL != ao) {
+    DSMMyStoreQueryResult* dsm_res =
+      dynamic_cast<DSMMyStoreQueryResult*>(ao);
+    if (NULL != dsm_res) {
+      res = dsm_res->res;
+      return res;
+    }
   }
-  return res;
+  sc_sess->SET_STRERROR("No result object");
+  sc_sess->SET_ERRNO(DSM_ERRNO_MY_NORESULT);
+  return NULL;
 }
 
 string replaceQueryParams(const string& q, DSMSession* sc_sess, 
@@ -256,7 +261,7 @@ EXEC_ACTION_START(SCMyDisconnectAction) {
     return false;
 
   try {
-    if (!conn->isClosed()) conn->close();
+    if (conn->isValid() && !conn->isClosed()) conn->close();
     // connection object might be reused - but its safer to create a new one
     sc_sess->avar[MY_AKEY_CONNECTION] = AmArg();
     sc_sess->CLR_ERRNO;
@@ -298,23 +303,25 @@ EXEC_ACTION_START(SCMyExecuteAction) {
     return false;
   string qstr = replaceQueryParams(arg, sc_sess, event_params);
 
+  DBG("mysql.execute '%s'\n", qstr.c_str());
   try {
     sql::Statement* stmt = conn->createStatement();
-    sql::ResultSet* res = stmt->executeQuery(qstr);
-    if (res) {
-      sc_sess->CLR_ERRNO;
-      sc_sess->var["db.rows"] = int2str((int)res->rowsCount());
+    bool res = stmt->execute(qstr);
+    sc_sess->CLR_ERRNO;
+    if (!res) {
+      // Statement was an INSERT, UPDATE, or DELETE
+      sc_sess->var["db.rows"] = std::to_string(stmt->getUpdateCount());
       sc_sess->var["db.info"] = "";
-      sc_sess->var["db.insert_id"] = int2str((unsigned int)getInsertId(conn));
+      sc_sess->var["db.insert_id"] = std::to_string(getInsertId(conn));
     } else {
-      sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
-      sc_sess->SET_STRERROR("query did not have a result");
+      // Statement was a SELECT
+      sc_sess->var["db.rows"] = "0";
       sc_sess->var["db.info"] = "";
+      sc_sess->var["db.insert_id"] = "0";
     }
     delete stmt;
-    delete res;
   } catch (const sql::SQLException& e) {
-    ERROR("DB query '%s' failed: '%s'\n", qstr.c_str(), e.what());
+    ERROR("mysql.execute failed\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
@@ -327,6 +334,7 @@ EXEC_ACTION_START(SCMyQueryAction) {
     return false;
   string qstr = replaceQueryParams(arg, sc_sess, event_params);
 
+  DBG("mysql.query '%s'\n", qstr.c_str());
   try {
     DSMMyStoreQueryResult* m_res = new DSMMyStoreQueryResult();
     sql::Statement* stmt = conn->createStatement();
@@ -376,6 +384,7 @@ EXEC_ACTION_START(SCMyQueryGetResultAction) {
       }
       size_t num_rows = res->rowsCount();
       if (num_rows <= rowindex_i) {
+	ERROR("row index '%u' out of result rows bounds\n", rowindex_i);
 	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
 	sc_sess->SET_STRERROR("row index out of result rows bounds");
 	delete stmt;
@@ -386,13 +395,13 @@ EXEC_ACTION_START(SCMyQueryGetResultAction) {
       // get all columns
       sql::ResultSetMetaData* meta = res->getMetaData();
       for (size_t i = 0; i <= rowindex_i; i++) res->next();
-      for (size_t i = 0; i < meta->getColumnCount(); i++) {
+      for (size_t i = 1; i <= meta->getColumnCount(); i++) {
 	sc_sess->var[meta->getColumnLabel(i)] =
 	  (res->getString(i)).asStdString();
       }
 
       sc_sess->CLR_ERRNO;    
-      sc_sess->var["db.rows"] = int2str((int)num_rows);
+      sc_sess->var["db.rows"] = int2str((unsigned int)num_rows);
       delete res;
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
@@ -409,10 +418,13 @@ EXEC_ACTION_START(SCMyQueryGetResultAction) {
 CONST_ACTION_2P(SCMyGetResultAction, ',', true);
 EXEC_ACTION_START(SCMyGetResultAction) {
   sql::ResultSet* res = getMyDSMQueryResult(sc_sess);
-  if (NULL == res)
+  if (NULL == res) {
+    DBG("mysql.getResult is NULL\n");
     return false;
+  }
 
   if (!res) {
+    ERROR("no result from query\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_NORESULT);
     sc_sess->SET_STRERROR("No result from query");
     return false;
@@ -422,6 +434,7 @@ EXEC_ACTION_START(SCMyGetResultAction) {
   string rowindex = resolveVars(par1, sess, sc_sess, event_params);
   string colname  = resolveVars(par2, sess, sc_sess, event_params);
 
+  DBG("mysql.getResult '%s' '%s'\n", rowindex.c_str(), colname.c_str());
   if (rowindex.length()) {
     if (str2i(rowindex, rowindex_i)) {
       ERROR("row index '%s' not understood\n", rowindex.c_str());
@@ -432,11 +445,14 @@ EXEC_ACTION_START(SCMyGetResultAction) {
   }
 
   if (res->rowsCount() <= rowindex_i) {
+    ERROR("row index '%u' out of result rows bounds\n", rowindex_i);
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
     sc_sess->SET_STRERROR("row index out of result rows bounds");
     return false;
   }
+
   DBG("rowindex_i = %d\n", rowindex_i);
+  res->beforeFirst();
   if (colname.length()) {
     sql::SQLString colLabel = sql::SQLString(colname);
     // get only this column
@@ -452,7 +468,7 @@ EXEC_ACTION_START(SCMyGetResultAction) {
     // get all columns
     sql::ResultSetMetaData* meta = res->getMetaData();
     for (size_t i = 0; i <= rowindex_i; i++) res->next();
-    for (size_t i = 0; i < meta->getColumnCount(); i++) {
+    for (size_t i = 1; i <= meta->getColumnCount(); i++) {
       sc_sess->var[(meta->getColumnLabel(i)).asStdString()] =
 	(res->getString(i)).asStdString();
     }
@@ -509,7 +525,6 @@ bool playDBAudio(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType e
 
   string qstr = replaceQueryParams(par1, sc_sess, event_params);
 
-  INFO("playDBAudio query '%s'\n", qstr.c_str());
   try {
     sql::Statement* stmt = conn->createStatement();
     sql::ResultSet* res = stmt->executeQuery(qstr);
@@ -531,7 +546,7 @@ bool playDBAudio(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType e
 	sc_sess->SET_STRERROR("tmpfile() failed: "+string(strerror(errno)));
 	EXEC_ACTION_STOP;
       }
-      string s = res->getString(0);
+      string s = res->getString(1);
       fwrite(s.data(), 1, s.length(), t_file);
       rewind(t_file);
       delete res;
@@ -600,6 +615,13 @@ EXEC_ACTION_START(SCMyGetFileFromDBAction) {
 	delete res;
 	return false;
       }
+      if (res->getMetaData()->getColumnCount() == 0) {
+	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NODATA);
+	sc_sess->SET_STRERROR("result does not have data");
+	delete stmt;
+	delete res;
+	return false;
+      }
       FILE *t_file = fopen(fname.c_str(), "wb");
       if (NULL == t_file) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
@@ -609,7 +631,7 @@ EXEC_ACTION_START(SCMyGetFileFromDBAction) {
 	return false;
       }
 
-      string s = res->getString(0);
+      string s = res->getString(1);
       fwrite(s.data(), 1, s.length(), t_file);
       fclose(t_file);
       delete res;
@@ -633,10 +655,11 @@ EXEC_ACTION_START(SCMyPutFileToDBAction) {
   sql::Connection* conn = getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
     return false;
-  string qstr = replaceQueryParams(par1, sc_sess, event_params);
 
+  string qstr = replaceQueryParams(par1, sc_sess, event_params);
   string fname = resolveVars(par2, sess, sc_sess, event_params);
 
+  DBG("mysql.putFileToDB '%s' '%s'\n", qstr.c_str(), fname.c_str());
   size_t fpos = qstr.find("__FILE__");
   if (fpos == string::npos) {
     ERROR("missing __FILE__ in query string '%s'\n", 
@@ -668,28 +691,28 @@ EXEC_ACTION_START(SCMyPutFileToDBAction) {
 
     sql::mysql::MySQL_Connection* mysql_conn =
       dynamic_cast<sql::mysql::MySQL_Connection*>(conn);
-    string query = qstr.substr(0, fpos) +
-      mysql_conn->escapeString(sql::SQLString(file_data)) +
-      qstr.substr(fpos+8);
+    qstr.replace(fpos, 8,
+		 mysql_conn->escapeString(sql::SQLString(file_data)));
 
     sql::Statement* stmt = conn->createStatement();
-    sql::ResultSet* res = stmt->executeQuery(query);
-    if (res) {
+    bool res = stmt->execute(qstr);
+    if (!res) {
       sc_sess->CLR_ERRNO;
-      sc_sess->var["db.rows"] = int2str((int)res->rowsCount());
+      sc_sess->var["db.rows"] = "0";
       sc_sess->var["db.info"] = "";
-      sc_sess->var["db.insert_id"] = int2str((unsigned int)getInsertId(conn));
-      delete res;
+      sc_sess->var["db.insert_id"] = std::to_string(getInsertId(conn));
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
-      sc_sess->SET_STRERROR("query did not have a result");
+      sc_sess->SET_STRERROR("mysql.putFileToDB query was a SELECT");
       sc_sess->var["db.info"] = "";
     }
 
     delete stmt;
   } catch (const sql::SQLException& e) {
-    ERROR("DB query '%s' failed: '%s'\n", par1.c_str(), e.what());
-    sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
+    ERROR("DB execute '%s' failed: '%s' '%s' '%d'\n",
+	  replaceQueryParams(par1, sc_sess, event_params).c_str(),
+	  e.what(), e.getSQLState().c_str(), e.getErrorCode());
+    sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
   }
