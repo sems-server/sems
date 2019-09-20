@@ -943,7 +943,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 	  (answer_media.payloads[0].encoding_name == "telephone-event"))
 	 ){
 	// no compatible media found
-	throw Exception(488,"no compatible payload");
+	throw Exception(488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
       }
       audio_1st_stream = false;
     }
@@ -970,6 +970,9 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 
     media_index++;
   }
+
+  if (audio_1st_stream)
+    throw Exception(488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
 
   return true;
 }

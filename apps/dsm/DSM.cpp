@@ -691,7 +691,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name,
   if (app_name == MOD_NAME) {
     if (InboundStartDiag.empty()) {
       ERROR("no inbound calls allowed\n");
-      throw AmSession::Exception(488, "Not Acceptable Here");
+      throw AmSession::Exception(488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
     }
     if (InboundStartDiag=="$(mon_select)") {
       runMonitorAppSelect(req, start_diag, vars);
@@ -739,7 +739,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name,
   if (app_name == MOD_NAME) {
     if (OutboundStartDiag.empty()) {
       ERROR("no outbound calls allowed\n");
-      throw AmSession::Exception(488, "Not Acceptable Here");
+      throw AmSession::Exception(488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
     }
   } else {
     start_diag = app_name;
