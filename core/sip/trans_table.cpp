@@ -547,7 +547,6 @@ void compute_branch(char* branch/*[8]*/, const cstring& callid, const cstring& c
 {
     unsigned int hl=0;
     unsigned int hh=0;
-    timeval      tv;
 
     hh = __branch_cnt.inc();
     hl = __branch_cnt.inc();
