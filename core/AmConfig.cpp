@@ -763,7 +763,6 @@ int AmConfig::insert_SIP_interface_mapping(const SIP_interface& intf) {
 
 static int readSIPInterface(AmConfigReader& cfg, const string& i_name)
 {
-  int ret=0;
   AmConfig::SIP_interface intf;
 
   string suffix;
