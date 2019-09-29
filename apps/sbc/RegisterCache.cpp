@@ -1029,12 +1029,10 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
     return true;
   }
 
-  bool star_contact=false;
   unsigned int contact_expires=0;
   AmUriParser* contact=NULL;
   if (req.contact == "*") {
     // unregister everything
-    star_contact = true;
 
     if(parseExpires(ctx,req, logger) < 0) {
       return true;
