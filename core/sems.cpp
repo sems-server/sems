@@ -155,7 +155,7 @@ static void set_default_interface(const string& iface_name)
   else {
     idx = if_it->second;
   }
-  AmConfig::SIP_Ifs[if_it->second].LocalIP = iface_name;
+  AmConfig::SIP_Ifs[idx].LocalIP = iface_name;
 
   if_it = AmConfig::RTP_If_names.find("default");
   if(if_it == AmConfig::RTP_If_names.end()) {
@@ -168,7 +168,7 @@ static void set_default_interface(const string& iface_name)
   else {
     idx = if_it->second;
   }
-  AmConfig::RTP_Ifs[if_it->second].LocalIP = iface_name;
+  AmConfig::RTP_Ifs[idx].LocalIP = iface_name;
 }
 
 /* Note: The function should not use logging because it is called before
