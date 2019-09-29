@@ -434,8 +434,6 @@ void MuxStreamQueue::close(const string& _remote_ip, unsigned short _remote_port
   }
   unsigned char stream_id = mux_id_it->second;
 
-  MuxStreamState& stream_state = streamstates[stream_id];
-
   // flush remaining frames - might be including frames of other streams, but this
   // destination might not be periodically handled in the future if this was the only
   // stream to this destination
@@ -459,9 +457,7 @@ void decompress(const rtp_mux_hdr_compressed_t* rtp_mux_hdr_compressed, unsigned
   rtp_hdr->m = rtp_mux_hdr_compressed->m;
   // use 3 lsb bits sent in compressed
   u_int16 old_rtp_hdr_seq = ntohs(old_rtp_hdr->seq);
-  u_int32 old_rtp_hdr_ts = ntohl(old_rtp_hdr->ts);
   u_int16 rtp_hdr_seq = (ntohs(rtp_hdr->seq) & 0xFFF8/*(~ (u_int16)7)*/) + rtp_mux_hdr_compressed->sn_lsb;
-  bool wrap = false;
   // new Seqno smaller?
   if (rtp_hdr_seq < old_rtp_hdr_seq) {
       // next 3-bit
