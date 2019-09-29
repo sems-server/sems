@@ -2570,7 +2570,6 @@ int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
     
     sockaddr_storage from;
     socklen_t    len=sizeof(from);
-    trsp_socket* tsock=NULL;
     
     if (connect(temp_sock, (sockaddr*)remote_ip, 
 		remote_ip->ss_family == AF_INET ? 
