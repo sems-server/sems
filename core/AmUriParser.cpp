@@ -49,21 +49,17 @@ bool AmUriParser::isEqual(const AmUriParser& c) const {
 static inline int skip_name(const string& s, unsigned int pos)
 {
   size_t i;
-  int last_wsp, quoted = 0;
+  int quoted = 0;
 	
   for(i = pos; i < s.length(); i++) {
     char c = s[i];
     if (!quoted) {
-      if ((c == ' ') || (c == '\t')) {
-	last_wsp = i;
-      } else {
-	if (c == '<') {
-	  return i;
-	}
+      if (c == '<') {
+	return i;
+      }
 
-	if (c == '\"') {
-	  quoted = 1;
-	}
+      if (c == '\"') {
+	quoted = 1;
       }
     } else {
       if ((c == '\"') && (s[i-1] != '\\')) quoted = 0;
