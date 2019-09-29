@@ -81,14 +81,6 @@ typedef struct {
 #endif
 } rtp_mux_hdr_compressed_t;
 
-static crc_t calc_crc4(u_int32 ts);
-static u_int16 get_rtp_hdr_len(const rtp_hdr_t* hdr);
-static bool rtp_hdr_changed(const rtp_hdr_t* hdr1, const rtp_hdr_t* hdr2);
-
-static void decompress(const rtp_mux_hdr_compressed_t* rtp_mux_hdr_compressed, unsigned int ts_increment,
-		       const rtp_hdr_t* old_rtp_hdr, unsigned char* rtp_restored_hdr);
-
-
 using std::string;
 
 struct MuxStreamState {
