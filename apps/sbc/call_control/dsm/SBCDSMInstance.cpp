@@ -228,7 +228,7 @@ void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChange
   case CallLeg::StatusChangeCause::RtpTimeout: event_params["reason"] = "RtpTimeout"; break;
   case CallLeg::StatusChangeCause::SessionTimeout: event_params["reason"] = "SessionTimeout"; break;
   case CallLeg::StatusChangeCause::InternalError: event_params["reason"] = "InternalError"; break;
-  defaut: break;
+  default: break;
   };
 
   engine.runEvent(call, this, DSMCondition::LegStateChange, &event_params);
