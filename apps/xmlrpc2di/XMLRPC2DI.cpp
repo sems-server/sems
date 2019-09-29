@@ -83,10 +83,8 @@ int XMLRPC2DI::load() {
   DebugServerParams = cfg.getParameter("debug_server_params", "no") == "yes";
 
   XmlRpcServer* s;
-  bool multi_threaded = false;
   unsigned int threads = 0;
   if (multithreaded == "yes") {
-    multi_threaded = true;
     if (!cfg.getParameter("threads").length())
       threads = 5;
     else 
