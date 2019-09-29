@@ -138,11 +138,9 @@ void DSMCall::onOutgoingInvite(const string& headers) {
   AmSipRequest req;
   req.hdrs = headers;
 
-  bool run_session_invite = engine.onInvite(req, this);
   if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
     DBG("session choose to not connect media\n");
     // TODO: set flag to not connect RTP on session start
-    run_session_invite = false;     // don't accept audio 
   }    
   
   if (checkVar(DSM_ACCEPT_EARLY_SESSION, DSM_ACCEPT_EARLY_SESSION_FALSE)) {
