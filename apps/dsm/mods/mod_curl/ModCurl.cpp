@@ -405,7 +405,7 @@ bool curl_run_post(DSMSession* sc_sess, const string& par1, const string& par2,
   }
   curl_formfree(post);
   curl_easy_cleanup(m_curl_handle);
-  return false;
+  return res;
 }
 
 CONST_ACTION_2P(SCJCurlPOSTAction, ',', true);
