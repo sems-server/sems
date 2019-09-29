@@ -582,7 +582,7 @@ void tcp_server_worker::run()
   }
 
   /* Start the event loop. */
-  int ret = event_base_dispatch(evbase);
+  (void)event_base_dispatch(evbase);
 
   // clean-up fake fds/event
   if (NULL != ev_default)
