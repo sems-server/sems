@@ -1368,28 +1368,6 @@ static char* parse_until(char* s, char* end, char c)
   return line;
 }
 
-static size_t len_till_eol(char* s, char* end)
-{
-  size_t res=0;
-  char* line=s;
-  while(line<end && *line && *line != '\r' && *line != '\n'){
-    line++;
-    res++;
-  }
-  return res;
-}
-
-static size_t len_till_char_or_eol(char* s, char* end, char c)
-{
-  size_t res=0;
-  char* line=s;
-  while(line<end && *line && *line !=  c && *line != '\r' && *line != '\n'){
-    line++;
-    res++;
-  }
-  return res;
-}
-
 static char* is_eql_next(char* s)
 {
   char* current_line=s;
