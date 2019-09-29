@@ -999,11 +999,9 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
     return -1;
   }
 
-  bool set_on_hold = false;
   if (!remote_sdp.media.empty()) {
     vector<SdpAttribute>::const_iterator pos =
       std::find(remote_sdp.media[0].attributes.begin(), remote_sdp.media[0].attributes.end(), SdpAttribute("sendonly"));
-    set_on_hold = pos != remote_sdp.media[0].attributes.end();
   }
 
   lockAudio();
