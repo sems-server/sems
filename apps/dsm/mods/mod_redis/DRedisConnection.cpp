@@ -89,7 +89,7 @@ int DRedisConnection::handle_redis_reply(redisReply *reply, const char* _cmd) {
   case REDIS_REPLY_STRING:
     if (reply->len>=0) {
       if (cfg.full_logging) {
-	DBG("REDIS %s: str: %.*s\n", _cmd, reply->len, reply->str); 
+	DBG("REDIS %s: str: %.*s\n", _cmd, (int)reply->len, reply->str);
       }
     } break;
 
@@ -105,7 +105,7 @@ int DRedisConnection::handle_redis_reply(redisReply *reply, const char* _cmd) {
     for (size_t i=0;i<reply->elements;i++) {
       switch(reply->element[i]->type) {
       case REDIS_REPLY_ERROR: ERROR("REDIS %s ERROR: %.*s\n",
-				    _cmd, reply->element[i]->len,
+				    _cmd, (int)reply->element[i]->len,
 				    reply->element[i]->str);
 	return DB_E_WRITE;
 
@@ -129,7 +129,7 @@ int DRedisConnection::handle_redis_reply(redisReply *reply, const char* _cmd) {
 	if (cfg.full_logging) {
 	  if (reply->element[i]->len >= 0) {
 	    DBG("REDIS %s: %.*s\n", _cmd,
-		reply->element[i]->len, reply->element[i]->str); 
+		(int)reply->element[i]->len, reply->element[i]->str);
 	  }
 	}
 	break;
