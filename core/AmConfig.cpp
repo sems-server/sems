@@ -785,7 +785,7 @@ static int readSIPInterface(AmConfigReader& cfg, const string& i_name)
       ERROR("sip_port%s: invalid sip port specified (%s)\n",
 	    suffix.c_str(),
 	    sip_port_str.c_str());
-      ret = -1;
+      return -1;
     }
   }
 
