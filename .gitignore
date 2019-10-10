@@ -30,5 +30,6 @@ getarch
 getos
 semantic.cache
 sems
+sems_tests
 sems-logfile-callextract
 sems-stats
