@@ -1,13 +1,14 @@
 set (diameter_client_SRCS
 DiameterClient.cpp
 ServerConnection.cpp
+lib_dbase/avp.c
+lib_dbase/diameter_msg.c
+lib_dbase/tcp_comm.c
 )
 
-ADD_SUBDIRECTORY (lib_dbase)
 INCLUDE_DIRECTORIES (lib_dbase)
 
 SET(sems_module_name diameter_client)
-SET(sems_module_libs libdbase)
 
 IF(OPENSSL_FOUND)
 	ADD_DEFINITIONS(-DWITH_OPENSSL)
