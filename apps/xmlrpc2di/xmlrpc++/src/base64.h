@@ -9,6 +9,10 @@
 #if !defined(__BASE64_H_INCLUDED__)
 #define __BASE64_H_INCLUDED__ 1
 
+#if defined __APPLE__ && defined __clang__
+#include <ios>
+#endif // __APPLE__ && __clang__
+
 #ifndef MAKEDEPEND
 # include <iterator>
 #endif
