@@ -253,6 +253,14 @@ ELSE(MYSQLPP_FOUND)
 	MESSAGE(STATUS "Using MySQL++: NO")
 ENDIF(MYSQLPP_FOUND)
 
+# Let's try to find MySQL-connector-C++ development files
+FIND_PACKAGE(MySQLcppconn)
+IF(MYSQLCPPCONN_FOUND)
+	MESSAGE(STATUS "Using MySQL-connector-C++: YES")
+ELSE(MYSQLCPPCONN_FOUND)
+	MESSAGE(STATUS "Using MySQL-connector-C++: NO")
+ENDIF(MYSQLCPPCONN_FOUND)
+
 # Let's try to find Flite library and header files
 IF(SEMS_USE_TTS)
 	FIND_PACKAGE(Flite REQUIRED)
