@@ -26,8 +26,32 @@ matrix:
     dist: bionic
     compiler: clang
     env: OPENSSL_ROOT_DIR=/usr SEMS_USE_TTS=yes
+  - os: osx
+    osx_image: xcode9.4
+    compiler: clang
+    env: OPENSSL_ROOT_DIR=/usr/local/opt/openssl SEMS_USE_TTS=no
+  - os: osx
+    osx_image: xcode9.4
+    compiler: gcc
+    env: OPENSSL_ROOT_DIR=/usr/local/opt/openssl SEMS_USE_TTS=no
 
 before_install:
+        - |
+          if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+                brew update
+
+                # bcg729, flite, ilbc (not tested), mISDN, rtmp are missing
+                brew install codec2 hiredis lame libevent libgsm mpg123 mysql++ mysql-connector-c mysql-connector-c++@1.1 openssl opus libsamplerate spandsp speex sip
+                brew link --force mysql-connector-c++@1.1
+
+                # Manually install bcg729
+                wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
+                tar xfv bcg729-1.0.4.tar.gz
+                # Fix for glibtoolize
+                sed -i -e "s,/opt/local/bin/glibtoolize,/usr/local/bin/glibtoolize,g" bcg729-1.0.4/autogen.sh
+                pushd bcg729-1.0.4 && ./autogen.sh && ./configure && make && sudo make install && popd
+          fi
+
         - |
           if [ "$TRAVIS_OS_NAME" == "linux" ]; then
                 sudo apt-get -qq update
