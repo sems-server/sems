@@ -28,20 +28,25 @@ matrix:
     env: OPENSSL_ROOT_DIR=/usr SEMS_USE_TTS=yes
 
 before_install:
-        - sudo apt-get -qq update
-          # bcg729, codec2 (available since Xenial), ilbc, mISDN are missing
-        - sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
-          # Manually install codec2
-        - wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
-        - tar -xvf codec2-0.7.tar.xz
-        - pushd codec2-0.7 && mkdir build && pushd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ../ && make && sudo make install && popd && popd
-          # Manually install bcg729
-        - wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
-        - tar xfv bcg729-1.0.4.tar.gz
-        - pushd bcg729-1.0.4 && ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && popd
-          # Fix for a very old GCC in Trusty and Xenial
-        - sed -i -e "s,\-Werror=stringop-truncation,,g" CMakeLists.txt
+        - |
+          if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+                sudo apt-get -qq update
+                # bcg729, codec2 (available since Xenial), ilbc, mISDN are missing
+                sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
 
+                # Manually install codec2
+                wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
+                tar -xvf codec2-0.7.tar.xz
+                pushd codec2-0.7 && mkdir build && pushd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ../ && make && sudo make install && popd && popd
+
+                # Manually install bcg729
+                wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
+                tar xfv bcg729-1.0.4.tar.gz
+                pushd bcg729-1.0.4 && ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && popd
+
+                # Fix for a very old GCC in Trusty and Xenial
+                sed -i -e "s,\-Werror=stringop-truncation,,g" CMakeLists.txt
+          fi
 
 before_script:
         - mkdir build
