@@ -12,7 +12,8 @@ SET(sems_module_name diameter_client)
 
 IF(OPENSSL_FOUND)
 	ADD_DEFINITIONS(-DWITH_OPENSSL)
-	SET(sems_module_libs ${sems_module_libs} ssl crypto)
+	INCLUDE_DIRECTORIES(${OPENSSL_INCLUDE_DIR})
+	SET(sems_module_libs ${sems_module_libs} ${OPENSSL_LIBRARIES})
 ENDIF(OPENSSL_FOUND)
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

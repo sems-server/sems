@@ -10,35 +10,72 @@ sudo: required
 
 matrix:
   include:
-  - dist: xenial
+  - os: linux
+    dist: xenial
     compiler: gcc
-  - dist: xenial
+    env: OPENSSL_ROOT_DIR=/usr SEMS_USE_TTS=yes
+  - os: linux
+    dist: xenial
     compiler: clang
-  - dist: bionic
+    env: OPENSSL_ROOT_DIR=/usr SEMS_USE_TTS=yes
+  - os: linux
+    dist: bionic
     compiler: gcc
-  - dist: bionic
+    env: OPENSSL_ROOT_DIR=/usr SEMS_USE_TTS=yes
+  - os: linux
+    dist: bionic
     compiler: clang
+    env: OPENSSL_ROOT_DIR=/usr SEMS_USE_TTS=yes
+  - os: osx
+    osx_image: xcode9.4
+    compiler: clang
+    env: OPENSSL_ROOT_DIR=/usr/local/opt/openssl SEMS_USE_TTS=no
+  - os: osx
+    osx_image: xcode9.4
+    compiler: gcc
+    env: OPENSSL_ROOT_DIR=/usr/local/opt/openssl SEMS_USE_TTS=no
 
 before_install:
-        - sudo apt-get -qq update
-          # bcg729, codec2 (available since Xenial), ilbc, mISDN are missing
-        - sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
-          # Manually install codec2
-        - wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
-        - tar -xvf codec2-0.7.tar.xz
-        - pushd codec2-0.7 && mkdir build && pushd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ../ && make && sudo make install && popd && popd
-          # Manually install bcg729
-        - wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
-        - tar xfv bcg729-1.0.4.tar.gz
-        - pushd bcg729-1.0.4 && ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && popd
-          # Fix for a very old GCC in Trusty and Xenial
-        - sed -i -e "s,\-Werror=stringop-truncation,,g" CMakeLists.txt
+        - |
+          if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+                brew update
 
+                # bcg729, flite, ilbc (not tested), mISDN, rtmp are missing
+                brew install codec2 hiredis lame libevent libgsm mpg123 mysql++ mysql-connector-c mysql-connector-c++@1.1 openssl opus libsamplerate spandsp speex sip
+                brew link --force mysql-connector-c++@1.1
+
+                # Manually install bcg729
+                wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
+                tar xfv bcg729-1.0.4.tar.gz
+                # Fix for glibtoolize
+                sed -i -e "s,/opt/local/bin/glibtoolize,/usr/local/bin/glibtoolize,g" bcg729-1.0.4/autogen.sh
+                pushd bcg729-1.0.4 && ./autogen.sh && ./configure && make && sudo make install && popd
+          fi
+
+        - |
+          if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+                sudo apt-get -qq update
+                # bcg729, codec2 (available since Xenial), ilbc, mISDN are missing
+                sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
+
+                # Manually install codec2
+                wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
+                tar -xvf codec2-0.7.tar.xz
+                pushd codec2-0.7 && mkdir build && pushd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ../ && make && sudo make install && popd && popd
+
+                # Manually install bcg729
+                wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
+                tar xfv bcg729-1.0.4.tar.gz
+                pushd bcg729-1.0.4 && ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && popd
+
+                # Fix for a very old GCC in Trusty and Xenial
+                sed -i -e "s,\-Werror=stringop-truncation,,g" CMakeLists.txt
+          fi
 
 before_script:
         - mkdir build
         - cd build
-        - cmake .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -DINCLUDE_INSTALL_DIR:PATH=/usr/include -DLIB_INSTALL_DIR:PATH=/usr/lib -DSYSCONF_INSTALL_DIR:PATH=/etc -DSHARE_INSTALL_PREFIX:PATH=/usr/share -DLIB_SUFFIX= -DBUILD_SHARED_LIBS:BOOL=ON -DSEMS_USE_SPANDSP=yes -DSEMS_USE_LIBSAMPLERATE=yes -DSEMS_USE_ZRTP=NO -DSEMS_USE_MP3=yes -DSEMS_USE_ILBC=yes -DSEMS_USE_G729=yes -DSEMS_USE_OPUS=yes -DSEMS_USE_TTS=yes -DSEMS_USE_OPENSSL=yes -DSEMS_USE_MONITORING=yes -DSEMS_USE_IPV6=yes -DSEMS_CFG_PREFIX= -DSEMS_AUDIO_PREFIX=/usr/share -DSEMS_EXEC_PREFIX=/usr -DSEMS_LIBDIR=lib -DSEMS_DOC_PREFIX=/usr/share/doc
+        - cmake .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -DINCLUDE_INSTALL_DIR:PATH=/usr/include -DLIB_INSTALL_DIR:PATH=/usr/lib -DSYSCONF_INSTALL_DIR:PATH=/etc -DSHARE_INSTALL_PREFIX:PATH=/usr/share -DLIB_SUFFIX= -DBUILD_SHARED_LIBS:BOOL=ON -DSEMS_USE_SPANDSP=yes -DSEMS_USE_LIBSAMPLERATE=yes -DSEMS_USE_ZRTP=NO -DSEMS_USE_MP3=yes -DSEMS_USE_ILBC=yes -DSEMS_USE_G729=yes -DSEMS_USE_OPUS=yes -DSEMS_USE_TTS=${SEMS_USE_TTS} -DSEMS_USE_OPENSSL=yes -DSEMS_USE_MONITORING=yes -DSEMS_USE_IPV6=yes -DSEMS_CFG_PREFIX= -DSEMS_AUDIO_PREFIX=/usr/share -DSEMS_EXEC_PREFIX=/usr -DSEMS_LIBDIR=lib -DSEMS_DOC_PREFIX=/usr/share/doc -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
 
 script:
         - make
