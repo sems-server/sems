@@ -334,18 +334,22 @@ void AmSipDialog::onRequestTxed(const AmSipRequest& req)
 
 bool AmSipDialog::onRxReplySanity(const AmSipReply& reply)
 {
-  if(!getRemoteTag().empty()
-     && reply.to_tag != getRemoteTag()) {
+  if(!getRemoteTag().empty() && reply.to_tag != getRemoteTag()) {
 
     if(status == Early) {
       if(reply.code < 200 && !reply.to_tag.empty()) {
 	// Provision reply, such as 180, can come from a new UAS
 	return true;
       }
-    }
-    else {
-      DBG("dropping reply (%u %s) in non-Early state\n",
-	  reply.code, reply.reason.c_str());
+    } else if(reply.cseq_method == SIP_METH_INVITE
+	      || reply.cseq_method == SIP_METH_CANCEL
+	      || reply.cseq_method == SIP_METH_BYE) {
+      // do not drop in order to avoid avoid sessions hangs
+      DBG("[%s] reply for %s '%d %s' is not matched with dialog. but matched with transaction. process it",
+          local_tag.c_str(), reply.cseq_method.c_str(), reply.code,
+	  reply.reason.c_str());
+    } else {
+      DBG("dropping reply (%u %s)\n", reply.code, reply.reason.c_str());
       return false;
     }
   }
