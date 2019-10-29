@@ -219,7 +219,7 @@ How to get started with SEMS:
   applications, see the explanation of 'application' parameter in 
   sems.conf.
 
-Creating packages on debian (ubuntu, ...), here for jessie:
+Creating packages on debian (ubuntu, ...):
 
    install debian package build tools:
    $ sudo apt-get install debhelper devscripts
@@ -227,8 +227,8 @@ Creating packages on debian (ubuntu, ...), here for jessie:
    install dependencies (those below or let dpkg-buildpackage below tell you
    which ones):
    $  sudo apt-get install g++ make libspandsp-dev flite-dev libspeex-dev \
-         libssl-dev python-dev python-sip-dev openssl libev-dev \
-         libmysql++-dev libevent-dev libxml2-dev libcurl4-openssl-dev
+         libgsm1-dev libssl-dev python-dev python-sip-dev openssl libev-dev \
+         libmysqlcppconn-dev libevent-dev libxml2-dev libcurl4-openssl-dev
    
    get the source: 
    $ wget ftp.iptel.org/pub/sems/sems-x.y.z.tar.gz ; tar xzvf sems-x.y.z.tar.gz
