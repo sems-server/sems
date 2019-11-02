@@ -226,16 +226,15 @@ Creating packages on debian (ubuntu, ...):
 
    install dependencies (those below or let dpkg-buildpackage below tell you
    which ones):
-   $  sudo apt-get install g++ make libspandsp-dev flite-dev libspeex-dev \
-         libgsm1-dev libssl-dev python-dev python-sip-dev openssl libev-dev \
-         libmysqlcppconn-dev libevent-dev libxml2-dev libcurl4-openssl-dev
+   $ sudo apt-get install debhelper g++ make libspandsp-dev flite1-dev \
+         libspeex-dev libgsm1-dev libopus-dev libssl-dev python-dev \
+	 python-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
+	 libxml2-dev libcurl4-openssl-dev libhiredis-dev
    
    get the source: 
-   $ wget ftp.iptel.org/pub/sems/sems-x.y.z.tar.gz ; tar xzvf sems-x.y.z.tar.gz
-   or, for git master:
    $ git clone https://github.com/sems-server/sems.git
 
-   $ cd sems-x.y.z ; ln -s pkg/deb/jessie ./debian
+   $ cd sems; ln -s pkg/deb/buster ./debian
 
    set version in changelog if not correct
    $ dch -v x.y.z "SEMS x.y.z release"
