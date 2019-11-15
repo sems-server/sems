@@ -177,48 +177,6 @@ Requirements:
  o libZRTP SDK (http://zfoneproject.com) for ZRTP
  o libev for jsonrpc
 
-How to get started with SEMS:
-
-  To try out SEMS, the easiest is to get a release from 
-  http://ftp.iptel.org/pub/sems/, unpack and install it 
-  using the usual make && make install. After installation, the 
-  configuration file /usr/local/etc/sems/sems.conf needs to be 
-  adapted, especially the parameters "sip_ip", "media_ip",
-  "load_plugins", "application".
-
-  On Debian and Ubuntu, add the SEMS repository from OBS to 
-  /etc/apt/sources.list:
-     deb http://download.opensuse.org/repositories/home:/team-sems/Debian_5.0 ./
-  and install SEMS packages with: 
-   wget http://download.opensuse.org/repositories/home:/team-sems/Debian_5.0/Release.key \
-        -O - |apt-key add -   
-   apt-get update && apt-get install sems
-  If you want to build SEMS from source on debian/derivatives, see below.
-
-  On Fedora/CentOS, simply do 
-   $ sudo yum install sems
-  and sems package will be installed.
- 
-  You can also follow one of the tutorials linked from the SEMS homepage
-  (e.g. http://ftp.iptel.org/pub/sems/doc/current/howtostart_noproxy.html).
-  The Application Modules Documentation page then gives an 
-  overview of the application modules that come with SEMS 
-  (http://ftp.iptel.org/pub/sems/doc/current/AppDoc.html).
-  
-  If you are interested in writing your own applications, the 
-  application development tutorial is a good start 
-  (http://www.iptel.org/sems/sems_application_development_tutorial),
-  together with the design overview 
-  (http://www.iptel.org/files/semsng-designoverview.pdf) and the example
-  applications (apps/examples/).
-   
-  SEMS needs to be told from the many possible applications that are
-  loaded which one to run. You can simply set the application 
-  in sems.conf, e.g. application=conference. You can also define an
-  application mapping, i.e. numbers (R-URIs) that will be mapped to
-  applications, see the explanation of 'application' parameter in 
-  sems.conf.
-
 Creating packages on debian (ubuntu, ...):
 
    install debian package build tools:
