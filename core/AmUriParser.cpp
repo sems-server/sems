@@ -176,13 +176,15 @@ enum {
  */
 bool AmUriParser::parse_uri() {
   // assuming user@host
-  size_t pos = 0; int st = uS0;
+  size_t pos; int st = uS0;
   size_t p1 = 0; 
   int eq = 0; const char* sip_prot = "SIP:";
   uri_user = ""; uri_host = ""; uri_port = ""; uri_param = "";
 
   if (uri.empty())
     return false;
+
+  pos = skip_name(uri, 0);
 
   while (pos<uri.length()) {
     char c = uri[pos];
