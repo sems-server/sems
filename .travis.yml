@@ -43,6 +43,8 @@ before_install:
                 # bcg729, flite, ilbc (not tested), mISDN, rtmp are missing
                 brew install codec2 hiredis lame libevent libgsm mpg123 mysql++ mysql-connector-c mysql-connector-c++@1.1 openssl opus libsamplerate spandsp speex sip
                 brew link --force mysql-connector-c++@1.1
+                brew link --force mysql-client
+                sed -i -e "s,<mysql/udf_registration_types.h>,\"mysql/udf_registration_types.h\",g" /usr/local/include/mysql/mysql_com.h
 
                 # Manually install bcg729
                 wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
