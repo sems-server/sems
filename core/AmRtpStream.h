@@ -326,6 +326,11 @@ public:
   void setReceiving(bool r);
 
   /**
+   * Get whether RTP stream will receive RTP packets internally (received packets will be dropped or not).
+   */
+  bool getReceiving();
+
+  /**
    * Stops RTP stream receiving RTP packets internally (received packets will be dropped).
    */
   void pause();

@@ -769,6 +769,10 @@ void AmRtpStream::setReceiving(bool r) {
   receiving = r;
 }
 
+bool AmRtpStream::getReceiving() {
+  return receiving;
+}
+
 void AmRtpStream::pause()
 {
   DBG("RTP Stream instance [%p] pausing (receiving=false)\n", this);

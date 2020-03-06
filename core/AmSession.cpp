@@ -71,6 +71,8 @@ AmSession::AmSession(AmSipDialog* p_dlg)
     m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     processing_status(SESSION_PROCESSING_EVENTS),
+    receiving_saved(true),
+    mute(false),
     sess_stopped(false),
     accept_early_session(false),
     rtp_interface(-1),
@@ -645,6 +647,18 @@ void AmSession::clearAudio()
   postEvent(new AmAudioEvent(AmAudioEvent::cleared));
 }
 
+void AmSession::setReceiving(bool receive)
+{
+  DBG("AmSession::setReceiving: %d\n", receive);
+  lockAudio();
+  RTPStream()->setReceiving(receive);
+  if(receive && receive != receiving_saved) {
+    DBG("receiving enabled, reinviteing\n");
+    sendReinvite();
+  }
+  unlockAudio();
+}
+
 void AmSession::process(AmEvent* ev)
 {
   CALL_EVENT_H(process,ev);
@@ -858,6 +872,7 @@ void AmSession::onSendReply(const AmSipRequest& req, AmSipReply& reply, int& fla
 bool AmSession::getSdpOffer(AmSdp& offer)
 {
   DBG("AmSession::getSdpOffer(...) ...\n");
+  receiving_saved = RTPStream()->getReceiving();
 
   offer.version = 0;
   offer.origin.user = "sems";
@@ -911,6 +926,7 @@ public:
 bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 {
   DBG("AmSession::getSdpAnswer(...) ...\n");
+  receiving_saved = RTPStream()->getReceiving();
 
   answer.version = 0;
   answer.origin.user = "sems";
@@ -1022,6 +1038,7 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
   if (!isProcessingMedia()) {
     setInbandDetector(AmConfig::DefaultDTMFDetector);
   }
+  RTPStream()->mute = mute;
 
   return ret;
 }

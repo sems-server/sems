@@ -97,6 +97,9 @@ private:
     SESSION_ENDED_DISCONNECTED
   };
   ProcessingStatus processing_status;
+  bool receiving_saved;
+  bool mute;
+
 
 #ifndef SESSION_THREADPOOL
   /** @see AmThread::run() */
@@ -303,10 +306,10 @@ public:
   virtual void clearAudio();
 
   /** setter for rtp_str->mute */
-  void setMute(bool mute) { RTPStream()->mute = mute; }
+  void setMute(bool _mute) { mute = RTPStream()->mute = _mute; }
 
   /** setter for rtp_str->receiving */
-  void setReceiving(bool receive) { RTPStream()->setReceiving(receive); }
+  void setReceiving(bool receive);
 
   /** setter for rtp_str->force_receive_dtmf*/
   void setForceDtmfReceiving(bool receive) { RTPStream()->force_receive_dtmf = receive; }
