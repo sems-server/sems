@@ -1140,6 +1140,16 @@ void AmSession::setOnHold(bool hold)
   unlockAudio();
 }
 
+void AmSession::setRemoteHold(bool remote_hold)
+{
+  lockAudio();
+  bool old_hold = RTPStream()->getRemoteHold();
+  RTPStream()->setRemoteHold(remote_hold);
+  if (remote_hold != old_hold)
+    sendReinvite();
+  unlockAudio();
+}
+
 void AmSession::onFailure()
 {
   // switch (cause) {

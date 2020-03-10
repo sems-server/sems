@@ -404,6 +404,7 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     passive(false),
     passive_rtcp(false),
     hold(false),
+    remotehold(false),
     monitor_rtp_timeout(true),
     receiving(true),
     relay_enabled(false),
@@ -566,7 +567,7 @@ void AmRtpStream::getSdp(SdpMedia& m)
   m.nports = 0;
   m.transport = TP_RTPAVP;
   m.send = !hold;
-  m.recv = receiving;
+  m.recv = !remotehold;
   m.dir = SdpMedia::DirBoth;
 }
 
@@ -807,6 +808,14 @@ void AmRtpStream::setOnHold(bool on_hold) {
 
 bool AmRtpStream::getOnHold() {
   return hold;
+}
+
+void AmRtpStream::setRemoteHold(bool remote_hold) {
+  remotehold = remote_hold;
+}
+
+bool AmRtpStream::getRemoteHold() {
+  return remotehold;
 }
 
 void AmRtpStream::recvDtmfPacket(AmRtpPacket* p) {

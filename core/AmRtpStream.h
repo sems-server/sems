@@ -232,6 +232,8 @@ protected:
   /** mute && port == 0 */
   bool           hold;
 
+  bool           remotehold;
+
   /** marker flag */
   bool           begin_talk;
 
@@ -469,6 +471,12 @@ public:
   
   /** get whether RTP stream is on hold  */
   bool getOnHold();
+
+  /** request the remote end to set the RTP stream on hold */
+  void setRemoteHold(bool remote_hold);
+
+  /** get whether the remote end is requested to set the RTP stream is on hold  */
+  bool getRemoteHold();
 
   /** setter for monitor_rtp_timeout */
   void setMonitorRTPTimeout(bool m) { monitor_rtp_timeout = m; }

@@ -360,6 +360,9 @@ public:
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
 
+  /** request the remote end to set the session on/off hold */
+  virtual void setRemoteHold(bool remote_hold);
+
   /** update UAC trans state reference from old_cseq to new_cseq
       e.g. if uac_auth or session_timer have resent a UAC request
    */
