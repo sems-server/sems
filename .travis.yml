@@ -57,13 +57,8 @@ before_install:
         - |
           if [ "$TRAVIS_OS_NAME" == "linux" ]; then
                 sudo apt-get -qq update
-                # bcg729, codec2 (available since Xenial), ilbc, mISDN are missing
-                sudo apt-get install -y flite-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
-
-                # Manually install codec2
-                wget https://freedv.com/wp-content/uploads/sites/8/2017/10/codec2-0.7.tar.xz
-                tar -xvf codec2-0.7.tar.xz
-                pushd codec2-0.7 && mkdir build && pushd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ../ && make && sudo make install && popd && popd
+                # bcg729, ilbc, mISDN are missing
+                sudo apt-get install -y flite-dev libcodec2-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
 
                 # Manually install bcg729
                 wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
@@ -77,7 +72,7 @@ before_install:
 before_script:
         - mkdir build
         - cd build
-        - cmake .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -DINCLUDE_INSTALL_DIR:PATH=/usr/include -DLIB_INSTALL_DIR:PATH=/usr/lib -DSYSCONF_INSTALL_DIR:PATH=/etc -DSHARE_INSTALL_PREFIX:PATH=/usr/share -DLIB_SUFFIX= -DBUILD_SHARED_LIBS:BOOL=ON -DSEMS_USE_SPANDSP=yes -DSEMS_USE_LIBSAMPLERATE=yes -DSEMS_USE_ZRTP=NO -DSEMS_USE_MP3=yes -DSEMS_USE_ILBC=yes -DSEMS_USE_G729=yes -DSEMS_USE_OPUS=yes -DSEMS_USE_TTS=${SEMS_USE_TTS} -DSEMS_USE_OPENSSL=yes -DSEMS_USE_MONITORING=yes -DSEMS_USE_IPV6=yes -DSEMS_CFG_PREFIX= -DSEMS_AUDIO_PREFIX=/usr/share -DSEMS_EXEC_PREFIX=/usr -DSEMS_LIBDIR=lib -DSEMS_DOC_PREFIX=/usr/share/doc -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
+        - cmake .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -DINCLUDE_INSTALL_DIR:PATH=/usr/include -DLIB_INSTALL_DIR:PATH=/usr/lib -DSYSCONF_INSTALL_DIR:PATH=/etc -DSHARE_INSTALL_PREFIX:PATH=/usr/share -DLIB_SUFFIX= -DBUILD_SHARED_LIBS:BOOL=ON -DSEMS_USE_SPANDSP=yes -DSEMS_USE_LIBSAMPLERATE=yes -DSEMS_USE_ZRTP=NO -DSEMS_USE_MP3=yes -DSEMS_USE_ILBC=yes -DSEMS_USE_G729=yes -DSEMS_USE_OPUS=yes -DSEMS_USE_CODEC2=yes -DSEMS_USE_TTS=${SEMS_USE_TTS} -DSEMS_USE_OPENSSL=yes -DSEMS_USE_MONITORING=yes -DSEMS_USE_IPV6=yes -DSEMS_CFG_PREFIX= -DSEMS_AUDIO_PREFIX=/usr/share -DSEMS_EXEC_PREFIX=/usr -DSEMS_LIBDIR=lib -DSEMS_DOC_PREFIX=/usr/share/doc -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
 
 script:
         - make
