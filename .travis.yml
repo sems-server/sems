@@ -8,6 +8,45 @@ python:
 
 sudo: required
 
+addons:
+  apt:
+    update: true
+    packages: # bcg729, ilbc, mISDN are missing
+    - flite-dev
+    - libcodec2-dev
+    - libevent-dev
+    - libgsm1-dev
+    - libhiredis-dev
+    - libmp3lame-dev
+    - libmpg123-dev
+    - libmysql++-dev
+    - libmysqlcppconn-dev
+    - libopus-dev
+    - librtmp-dev
+    - libsamplerate-dev
+    - libspandsp-dev
+    - libspeex-dev
+    - libssl-dev
+    - python-sip-dev
+  homebrew: # bcg729, flite, ilbc (not tested), mISDN, rtmp are missing
+    update: true
+    packages:
+    - codec2
+    - hiredis
+    - lame
+    - libevent
+    - libgsm
+    - libsamplerate
+    - mpg123
+    - mysql++
+    - mysql-connector-c
+    - mysql-connector-c++@1.1
+    - openssl
+    - opus
+    - sip
+    - spandsp
+    - speex
+
 matrix:
   include:
   - os: linux
@@ -38,10 +77,6 @@ matrix:
 before_install:
         - |
           if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-                brew update
-
-                # bcg729, flite, ilbc (not tested), mISDN, rtmp are missing
-                brew install codec2 hiredis lame libevent libgsm mpg123 mysql++ mysql-connector-c mysql-connector-c++@1.1 openssl opus libsamplerate spandsp speex sip
                 brew link --force mysql-connector-c++@1.1
                 brew link --force mysql-client
                 sed -i -e "s,<mysql/udf_registration_types.h>,\"mysql/udf_registration_types.h\",g" /usr/local/include/mysql/mysql_com.h
@@ -56,10 +91,6 @@ before_install:
 
         - |
           if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-                sudo apt-get -qq update
-                # bcg729, ilbc, mISDN are missing
-                sudo apt-get install -y flite-dev libcodec2-dev libevent-dev libgsm1-dev libhiredis-dev libmp3lame-dev libmpg123-dev libmysql++-dev libmysqlcppconn-dev libopus-dev librtmp-dev libsamplerate-dev libspandsp-dev libspeex-dev libssl-dev python-sip-dev
-
                 # Manually install bcg729
                 wget https://github.com/BelledonneCommunications/bcg729/archive/1.0.4/bcg729-1.0.4.tar.gz
                 tar xfv bcg729-1.0.4.tar.gz
