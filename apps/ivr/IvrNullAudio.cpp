@@ -43,9 +43,41 @@ static PyObject* IvrNullAudio_init(IvrNullAudio* self, PyObject* args)
   return Py_None;
 }
 
+static PyObject* IvrNullAudio_setReadLength(IvrNullAudio* self, PyObject* args)
+{
+  int read_msec = -1;
+
+  if(!PyArg_ParseTuple(args,"i", &read_msec))
+    return NULL;
+
+  self->nullaudio->setReadLength(read_msec);
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static PyObject* IvrNullAudio_setWriteLength(IvrNullAudio* self, PyObject* args)
+{
+  int write_msec = -1;
+
+  if(!PyArg_ParseTuple(args,"i", &write_msec))
+    return NULL;
+
+  self->nullaudio->setWriteLength(write_msec);
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 static PyMethodDef IvrNullAudio_methods[] = {
   {"init", (PyCFunction)IvrNullAudio_init, METH_VARARGS,
    "nullaudio, plays silence, and recording goes to void, parameters: play and rec length in ms"
+  },
+  {"setReadLength", (PyCFunction)IvrNullAudio_setReadLength, METH_VARARGS,
+   "(re) set maximum read length"
+  },
+  {"setWriteLength", (PyCFunction)IvrNullAudio_setWriteLength, METH_VARARGS,
+   "(re) set maximum write length"
   },
   {NULL}  /* Sentinel */
 };
