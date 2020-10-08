@@ -1861,8 +1861,9 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		t->state == TS_PROCEEDING)) {
 
 		if(!(t->flags & TR_FLAG_DISABLE_BL)) {
-		    tr_blacklist::instance()->insert(&t->msg->remote_ip,
-						     default_bl_ttl,"503");
+			if(default_bl_ttl) {
+				tr_blacklist::instance()->insert(&t->msg->remote_ip, default_bl_ttl,"503");
+			}
 		}
 
 		if(msg->local_socket) { // remote reply
