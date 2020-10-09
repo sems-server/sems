@@ -898,8 +898,8 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 
 void AmB2BSession::setRtpRelayMode(RTPRelayMode mode)
 {
-  DBG("enabled RTP relay mode for B2B call '%s'\n",
-      getLocalTag().c_str());
+  DBG("set RTP relay mode for B2B call '%s' to '%d'\n",
+      getLocalTag().c_str(), mode);
 
   rtp_relay_mode = mode;
 }
