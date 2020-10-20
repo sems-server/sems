@@ -10,6 +10,8 @@
 #include "IvrEvent.h"
 #include "AmMediaProcessor.h"
 
+extern PyObject *SemsError;
+
 /** \brief python wrapper of IvrDialog, the base class for python IVR sessions */
 typedef struct {
     
@@ -507,7 +509,29 @@ static PyObject* IvrDialogBase_sendReply(IvrDialogBase* self, PyObject* args)
      return NULL;
 
    assert(self->p_dlg);
-   self->p_dlg->dlg->reply(self->p_dlg->mReq, code, reason, NULL, hdrs, 0);
+   try {
+     self->p_dlg->dlg->reply(self->p_dlg->mReq, code, reason, NULL, hdrs, 0);
+   } catch (const AmSession::Exception& e) {
+     PyObject * SemsErrorDict = PyDict_New();
+     PyObject *k = PyString_FromString("code"); //New
+     PyObject *v = PyInt_FromLong(e.code); //New
+     PyDict_SetItem(SemsErrorDict, k, v);
+     Py_DECREF(v);
+     Py_DECREF(k);
+     k = PyString_FromString("reason"); //New
+     v = PyString_FromString(e.reason.c_str()); //New
+     PyDict_SetItem(SemsErrorDict, k, v);
+     Py_DECREF(v);
+     Py_DECREF(k);
+     k = PyString_FromString("hdrs"); //New
+     v = PyString_FromString(e.hdrs.c_str()); //New
+     PyDict_SetItem(SemsErrorDict, k, v);
+     Py_DECREF(v);
+     Py_DECREF(k);
+     PyErr_SetObject(SemsError, SemsErrorDict);
+     Py_XDECREF(SemsErrorDict);
+     return NULL;
+   }
    Py_INCREF(Py_None);
    return Py_None;
 }
