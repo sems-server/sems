@@ -77,6 +77,8 @@ struct PythonGIL
 
 extern "C" {
 
+  PyObject* SemsError;
+
   static PyObject* ivr_log(PyObject*, PyObject* args)
   {
     int level;
@@ -331,6 +333,11 @@ void IvrFactory::import_ivr_builtins()
 
   PyModule_AddStringConstant(ivr_module, "LOCAL_SIP_IP", AmConfig::SIP_Ifs[0].LocalIP.c_str());
   PyModule_AddIntConstant(ivr_module, "LOCAL_SIP_PORT", AmConfig::SIP_Ifs[0].LocalPort);
+
+  // add exception to handle the AmSession's exception
+  SemsError = PyErr_NewException("ivr.semserror", NULL, NULL);
+  Py_INCREF(SemsError);
+  PyModule_AddObject(ivr_module, "semserror", SemsError);
 
   // add log level for the log module
   PyModule_AddIntConstant(ivr_module, "SEMS_LOG_LEVEL",log_level);
@@ -789,16 +796,74 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
   va_end(va);
 
   if(!o) {
-    if(PyErr_Occurred()) PyErr_PrintEx(0);
+    if(PyErr_Occurred()) {
+      PyObject* type;
+      PyObject* value;
+      PyObject* tb;
+      PyErr_Fetch(&type, &value, &tb);
+      if(PyErr_GivenExceptionMatches(type, SemsError)) {
+        PyObject* args;
+        PyObject* dict;
+        bool error = false;
+        if(PyDict_Check(value)) {
+          dict = value;
+        } else if((args = PyObject_GetAttrString(value, "args")))
+        {
+          Py_ssize_t s = PyTuple_Size(args);
+          bool found = false;
+          for(Py_ssize_t i = 0; i < s; ++i)
+          {
+            dict = PyTuple_GetItem(args, i);
+            if(PyDict_Check(dict)) {
+              found = true;
+              break;
+            }
+          }
+          Py_DECREF(args);
+          if(!found) error = true;
+        } else error = true;
+        long code = 0;
+        string reason;
+        string hdrs;
+        if(!error) {
+          PyObject* tmp;
+          if((tmp = PyDict_GetItemString(dict, "code"))) {
+            if(PyInt_Check(tmp)) {
+              code = PyInt_AsLong(tmp);
+            } else error = true;
+          } else error = true;
+          if((tmp = PyDict_GetItemString(dict, "reason"))) {
+            if(PyString_Check(tmp)) {
+              reason = PyString_AsString(tmp);
+            } else error = true;
+          } else error = true;
+          if((tmp = PyDict_GetItemString(dict, "hdrs"))) {
+            if(PyString_Check(tmp)) {
+              reason = PyString_AsString(tmp);
+            } else error = true;
+          } else error = true;
+        }
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(tb);
+        if(!error) throw Exception(code, reason, hdrs);
+      } else {
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(tb);
+      }
+    } else {
+      ERROR("NULL result without error in PyObject_Call");
+    }
   }
   else {
-    if(o && PyBool_Check(o) && (o == Py_True)) {
+    if(PyBool_Check(o) && (o == Py_True)) {
       ret = true;
     }
 
     Py_DECREF(o);
   }
-    
+
   return ret;
 }
 
@@ -880,24 +945,28 @@ void safe_Py_DECREF(PyObject* pyo)
   Py_DECREF(pyo);
 }
 
+struct ObjScope
+{
+  PyObject* obj;
+  ObjScope(PyObject* o): obj(o) {}
+  ~ObjScope() {safe_Py_DECREF(obj);}
+};
+
 void IvrDialog::onSipReply(const AmSipRequest& req,
 			   const AmSipReply& reply, 
 			   AmBasicSipDialog::Status old_dlg_status) 
 {
-  PyObject* pyrp = getPySipReply(reply);
-  PyObject* pyrq = getPySipRequest(req);
-  callPyEventHandler("onSipReply","(OO)", pyrq, pyrp);
-  safe_Py_DECREF(pyrp);
-  safe_Py_DECREF(pyrq);
+  ObjScope pyrp(getPySipReply(reply));
+  ObjScope pyrq(getPySipRequest(req));
+  callPyEventHandler("onSipReply","(OO)", pyrq.obj, pyrp.obj);
   AmB2BCallerSession::onSipReply(req, reply, old_dlg_status);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r)
 {
   mReq = r;
-  PyObject* pyo = getPySipRequest(r);
-  callPyEventHandler("onSipRequest","(O)", pyo);
-  safe_Py_DECREF(pyo);
+  ObjScope pyo(getPySipRequest(r));
+  callPyEventHandler("onSipRequest","(O)", pyo.obj);
   AmB2BCallerSession::onSipRequest(r);
 }
 
