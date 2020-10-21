@@ -821,7 +821,7 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
           }
           Py_DECREF(args);
           if(!found) error = true;
-        }
+        } else error = true;
         long code = 0;
         string reason;
         string hdrs;
