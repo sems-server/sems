@@ -72,7 +72,12 @@ void AmB2ABSession::onB2ABEvent(B2ABEvent* ev)
   switch(ev->event_id){
 
   case B2ABTerminateLeg:
-    terminateLeg();
+    std::map<string,string>::const_iterator it;
+    it= ev->params.find("cancel_hdrs");
+    if (it != ev->params.end())
+      terminateLeg(it->second);
+    else
+      terminateLeg();
     break;
   }
 }
@@ -110,16 +115,20 @@ void AmB2ABSession::onBye(const AmSipRequest& req) {
   setStopped();
 }
 
-void AmB2ABSession::terminateLeg()
+void AmB2ABSession::terminateLeg(const string &cancel_hdrs)
 {
-  dlg->bye();
+  dlg->bye(cancel_hdrs);
   disconnectSession();
   setStopped();
 }
 
-void AmB2ABSession::terminateOtherLeg()
+void AmB2ABSession::terminateOtherLeg(const string &cancel_hdrs)
 {
-  relayEvent(new B2ABEvent(B2ABTerminateLeg));
+  B2ABEvent* ev = new B2ABEvent(B2ABTerminateLeg);
+  if (!cancel_hdrs.empty()) {
+        ev->params["cancel_hdrs"]= cancel_hdrs;
+  }
+  relayEvent(ev);
   clear_other();
 }
 
@@ -142,10 +151,10 @@ void AmB2ABCallerSession::onBeforeDestroy() {
   DBG("OK, got release from callee session.\n");
 }
 
-void AmB2ABCallerSession::terminateOtherLeg()
+void AmB2ABCallerSession::terminateOtherLeg(const string &cancel_hdrs)
 {
   if (callee_status != None)
-    AmB2ABSession::terminateOtherLeg();
+    AmB2ABSession::terminateOtherLeg(cancel_hdrs);
 
   callee_status = None;
 }
