@@ -108,7 +108,7 @@ void MWI::publish(const string& user, const string& domain)
 
   AmSipDialog tmp_d(NULL);
   tmp_d.setLocalParty(string("<sip:mwi-publisher@") + presence_server + ">");
-  tmp_d.setRemoteParty(domain.c_str());
+  tmp_d.setRemoteParty("sip:" + user + "@" + domain);
   tmp_d.setRouteSet("sip:" + presence_server);
   tmp_d.setRemoteUri("sip:" + user + "@" + domain);
   tmp_d.setCallid(AmSession::getNewId() + "@" + presence_server);
