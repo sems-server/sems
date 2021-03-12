@@ -25,7 +25,7 @@ static void IvrNullAudio_dealloc(IvrNullAudio* self)
     self->nullaudio = NULL;
   }
 
-  self->ob_base.ob_type->tp_free((PyObject*)self);
+  self->ob_type->tp_free((PyObject*)self);
 }
 
 
@@ -91,14 +91,15 @@ static PyGetSetDef IvrNullAudio_getseters[] = {
 PyTypeObject IvrNullAudioType = {
 	
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrNullAudio",        /*tp_name*/
   sizeof(IvrNullAudio),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
   (destructor)IvrNullAudio_dealloc, /*tp_dealloc*/
-  0,                         /*tp_vectorcall_offset/tp_print*/
+  0,                         /*tp_print*/
   0,                         /*tp_getattr*/
   0,                         /*tp_setattr*/
-  0,                         /*tp_as_async/was: tp_compare*/
+  0,                         /*tp_compare*/
   0,                         /*tp_repr*/
   0,                         /*tp_as_number*/
   0,                         /*tp_as_sequence*/
@@ -128,14 +129,4 @@ PyTypeObject IvrNullAudioType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrNullAudio_new,          /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };

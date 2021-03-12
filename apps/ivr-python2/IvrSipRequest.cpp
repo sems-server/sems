@@ -48,13 +48,13 @@ static PyObject* IvrSipRequest_new(PyTypeObject *type, PyObject *args, PyObject 
       return NULL;
     }
     
-    if ((NULL == o_req) || !PyCapsule_CheckExact(o_req)){
+    if ((NULL == o_req) || !PyCObject_Check(o_req)){
 	    
       Py_DECREF(self);
       return NULL;
     }
 	
-    self->p_req = (AmSipRequest*)PyCapsule_GetPointer(o_req, "SipReq");
+    self->p_req = (AmSipRequest*)PyCObject_AsVoidPtr(o_req);
     self->own_p_req = true;
   }
 
@@ -77,13 +77,13 @@ static PyObject* IvrSipRequest_newRef(PyTypeObject *type, PyObject *args, PyObje
       return NULL;
     }
     
-    if ((NULL == o_req) || !PyCapsule_CheckExact(o_req)){
+    if ((NULL == o_req) || !PyCObject_Check(o_req)){
 	    
       Py_DECREF(self);
       return NULL;
     }
 	
-    self->p_req = (AmSipRequest*)PyCapsule_GetPointer(o_req, "SipReq");
+    self->p_req = (AmSipRequest*)PyCObject_AsVoidPtr(o_req);
     self->own_p_req = false;
   }
 
@@ -99,14 +99,14 @@ IvrSipRequest_dealloc(IvrSipRequest* self)
   if(self->own_p_req)
     delete self->p_req;
 
-  self->ob_base.ob_type->tp_free((PyObject*)self);
+  self->ob_type->tp_free((PyObject*)self);
 }
 
 #define def_IvrSipRequest_GETTER(getter_name, attr)		\
   static PyObject*						\
   getter_name(IvrSipRequest *self, void *closure)		\
   {								\
-    return PyUnicode_FromString(self->p_req->attr.c_str());	\
+    return PyString_FromString(self->p_req->attr.c_str());	\
   }					  
 								
 def_IvrSipRequest_GETTER(IvrSipRequest_getmethod,       method)
@@ -126,13 +126,13 @@ def_IvrSipRequest_GETTER(IvrSipRequest_gethdrs,         hdrs)
 // static PyObject*
 // IvrSipRequest_getuser(IvrSipRequest *self, void *closure)
 // {
-//   return PyUnicode_FromString(self->p_req->user.c_str());
+//   return PyString_FromString(self->p_req->user.c_str());
 // }
 
 static PyObject*
 IvrSipRequest_getcseq(IvrSipRequest *self, void *closure)
 {
-  return PyLong_FromLong(self->p_req->cseq);
+  return PyInt_FromLong(self->p_req->cseq);
 }
 
 static PyObject*
@@ -142,9 +142,9 @@ IvrSipRequest_getbody(IvrSipRequest *self, void *closure)
   {
     string body;
     self->p_req->body.print(body);
-    return PyUnicode_FromString(body.c_str());
+    return PyString_FromString(body.c_str());
   }
-  return PyUnicode_FromString("");
+  return PyString_FromString("");
 }
 
 #define def_IvrSipRequest_SETTER(setter_name, attr)			\
@@ -184,6 +184,7 @@ static PyGetSetDef IvrSipRequest_getset[] = {
 PyTypeObject IvrSipRequestType = {
     
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrSipRequest",        /*tp_name*/
   sizeof(IvrSipRequest),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
@@ -221,22 +222,12 @@ PyTypeObject IvrSipRequestType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrSipRequest_new,          /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };
 
 
 PyObject* IvrSipRequest_FromPtr(AmSipRequest* req)
 {
-  PyObject* c_req = PyCapsule_New(req, "SipReq", NULL);
+  PyObject* c_req = PyCObject_FromVoidPtr(req,NULL);
   PyObject* args = Py_BuildValue("(O)",c_req);
     
   PyObject* py_req = IvrSipRequest_new(&IvrSipRequestType,args,NULL);
@@ -249,7 +240,7 @@ PyObject* IvrSipRequest_FromPtr(AmSipRequest* req)
 
 PyObject* IvrSipRequest_BorrowedFromPtr(AmSipRequest* req)
 {
-  PyObject* c_req = PyCapsule_New(req, "SipReq", NULL);
+  PyObject* c_req = PyCObject_FromVoidPtr(req,NULL);
   PyObject* args = Py_BuildValue("(O)",c_req);
     
   PyObject* py_req = IvrSipRequest_newRef(&IvrSipRequestType,args,NULL);

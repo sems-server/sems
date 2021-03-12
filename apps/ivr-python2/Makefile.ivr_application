@@ -36,7 +36,7 @@ clean:
 
 .PHONY: compile
 compile: 
-	$(PY_EXE) $(IVRPATH)/py_comp -b -q .
+	$(PY_EXE) $(IVRPATH)/py_comp -q .
 
 .PHONY: install
 install: all $(extra_install)

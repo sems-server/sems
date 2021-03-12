@@ -101,7 +101,7 @@ extern "C" {
       return NULL;
 
     string res = getHeader(headers,header_name, true);
-    return PyUnicode_FromString(res.c_str());
+    return PyString_FromString(res.c_str());
   }
 
   static PyObject* ivr_getHeaders(PyObject*, PyObject* args)
@@ -112,7 +112,7 @@ extern "C" {
       return NULL;
 
     string res = getHeader(headers,header_name);
-    return PyUnicode_FromString(res.c_str());
+    return PyString_FromString(res.c_str());
   }
 
   static PyObject* ivr_ignoreSigchld(PyObject*, PyObject* args)
@@ -140,8 +140,8 @@ extern "C" {
     if (module != NULL) {
       PyObject *ivrFactory = PyObject_GetAttrString(module, "__c_ivrFactory");
       if (ivrFactory != NULL){
-	if (PyCapsule_CheckExact(ivrFactory))
-	  pIvrFactory = (IvrFactory*)PyCapsule_GetPointer(ivrFactory, "ivrFactory");
+	if (PyCObject_Check(ivrFactory))
+	  pIvrFactory = (IvrFactory*)PyCObject_AsVoidPtr(ivrFactory);
 	Py_DECREF(ivrFactory);
       }
     }
@@ -259,18 +259,6 @@ extern "C" {
 
     {NULL}  /* Sentinel */
   };
-
-  static struct PyModuleDef ivrmoduledef = {
-        PyModuleDef_HEAD_INIT,
-        "ivr",
-        NULL,
-        -1,
-        ivr_methods,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-  };
 }
 
 void PythonScriptThread::run() {
@@ -299,19 +287,20 @@ void IvrFactory::import_object(PyObject* m, const char* name, PyTypeObject* type
     return;
   }
   Py_INCREF(type);
+#if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 5
+  PyModule_AddObject(m, (char*)name, (PyObject *)type);
+#else
   PyModule_AddObject(m, name, (PyObject *)type);
+#endif
 }
 
 void IvrFactory::import_ivr_builtins()
 {
   // ivr module - start
-  PyObject* m = PyImport_GetModuleDict();
-  PyObject* nameobj = PyUnicode_FromString("ivr");
-  ivr_module = PyModule_Create(&ivrmoduledef);
-  PyObject_SetItem(m, nameobj, ivr_module);
-  Py_DECREF(nameobj);
+  PyImport_AddModule("ivr");
+  ivr_module = Py_InitModule("ivr",ivr_methods);
 
-  PyObject* pIvrFactory = PyCapsule_New((void*)this, "ivrFactory", NULL);
+  PyObject* pIvrFactory = PyCObject_FromVoidPtr((void*)this,NULL);
   if (pIvrFactory != NULL)
     PyModule_AddObject(ivr_module, "__c_ivrFactory", pIvrFactory);
 
@@ -353,7 +342,7 @@ void IvrFactory::import_ivr_builtins()
   // add log level for the log module
   PyModule_AddIntConstant(ivr_module, "SEMS_LOG_LEVEL",log_level);
 
-  PyObject* log_mod_name = PyUnicode_FromString("log");
+  PyObject* log_mod_name = PyString_FromString("log");
   PyObject* log_mod = PyImport_Import(log_mod_name);
   Py_DECREF(log_mod_name);
 
@@ -382,7 +371,7 @@ void IvrFactory::init_python_interpreter(const string& script_path)
 void IvrFactory::set_sys_path(const string& script_path)
 {
 
-  PyObject* py_mod_name = PyUnicode_FromString("sys");
+  PyObject* py_mod_name = PyString_FromString("sys");
   PyObject* py_mod = PyImport_Import(py_mod_name);
   Py_DECREF(py_mod_name);
     
@@ -393,7 +382,7 @@ void IvrFactory::set_sys_path(const string& script_path)
     return;
   }
 
-  PyObject* sys_path_str = PyUnicode_FromString("path");
+  PyObject* sys_path_str = PyString_FromString("path");
   PyObject* sys_path = PyObject_GetAttr(py_mod,sys_path_str);
   Py_DECREF(sys_path_str);
 
@@ -403,7 +392,7 @@ void IvrFactory::set_sys_path(const string& script_path)
     return;
   }
 
-  PyObject* script_path_str = PyUnicode_FromString(script_path.c_str());
+  PyObject* script_path_str = PyString_FromString(script_path.c_str());
   if(!PyList_Insert(sys_path, 0, script_path_str)){
     PyErr_PrintEx(0);
   }
@@ -424,7 +413,7 @@ IvrDialog* IvrFactory::newDlg(const string& name, AmArg* session_params)
 
   IvrDialog* dlg = new IvrDialog();
 
-  PyObject* c_dlg = PyCapsule_New(dlg, "IvrDialog", NULL);
+  PyObject* c_dlg = PyCObject_FromVoidPtr(dlg,NULL);
   PyObject* dlg_inst = PyObject_CallMethod(mod_desc.dlg_class,
 					   (char*)"__new__",(char*)"OO",
 					   mod_desc.dlg_class,c_dlg);
@@ -469,8 +458,8 @@ bool IvrFactory::loadScript(const string& path)
   } else {
     for(map<string,string>::const_iterator it = cfg.begin();
 	it != cfg.end(); it++){
-      PyObject *f = PyUnicode_FromString(it->first.c_str());
-      PyObject *s = PyUnicode_FromString(it->second.c_str());
+      PyObject *f = PyString_FromString(it->first.c_str());
+      PyObject *s = PyString_FromString(it->second.c_str());
       PyDict_SetItem(config, f, s);
       Py_DECREF(f);
       Py_DECREF(s);
@@ -482,7 +471,7 @@ bool IvrFactory::loadScript(const string& path)
   PyObject_SetAttrString(ivr_module, "config", config);
   
   // load module
-  modName = PyUnicode_FromString(path.c_str());
+  modName = PyString_FromString(path.c_str());
   
   mod     = PyImport_Import(modName);
   if (NULL != config) {
@@ -839,18 +828,18 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
         if(!error) {
           PyObject* tmp;
           if((tmp = PyDict_GetItemString(dict, "code"))) {
-            if(PyLong_Check(tmp)) {
-              code = PyLong_AsLong(tmp);
+            if(PyInt_Check(tmp)) {
+              code = PyInt_AsLong(tmp);
             } else error = true;
           } else error = true;
           if((tmp = PyDict_GetItemString(dict, "reason"))) {
-            if(PyUnicode_Check(tmp)) {
-              reason = PyUnicode_AsUTF8(tmp);
+            if(PyString_Check(tmp)) {
+              reason = PyString_AsString(tmp);
             } else error = true;
           } else error = true;
           if((tmp = PyDict_GetItemString(dict, "hdrs"))) {
-            if(PyUnicode_Check(tmp)) {
-              reason = PyUnicode_AsUTF8(tmp);
+            if(PyString_Check(tmp)) {
+              reason = PyString_AsString(tmp);
             } else error = true;
           } else error = true;
         }

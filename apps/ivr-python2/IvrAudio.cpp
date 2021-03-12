@@ -56,7 +56,7 @@ static void IvrAudioFile_dealloc(IvrAudioFile* self)
   delete self->filename;
 #endif
 
-  self->ob_base.ob_type->tp_free((PyObject*)self);
+  self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject* IvrAudioFile_open(IvrAudioFile* self, PyObject* args)
@@ -100,6 +100,53 @@ static PyObject* IvrAudioFile_open(IvrAudioFile* self, PyObject* args)
     PyErr_SetString(PyExc_IOError,"Could not open file");
     return NULL;
   }
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static PyObject* IvrAudioFile_fpopen(IvrAudioFile* self, PyObject* args)
+{
+  int                   ivr_open_mode;
+  char*                 filename;
+  PyObject*             py_file = NULL;
+  AmAudioFile::OpenMode open_mode;
+
+  if(!PyArg_ParseTuple(args,"siO",&filename,&ivr_open_mode,&py_file))
+    return NULL;
+
+  switch(ivr_open_mode){
+  case AUDIO_READ:
+    open_mode = AmAudioFile::Read;
+    break;
+  case AUDIO_WRITE:
+    open_mode = AmAudioFile::Write;
+    break;
+  default:
+    PyErr_SetString(PyExc_TypeError,"Unknown open mode");
+    return NULL;
+    break;
+  }
+
+  FILE* fp = PyFile_AsFile(py_file);
+  if(!fp){
+    PyErr_SetString(PyExc_IOError,"Could not get FILE pointer");
+    return NULL;
+  }
+
+  int i;
+  Py_BEGIN_ALLOW_THREADS;
+  i = self->af->fpopen(filename,open_mode,fp);
+  Py_END_ALLOW_THREADS;
+  if(i){
+    PyErr_SetString(PyExc_IOError,"Could not open file");
+    return NULL;
+  }
+  // remember, we do not own the file pointer.
+  // we just want to delay its destruction
+  self->af->setCloseOnDestroy(false);
+  self->py_file = py_file;
+  Py_INCREF(self->py_file);
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -170,7 +217,7 @@ static PyObject* IvrAudioFile_close(IvrAudioFile* self, PyObject*)
 
 static PyObject* IvrAudioFile_getDataSize(IvrAudioFile* self, PyObject*)
 {
-  return PyLong_FromLong(self->af->getDataSize());
+  return PyInt_FromLong(self->af->getDataSize());
 }
 
 static PyObject* IvrAudioFile_setRecordTime(IvrAudioFile* self, PyObject* args)
@@ -185,8 +232,23 @@ static PyObject* IvrAudioFile_setRecordTime(IvrAudioFile* self, PyObject* args)
   return Py_None;
 }
 
+static PyObject* IvrAudioFile_exportRaw(IvrAudioFile* self, PyObject*)
+{
+  Py_BEGIN_ALLOW_THREADS;
+  if(self->af->getMode() == AmAudioFile::Write)
+    self->af->on_close();
+    
+  self->af->rewind();
+  Py_END_ALLOW_THREADS;
+  return PyFile_FromFile(self->af->getfp(),(char*)"",(char*)"rwb",NULL);
+}
+
+
 static PyMethodDef IvrAudioFile_methods[] = {
   {"open", (PyCFunction)IvrAudioFile_open, METH_VARARGS,
+   "open the audio file"
+  },
+  {"fpopen", (PyCFunction)IvrAudioFile_fpopen, METH_VARARGS,
    "open the audio file"
   },
   {"close", (PyCFunction)IvrAudioFile_close, METH_NOARGS,
@@ -200,6 +262,10 @@ static PyMethodDef IvrAudioFile_methods[] = {
   },
   {"setRecordTime", (PyCFunction)IvrAudioFile_setRecordTime, METH_VARARGS,
    "set the maximum record time in millisecond"
+  },
+  {"exportRaw", (PyCFunction)IvrAudioFile_exportRaw, METH_NOARGS,
+   "creates a new Python file with the actual file"
+   " and eventually flushes headers (audio->on_stop)"
   },
 #ifdef IVR_WITH_TTS
   {"tts", (PyCFunction)IvrAudioFile_tts, METH_CLASS | METH_VARARGS,
@@ -250,6 +316,7 @@ static PyGetSetDef IvrAudioFile_getseters[] = {
 PyTypeObject IvrAudioFileType = {
 	
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrAudioFile",        /*tp_name*/
   sizeof(IvrAudioFile),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
@@ -287,14 +354,4 @@ PyTypeObject IvrAudioFileType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrAudioFile_new,          /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };
