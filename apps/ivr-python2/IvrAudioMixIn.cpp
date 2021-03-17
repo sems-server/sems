@@ -25,7 +25,7 @@ static void IvrAudioMixIn_dealloc(IvrAudioMixIn* self)
     self->mix = NULL;
   }
 
-  self->ob_base.ob_type->tp_free((PyObject*)self);
+  self->ob_type->tp_free((PyObject*)self);
 }
 
 
@@ -96,6 +96,7 @@ static PyGetSetDef IvrAudioMixIn_getseters[] = {
 PyTypeObject IvrAudioMixInType = {
 	
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrAudioMixIn",        /*tp_name*/
   sizeof(IvrAudioMixIn),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
@@ -133,14 +134,4 @@ PyTypeObject IvrAudioMixInType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrAudioMixIn_new,          /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };

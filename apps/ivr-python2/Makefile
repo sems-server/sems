@@ -6,16 +6,15 @@ COREPATH ?=../../core
 
 PYTHON_DIR = $(shell $(PY_EXE) ./python_inc.py)
 PYTHON_LIBDIR = $(shell $(PY_EXE) ./python_lib.py)
-PYTHON_CONFDIR = $(shell $(PY_EXE)-config --configdir)
 
 # put used Python modules from lib-dynload here, e.g. time, mysql, _cvs.so etc.
 PYTHON_module_cflags = -I$(PYTHON_DIR) -fno-strict-aliasing -Wno-write-strings
 
-PYTHON_module_ldflags = -L$(PYTHON_CONFDIR) \
+PYTHON_module_ldflags = -L$(PYTHON_LIBDIR)/config \
 			-lpython$(PY_VER)
 
 #PYTHON_module_ldflags = -Xlinker --export-dynamic \
-#			-L$(PYTHON_CONFDIR) \
+#			-L$(PYTHON_LIBDIR)/config \
 #			-lpython$(PY_VER)
 
 
@@ -56,7 +55,7 @@ py_obj = $(py_src:.py=.pyc)
 ifeq (,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
-	$(PY_EXE) py_comp -l -b -q py &&\
+	$(PY_EXE) py_comp -l -q py &&\
 	cp py/*.pyc $(COREPATH)/lib
 
 endif
@@ -64,7 +63,7 @@ endif
 ifeq (all,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
-	$(PY_EXE) py_comp -l -b -q py &&\
+	$(PY_EXE) py_comp -l -q py &&\
 	cp py/*.pyc $(COREPATH)/lib
 
 endif
@@ -72,14 +71,14 @@ endif
 ifeq (install,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
-	python$(PY_VER) py_comp -l -b -q py &&\
+	python$(PY_VER) py_comp -l -q py &&\
 	cp py/*.pyc $(COREPATH)/lib
 
 endif
 
 ifeq (module_package,$(MAKECMDGOALS))
 python_files:
-	python$(PY_VER) py_comp -l -b -q py
+	python$(PY_VER) py_comp -l -q py
 
 endif
 

@@ -39,13 +39,13 @@ static PyObject* IvrDialogBase_new(PyTypeObject *type, PyObject *args, PyObject 
       return NULL;
     }
     
-    if ((NULL == o_dlg) || !PyCapsule_CheckExact(o_dlg)){
+    if ((NULL == o_dlg) || !PyCObject_Check(o_dlg)){
 	    
       Py_DECREF(self);
       return NULL;
     }
 	
-    self->p_dlg = (IvrDialog*)PyCapsule_GetPointer(o_dlg, "IvrDialog");
+    self->p_dlg = (IvrDialog*)PyCObject_AsVoidPtr(o_dlg);
 	
     // initialize self.dialog
     self->dialog = IvrSipDialog_FromPtr(self->p_dlg->dlg);
@@ -79,7 +79,7 @@ IvrDialogBase_dealloc(IvrDialogBase* self)
   self->dialog=NULL;
   Py_XDECREF(self->invite_req);
   self->invite_req=NULL;
-  self->ob_base.ob_type->tp_free((PyObject*)self);
+  self->ob_type->tp_free((PyObject*)self);
 }
 
 //
@@ -513,18 +513,18 @@ static PyObject* IvrDialogBase_sendReply(IvrDialogBase* self, PyObject* args)
      self->p_dlg->dlg->reply(self->p_dlg->mReq, code, reason, NULL, hdrs, 0);
    } catch (const AmSession::Exception& e) {
      PyObject * SemsErrorDict = PyDict_New();
-     PyObject *k = PyUnicode_FromString("code"); //New
-     PyObject *v = PyLong_FromLong(e.code); //New
+     PyObject *k = PyString_FromString("code"); //New
+     PyObject *v = PyInt_FromLong(e.code); //New
      PyDict_SetItem(SemsErrorDict, k, v);
      Py_DECREF(v);
      Py_DECREF(k);
-     k = PyUnicode_FromString("reason"); //New
-     v = PyUnicode_FromString(e.reason.c_str()); //New
+     k = PyString_FromString("reason"); //New
+     v = PyString_FromString(e.reason.c_str()); //New
      PyDict_SetItem(SemsErrorDict, k, v);
      Py_DECREF(v);
      Py_DECREF(k);
-     k = PyUnicode_FromString("hdrs"); //New
-     v = PyUnicode_FromString(e.hdrs.c_str()); //New
+     k = PyString_FromString("hdrs"); //New
+     v = PyString_FromString(e.hdrs.c_str()); //New
      PyDict_SetItem(SemsErrorDict, k, v);
      Py_DECREF(v);
      Py_DECREF(k);
@@ -544,18 +544,18 @@ IvrDialogBase_getAppParam(IvrDialogBase *self, PyObject* args)
     return NULL;
 
   string app_param = self->p_dlg->getAppParam(param_name);
-  return PyUnicode_FromString(app_param.c_str());
+  return PyString_FromString(app_param.c_str());
 }
 
 static PyObject*
 getSessionParams_helper(AmArg& p)
 {
   if(isArgInt(p) || isArgLongLong(p)) {
-    return PyLong_FromLong(p.asLong());
+    return PyInt_FromLong(p.asLong());
   } else if(isArgDouble(p)) {
     return PyFloat_FromDouble(p.asDouble());
   } else if(isArgCStr(p)) {
-    return PyUnicode_FromString(p.asCStr());
+    return PyString_FromString(p.asCStr());
   } else {
     return NULL;
   }
@@ -577,7 +577,7 @@ IvrDialogBase_getSessionParams(IvrDialogBase *self, PyObject*)
     for(;it != vs->end(); ++it) {
       if(!(v = getSessionParams_helper(it->second))) continue;
 
-      k = PyUnicode_FromString(it->first.c_str());
+      k = PyString_FromString(it->first.c_str());
       PyDict_SetItem(output, k, v);
       Py_DECREF(v);
       Py_DECREF(k);
@@ -745,6 +745,7 @@ static PyGetSetDef IvrDialogBase_getset[] = {
 PyTypeObject IvrDialogBaseType = {
     
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrDialogBase",       /*tp_name*/
   sizeof(IvrDialogBase),     /*tp_basicsize*/
   0,                         /*tp_itemsize*/
@@ -782,14 +783,4 @@ PyTypeObject IvrDialogBaseType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrDialogBase_new,         /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };

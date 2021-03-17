@@ -26,13 +26,13 @@ static PyObject* IvrSipDialog_new(PyTypeObject *type, PyObject *args, PyObject *
       return NULL;
     }
     
-    if ((NULL == o_dlg) || !PyCapsule_CheckExact(o_dlg)){
+    if ((NULL == o_dlg) || !PyCObject_Check(o_dlg)){
 	    
       Py_DECREF(self);
       return NULL;
     }
 	
-    self->p_dlg = (AmSipDialog*)PyCapsule_GetPointer(o_dlg, "SipDialog");
+    self->p_dlg = (AmSipDialog*)PyCObject_AsVoidPtr(o_dlg);
   }
 
   DBG("IvrSipDialog_new\n");
@@ -49,7 +49,7 @@ static PyObject* IvrSipDialog_new(PyTypeObject *type, PyObject *args, PyObject *
   static PyObject*						\
   getter_name(IvrSipDialog *self, void *closure)		\
   {								\
-    return PyUnicode_FromString(self->p_dlg->attr.c_str());	\
+    return PyString_FromString(self->p_dlg->attr.c_str());	\
   }								\
 								
 def_IvrSipDialog_GETTER(IvrSipDialog_getuser,         getUser())
@@ -82,19 +82,19 @@ def_IvrSipDialog_SETTER(IvrSipDialog_setremote_uri,   setRemoteUri)
 static PyObject*
 IvrSipDialog_getcseq(IvrSipDialog *self, void *closure)
 {
-  return PyLong_FromLong(self->p_dlg->cseq);
+  return PyInt_FromLong(self->p_dlg->cseq);
 }
 
 static PyObject*
 IvrSipDialog_getstatus(IvrSipDialog *self, void *closure)
 {
-  return PyLong_FromLong((int)self->p_dlg->getStatus());
+  return PyInt_FromLong((int)self->p_dlg->getStatus());
 }
 
 static PyObject*
 IvrSipDialog_getstatusstr(IvrSipDialog *self, void *closure)
 {
-  return PyUnicode_FromString((char*)self->p_dlg->getStatusStr());
+  return PyString_FromString((char*)self->p_dlg->getStatusStr());
 }
 
 static PyGetSetDef IvrSipDialog_getset[] = {
@@ -122,6 +122,7 @@ static PyGetSetDef IvrSipDialog_getset[] = {
 PyTypeObject IvrSipDialogType = {
     
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrSipDialog",        /*tp_name*/
   sizeof(IvrSipDialog),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
@@ -159,22 +160,12 @@ PyTypeObject IvrSipDialogType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrSipDialog_new,          /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };
 
 
 PyObject* IvrSipDialog_FromPtr(AmSipDialog* dlg)
 {
-  PyObject* c_dlg = PyCapsule_New(dlg, "SipDialog", NULL);
+  PyObject* c_dlg = PyCObject_FromVoidPtr(dlg,NULL);
   PyObject* args = Py_BuildValue("(O)",c_dlg);
     
   PyObject* py_dlg = IvrSipDialog_new(&IvrSipDialogType,args,NULL);

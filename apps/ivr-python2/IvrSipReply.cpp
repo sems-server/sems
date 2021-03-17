@@ -46,13 +46,13 @@ static PyObject* IvrSipReply_new(PyTypeObject *type, PyObject *args, PyObject *k
       return NULL;
     }
     
-    if ((NULL == o_req) || !PyCapsule_CheckExact(o_req)){
+    if ((NULL == o_req) || !PyCObject_Check(o_req)){
 	    
       Py_DECREF(self);
       return NULL;
     }
 	
-    self->p_req = (AmSipReply*)PyCapsule_GetPointer(o_req, "SipReply");
+    self->p_req = (AmSipReply*)PyCObject_AsVoidPtr(o_req);
   }
 
   DBG("IvrSipReply_new\n");
@@ -63,14 +63,14 @@ static void
 IvrSipReply_dealloc(IvrSipReply* self) 
 {
   delete self->p_req;
-  self->ob_base.ob_type->tp_free((PyObject*)self);
+  self->ob_type->tp_free((PyObject*)self);
 }
 
 #define def_IvrSipReply_GETTER(getter_name, attr)		\
   static PyObject*						\
   getter_name(IvrSipReply *self, void *closure)			\
   {								\
-    return PyUnicode_FromString(self->p_req->attr.c_str());	\
+    return PyString_FromString(self->p_req->attr.c_str());	\
   }								
 								
 								
@@ -85,13 +85,13 @@ def_IvrSipReply_GETTER(IvrSipReply_getroute,      route)
 static PyObject*
 IvrSipReply_getcseq(IvrSipReply *self, void *closure)
 {
-  return PyLong_FromLong(self->p_req->cseq);
+  return PyInt_FromLong(self->p_req->cseq);
 }
 
 static PyObject*
 IvrSipReply_getcode(IvrSipReply *self, void *closure)
 {
-  return PyLong_FromLong(self->p_req->code);
+  return PyInt_FromLong(self->p_req->code);
 }
 
 static PyGetSetDef IvrSipReply_getset[] = {
@@ -110,6 +110,7 @@ static PyGetSetDef IvrSipReply_getset[] = {
 PyTypeObject IvrSipReplyType = {
     
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrSipReply",        /*tp_name*/
   sizeof(IvrSipReply),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
@@ -147,22 +148,12 @@ PyTypeObject IvrSipReplyType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrSipReply_new,          /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };
 
 
 PyObject* IvrSipReply_FromPtr(AmSipReply* req)
 {
-  PyObject* c_req = PyCapsule_New(req, "SipReply", NULL);
+  PyObject* c_req = PyCObject_FromVoidPtr(req,NULL);
   PyObject* args = Py_BuildValue("(O)",c_req);
     
   PyObject* py_req = IvrSipReply_new(&IvrSipReplyType,args,NULL);

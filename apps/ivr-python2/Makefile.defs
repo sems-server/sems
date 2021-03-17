@@ -1,6 +1,6 @@
-# Python version: 3.x
+# Python version: 2.5, 2.4 or 2.3
 #
-PYTHON_VERSION ?= $(shell python3 -c 'import sys;print(sys.version[0:3])')
+PYTHON_VERSION ?= $(shell python2 -c 'import sys;print sys.version[0:3]')
 
 PY_VER = $(PYTHON_VERSION)
 PY_EXE = python$(PY_VER)

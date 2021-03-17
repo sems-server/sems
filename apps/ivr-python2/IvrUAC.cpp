@@ -33,7 +33,7 @@ static PyObject* IvrUAC_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 static void IvrUAC_dealloc(IvrUAC* self)
 {
-  self->ob_base.ob_type->tp_free((PyObject*)self);
+  self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
@@ -61,7 +61,7 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
       int size = PyList_Size(sp);
       for (int ii = 0; ii < size; ii++) {
         PyObject *item = PyList_GetItem(sp, ii);
-        const char *str = PyUnicode_AsUTF8(item);
+        char *str = PyString_AsString(item);
         session_params->push(string(str));
       }
     } else if(PyDict_Check(sp)) {
@@ -71,8 +71,8 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
       PyObject *key, *value;
       Py_ssize_t pos = 0;
       while (PyDict_Next(sp, &pos, &key, &value)) {
-        if(PyUnicode_Check(value))
-          (*session_params)[PyUnicode_AsUTF8(key)] = PyUnicode_AsUTF8(value);
+        if(PyString_Check(value))
+          (*session_params)[PyString_AsString(key)] = PyString_AsString(value);
       }
     }
   }
@@ -93,6 +93,7 @@ static PyMethodDef IvrUAC_methods[] = {
 
 PyTypeObject IvrUACType = {	
   PyObject_HEAD_INIT(NULL)
+  0,                         /*ob_size*/
   "ivr.IvrUAC",              /*tp_name*/
   sizeof(IvrUAC),            /*tp_basicsize*/
   0,                         /*tp_itemsize*/
@@ -130,14 +131,4 @@ PyTypeObject IvrUACType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrUAC_new,                /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
-  0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
 };
