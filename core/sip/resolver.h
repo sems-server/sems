@@ -77,7 +77,7 @@ class dns_entry
     : public atomic_ref_cnt,
       public dns_base_entry
 {
-    virtual dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end)=0;
+    virtual dns_base_entry* get_rr(dns_record* rr, unsigned char* begin, unsigned char* end)=0;
 
 public:
     vector<dns_base_entry*> ip_vec;
@@ -87,7 +87,7 @@ public:
     dns_entry();
     virtual ~dns_entry();
     virtual void init()=0;
-    virtual void add_rr(dns_record* rr, u_char* begin, u_char* end, long now);
+    virtual void add_rr(dns_record* rr, unsigned char* begin, unsigned char* end, long now);
     virtual int next_ip(dns_handle* h, sockaddr_storage* sa)=0;
 
     virtual string to_str();
@@ -140,7 +140,7 @@ public:
     {}
 
     void init(){};
-    dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end);
+    dns_base_entry* get_rr(dns_record* rr, unsigned char* begin, unsigned char* end);
     int next_ip(dns_handle* h, sockaddr_storage* sa);
 
     int fill_ip_list(const list<sip_destination>& ip_list);
@@ -199,7 +199,7 @@ public:
     {}
 
     void init();
-    dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end);
+    dns_base_entry* get_rr(dns_record* rr, unsigned char* begin, unsigned char* end);
 
     // not needed
     int next_ip(dns_handle* h, sockaddr_storage* sa) { return -1; }

@@ -169,7 +169,7 @@ public:
 	stable_sort(ip_vec.begin(),ip_vec.end(),srv_less);
     }
 
-    dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end);
+    dns_base_entry* get_rr(dns_record* rr, unsigned char* begin, unsigned char* end);
 
     int next_ip(dns_handle* h, sockaddr_storage* sa)
     {
@@ -316,7 +316,7 @@ dns_entry* dns_entry::make_entry(dns_rr_type t)
     }
 }
 
-void dns_entry::add_rr(dns_record* rr, u_char* begin, u_char* end, long now)
+void dns_entry::add_rr(dns_record* rr, unsigned char* begin, unsigned char* end, long now)
 {
     dns_base_entry* e = get_rr(rr,begin,end);
     if(!e) return;
@@ -451,7 +451,7 @@ void ip_entry::to_sa(sockaddr_storage* sa)
 string ip_entry::to_str()
 {
     if(type == IPv4) {
-	u_char* cp = (u_char*)&addr;
+	unsigned char* cp = (unsigned char*)&addr;
 	return int2str(cp[0]) + 
 	    "." + int2str(cp[1]) + 
 	    "." + int2str(cp[2]) + 
@@ -496,7 +496,7 @@ string ip_port_entry::to_str()
     return ip_entry::to_str() + ":" + int2str(port);
 }
 
-dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, u_char* begin, u_char* end)
+dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, unsigned char* begin, unsigned char* end)
 {
     if(rr->type != dns_r_a)
 	return NULL;
@@ -516,16 +516,16 @@ dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, u_char* begin, u_char* end)
     return new_ip;
 }
 
-dns_base_entry* dns_srv_entry::get_rr(dns_record* rr, u_char* begin, u_char* end)
+dns_base_entry* dns_srv_entry::get_rr(dns_record* rr, unsigned char* begin, unsigned char* end)
 {
     if(rr->type != dns_r_srv)
 	return NULL;
 
-    u_char name_buf[NS_MAXDNAME];
-    const u_char * rdata = ns_rr_rdata(*rr);
+    unsigned char name_buf[NS_MAXDNAME];
+    const unsigned char * rdata = ns_rr_rdata(*rr);
 	
     /* Expand the target's name */
-    u_char* p = (u_char*)rdata+6;
+    unsigned char* p = (unsigned char*)rdata+6;
     if (dns_expand_name(&p,begin,end,
     			   name_buf,         /* Result                */
     			   NS_MAXDNAME)      /* Size of result buffer */
@@ -570,7 +570,7 @@ struct dns_search_h
 };
 
 int rr_to_dns_entry(dns_record* rr, dns_section_type t,
-		    u_char* begin, u_char* end, void* data)
+		    unsigned char* begin, unsigned char* end, void* data)
 {
     // only answer and additional sections
     if(t != dns_s_an && t != dns_s_ar)
@@ -668,7 +668,7 @@ void dns_naptr_entry::init()
     stable_sort(ip_vec.begin(),ip_vec.end(),naptr_less);
 }
 
-dns_base_entry* dns_naptr_entry::get_rr(dns_record* rr, u_char* begin, u_char* end)
+dns_base_entry* dns_naptr_entry::get_rr(dns_record* rr, unsigned char* begin, unsigned char* end)
 {
     enum NAPTR_FieldIndex {
 	NAPTR_Flags       = 0,
@@ -681,7 +681,7 @@ dns_base_entry* dns_naptr_entry::get_rr(dns_record* rr, u_char* begin, u_char* e
     if(rr->type != dns_r_naptr)
 	return NULL;
 
-    const u_char * rdata = ns_rr_rdata(*rr);
+    const unsigned char * rdata = ns_rr_rdata(*rr);
 
     unsigned short order = dns_get_16(rdata);
     rdata += 2;
@@ -856,7 +856,7 @@ _resolver::~_resolver()
 
 int _resolver::query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type t)
 {
-    u_char dns_res[NS_PACKETSZ];
+    unsigned char dns_res[NS_PACKETSZ];
 
     if(!name) return -1;
 
