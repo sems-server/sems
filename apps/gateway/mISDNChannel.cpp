@@ -118,8 +118,8 @@ int mISDN_get_free_ext_ie(mISDN::Q931_info_t *qi) {
         return (-1);
 }
 
-int mISDN_AddIE(mISDN::Q931_info_t *qi, u_char *p, u_char ie, u_char *iep) {
-        u_char          *ps;
+int mISDN_AddIE(mISDN::Q931_info_t *qi, unsigned char *p, unsigned char ie, unsigned char *iep) {
+        unsigned char          *ps;
         mISDN::ie_info_t       *ies;
         int             l;
 
@@ -158,7 +158,7 @@ int mISDN_AddIE(mISDN::Q931_info_t *qi, u_char *p, u_char ie, u_char *iep) {
                 }
                 l = iep[0] + 1;
         }
-        ps = (u_char *) qi;
+        ps = (unsigned char *) qi;
         ps += L3_EXTRA_SIZE;
         ies->off = (u16)(p - ps);
         *p++ = ie;

@@ -303,7 +303,7 @@ void udp_trsp::run()
     msg.msg_namelen    = sizeof(sockaddr_storage);
     msg.msg_iov        = iov;
     msg.msg_iovlen     = 1;
-    msg.msg_control    = new u_char[DSTADDR_DATASIZE];
+    msg.msg_control    = new unsigned char[DSTADDR_DATASIZE];
     msg.msg_controllen = DSTADDR_DATASIZE;
 
     if(sock->get_sd()<=0){

@@ -39,18 +39,18 @@ struct dns_record
 
 class dns_entry;
 
-typedef int (*dns_parse_fct)(dns_record* rr, dns_section_type t, u_char* begin, u_char* end, void* data);
+typedef int (*dns_parse_fct)(dns_record* rr, dns_section_type t, unsigned char* begin, unsigned char* end, void* data);
 
-int dns_msg_parse(u_char* msg, int len, dns_parse_fct fct, void* data);
-int dns_expand_name(u_char** ptr, u_char* begin, u_char* end, 
-		    u_char* buf, unsigned int len);
+int dns_msg_parse(unsigned char* msg, int len, dns_parse_fct fct, void* data);
+int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* end, 
+		    unsigned char* buf, unsigned int len);
 
-inline uint16_t dns_get_16(const u_char* p)
+inline uint16_t dns_get_16(const unsigned char* p)
 {
   return ntohs(*(uint16_t*)p);
 }
 
-inline uint32_t dns_get_32(const u_char* p)
+inline uint32_t dns_get_32(const unsigned char* p)
 {
   return ntohl(*(uint32_t*)p);
 }

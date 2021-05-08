@@ -6,10 +6,10 @@
 #define SECTION_COUNTS_OFF 4
 #define HEADER_OFFSET      12
 
-unsigned short dns_msg_count(u_char* begin, dns_section_type sect);
-int dns_skip_name(u_char** p, u_char* end);
-int dns_expand_name(u_char** ptr, u_char* begin, u_char* end, 
-		    u_char* buf, unsigned int len);
+unsigned short dns_msg_count(unsigned char* begin, dns_section_type sect);
+int dns_skip_name(unsigned char** p, unsigned char* end);
+int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* end, 
+		    unsigned char* buf, unsigned int len);
 
 
 const char* dns_rr_type_str(dns_rr_type t)
@@ -27,11 +27,11 @@ const char* dns_rr_type_str(dns_rr_type t)
 
 
 
-int dns_msg_parse(u_char* msg, int len, dns_parse_fct fct, void* data)
+int dns_msg_parse(unsigned char* msg, int len, dns_parse_fct fct, void* data)
 {
-  u_char* begin = msg;
-  u_char* p = begin + HEADER_OFFSET;
-  u_char* end = msg + len;
+  unsigned char* begin = msg;
+  unsigned char* p = begin + HEADER_OFFSET;
+  unsigned char* end = msg + len;
 
   if(p >= end) return -1;
 
@@ -48,7 +48,7 @@ int dns_msg_parse(u_char* msg, int len, dns_parse_fct fct, void* data)
     for(int i=0; i<dns_msg_count(begin,(dns_section_type)s); i++){
 
       // expand name
-      if(dns_expand_name(&p,begin,end,(u_char*)rr.name,NS_MAXDNAME) < 0) return -1;
+      if(dns_expand_name(&p,begin,end,(unsigned char*)rr.name,NS_MAXDNAME) < 0) return -1;
 
       // at least 8 bytes for type+class+ttl left?
       if((p + 8) > end) return -1;
@@ -79,14 +79,14 @@ int dns_msg_parse(u_char* msg, int len, dns_parse_fct fct, void* data)
   return 0;
 }
 
-unsigned short dns_msg_count(u_char* begin, dns_section_type sect)
+unsigned short dns_msg_count(unsigned char* begin, dns_section_type sect)
 {
-  u_char* p = begin + SECTION_COUNTS_OFF + 2*sect;
+  unsigned char* p = begin + SECTION_COUNTS_OFF + 2*sect;
 
   return ((u_short)*p)<<8 | ((u_short)*(p+1));
 }
 
-int dns_skip_name(u_char** p, u_char* end)
+int dns_skip_name(unsigned char** p, unsigned char* end)
 {
   while(*p < end) {
     
@@ -106,11 +106,11 @@ int dns_skip_name(u_char** p, u_char* end)
   return -1;
 }
 
-int dns_expand_name(u_char** ptr, u_char* begin, u_char* end, 
-		    u_char* start_buf, unsigned int len)
+int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* end, 
+		    unsigned char* start_buf, unsigned int len)
 {
-  u_char* buf = start_buf;
-  u_char* p = *ptr;
+  unsigned char* buf = start_buf;
+  unsigned char* p = *ptr;
   bool    is_ptr=false;
 
   while(p < end) {
