@@ -848,9 +848,8 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
         Py_XDECREF(tb);
         if(!error) throw Exception(code, reason, hdrs);
       } else {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(tb);
+        PyErr_Restore(type, value, tb);
+        PyErr_PrintEx(0);
       }
     } else {
       ERROR("NULL result without error in PyObject_Call");
