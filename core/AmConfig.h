@@ -166,6 +166,8 @@ struct AmConfig
     unsigned int mtu;
   };
 
+  static map<string, string> IfName2IP;
+
   static vector<SysIntf> SysIfs;
 
   static int insert_SIP_interface(const SIP_interface& intf);
