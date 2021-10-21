@@ -469,6 +469,17 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
     }
   }
 
+  if(status == Cancelling){
+
+    DBG("?Cancelling?: cseq_method = %s; code = %i\n",
+	reply.cseq_method.c_str(), reply.code);
+
+    if((reply.cseq_method == SIP_METH_CANCEL) && (reply.code >= 200)){
+      //TODO: support the auth case here (401/403)
+      setStatus(Disconnected);
+    }
+  }
+
   if (offeranswer_enabled) {
     oa.onReplyIn(reply);
   }
