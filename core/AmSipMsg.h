@@ -37,8 +37,10 @@ class _AmSipMsgInDlg
   trans_ticket tt;
 
   string         remote_ip;
+  string         remote_ip_sip;
   unsigned short remote_port;
   string         local_ip;
+  string         local_ip_sip;
   unsigned short local_port;
   string         trsp;
 
