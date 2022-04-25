@@ -37,10 +37,10 @@ class _AmSipMsgInDlg
   trans_ticket tt;
 
   string         remote_ip;
-  string         remote_ip_sip;
+  bool           remote_ip_is_ipv6;
   unsigned short remote_port;
   string         local_ip;
-  string         local_ip_sip;
+  bool           local_ip_is_ipv6;
   unsigned short local_port;
   string         trsp;
 
