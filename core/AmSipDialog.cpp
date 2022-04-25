@@ -370,9 +370,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
     case Trying:
     case Proceeding:
       if(reply.code < 200){
-	// Do not go to Early state if reply did not come from an UAS
-	if (((reply.code == 100) || (reply.code == 181) || (reply.code == 182))
-	    || reply.to_tag.empty())
+        if(reply.code == 100 || reply.to_tag.empty())
 	  setStatus(Proceeding);
 	else {
 	  setStatus(Early);
