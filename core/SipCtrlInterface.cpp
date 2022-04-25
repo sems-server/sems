@@ -639,9 +639,11 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	req.max_forwards = AmConfig::MaxForwards;
 
     req.remote_ip = get_addr_str(&msg->remote_ip);
+    req.remote_ip_sip = get_addr_str(&msg->remote_ip_sip);
     req.remote_port = am_get_port(&msg->remote_ip);
 
     req.local_ip = get_addr_str(&msg->local_ip);
+    req.local_ip_sip = get_addr_str(&msg->local_ip_sip);
     req.local_port = am_get_port(&msg->local_ip);
 
     req.trsp = msg->local_socket->get_transport();
