@@ -737,9 +737,11 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
     }
 
     reply.remote_ip = get_addr_str(&msg->remote_ip);
+    reply.remote_ip_sip = get_addr_str_sip(&msg->remote_ip);
     reply.remote_port = am_get_port(&msg->remote_ip);
 
     reply.local_ip = get_addr_str(&msg->local_ip);
+    reply.local_ip_sip = get_addr_str_sip(&msg->local_ip);
     reply.local_port = am_get_port(&msg->local_ip);
 
     if(msg->local_socket)
