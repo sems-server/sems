@@ -1,12 +1,14 @@
 # defines
 %global		build_timestamp %(date +"%Y%m%d%H%M")
+%define         _unpackaged_files_terminate_build 0
 
 Summary:	SIP Express Media Server, an extensible SIP media server
 Name:		sems
 Version:	1.7.0
-Release:	1.%{build_timestamp}%{?dist}
+Release:	2.%{build_timestamp}%{?dist}
 URL:		https://github.com/sems-server/%{name}
-Source0:	https://github.com/sems-server/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
+#Source0:	https://github.com/sems-server/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
+Source0:        https://github.com/sems-server/sems/archive/master.tar.gz
 
 License:	GPLv2+
 BuildRequires:	bcg729-devel
@@ -210,7 +212,12 @@ methods calls, get_loglevel and set_loglevel are implemented (like in the
 stats UDP server). Additionally, it can be used as client to access
 XMLRPC servers.
 
+
 %prep
+# Temporary fix for adding versioning to the archive from the master
+cd ../SOURCES && tar -zxf master.tar.gz --transform s/sems-master/%{name}-%{version}/ && rm -f master.tar.gz
+tar cvzf master.tar.gz sems-1.7.0/ && cd ../BUILD
+
 %autosetup -p1
 mv ./apps/dsm/fsmc/readme.txt  ./apps/dsm/fsmc/Readme.fsmc.txt
 
