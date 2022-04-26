@@ -639,9 +639,11 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	req.max_forwards = AmConfig::MaxForwards;
 
     req.remote_ip = get_addr_str(&msg->remote_ip);
+    req.remote_ip_is_ipv6 = (msg->remote_ip.ss_family != AF_INET);
     req.remote_port = am_get_port(&msg->remote_ip);
 
     req.local_ip = get_addr_str(&msg->local_ip);
+    req.local_ip_is_ipv6 = (msg->local_ip.ss_family != AF_INET);
     req.local_port = am_get_port(&msg->local_ip);
 
     req.trsp = msg->local_socket->get_transport();
@@ -735,9 +737,11 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
     }
 
     reply.remote_ip = get_addr_str(&msg->remote_ip);
+    reply.remote_ip_is_ipv6 = (msg->remote_ip.ss_family != AF_INET);
     reply.remote_port = am_get_port(&msg->remote_ip);
 
     reply.local_ip = get_addr_str(&msg->local_ip);
+    reply.local_ip_is_ipv6 = (msg->local_ip.ss_family != AF_INET);
     reply.local_port = am_get_port(&msg->local_ip);
 
     if(msg->local_socket)
