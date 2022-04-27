@@ -1,3 +1,9 @@
+sems (1.8.0-dev) UNRELEASED; urgency=medium
+
+  * Devel version
+
+ -- Juha Heinanen <jh@tutpro.com>  Wed, 27 Apr 2022 14:52:32 +0300
+
 sems (1.7.0~dev) unstable; urgency=medium
 
   * Devel version
