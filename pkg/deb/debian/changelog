@@ -1,3 +1,9 @@
+sems (1.7.0) unstable; urgency=medium
+
+  * SEMS 1.7.0 release
+
+ -- Juha Heinanen <jh@tutpro.com>  Wed, 27 Apr 2022 14:47:28 +0300
+
 sems (1.7.0~dev) unstable; urgency=medium
 
   * Devel version
