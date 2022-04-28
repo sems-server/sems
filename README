@@ -224,26 +224,14 @@ Documentation:
   Generate the doxygen documentation with 'make doc' in doc/doxygen_doc,
   that contains all these files as well.
 
-  All this and more documentation is available online linked from 
-  the SEMS homepage: 
-    http://www.iptel.org/sems.
-
 Support, mailing lists, bugs and contact:
 
-  Please have a look at the documentation and other information on 
-  the SEMS homepage (www.iptel.org/sems). 
-
   Best-effort support is given through the mailing lists for SEMS,
-  sems@iptel.org and semsdev@iptel.org, which are the first address 
-  to ask for help, report bugs and improvements. You need to be 
-  subscribed to be able to post to the lists: http://lists.iptel.org.
-  The mailing list archives at   http://lists.iptel.org/pipermail/sems/ 
-  and http://lists.iptel.org/pipermail/semsdev/ can be a great help as
-  well (especially with google site search on lists.iptel.org, e.g.
-  http://www.google.com/coop/cse?cx=006590474108803368786%3A158hxzctv4u ). 
+  sems-users@googlegroups.com and sems-dev@googlegroups.com, which are the
+  first address to ask for help, report bugs and improvements.
 
-  The bug tracker for SEMS is at http://tracker.iptel.org/browse/SEMS
-  Please submit all bugs, crashes and feature requests you encounter.
+  Bugs can be filed as issues on this site.  Please submit all bugs,
+  crashes and feature requests you encounter.
 
 Authors:
 
