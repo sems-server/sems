@@ -4,7 +4,7 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
-PYTHON_MODULES=ivr conf_auth mailbox pin_collect
+PYTHON_MODULES=ivr ivr-python2 conf_auth mailbox pin_collect
 
 EXCLUDED_MODULES=gateway examples mp3 twit
 
@@ -21,8 +21,8 @@ export USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)"
 override_dh_auto_build:
 	$(MAKE) \
 	cfg_target=/etc/sems/ prefix=/usr \
-	exclude_app_modules="$(EXCLUDED_MODULES)" \
-	exclude_dsm_modules="$(EXCLUDED_DSM_MODULES)" \
+	exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
+	exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
 	DESTDIR=$(CURDIR)/debian/sems
 
 override_dh_auto_install:
