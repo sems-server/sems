@@ -129,7 +129,13 @@ int AmOfferAnswer::onRequestIn(const AmSipRequest& req)
 
     const AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
     if(sdp_body)
-      err_code = onRxSdp(req.cseq,*sdp_body,&err_txt);
+	    err_code = onRxSdp(req.cseq,*sdp_body,&err_txt);
+    else {
+      if (!req.body.hasContentType("application/csta+xml")) {
+	    err_code = 400;
+	    err_txt = "unsupported content type";
+      }
+    }
   }
 
   if(checkStateChange()){
@@ -170,12 +176,12 @@ int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
      !reply.body.empty() ) {
 
     const AmMimeBody* sdp_body = reply.body.hasContentType(SIP_APPLICATION_SDP);
-    if(sdp_body) {
+    if(sdp_body || reply.body.hasContentType("application/csta+xml")) {
 
       if(((state == OA_Completed) ||
 	  (state == OA_OfferRecved)) &&
 	 (reply.cseq == cseq)) {
-	
+
 	DBG("ignoring subsequent SDP reply within the same transaction\n");
 	DBG("this usually happens when 183 and 200 have SDP\n");
 
@@ -221,8 +227,10 @@ int AmOfferAnswer::onRxSdp(unsigned int m_cseq, const AmMimeBody& body, const ch
   const AmMimeBody *sdp = body.hasContentType("application/sdp");
 
   if (sdp == NULL) {
-    err_code = 400;
-    *err_txt = "sdp body part not found";
+    if (!body.empty() && !body.hasContentType("application/csta+xml")) {
+      err_code = 400;
+      *err_txt = "sdp body part not found";
+    }
   } else if (sdp_remote.parse((const char*)sdp->getPayload())) {
     err_code = 400;
     *err_txt = "session description parsing failed";
@@ -269,6 +277,7 @@ int AmOfferAnswer::onTxSdp(unsigned int m_cseq, const AmMimeBody& body)
 {
   // assume that the payload is ok if it is not empty.
   // (do not parse again self-generated SDP)
+  // should work also with other than sdp payloads
   if(body.empty()){
     return -1;
   }
@@ -287,7 +296,7 @@ int AmOfferAnswer::onTxSdp(unsigned int m_cseq, const AmMimeBody& body)
 
   case OA_OfferSent:
     // There is already a pending offer!!!
-    DBG("There is already a pending offer, onTxSdp fails\n");
+    ERROR("There is already a pending offer, onTxSdp fails\n");
     return -1;
 
   default:
@@ -303,7 +312,7 @@ int AmOfferAnswer::onRequestOut(AmSipRequest& req)
   bool generate_sdp = sdp_body && !sdp_body->getLen();
   bool has_sdp = sdp_body && sdp_body->getLen();
 
-  if (!sdp_body &&
+  if (!sdp_body && !req.body.hasContentType("application/csta+xml") &&
       ((req.method == SIP_METH_PRACK) ||
        (req.method == SIP_METH_ACK))
       && (state == OA_OfferRecved)) {
@@ -330,9 +339,12 @@ int AmOfferAnswer::onRequestOut(AmSipRequest& req)
     }
   }
 
-  if(has_sdp && (onTxSdp(req.cseq,req.body) != 0)){
-    DBG("onTxSdp() failed\n");
-    return -1;
+  if((has_sdp ||
+      (req.body.hasContentType("application/csta+xml") &&
+       req.method != SIP_METH_INFO)) &&
+     (onTxSdp(req.cseq,req.body) != 0)){
+	  DBG("onTxSdp() failed\n");
+	  return -1;
   }
 
   return 0;
@@ -344,7 +356,8 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
   bool generate_sdp = sdp_body && !sdp_body->getLen();
   bool has_sdp = sdp_body && sdp_body->getLen();
 
-  if (!has_sdp && !generate_sdp) {
+  if (!has_sdp && !generate_sdp &&
+      !reply.body.hasContentType("application/csta+xml")) {
     // let's see whether we should force SDP or not.
 
     if (reply.cseq_method == SIP_METH_INVITE){
@@ -414,10 +427,12 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
     }
   }
 
-  if (has_sdp && (onTxSdp(reply.cseq,reply.body) != 0)) {
-    
-    DBG("onTxSdp() failed\n");
-    return -1;
+  if ((has_sdp ||
+       (reply.cseq_method != SIP_METH_INFO &&
+	reply.body.hasContentType("application/csta+xml"))) &&
+      (onTxSdp(reply.cseq,reply.body) != 0)) {
+	  DBG("onTxSdp() failed\n");
+	  return -1;
   }
 
   if( (reply.code >= 300) &&
