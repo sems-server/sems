@@ -137,6 +137,11 @@ int AmRtpStream::getLocalSocket()
     throw string ("while setting socket non blocking.");
   }
 
+  if (AmConfig::DSCPforRtp) {
+    setsockopt(sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforRtp, sizeof(AmConfig::DSCPforRtp));
+    setsockopt(rtcp_sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforRtp, sizeof(AmConfig::DSCPforRtp));
+  }
+
   l_sd = sd;
   l_rtcp_sd = rtcp_sd;
 

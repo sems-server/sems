@@ -6,6 +6,7 @@
 #include "hash.h"
 
 #include "AmUtils.h"
+#include "AmConfig.h"
 
 #include <netdb.h>
 #include <event2/event.h>
@@ -189,6 +190,10 @@ int tcp_trsp_socket::connect()
     ERROR("socket: %s\n",strerror(errno));
     return -1;
   } 
+
+  if (AmConfig::DSCPforSip) {
+    setsockopt(sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforSip, sizeof(AmConfig::DSCPforSip));
+  }
 
   int true_opt = 1;
   if(ioctl(sd, FIONBIO , &true_opt) == -1) {
@@ -630,6 +635,10 @@ int tcp_server_socket::bind(const string& bind_ip, unsigned short bind_port)
     ERROR("socket: %s\n",strerror(errno));
     return -1;
   } 
+
+  if (AmConfig::DSCPforSip) {
+    setsockopt(sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforSip, sizeof(AmConfig::DSCPforSip));
+  }
 
   int true_opt = 1;
   if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,

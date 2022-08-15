@@ -203,6 +203,10 @@ struct AmConfig
   static bool SipNATHandling;
   /** use raw socket to send UDP packets (root permission required) */
   static bool UseRawSockets;
+  /** Set DSCP field for the specified value on outgoing SIP packets, use 0 for none */
+  static unsigned int DSCPforSip;
+  /** Set DSCP field for the specified value on outgoing RTP packets, use 0 for none */
+  static unsigned int DSCPforRtp;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
   /** Server/User-Agent header (optional) */

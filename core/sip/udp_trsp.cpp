@@ -37,6 +37,7 @@
 #include "trans_layer.h"
 #include "log.h"
 #include "AmUtils.h"
+#include "AmConfig.h"
 
 #include <sys/param.h>
 #include <arpa/inet.h>
@@ -100,6 +101,10 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 	return -1;
     } 
     
+    if (AmConfig::DSCPforSip) {
+      setsockopt(sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforSip, sizeof(AmConfig::DSCPforSip));
+    }
+
     if(::bind(sd,(const struct sockaddr*)&addr,SA_len(&addr))) {
 
 	ERROR("bind: %s\n",strerror(errno));

@@ -98,6 +98,8 @@ bool         AmConfig::ForceOutboundIf         = false;
 bool         AmConfig::ForceSymmetricRtp       = false;
 bool         AmConfig::SipNATHandling          = false;
 bool         AmConfig::UseRawSockets           = false;
+unsigned int AmConfig::DSCPforSip              = 0;
+unsigned int AmConfig::DSCPforRtp              = 0;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 string       AmConfig::Signature               = "";
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
@@ -389,6 +391,26 @@ int AmConfig::readConfiguration()
     if(UseRawSockets && (raw_sender::init() < 0)) {
       UseRawSockets = false;
     }
+  }
+
+  if (cfg.hasParameter("dscp_sip")) {
+      unsigned int ds = 0;
+      if(str2int(cfg.getParameter("dscp_sip"), ds)) {
+	  ERROR("invalid dscp_sip specified\n");
+      }
+      else {
+	  DSCPforSip = ds;
+      }
+  }
+
+  if (cfg.hasParameter("dscp_rtp")) {
+      unsigned int dr = 0;
+      if(str2int(cfg.getParameter("dscp_rtp"), dr)) {
+	  ERROR("invalid dscp_rtp specified\n");
+      }
+      else {
+	  DSCPforRtp = dr;
+      }
   }
 
   if(cfg.hasParameter("ignore_notify_lower_cseq")) {
