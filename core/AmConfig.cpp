@@ -395,7 +395,7 @@ int AmConfig::readConfiguration()
 
   if (cfg.hasParameter("dscp_sip")) {
       unsigned int ds = 0;
-      if(str2int(cfg.getParameter("dscp_sip"), ds)) {
+      if(str2i(cfg.getParameter("dscp_sip"), ds)) {
 	  ERROR("invalid dscp_sip specified\n");
       }
       else {
@@ -405,7 +405,7 @@ int AmConfig::readConfiguration()
 
   if (cfg.hasParameter("dscp_rtp")) {
       unsigned int dr = 0;
-      if(str2int(cfg.getParameter("dscp_rtp"), dr)) {
+      if(str2i(cfg.getParameter("dscp_rtp"), dr)) {
 	  ERROR("invalid dscp_rtp specified\n");
       }
       else {
