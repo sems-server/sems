@@ -210,6 +210,9 @@ int MuxStreamQueue::init(const string& _remote_ip, unsigned short _remote_port) 
     return -1;
   }
 
+  if (AmConfig::DSCPforRtp) {
+    setsockopt(l_sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforRtp, sizeof(AmConfig::DSCPforRtp));
+  }
   if (!am_inet_pton(remote_ip.c_str(), &r_saddr)) {
     WARN("Address not valid (host: %s).\n", remote_ip.c_str());
     return -1;

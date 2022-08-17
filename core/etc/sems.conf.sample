@@ -609,6 +609,18 @@ use_default_signature=yes
 #
 # use_raw_sockets=yes
 
+# set DSCP field on outgoing SIP packets? (unsigned int value)
+#
+# Default 0, don't set
+#
+# dscp_sip = 104
+
+# set DSCP field on outgoing RTP packets? (unsigned int value)
+#
+# Default 0, don't set
+#
+# dscp_rtp = 184
+
 #
 # accept forked dialogs on UAS side? [yes|no]
 #
