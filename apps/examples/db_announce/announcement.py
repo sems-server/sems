@@ -58,7 +58,7 @@ class IvrDialog(IvrDialogBase):
                                       user=self.DB_USER,\
                                       passwd=self.DB_PASSWD,\
                                       db=self.DB_DB)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             error(APPLICATION + ": cannot open database: " +\
                   str(e.args[0]) + ":" + e.args[1])
             return False
@@ -143,7 +143,7 @@ class IvrDialog(IvrDialogBase):
                 cursor.close()
                 return False
 
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             error(APPLICATION + ": error in accessing database: " +\
                   str(e.args[0]) + ":" + e.args[1])
             return False
