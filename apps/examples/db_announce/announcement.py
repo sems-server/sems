@@ -29,27 +29,27 @@ class IvrDialog(IvrDialogBase):
 
     def __init__(self):
 
-	try:
-	    if config['mysql_server']:
-		self.DB_HOST = config['mysql_server']
+        try:
+            if config['mysql_server']:
+                self.DB_HOST = config['mysql_server']
         except KeyError:
             pass
 
-	try:
-	    if config['mysql_user']:
-		self.DB_USER = config['mysql_user']
+        try:
+            if config['mysql_user']:
+                self.DB_USER = config['mysql_user']
         except KeyError:
             pass
 
-	try:
-	    if config['mysql_passwd']:
-		self.DB_PASSWD = config['mysql_passwd']
+        try:
+            if config['mysql_passwd']:
+                self.DB_PASSWD = config['mysql_passwd']
         except KeyError:
             pass
 
-	try:
-	    if config['mysql_db']:
-		self.DB_DB = config['mysql_db']
+        try:
+            if config['mysql_db']:
+                self.DB_DB = config['mysql_db']
         except KeyError:
             pass
 
