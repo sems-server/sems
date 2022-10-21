@@ -14,11 +14,11 @@ class IvrDialog(IvrDialogBase):
 		#self.enqueue(self.announcement, None)
 		
 		self.beep = IvrAudioFile()
-	        self.beep.open(config['beep'], ivr.AUDIO_READ)
+		self.beep.open(config['beep'], ivr.AUDIO_READ)
 		
 		self.mixin = IvrAudioMixIn()
 		self.mixin.init(self.announcement, self.beep, 3, 0.6, True)
-                self.enqueue(self.mixin, None)
+		self.enqueue(self.mixin, None)
 
 	def onEmptyQueue(self):
 		self.bye()

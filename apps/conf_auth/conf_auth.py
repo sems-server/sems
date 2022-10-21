@@ -39,22 +39,22 @@ class IvrDialog(IvrDialogBase):
 	conf_duration = 0
 		
 	def sessionInfo(self):
-		print "IVR Session info:"
-		print " user:        ", self.dialog.user
-		print " domain:      ", self.dialog.domain
-		print " sip_ip:      ", self.dialog.sip_ip
-		print " sip_port:    ", self.dialog.sip_port
-		print " local_uri:   ", self.dialog.local_uri
-		print " remote_uri:  ", self.dialog.remote_uri
-		print " contact_uri: ", self.dialog.contact_uri
-		print " callid:      ", self.dialog.callid
-		print " remote_tag:  ", self.dialog.remote_tag
-		print " local_tag:   ", self.dialog.local_tag
-		print " remote_party:", self.dialog.remote_party
-		print " local_party: ", self.dialog.local_party
-		print " route:       ", self.dialog.route
-		print " next_hop:     ", self.dialog.next_hop
-		print " cseq:        ", self.dialog.cseq
+		print ("IVR Session info:")
+		print (" user:        ", self.dialog.user)
+		print (" domain:      ", self.dialog.domain)
+		print (" sip_ip:      ", self.dialog.sip_ip)
+		print (" sip_port:    ", self.dialog.sip_port)
+		print (" local_uri:   ", self.dialog.local_uri)
+		print (" remote_uri:  ", self.dialog.remote_uri)
+		print (" contact_uri: ", self.dialog.contact_uri)
+		print (" callid:      ", self.dialog.callid)
+		print (" remote_tag:  ", self.dialog.remote_tag)
+		print (" local_tag:   ", self.dialog.local_tag)
+		print (" remote_party:", self.dialog.remote_party)
+		print (" local_party: ", self.dialog.local_party)
+		print (" route:       ", self.dialog.route)
+		print (" next_hop:     ", self.dialog.next_hop)
+		print (" cseq:        ", self.dialog.cseq)
 
 	def onSessionStart(self):
 		self.sessionInfo()
@@ -115,7 +115,7 @@ class IvrDialog(IvrDialogBase):
 		elif self.state == collect:
 			self.setTimer(HINT_TIMER,  HINT_TIMEOUT)
 
- 	def onTimer(self, id):
+	def onTimer(self, id):
 		if id == HINT_TIMER and self.state == collect:
 			self.enqueue(self.hint_msg, None)
 		elif id == CONF_TIMER and self.state == connected:

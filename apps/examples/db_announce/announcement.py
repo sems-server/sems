@@ -29,27 +29,27 @@ class IvrDialog(IvrDialogBase):
 
     def __init__(self):
 
-	try:
-	    if config['mysql_server']:
-		self.DB_HOST = config['mysql_server']
+        try:
+            if config['mysql_server']:
+                self.DB_HOST = config['mysql_server']
         except KeyError:
             pass
 
-	try:
-	    if config['mysql_user']:
-		self.DB_USER = config['mysql_user']
+        try:
+            if config['mysql_user']:
+                self.DB_USER = config['mysql_user']
         except KeyError:
             pass
 
-	try:
-	    if config['mysql_passwd']:
-		self.DB_PASSWD = config['mysql_passwd']
+        try:
+            if config['mysql_passwd']:
+                self.DB_PASSWD = config['mysql_passwd']
         except KeyError:
             pass
 
-	try:
-	    if config['mysql_db']:
-		self.DB_DB = config['mysql_db']
+        try:
+            if config['mysql_db']:
+                self.DB_DB = config['mysql_db']
         except KeyError:
             pass
 
@@ -58,7 +58,7 @@ class IvrDialog(IvrDialogBase):
                                       user=self.DB_USER,\
                                       passwd=self.DB_PASSWD,\
                                       db=self.DB_DB)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             error(APPLICATION + ": cannot open database: " +\
                   str(e.args[0]) + ":" + e.args[1])
             return False
@@ -143,7 +143,7 @@ class IvrDialog(IvrDialogBase):
                 cursor.close()
                 return False
 
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             error(APPLICATION + ": error in accessing database: " +\
                   str(e.args[0]) + ":" + e.args[1])
             return False

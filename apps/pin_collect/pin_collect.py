@@ -56,7 +56,7 @@ class IvrDialog(IvrDialogBase):
 		self.welcome_msg = IvrAudioFile()
 		self.welcome_msg.open(config['welcome_msg'],AUDIO_READ)
 		
- 		self.pin_msg = IvrAudioFile()
+		self.pin_msg = IvrAudioFile()
 		self.pin_msg.open(config['pin_msg'],AUDIO_READ)
 
 		self.enqueue(self.welcome_msg,None)

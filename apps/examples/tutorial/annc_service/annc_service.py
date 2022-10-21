@@ -70,7 +70,7 @@ class IvrDialog(IvrDialogBase):
 		self.cleanup()
 
 	def onEmptyQueue(self):
- 		if (self.repeat_left>0):
+		if (self.repeat_left>0):
 			if (int(self.delay) > 0):
 				self.setTimer(DELAY_TIMER_ID, int(self.delay)/1000)
 			else:

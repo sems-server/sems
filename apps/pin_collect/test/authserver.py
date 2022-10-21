@@ -20,5 +20,5 @@ server = SimpleXMLRPCServer.SimpleXMLRPCServer(("127.0.0.1", 9090))
 server.register_instance(authsrv)
 
 #Go into the main listener loop
-print "Listening on port 9090"
+print ("Listening on port 9090")
 server.serve_forever()
