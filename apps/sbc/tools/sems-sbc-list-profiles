@@ -1,7 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from xmlrpclib import *
+from xmlrpc.client import *
 s = ServerProxy('http://localhost:8090')
-print "Active calls: %d" % s.calls()
-print s.di('sbc','listProfiles')
+print("Active calls: %d" % s.calls())
+print(s.di('sbc','listProfiles'))
