@@ -1,13 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import sys
-from xmlrpclib import *
+from xmlrpc.client import *
 
 if len(sys.argv) != 2:
-	print "usage: %s <profile name>" % sys.argv[0]
+	print("usage: %s <profile name>" % sys.argv[0])
 	sys.exit(1)
 
 s = ServerProxy('http://localhost:8090')
-print "Active calls: %d" % s.calls()
+print("Active calls: %d" % s.calls())
 p ={ 'name' : sys.argv[1] }
-print s.di('sbc','reloadProfile',p)
+print(s.di('sbc','reloadProfile',p))
+
