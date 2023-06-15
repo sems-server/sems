@@ -48,7 +48,7 @@ CurlModule::CurlModule() {
     }
 
     curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
-    if (data && data->version >=0) {
+    if (data && data->version) {
       DBG("using libcurl version '%s'\n", 
 	  data->version);
       if (data->features & CURL_VERSION_SSL) {
