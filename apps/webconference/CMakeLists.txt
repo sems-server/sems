@@ -20,6 +20,7 @@ beep.wav
 entering_conference.wav
 first_participant.wav
 pin_prompt.wav
+wrong_pin_bye.wav
 wrong_pin.wav
 )
 
