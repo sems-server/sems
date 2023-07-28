@@ -14,6 +14,8 @@ class TOXmlRpcClient : public XmlRpc::XmlRpcClient {
     : XmlRpcClient(host, port, uri
 #ifdef HAVE_XMLRPCPP_SSL
 		   , ssl
+#else
+		   , false
 #endif
 		   ) { }
 
