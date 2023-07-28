@@ -33,7 +33,7 @@
 #include <string>
 using std::string;
 
-#ifdef USE_MYSQL
+#ifdef WITH_MYSQL
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
@@ -47,14 +47,14 @@ class EarlyAnnounceFactory: public AmSessionFactory
 {
 public:
 
-#ifdef USE_MYSQL
-  static string AnnounceApplication;
-  static string AnnounceMessage;
-  static string DefaultLanguage;
-#else 
-  static string AnnouncePath;
-  static string AnnounceFile;
+#ifdef WITH_MYSQL
+  static string application;
+  static string announce_message;
+  static string default_language;
 #endif
+  static string announce_path;
+  static string default_file;
+
   enum ContB2B {
     Always = 0,
     Never,
