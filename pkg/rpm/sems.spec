@@ -7,7 +7,6 @@ Name:		sems
 Version:	1.7.0
 Release:	2.%{build_timestamp}%{?dist}
 URL:		https://github.com/sems-server/%{name}
-#Source0:	https://github.com/sems-server/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
 Source0:        https://github.com/sems-server/sems/archive/master.tar.gz
 
 License:	GPLv2+
@@ -18,19 +17,13 @@ BuildRequires:	flite-devel
 BuildRequires:	gcc-c++
 BuildRequires:	gsm-devel
 BuildRequires:	hiredis-devel
-BuildRequires:	ilbc-devel
-BuildRequires:	lame-devel
 BuildRequires:	lame-devel
 BuildRequires:	libevent-devel
 BuildRequires:	libmpg123-devel
 BuildRequires:	libsamplerate-devel
-BuildRequires:	mISDN-devel
-BuildRequires:	mysql++-devel
+BuildRequires:  mysql-connector-c++-devel
 BuildRequires:	openssl-devel
 BuildRequires:	opus-devel
-BuildRequires:	python-devel
-#BuildRequires:	python2-devel
-BuildRequires:	sip-devel
 BuildRequires:	spandsp-devel
 BuildRequires:	speex-devel
 BuildRequires:	systemd
@@ -47,13 +40,15 @@ you to extend SEMS and write your own applications and integrate new
 codec. Voice-mail, announcement and echo plug-ins are already included.
 SEMS supports g711u, g711a, GSM06.10 and wav file.
 
-#%package	conf_auth
-#Summary:	Conference with authorization
-#Requires:	%{name}%{?_isa} = %{version}-%{release}
-#Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
+%if 0%{?_with_python}
+%package	conf_auth
+Summary:	Conference with authorization
+Requires:	%{name}%{?_isa} = %{version}-%{release}
+Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
 
-#%description	conf_auth
-#Conference with authorization by PIN-numbers.
+%description	conf_auth
+Conference with authorization by PIN-numbers.
+%endif
 
 %package	conference
 Summary:	Conferencing application
@@ -62,6 +57,17 @@ Obsoletes:	%{name} < 1.2.0
 
 %description	conference
 Conferencing application for SEMS.
+
+%if 0%{?_with_mysql++}
+%package        db_reg_agent
+Summary:        mysql++ obsoleted
+BuildRequires:  mysql++-devel
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       mysql++
+
+%description    db_reg_agent
+See Readme
+%endif
 
 %package	diameter_client
 Summary:	A simple DIAMETER client implementation
@@ -111,12 +117,15 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 %description	g729
 This is a wrapper around the g729 codec from the bcg729 library.
 
-#%package	gateway
-#Summary:	ISDN gateway for SEMS
-#Requires:	%{name}%{?_isa} = %{version}-%{release}
+%if 0%{?_with_gateway}
+%package	gateway
+Summary:	ISDN gateway for SEMS
+BuildRequires:	mISDN-devel
+Requires:	%{name}%{?_isa} = %{version}-%{release}
 
-#%description	gateway
-#ISDN gateway for SEMS.
+%description	gateway
+ISDN gateway for SEMS.
+%endif
 
 %package	gsm
 Summary:	GSM support for SEMS
@@ -132,23 +141,25 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 %description	ilbc
 iLBC support for SEMS.
 
-#%package	ivr
-#Summary:	IVR functionality for SEMS
-#Requires:	python2 >= 2.3
-#Requires:	%{name}%{?_isa} = %{version}-%{release}
+%if 0%{?_with_python}
+%package	ivr
+Summary:	IVR functionality for SEMS
+Requires:	python2 >= 2.3
+Requires:	%{name}%{?_isa} = %{version}-%{release}
 
-#%description	ivr
-#IVR functionality for SEMS.
+%description	ivr
+IVR functionality for SEMS.
 
-#%package	mailbox
-#Summary:	Mailbox application
-#Requires:	%{name}%{?_isa} = %{version}-%{release}
-#Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
+%package	mailbox
+Summary:	Mailbox application
+Requires:	%{name}%{?_isa} = %{version}-%{release}
+Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
 
-#%description	mailbox
-#The mailbox application is a mailbox where callers can leave messages
-#for offline or unavailable users and the users can dial in to check their
-#messages. It uses an IMAP server as back-end to store the voice messages.
+%description	mailbox
+The mailbox application is a mailbox where callers can leave messages
+for offline or unavailable users and the users can dial in to check their
+messages. It uses an IMAP server as back-end to store the voice messages.
+%endif
 
 %package	mp3
 Summary:	mp3 support for SEMS
@@ -164,14 +175,15 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 %description	opus
 Opus support for SEMS.
 
-#%package	pin_collect
-#Summary:	Collects a PIN
-#Requires:	%{name}%{?_isa} = %{version}-%{release}
-#Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
+%if 0%{?_with_python}
+%package	pin_collect
+Summary:	Collects a PIN
+Requires:	%{name}%{?_isa} = %{version}-%{release}
+Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
 
-#%description	pin_collect
-#This application collects a PIN and then transfers using a
-#(proprietary) REFER the call.
+%description	pin_collect
+This application collects a PIN and then transfers using a
+(proprietary) REFER the call.
 
 %package	python
 Summary:	Python bindings for SEMS
@@ -183,6 +195,7 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 
 %description	python
 Python bindings for SEMS.
+%endif
 
 %if 0%{?_with_rtmp}
 %package	rtmp
@@ -222,8 +235,7 @@ tar cvzf master.tar.gz sems-1.7.0/ && cd ../BUILD
 mv ./apps/dsm/fsmc/readme.txt  ./apps/dsm/fsmc/Readme.fsmc.txt
 
 %build
-mkdir cmake_build && cd cmake_build
-%{cmake3} .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG \
+%{cmake} .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG \
 	-DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG \
 	-DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG \
 	-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
@@ -240,6 +252,7 @@ mkdir cmake_build && cd cmake_build
 	-DSEMS_USE_MP3=yes \
 	-DSEMS_USE_ILBC=yes \
 	-DSEMS_USE_G729=yes \
+	-DSEMS_USE_CODEC2=yes \
 	-DSEMS_USE_OPUS=yes \
 	-DSEMS_USE_TTS=yes \
 	-DSEMS_USE_OPENSSL=yes \
@@ -251,13 +264,10 @@ mkdir cmake_build && cd cmake_build
 	-DSEMS_LIBDIR=lib64 \
 	-DSEMS_DOC_PREFIX=/usr/share/doc
 
-make %{?_smp_mflags}
-cd ..
+%cmake_build
 
 %install
-cd cmake_build
-make install DESTDIR=%{buildroot}
-cd ..
+%cmake_install
 
 install -D -m 0644 -p pkg/rpm/sems.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 
@@ -330,8 +340,8 @@ getent passwd %{name} >/dev/null || \
 %config(noreplace) %{_sysconfdir}/%{name}/etc/app_mapping.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/callback.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/click2dial.conf
-%config(noreplace) %{_sysconfdir}/%{name}/etc/db_reg_agent.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/echo.conf
+%config(noreplace) %{_sysconfdir}/%{name}/etc/jsonrpc.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/monitoring.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/msg_storage.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/mwi.conf
@@ -376,20 +386,18 @@ getent passwd %{name} >/dev/null || \
 %doc doc/Readme.click2dial.txt
 %doc doc/Readme.conf_auth.txt
 %doc doc/Readme.echo.txt
+%doc doc/Readme.jsonrpc.txt
 %doc doc/Readme.monitoring.txt
 %doc doc/Readme.msg_storage.txt
-#%doc doc/Readme.py_sems.txt
 %doc doc/Readme.reg_agent.txt
 %doc doc/Readme.registrar_client.txt
 %doc doc/Readme.sst_b2b.txt
 %doc doc/Readme.sw_prepaid_sip.txt
-#%doc doc/Readme.twit.txt
 %doc doc/Readme.uac_auth.txt
 %doc doc/Readme.voicebox.txt
 %doc doc/Readme.voicemail.txt
 %doc doc/Readme.webconference.txt
 %doc doc/Tuning.txt
-#%doc doc/ZRTP.txt
 
 %{_sbindir}/%{name}
 %{_sbindir}/%{name}-get-callproperties
@@ -495,6 +503,7 @@ getent passwd %{name} >/dev/null || \
 %{_datadir}/%{name}/audio/webconference/entering_conference.wav
 %{_datadir}/%{name}/audio/webconference/first_participant.wav
 %{_datadir}/%{name}/audio/webconference/pin_prompt.wav
+%{_datadir}/%{name}/audio/webconference/wrong_pin_bye.wav
 %{_datadir}/%{name}/audio/webconference/wrong_pin.wav
 
 %{_libdir}/%{name}/plug-in/adpcm.so
@@ -512,8 +521,9 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/plug-in/cc_registrar.so
 %{_libdir}/%{name}/plug-in/cc_syslog_cdr.so
 %{_libdir}/%{name}/plug-in/click2dial.so
-%{_libdir}/%{name}/plug-in/db_reg_agent.so
+%{_libdir}/%{name}/plug-in/codec2.so
 %{_libdir}/%{name}/plug-in/echo.so
+%{_libdir}/%{name}/plug-in/jsonrpc.so
 %{_libdir}/%{name}/plug-in/isac.so
 %{_libdir}/%{name}/plug-in/l16.so
 %{_libdir}/%{name}/plug-in/monitoring.so
@@ -531,11 +541,13 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/plug-in/wav.so
 %{_libdir}/%{name}/plug-in/webconference.so
 
-#%files conf_auth
-# currently empty
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/conf_auth.conf
-#%doc doc/Readme.conf_auth.txt
-#%{_libdir}/%{name}/ivr/conf_auth.py*
+%if 0%{?_with_python}
+%files conf_auth
+ currently empty
+%config(noreplace) %{_sysconfdir}/%{name}/etc/conf_auth.conf
+%doc doc/Readme.conf_auth.txt
+%{_libdir}/%{name}/ivr/conf_auth.py*
+%endif
 
 %files conference
 %config(noreplace) %{_sysconfdir}/%{name}/etc/conference.conf
@@ -544,6 +556,13 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/plug-in/conference.so
 %{_datadir}/%{name}/audio/conference/beep.wav
 %{_datadir}/%{name}/audio/conference/first_participant.wav
+
+%if 0%{?_with_mysql++}
+%files db_reg_agent
+%config(noreplace) %{_sysconfdir}/%{name}/etc/db_reg_agent.conf
+%{_libdir}/%{name}/plug-in/db_reg_agent.so
+%doc doc/Readme.db_reg_agent.txt
+%endif
 
 %files diameter_client
 %doc doc/Readme.diameter_client.txt
@@ -560,8 +579,10 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/dsm/mod_dlg.so
 %{_libdir}/%{name}/dsm/mod_groups.so
 %{_libdir}/%{name}/dsm/mod_monitoring.so
-#%{_libdir}/%{name}/dsm/mod_mysql.so
-#%{_libdir}/%{name}/dsm/mod_py.so
+%{_libdir}/%{name}/dsm/mod_mysql.so
+%if 0%{?_with_python}
+%{_libdir}/%{name}/dsm/mod_py.so
+%endif
 %{_libdir}/%{name}/dsm/mod_redis.so
 %{_libdir}/%{name}/dsm/mod_regex.so
 %{_libdir}/%{name}/dsm/mod_sbc.so
@@ -591,9 +612,11 @@ getent passwd %{name} >/dev/null || \
 %doc core/plug-in/g729/Readme.g729.md
 %{_libdir}/%{name}/plug-in/g729.so
 
-#%files gateway
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/gateway.conf
-#%{_libdir}/%{name}/plug-in/gateway.so
+%if 0%{?_with_gateway}
+%files gateway
+%config(noreplace) %{_sysconfdir}/%{name}/etc/gateway.conf
+%{_libdir}/%{name}/plug-in/gateway.so
+%endif
 
 %files gsm
 %{_libdir}/%{name}/plug-in/gsm.so
@@ -602,37 +625,39 @@ getent passwd %{name} >/dev/null || \
 %doc doc/Readme.iLBC.txt
 %{_libdir}/%{name}/plug-in/ilbc.so
 
-#%files ivr
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/ivr.conf
-#%doc doc/Readme.ivr.txt
-#%dir %{_libdir}/%{name}/ivr/
-#%{_libdir}/%{name}/plug-in/ivr.so
-#%{_libdir}/%{name}/ivr/log.py*
+%if 0%{?_with_python}
+%files ivr
+%config(noreplace) %{_sysconfdir}/%{name}/etc/ivr.conf
+%doc doc/Readme.ivr.txt
+%dir %{_libdir}/%{name}/ivr/
+%{_libdir}/%{name}/plug-in/ivr.so
+%{_libdir}/%{name}/ivr/log.py*
 
-#%files mailbox
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/mailbox.conf
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/mailbox_query.conf
-#%doc doc/Readme.mailbox.txt
-#%dir %{_datadir}/%{name}/audio/mailbox/
-#%dir %{_libdir}/%{name}/ivr/imap_mailbox/
-#%{_datadir}/%{name}/audio/mailbox/and.wav
-#%{_datadir}/%{name}/audio/mailbox/beep.wav
-#%{_datadir}/%{name}/audio/mailbox/bye.wav
-#%{_datadir}/%{name}/audio/mailbox/default_en.wav
-#%{_datadir}/%{name}/audio/mailbox/first_msg.wav
-#%{_datadir}/%{name}/audio/mailbox/msg_deleted.wav
-#%{_datadir}/%{name}/audio/mailbox/msg_menu.wav
-#%{_datadir}/%{name}/audio/mailbox/msg_saved.wav
-#%{_datadir}/%{name}/audio/mailbox/new_msg.wav
-#%{_datadir}/%{name}/audio/mailbox/next_msg.wav
-#%{_datadir}/%{name}/audio/mailbox/no_msg.wav
-#%{_datadir}/%{name}/audio/mailbox/saved_msg.wav
-#%{_datadir}/%{name}/audio/mailbox/you_have.wav
-#%{_libdir}/%{name}/ivr/mailbox.py*
-#%{_libdir}/%{name}/ivr/mailbox_query.py*
-#%{_libdir}/%{name}/ivr/imap_mailbox/MailboxURL.py*
-#%{_libdir}/%{name}/ivr/imap_mailbox/__init__.py*
-#%{_libdir}/%{name}/ivr/imap_mailbox/imap4ext.py*
+%files mailbox
+%config(noreplace) %{_sysconfdir}/%{name}/etc/mailbox.conf
+%config(noreplace) %{_sysconfdir}/%{name}/etc/mailbox_query.conf
+%doc doc/Readme.mailbox.txt
+%dir %{_datadir}/%{name}/audio/mailbox/
+%dir %{_libdir}/%{name}/ivr/imap_mailbox/
+%{_datadir}/%{name}/audio/mailbox/and.wav
+%{_datadir}/%{name}/audio/mailbox/beep.wav
+%{_datadir}/%{name}/audio/mailbox/bye.wav
+%{_datadir}/%{name}/audio/mailbox/default_en.wav
+%{_datadir}/%{name}/audio/mailbox/first_msg.wav
+%{_datadir}/%{name}/audio/mailbox/msg_deleted.wav
+%{_datadir}/%{name}/audio/mailbox/msg_menu.wav
+%{_datadir}/%{name}/audio/mailbox/msg_saved.wav
+%{_datadir}/%{name}/audio/mailbox/new_msg.wav
+%{_datadir}/%{name}/audio/mailbox/next_msg.wav
+%{_datadir}/%{name}/audio/mailbox/no_msg.wav
+%{_datadir}/%{name}/audio/mailbox/saved_msg.wav
+%{_datadir}/%{name}/audio/mailbox/you_have.wav
+%{_libdir}/%{name}/ivr/mailbox.py*
+%{_libdir}/%{name}/ivr/mailbox_query.py*
+%{_libdir}/%{name}/ivr/imap_mailbox/MailboxURL.py*
+%{_libdir}/%{name}/ivr/imap_mailbox/__init__.py*
+%{_libdir}/%{name}/ivr/imap_mailbox/imap4ext.py*
+%endif
 
 %files mp3
 %doc doc/Readme.mp3plugin.txt
@@ -641,19 +666,21 @@ getent passwd %{name} >/dev/null || \
 %files opus
 %{_libdir}/%{name}/plug-in/opus.so
 
-#%files pin_collect
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/pin_collect.conf
-#%doc doc/Readme.pin_collect.txt
-#%dir %{_datadir}/%{name}/audio/pin_collect/
-#%{_datadir}/%{name}/audio/pin_collect/enter_pin.wav
-#%{_datadir}/%{name}/audio/pin_collect/welcome.wav
-#%{_libdir}/%{name}/ivr/pin_collect.py*
+%if 0%{?_with_python}
+%files pin_collect
+%config(noreplace) %{_sysconfdir}/%{name}/etc/pin_collect.conf
+%doc doc/Readme.pin_collect.txt
+%dir %{_datadir}/%{name}/audio/pin_collect/
+%{_datadir}/%{name}/audio/pin_collect/enter_pin.wav
+%{_datadir}/%{name}/audio/pin_collect/welcome.wav
+%{_libdir}/%{name}/ivr/pin_collect.py*
 
-#%files python
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/py_sems.conf
-#%doc doc/Readme.py_sems.txt
-#%{_libdir}/%{name}/plug-in/py_sems.so
-#%{_libdir}/%{name}/plug-in/py_sems_log.py*
+%files python
+%config(noreplace) %{_sysconfdir}/%{name}/etc/py_sems.conf
+%doc doc/Readme.py_sems.txt
+%{_libdir}/%{name}/plug-in/py_sems.so
+%{_libdir}/%{name}/plug-in/py_sems_log.py*
+%endif
 
 %if 0%{?_with_rtmp}
 %files rtmp
