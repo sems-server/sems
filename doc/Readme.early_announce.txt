@@ -30,7 +30,7 @@ are relayed into the other leg.
 
 Announcement file played from file system
 -----------------------------------------
-If early_announce application was compiled WITHOUT -DUSE_MYSQL option,
+If use_mysql=no in early_announce.conf,
 it searches for files to play following these rules:
 
  1) <announce_path>/[RURI-Domain]/[RURI-User].wav
@@ -38,13 +38,14 @@ it searches for files to play following these rules:
  3) <announce_path>/<default_announce>
 
 Example sems (early_announce.conf) configuration for file system audio:
+use_mysql=no
 announce_path=wav/
 default_announce=default_en.wav
 
 Announcement file from MySQL DB
 -------------------------------
-If early_announce application was compiled with -DUSE_MYSQL option, it
-supports third Session Parameter
+If early_announce application was compiled with -DWITH_MYSQL option,
+and use_mysql=yes in early_announce.conf, it supports third Session Parameter
 
    Language	      two letter string or empty string (e.g. en)
   
@@ -53,6 +54,9 @@ and finally from default_audio tables (described below).  When an audio
 file is fetched from database, it is stored in /tmp directory.
 
 Example sems (early_announce.conf) configuration for MySQL audio:
+
+# Use MySQL, not file system
+use_mysql=yes
 
 # Host where MySQL server is running (optional, defaults to 'localhost')
 mysql_host=localhost

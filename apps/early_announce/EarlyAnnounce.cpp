@@ -33,7 +33,7 @@
 
 #define MOD_NAME "early_announce"
 
-#ifdef USE_MYSQL
+#ifdef WITH_MYSQL
 #define DEFAULT_AUDIO_TABLE "default_audio"
 #define DOMAIN_AUDIO_TABLE "domain_audio"
 #define USER_AUDIO_TABLE "user_audio"
@@ -41,14 +41,16 @@
 
 EXPORT_SESSION_FACTORY(EarlyAnnounceFactory,MOD_NAME);
 
-#ifdef USE_MYSQL
-string EarlyAnnounceFactory::AnnounceApplication;
-string EarlyAnnounceFactory::AnnounceMessage;
-string EarlyAnnounceFactory::DefaultLanguage;
-#else
-string EarlyAnnounceFactory::AnnouncePath;
-string EarlyAnnounceFactory::AnnounceFile;
+#ifdef WITH_MYSQL
+string EarlyAnnounceFactory::application;
+string EarlyAnnounceFactory::announce_message;
+string EarlyAnnounceFactory::default_language;
 #endif
+string EarlyAnnounceFactory::announce_path;
+string EarlyAnnounceFactory::default_file;
+
+void (*get_announce_file)(const string &user, const string &domain,
+                          const string &language, string *announce_file) = 0;
 
 EarlyAnnounceFactory::ContB2B EarlyAnnounceFactory::ContinueB2B = 
   EarlyAnnounceFactory::Never;
@@ -58,32 +60,34 @@ EarlyAnnounceFactory::EarlyAnnounceFactory(const string& _app_name)
 {
 }
 
-#ifdef USE_MYSQL
+#ifdef WITH_MYSQL
 
 static sql::Driver *driver;
 static sql::Connection *connection;
 
-int get_announce_msg(string application, string message, string user,
-		     string domain, string language, string *audio_file)
+int get_announce_msg(const string &user, const string &domain,
+                     const string &language, string *audio_file)
 {
     string query_string;
+    string application (EarlyAnnounceFactory::application);
+    string message     (EarlyAnnounceFactory::announce_message);
 
     if (!user.empty()) {
-	*audio_file = string("/tmp/") +  application + "_" + 
+	*audio_file = string("/tmp/") + application + "_" +
 	    message + "_" + domain + "_" + user + ".wav";
 	query_string = "select audio from " + string(USER_AUDIO_TABLE) +
 	    " where application='" + application + "' and message='" +
 	    message + "' and userid='" + user + "' and domain='" +
 	    domain + "'";
     } else if (!domain.empty()) {
-	*audio_file = string("/tmp/") +  application + "_" +
+	*audio_file = string("/tmp/") + application + "_" +
 	    message + "_" + domain + "_" + language + ".wav";
 	query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) +
 	    " where application='" + application + "' and message='" +
 	    message + "' and domain='" + domain + "' and language='" +
 	    language + "'";
     } else {
-	*audio_file = string("/tmp/") +  application  + "_" +
+	*audio_file = string("/tmp/") + application  + "_" +
 	    message + "_" + language + ".wav";
 	query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) +
 	    " where application='" + application + "' and message='" +
@@ -123,7 +127,38 @@ int get_announce_msg(string application, string message, string user,
     }
 }
 
+void get_announce_file_mysql(const string &user, const string &domain,
+                             const string &language_param, string *announce_file)
+{
+    string language(language_param);
+    if (language.empty()) language = EarlyAnnounceFactory::default_language;
+
+    get_announce_msg(user, domain, "", announce_file);
+    if (!announce_file->empty()) return;
+    get_announce_msg("", domain, language, announce_file);
+    if (!announce_file->empty()) return;
+    get_announce_msg("", "", language, announce_file);
+}
+
 #endif
+
+void get_announce_file_fs(const string &user, const string &domain,
+                          const string &language, string *announce_file)
+{
+  *announce_file = EarlyAnnounceFactory::announce_path + domain
+    + "/" + user + ".wav";
+
+  DBG("trying '%s'\n",announce_file->c_str());
+  if (file_exists(*announce_file))
+    return;
+
+  *announce_file = EarlyAnnounceFactory::announce_path + user + ".wav";
+  DBG("trying '%s'\n",announce_file->c_str());
+  if (file_exists(*announce_file))
+    return;
+
+  *announce_file = EarlyAnnounceFactory::announce_path + EarlyAnnounceFactory::default_file;
+}
 
 int EarlyAnnounceFactory::onLoad()
 {
@@ -148,7 +183,9 @@ int EarlyAnnounceFactory::onLoad()
     }
   }
 
-#ifdef USE_MYSQL
+  if (cfg.getParameter("use_mysql") == "yes") {
+
+#ifdef WITH_MYSQL
 
   /* Get default audio from MySQL */
 
@@ -180,19 +217,19 @@ int EarlyAnnounceFactory::onLoad()
 
   mysql_ca_cert = cfg.getParameter("mysql_ca_cert");
 
-  AnnounceApplication = cfg.getParameter("application");
-  if (AnnounceApplication.empty()) {
-    AnnounceApplication = MOD_NAME;
+  application = cfg.getParameter("application");
+  if (application.empty()) {
+    application = MOD_NAME;
   }
 
-  AnnounceMessage = cfg.getParameter("message");
-  if (AnnounceMessage.empty()) {
-    AnnounceMessage = "greeting_msg";
+  announce_message = cfg.getParameter("message");
+  if (announce_message.empty()) {
+    announce_message = "greeting_msg";
   }
 
-  DefaultLanguage = cfg.getParameter("default_language");
-  if (DefaultLanguage.empty()) {
-    DefaultLanguage = "en";
+  default_language = cfg.getParameter("default_language");
+  if (default_language.empty()) {
+    default_language = "en";
   }
 
   try {
@@ -227,9 +264,11 @@ int EarlyAnnounceFactory::onLoad()
     return -1;
   }
 
+  get_announce_file = get_announce_file_mysql;
+
   string announce_file;
-  if (!get_announce_msg(AnnounceApplication, AnnounceMessage, "", "",
-			DefaultLanguage, &announce_file)) {
+  if (!get_announce_msg("", "",
+			default_language, &announce_file)) {
     return -1;
   }
   if (announce_file.empty()) {
@@ -239,23 +278,34 @@ int EarlyAnnounceFactory::onLoad()
 
 #else 
 
+  ERROR("MySQL support not compiled for " MOD_NAME "\n");
+  return -1;
+
+#endif
+
+  } // use_mysql
+  else
+  {
+
   /* Get default audio from file system */
 
-  AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
-  if( !AnnouncePath.empty() 
-      && AnnouncePath[AnnouncePath.length()-1] != '/' )
-    AnnouncePath += "/";
+  announce_path = cfg.getParameter("announce_path",ANNOUNCE_PATH);
+  if( !announce_path.empty()
+      && announce_path[announce_path.length()-1] != '/' )
+    announce_path += "/";
 
-  AnnounceFile = cfg.getParameter("default_announce",ANNOUNCE_FILE);
+  default_file = cfg.getParameter("default_announce",ANNOUNCE_FILE);
 
-  string announce_file = AnnouncePath + AnnounceFile;
+  string announce_file = announce_path + default_file;
   if(!file_exists(announce_file)){
     ERROR("default file for " MOD_NAME " module does not exist ('%s').\n",
 	  announce_file.c_str());
     return -1;
   }
 
-#endif
+  get_announce_file = get_announce_file_fs;
+
+  }
 
   return 0;
 }
@@ -278,44 +328,12 @@ void EarlyAnnounceDialog::onInvite(const AmSipRequest& req)
 AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req, const string& app_name,
 					  const map<string,string>& app_params)
 {
+  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
+  string language = get_header_keyvalue(iptel_app_param,"Language");
+  string announce_file = "";
 
-#ifdef USE_MYSQL
-
-    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
-    string language = get_header_keyvalue(iptel_app_param,"Language");
-    string announce_file = "";
-
-    if (language.empty()) language = DefaultLanguage;
-
-    get_announce_msg(AnnounceApplication, AnnounceMessage, req.user,
-		     req.domain, "", &announce_file);
-    if (!announce_file.empty()) goto end;
-    get_announce_msg(AnnounceApplication, AnnounceMessage, "", req.domain,
-		     language, &announce_file);
-    if (!announce_file.empty()) goto end;
-    get_announce_msg(AnnounceApplication, AnnounceMessage, "", "", language,
-		     &announce_file);
-
-#else
-
-  string announce_path = AnnouncePath;
-  string announce_file = announce_path + req.domain 
-    + "/" + req.user + ".wav";
-
-  DBG("trying '%s'\n",announce_file.c_str());
-  if(file_exists(announce_file))
-    goto end;
-
-  announce_file = announce_path + req.user + ".wav";
-  DBG("trying '%s'\n",announce_file.c_str());
-  if(file_exists(announce_file))
-    goto end;
-
-  announce_file = AnnouncePath + AnnounceFile;
-
-#endif
-
- end:
+  get_announce_file(req.domain, req.user, language, &announce_file);
+ 
   return new EarlyAnnounceDialog(announce_file);
 }
 
