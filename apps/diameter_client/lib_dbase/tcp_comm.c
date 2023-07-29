@@ -566,11 +566,11 @@ void tcp_destroy_connection(dia_tcp_conn* conn_st) {
     ERROR("called without conn_st\n");
     return;
   }    
-
+#ifdef WITH_OPENSSL
   if (conn_st->ssl)
     SSL_free(conn_st->ssl);
   if (conn_st->ctx)
     SSL_CTX_free(conn_st->ctx);
-
+#endif
   pkg_free(conn_st);
 }
