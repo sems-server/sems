@@ -364,7 +364,7 @@ public:
 
   virtual void recvPacket(int fd, unsigned char* pkt = NULL, size_t len = 0);
 
-  void recvRtcpPacket();
+  void recvRtcpPacket(AmRtpPacket* p = NULL);
 
   /** ping the remote side, to open NATs and enable symmetric RTP */
   int ping();
