@@ -48,6 +48,8 @@ enum { B2ABTerminateLeg,
 /** \brief base class for event in B2AB session */
 struct B2ABEvent: public AmEvent
 {
+  map<string, string> params;
+
   B2ABEvent(int ev_id) 
     : AmEvent(ev_id)
   {}
@@ -153,10 +155,10 @@ class AmB2ABSession: public AmSession
   virtual void relayEvent(AmEvent* ev);
 
   /** Terminate our leg and forget the other. */
-  virtual void terminateLeg();
+  virtual void terminateLeg(const string &cancel_hdrs = "");
 
   /** Terminate the other leg and forget it.*/
-  virtual void terminateOtherLeg();
+  virtual void terminateOtherLeg(const string &cancel_hdrs = "");
 
 
   /** B2ABEvent handler */
@@ -226,7 +228,7 @@ class AmB2ABCallerSession: public AmB2ABSession
 		     const string& headers = "");
 
   // @see AmB2ABSession
-  void terminateOtherLeg();
+  void terminateOtherLeg(const string &cancel_hdrs = "");
 
  protected:
   void onB2ABEvent(B2ABEvent* ev);
