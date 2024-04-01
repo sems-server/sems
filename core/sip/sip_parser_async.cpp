@@ -212,10 +212,7 @@ int parse_headers_async(parser_state* pst, char* end)
     }
 
     // reset header struct
-    memset(hdr,0,sizeof(sip_header));
-    st = 0;
-    saved_st = 0;
-    pst->beg = c;
+    pst->reset_hdr_parser();
   }
 
   return UNEXPECTED_EOT;
