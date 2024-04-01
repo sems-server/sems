@@ -191,8 +191,6 @@ static int parse_header_async(sip_header* hdr, parser_state* pst, char* end)
 int parse_headers_async(parser_state* pst, char* end)
 {
   char*& c = pst->c;
-  int& st = pst->st;
-  int& saved_st = pst->saved_st;
   sip_header* hdr = &(pst->hdr);
 
   while(c < end) {
