@@ -251,8 +251,8 @@
 
                /* update memory */
 
-               memcpy(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
-               memcpy(mem+CB_MEML-SUBL,
+               memmove(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
+               memmove(mem+CB_MEML-SUBL,
 
 
 
@@ -299,8 +299,8 @@
 
                /* update memory */
 
-               memcpy(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
-               memcpy(mem+CB_MEML-SUBL,
+               memmove(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
+               memmove(mem+CB_MEML-SUBL,
                    &reverseDecresidual[subframe*SUBL],
                    SUBL*sizeof(float));
 

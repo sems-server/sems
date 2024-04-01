@@ -308,13 +308,8 @@
 
                /* update memory */
 
-               memcpy(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
-               memcpy(mem+CB_MEML-SUBL,
-
-
-
-
-
+               memmove(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
+               memmove(mem+CB_MEML-SUBL,
                    &decresidual[(start+1+subframe)*SUBL],
                    SUBL*sizeof(float));
                memset(weightState, 0, LPC_FILTERORDER*sizeof(float));
@@ -386,8 +381,8 @@
 
                /* update memory */
 
-               memcpy(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
-               memcpy(mem+CB_MEML-SUBL,
+               memmove(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
+               memmove(mem+CB_MEML-SUBL,
                    &reverseDecresidual[subframe*SUBL],
                    SUBL*sizeof(float));
                memset(weightState, 0, LPC_FILTERORDER*sizeof(float));
