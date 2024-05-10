@@ -121,8 +121,8 @@ DSM flow
  append($var, value)
  e.g. append($var, "text"); append($var, #key);
       append($var, @select); append($var, $var2);
- substr($var, pos)
-  e.g. substr($myvar, 5);
+ substr($var, pos[, len])
+  e.g. substr($myvar, 5, 2);
  
  size($arrayname, $dst);
   set variable $dst to size of array 
