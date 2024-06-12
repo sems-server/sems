@@ -280,16 +280,16 @@ CallLeg::~CallLeg()
   SBCCallRegistry::removeCall(getLocalTag());
 }
 
-void CallLeg::terminateOtherLeg()
+void CallLeg::terminateOtherLeg(const string &cancel_hdrs)
 {
   if (call_status != Connected) {
     DBG("trying to terminate other leg in %s state -> terminating the others as well\n", callStatus2str(call_status));
     // FIXME: may happen when for example reply forward fails, do we want to terminate
     // all other legs in such case?
-    terminateNotConnectedLegs(); // terminates all except the one identified by other_id
+    terminateNotConnectedLegs(cancel_hdrs); // terminates all except the one identified by other_id
   }
   
-  AmB2BSession::terminateOtherLeg();
+  AmB2BSession::terminateOtherLeg(cancel_hdrs);
 
   // remove this one from the list of other legs
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
@@ -304,7 +304,7 @@ void CallLeg::terminateOtherLeg()
   if (getCallStatus() != Disconnected) updateCallStatus(Disconnected); // no B legs should be remaining
 }
 
-void CallLeg::terminateNotConnectedLegs()
+void CallLeg::terminateNotConnectedLegs(const string &cancel_hdrs)
 {
   bool found = false;
   OtherLegInfo b;
@@ -312,7 +312,11 @@ void CallLeg::terminateNotConnectedLegs()
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
     if (i->id != getOtherId()) {
       i->releaseMediaSession();
-      AmSessionContainer::instance()->postEvent(i->id, new B2BEvent(B2BTerminateLeg));
+      B2BEvent* ev = new B2BEvent(B2BTerminateLeg);
+      if (!cancel_hdrs.empty()) {
+        ev->params["cancel_hdrs"]= cancel_hdrs;
+      }
+      AmSessionContainer::instance()->postEvent(i->id, ev);
     }
     else {
       found = true; // other_id is there
@@ -1068,15 +1072,15 @@ void CallLeg::onCancel(const AmSipRequest& req)
       // terminate whole B2B call if the caller receives CANCEL
       onCallFailed(CallCanceled, NULL);
       updateCallStatus(Disconnected, StatusChangeCause::Canceled);
-      stopCall(StatusChangeCause::Canceled);
+      stopCall(StatusChangeCause::Canceled, req.hdrs);
     }
     // else { } ... ignore for B leg
   }
 }
 
-void CallLeg::terminateLeg()
+void CallLeg::terminateLeg(const string &cancel_hdrs)
 {
-  AmB2BSession::terminateLeg();
+  AmB2BSession::terminateLeg(cancel_hdrs);
 }
 
 // was for caller only
@@ -1352,10 +1356,10 @@ void CallLeg::clear_other()
   AmB2BSession::clear_other();
 }
 
-void CallLeg::stopCall(const StatusChangeCause &cause) {
+void CallLeg::stopCall(const StatusChangeCause &cause, const string &cancel_hdrs) {
   if (getCallStatus() != Disconnected) updateCallStatus(Disconnected, cause);
-  terminateNotConnectedLegs();
-  terminateOtherLeg();
+  terminateNotConnectedLegs(cancel_hdrs);
+  terminateOtherLeg(cancel_hdrs);
   terminateLeg();
 }
 
