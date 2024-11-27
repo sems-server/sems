@@ -1,0 +1,29 @@
+name: Build docker images 
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  images_test_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build image based on RHEL7
+        run: docker build -t sems -f Dockerfile-rhel7 .
+
+      - name: Build image based on RHEL8
+        run: docker build -t sems -f Dockerfile-rhel8 .
+
+      - name: Build image based on RHEL9
+        run: docker build -t sems -f Dockerfile-rhel9 .
+
+      - name: Build image based on Debian 11
+        run: docker build -t sems -f Dockerfile-debian11 .
+
+      - name: Build image based on Debian 12
+        run: docker build -t sems -f Dockerfile-debian12 .

@@ -36,7 +36,6 @@
 #include "AmArg.h"
    #include <stdio.h>
 
-#include "grammar.h"
 #include "pythread.h"
 
 struct PythonGIL
@@ -59,20 +58,33 @@ SCPyModule::SCPyModule() {
 
 }
 
+#include <stdio.h> // For printf and fprintf
+
 int SCPyModule::preload() {
-  if(!Py_IsInitialized()){
-    add_env_path("PYTHONPATH",AmConfig::PlugInPath);
+  if (!Py_IsInitialized()) {
+    add_env_path("PYTHONPATH", AmConfig::PlugInPath);
     Py_Initialize();
-    DBG("Python version %s\n", Py_GetVersion());
+    printf("Python version %s\n", Py_GetVersion());
   }
 
   PyEval_InitThreads();
 
-  interp = PyThreadState_Get()->interp; 
+  interp = PyThreadState_Get()->interp;
   tstate = PyThreadState_Get();
 
-  PyImport_AddModule("dsm");
-  dsm_module = Py_InitModule("dsm",mod_py_methods);
+  static struct PyModuleDef dsm_module_def = {
+      PyModuleDef_HEAD_INIT,
+      "dsm",        // Module name
+      NULL,         // Optional module documentation
+      -1,           // Module keeps state in global variables
+      mod_py_methods // Module methods
+  };
+  dsm_module = PyModule_Create(&dsm_module_def);
+  if (!dsm_module) {
+    fprintf(stderr, "Failed to create dsm module\n");
+    return -1;
+  }
+
   PyModule_AddIntConstant(dsm_module, "Any", DSMCondition::Any);
   PyModule_AddIntConstant(dsm_module, "Invite", DSMCondition::Invite);
   PyModule_AddIntConstant(dsm_module, "SessionStart", DSMCondition::SessionStart);
@@ -80,7 +92,7 @@ int SCPyModule::preload() {
   PyModule_AddIntConstant(dsm_module, "Timer", DSMCondition::Timer);
   PyModule_AddIntConstant(dsm_module, "NoAudio", DSMCondition::NoAudio);
   PyModule_AddIntConstant(dsm_module, "Hangup", DSMCondition::Hangup);
-  PyModule_AddIntConstant(dsm_module, "Hold", DSMCondition::Hold);  
+  PyModule_AddIntConstant(dsm_module, "Hold", DSMCondition::Hold);
   PyModule_AddIntConstant(dsm_module, "UnHold", DSMCondition::UnHold);
   PyModule_AddIntConstant(dsm_module, "XmlrpcResponse", DSMCondition::XmlrpcResponse);
   PyModule_AddIntConstant(dsm_module, "DSMEvent", DSMCondition::DSMEvent);
@@ -88,12 +100,23 @@ int SCPyModule::preload() {
   PyModule_AddIntConstant(dsm_module, "B2BOtherReply", DSMCondition::B2BOtherReply);
   PyModule_AddIntConstant(dsm_module, "B2BOtherBye", DSMCondition::B2BOtherBye);
 
-  PyImport_AddModule("session");
-  session_module = Py_InitModule("session",session_methods);
+  static struct PyModuleDef session_module_def = {
+      PyModuleDef_HEAD_INIT,
+      "session",      // Module name
+      NULL,           // Optional module documentation
+      -1,             // Module keeps state in global variables
+      session_methods // Module methods
+  };
+  session_module = PyModule_Create(&session_module_def);
+  if (!session_module) {
+    fprintf(stderr, "Failed to create session module\n");
+    return -1;
+  }
 
   PyEval_ReleaseLock();
   return 0;
 }
+
 
 MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
@@ -193,23 +216,23 @@ bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess,
   if (NULL != event_params) {
     for (map<string,string>::iterator it=event_params->begin(); 
 	 it != event_params->end(); it++) {
-      PyObject* v = PyString_FromString(it->second.c_str());
+      PyObject* v = PyUnicode_FromString(it->second.c_str());
       PyDict_SetItemString(params, it->first.c_str(), v);
       Py_DECREF(v);
     }
   }
   PyDict_SetItemString(locals, "params", params);
 
-  PyObject *t = PyInt_FromLong(event);
+  PyObject *t = PyLong_FromLong(event);
   PyDict_SetItemString(locals, "type", t);
 
-  PyObject* py_sc_sess = PyCObject_FromVoidPtr(sc_sess,NULL);
+  PyObject* py_sc_sess = PyCapsule_New(sc_sess, NULL, NULL);
   PyObject* ts_dict = PyThreadState_GetDict();
   PyDict_SetItemString(ts_dict, "_dsm_sess_", py_sc_sess);
   Py_DECREF(py_sc_sess);
 
   // call the function
-  PyObject* res = PyEval_EvalCode((PyCodeObject*)py_func, globals, locals);
+  PyObject* res = PyEval_EvalCode((PyObject*)py_func, globals, locals);
 
   if(PyErr_Occurred())
     PyErr_Print();
@@ -227,7 +250,7 @@ bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess,
   if (NULL == res) {
     ERROR("evaluating python code\n");
   } else if (PyBool_Check(res)) {
-    py_res = PyInt_AsLong(res);
+    py_res = PyLong_AsLong(res);
     Py_DECREF(res);
   } else {
     if (expect_int_result) {

@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+
+import sys
+sys.path.append('/usr/local/lib/sems/plug-in/')
+
 from log import *
 from ivr import *
 
 if (config['auth_mode'] == 'XMLRPC'):
-	import xmlrpclib
+	import xmlrpc
 
 #states
 collect         = 0
@@ -35,19 +39,19 @@ class IvrDialog(IvrDialogBase):
 		debug("IVR Session info:")
 		debug(" user:        " + self.dialog.user)
 		debug(" domain:      " + self.dialog.domain)
-		debug(" sip_ip:      " + self.dialog.sip_ip)
-		debug(" sip_port:    " + self.dialog.sip_port)
-		debug(" local_uri:   " + self.dialog.local_uri)
-		debug(" remote_uri:  " + self.dialog.remote_uri)
-		debug(" contact_uri: " + self.dialog.contact_uri)
-		debug(" callid:      " + self.dialog.callid)
-		debug(" remote_tag:  " + self.dialog.remote_tag)
-		debug(" local_tag:   " + self.dialog.local_tag)
-		debug(" remote_party:" + self.dialog.remote_party)
-		debug(" local_party: " + self.dialog.local_party)
-		debug(" route:       " + self.dialog.route)
-		debug(" next_hop:    " + self.dialog.next_hop)
-		debug(" cseq:        " + str(self.dialog.cseq))
+		# debug(" sip_ip:      " + self.dialog.sip_ip)
+		# debug(" sip_port:    " + self.dialog.sip_port)
+		# debug(" local_uri:   " + self.dialog.local_uri)
+		# debug(" remote_uri:  " + self.dialog.remote_uri)
+		# debug(" contact_uri: " + self.dialog.contact_uri)
+		# debug(" callid:      " + self.dialog.callid)
+		# debug(" remote_tag:  " + self.dialog.remote_tag)
+		# debug(" local_tag:   " + self.dialog.local_tag)
+		# debug(" remote_party:" + self.dialog.remote_party)
+		# debug(" local_party: " + self.dialog.local_party)
+		# debug(" route:       " + self.dialog.route)
+		# debug(" next_hop:    " + self.dialog.next_hop)
+		# debug(" cseq:        " + str(self.dialog.cseq))
 
 	def onSessionStart(self):
 		self.sessionInfo()
@@ -76,7 +80,7 @@ class IvrDialog(IvrDialogBase):
 				# XMLRPC authentication mode
 				if (config['auth_mode'] == 'XMLRPC'):
 					try:
-						c = xmlrpclib.ServerProxy(config['auth_xmlrpc_url'])
+						c = xmlrpc.client.ServerProxy(config['auth_xmlrpc_url'])
 						erg = c.authorize(self.dialog.user, self.keys)
 	
 						debug('result of authentication: '+ str(erg))

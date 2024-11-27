@@ -9,8 +9,8 @@
 from log import *
 from ivr import *
 
-from urlparse import urlparse, urlsplit
-from urllib import urlretrieve
+from urllib.parse import urlparse, urlsplit
+from urllib.request import urlretrieve
 from os import unlink
 
 TIMEOUT_TIMER_ID = 1

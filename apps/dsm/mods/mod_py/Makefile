@@ -1,6 +1,8 @@
 plug_in_name = mod_py
 
-PYTHON_VERSION ?= $(shell python -c 'import sys;print sys.version[0:3]')
+PYTHON_VERSION ?= $(shell (python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null) || \
+                        (python -c 'import sys; assert sys.version_info.major == 3; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null))
+
 PY_VER = $(PYTHON_VERSION)
 PY_EXE = python$(PY_VER)
 

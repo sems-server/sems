@@ -54,7 +54,7 @@ class PySemsScript(PySemsB2ABDialog):
 			
 		PySemsB2ABDialog.onInvite(self,req)
 
-  	def onSessionStart(self,req):
+	def onSessionStart(self,req):
 		self.setOutput(self.ann)
 		self.initial_user = req.user
 		self.initial_domain = req.domain
@@ -82,24 +82,24 @@ class PySemsScript(PySemsB2ABDialog):
 
 		debug("*********** PySemsScript.process **************")
 		if isinstance(ev,AmAudioEvent):
-		  if ev.event_id == AmAudioEvent.cleared:
-			debug("AmAudioEvent.cleared")
-			to = self.initial_user[1:len(self.initial_user)] + \
-				"@" + self.initial_domain
-			debug("to is " + to)
-			debug("from is "+ self.initial_fromuri)
-			self.connectCallee("<sip:"+to+">", "sip:"+to, \
-				self.initial_fromuri, self.initial_fromuri)
-			debug("connectcallee ok")
-			return
+			if ev.event_id == AmAudioEvent.cleared:
+				debug("AmAudioEvent.cleared")
+				to = self.initial_user[1:len(self.initial_user)] + \
+					"@" + self.initial_domain
+				debug("to is " + to)
+				debug("from is "+ self.initial_fromuri)
+				self.connectCallee("<sip:"+to+">", "sip:"+to, \
+					self.initial_fromuri, self.initial_fromuri)
+				debug("connectcallee ok")
+				return
 		
 		PySemsB2ABDialog.process(self,ev);
 		return
 
 	def createCalleeSession(self):
-		print self.dlg.local_tag
+		print(self.dlg.local_tag)
 		cs = MyCalleeSession(self.dlg.local_tag)
-		print cs
+		print(cs)
 		return cs
 
 	def onDtmf(self, event, dur):

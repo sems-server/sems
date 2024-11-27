@@ -1,0 +1,34 @@
+FROM almalinux:9
+
+RUN yum install -y epel-release \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm \
+    && dnf install -y \
+        git \
+        make \
+        gcc-c++ \
+        libevent-devel \
+        gsm-devel \
+        opus-devel \
+        speex-devel \
+        openssl-devel \
+        python3-devel \
+        hiredis-devel \
+        zlib-devel \
+        libcurl-devel \
+        spandsp-devel \
+        mysql-connector-c++ \
+        python3-mysqlclient --nogpgcheck \
+    && ln -s /usr/lib64/libmysqlcppconn8.so.2 /usr/lib64/libmysqlcppconn.so
+
+WORKDIR /
+
+RUN git clone --depth 1 --branch python3-rhel7 https://github.com/hecko/sems.git
+
+WORKDIR /sems
+
+RUN USE_SPANDSP=1 make
+RUN USE_SPANDSP=1 make install
+
+# Run SEMS with the specified configuration
+CMD ["/usr/local/sbin/sems", "-E", "-f", "/usr/local/etc/sems/sems.conf"]

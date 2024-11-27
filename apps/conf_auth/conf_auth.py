@@ -1,6 +1,6 @@
 from log import *
 from ivr import *
-import xmlrpclib
+import xmlrpc
 
 
 XMLRPC_PROTOCOL = 'http'         # could e.g. be https
@@ -76,7 +76,7 @@ class IvrDialog(IvrDialogBase):
 			self.flush()
 			if key == 10:
 	
-				c = xmlrpclib.ServerProxy(server_path )
+				c = xmlrpc.client.ServerProxy(server_path )
 				erg = c.AuthorizeConference(self.dialog.remote_uri, 
 									self.dialog.local_party, self.keys)
 
