@@ -1,6 +1,5 @@
-# Python version: 3.x
-#
-PYTHON_VERSION ?= $(shell python3 -c 'import sys;print("%d.%d" % (sys.version_info.major,sys.version_info.minor))')
+PYTHON_VERSION ?= $(shell (python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null) || \
+                        (python -c 'import sys; assert sys.version_info.major == 3; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null))
 
 PY_VER = $(PYTHON_VERSION)
 PY_EXE = python$(PY_VER)

@@ -1,5 +1,8 @@
 import base64,time
 
+import sys
+sys.path.append('/usr/local/lib/sems/ivr/imap_mailbox/')
+
 from log import *
 from ivr import *
 

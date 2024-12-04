@@ -168,14 +168,24 @@ Requirements:
 
  All requirements are optional.
 
- o Python version >= 2.3 for the ivr (embedded python interpreter)
-    and py_sems
+ o Python for the ivr (embedded python interpreter) and py_sems
  o flite speech synthesizer for TTS in the ivr
  o lame >= 3.95 for mp3 file output, mpg123 for mp3 playback
  o spandsp library for DTMF detection and PLC
     (SEMS has its own implementations for both)
  o libZRTP SDK (http://zfoneproject.com) for ZRTP
  o libev for jsonrpc
+
+Supported environments:
+
+  SEMS server hes been tested with the following:
+    * RHEL 7 with Python 3
+    * RHEL 8 with Python 3
+    * RHEL 9 with Python 3
+    * Debian 11 with Python 3
+    * Debian 12 with Python 3
+
+  Please see appropriate Dockerfiles
 
 Creating packages on debian (ubuntu, ...):
 
@@ -203,6 +213,13 @@ Creating packages on debian (ubuntu, ...):
    $ dpkg-buildpackage -rfakeroot -us -uc
 
    install sems and sems-python-modules packages in .. using dpkg.
+
+Build and run in container
+
+   # build
+   docker build -t sems-rhel8 -f Dockerfile-rhel8
+   # test-run in foreground
+   podman run --rm -it --name sems sems-rhel8
 
 Installed files using 'make install':
 

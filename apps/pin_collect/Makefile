@@ -1,5 +1,5 @@
 
-NAME=pincollect
+NAME=pin_collect
 VERSION=2.3.0-1
 
 LIBDIR=.

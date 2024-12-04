@@ -17,6 +17,7 @@ apps/py_sems/sip/*.cpp
 apps/py_sems/sip/*.h
 apps/py_sems/sip/Makefile.gen
 apps/rtmp/flash_phone/*.swf
+apps/rtmp/librtmp/librtmp.so.0
 apps/xmlrpc2di/xmlrpc++/src/Makefile
 build/
 cmake_install.cmake

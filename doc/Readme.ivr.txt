@@ -28,11 +28,9 @@ For security reasons, only pre-loaded scripts can be executed.
 How to select which Python script will be executed:
 ---------------------------------------------------
 
-If the application determined by the normal application selection 
-(sems.conf application=xyz) is "ivr", the script is executed which 
-is named as the username. 
-Example: R-URI 123@sems.iptel.org starts <script_path>/123.py
-
+Depending on the sems.conf file this is the way how Python scrips gets selected:
+    application = $(ruri.user)
+        When R-URI is 123@sems.iptel.org, then <script_path>/123.py starts
 
 Troubleshooting:
 ----------------

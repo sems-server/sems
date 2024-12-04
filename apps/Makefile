@@ -13,6 +13,8 @@ local_exclude_app_modules += jsonrpc
 local_exclude_app_modules += mp3
 local_exclude_app_modules += py_sems
 local_exclude_app_modules += twit
+# Not supported since RHEL6 or so:
+local_exclude_app_modules += ivr-python2
 
 include $(COREPATH)/../Makefile.defs
 
