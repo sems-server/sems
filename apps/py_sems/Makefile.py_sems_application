@@ -31,7 +31,7 @@ clean:
 
 .PHONY: compile
 compile: 
-	python${PYTHON_VERSION} $(PYSEMSPATH)/py_comp -q .
+	python${PYTHON_VERSION} $(PYSEMSPATH)/py_comp -b -q .
 
 .PHONY: install
 install: all

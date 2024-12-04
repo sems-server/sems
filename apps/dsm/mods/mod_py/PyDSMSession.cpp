@@ -41,7 +41,7 @@ extern "C" {
       return NULL;							\
     }									\
 									\
-    DSMSession* sess = (DSMSession*)PyCObject_AsVoidPtr(py_sc_sess);	\
+    DSMSession* sess = (DSMSession*)PyCapsule_GetPointer(py_sc_sess, NULL); \
     if (NULL == sess) {							\
       ERROR("retrieving the session pointer from TL dict\n");		\
       return NULL;							\
@@ -73,7 +73,7 @@ extern "C" {
     
     DBG("returning '%s'\n", sess->var[varname].c_str());
 
-    return PyString_FromString(sess->var[varname].c_str());
+    return PyUnicode_FromString(sess->var[varname].c_str());
   }
 
   static PyObject* mod_py_getselect(PyObject*, PyObject* args)
@@ -109,7 +109,7 @@ extern "C" {
 
     DBG("returning '%s'\n", res.c_str());
 
-    return PyString_FromString(res.c_str());
+    return PyUnicode_FromString(res.c_str());
   }
 
   static PyObject* mod_py_seterror(PyObject*, PyObject* args)
@@ -198,7 +198,7 @@ extern "C" {
     GET_SESS_PTR;    
     unsigned int res =  sess->getRecordLength();
     DBG("record length %d\n",res);
-    return PyInt_FromLong(res);
+    return PyLong_FromLong(res);
   }
 
   static PyObject* getRecordDataSize(PyObject*, PyObject* args)
@@ -206,7 +206,7 @@ extern "C" {
     GET_SESS_PTR;    
     unsigned int res =  sess->getRecordDataSize();
     DBG("record data size %d\n",res);
-    return PyInt_FromLong(res);
+    return PyLong_FromLong(res);
   }
 
   static PyObject* stopRecord(PyObject*, PyObject* args)

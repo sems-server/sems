@@ -1,0 +1,37 @@
+FROM almalinux:8
+
+RUN yum -y update
+
+RUN yum install -y epel-release \
+    && dnf config-manager --set-enabled powertools \
+    && yum install -y https://dev.mysql.com/get/mysql80-community-release-el7-1.noarch.rpm \
+    && yum install -y \
+        git \
+        make \
+        gcc-c++ \
+        libevent-devel \
+        gsm-devel \
+        opus-devel \
+        speex-devel \
+        openssl-devel \
+        python36-devel \
+        hiredis-devel \
+        zlib-devel \
+        libcurl-devel \
+        spandsp-devel \
+        mysql-connector-c++ \
+        python3-mysqlclient --nogpgcheck \
+    && ln -s /usr/lib64/libmysqlcppconn8.so.2 /usr/lib64/libmysqlcppconn.so
+
+WORKDIR /
+
+RUN git clone --depth 1 --branch python3-rhel7 https://github.com/hecko/sems.git
+
+WORKDIR /sems
+
+RUN ln -s /usr/lib64/libpython3.6m.so /usr/lib64/libpython3.6.so
+RUN USE_SPANDSP=1 make
+RUN USE_SPANDSP=1 make install
+
+# Run SEMS with the specified configuration
+CMD ["/usr/local/sbin/sems", "-E", "-f", "/usr/local/etc/sems/sems.conf"]
