@@ -17,7 +17,7 @@ class PySemsScript(PySemsDialog):
 	def onInvite(self,req):
 
 
-		print "----------------- %s ----------------" % self.__class__
+		print(f"----------------- {self.__class__} ----------------")
 		
 		ann_file = self.getAnnounceFile(req)
 		self.ann = AmAudioFile()
@@ -36,18 +36,17 @@ class PySemsScript(PySemsDialog):
 			debug("res = %s" % repr(res))
 			debug("sdp_reply = %s" % sdp_reply)
 		
-			if self.dlg.reply(req,183,"OK","application/sdp",sdp_reply,"") <> 0:
+			if self.dlg.reply(req,183,"OK","application/sdp",sdp_reply,"") != 0:
 				self.setStopped()
 		except:
 			self.dlg.reply(req,500,"File not found","","","")
 			self.ann = None
 			self.setStopped()
 			raise
-		
-		
-  	def onSessionStart(self,req):
 
-  		debug("***** onSessionStart *******")
+	def onSessionStart(self,req):
+
+		debug("***** onSessionStart *******")
 		PySemsDialog.onSessionStart(self,req)
 
 		self.localreq = AmSipRequest(req)
@@ -84,28 +83,28 @@ class PySemsScript(PySemsDialog):
 
 		debug("*********** PySemsScript.process **************")
 		if isinstance(ev,AmAudioEvent):
-		  if ev.event_id == AmAudioEvent.cleared:
+			if ev.event_id == AmAudioEvent.cleared:
 
-			debug("AmAudioEvent.cleared")
+				debug("AmAudioEvent.cleared")
 
-			code = getHeader(self.localreq.hdrs,"P-Final-Reply-Code")
-			reason = getHeader(self.localreq.hdrs,"P-Final-Reply-Reason")
+				code = getHeader(self.localreq.hdrs,"P-Final-Reply-Code")
+				reason = getHeader(self.localreq.hdrs,"P-Final-Reply-Reason")
 
-			if reason == "":
-				reason = "OK"
+				if reason == "":
+					reason = "OK"
 			
-			code_i = 400
-			try:
-				code_i = int(code)
-				if (code_i < 300) or (code_i>699):
-					debug("Invalid reply code: %d",code_i)
-			except:
-				debug("Invalid reply code: %s",code)
-	
-			debug("Replying %d %s" % (code_i, reason))
-			self.dlg.reply(self.localreq, code_i, reason, "", "", "")
-			self.setStopped()
-			return
+				code_i = 400
+				try:
+					code_i = int(code)
+					if (code_i < 300) or (code_i>699):
+						debug("Invalid reply code: %d",code_i)
+				except:
+					debug("Invalid reply code: %s",code)
+
+				debug("Replying %d %s" % (code_i, reason))
+				self.dlg.reply(self.localreq, code_i, reason, "", "", "")
+				self.setStopped()
+				return
 		
 		PySemsDialog.process(self,ev);
 		return
