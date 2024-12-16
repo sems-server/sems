@@ -16,6 +16,11 @@ xmlrpc++/src/XmlRpcUtil.cpp
 xmlrpc++/src/XmlRpcValue.cpp
 )
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    FIND_PATH(OPENSSL_INCLUDE_DIR openssl/crypto.h HINTS /usr/local/Cellar/openssl@3/3.4.1/include )
+    SET(OPENSSL_FOUND TRUE)
+endif()
+
 INCLUDE_DIRECTORIES (xmlrpc++/src)
 
 SET(sems_module_name xmlrpc2di)

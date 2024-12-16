@@ -1,6 +1,7 @@
 FILE (GLOB sbc_SRCS "*.cpp")
 
 ADD_SUBDIRECTORY (call_control)
+INCLUDE_DIRECTORIES(${LIBEVENT2_INCLUDE_DIR})
 
 SET(sems_module_name sbc)
 SET(sbc_config_files
