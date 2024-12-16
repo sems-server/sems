@@ -17,7 +17,7 @@ IF(APPLE)
 		"${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress")
 ENDIF(APPLE)
 
-ADD_DEFINITIONS(-DMOD_NAME=\\\"${sems_module_name}\\\")
+ADD_DEFINITIONS(-DMOD_NAME="${sems_module_name}")
 
 # all modules should be linked against ${CMAKE_DL_LIBS} at least
 # and with additional ${sems_module_libs} if they exists

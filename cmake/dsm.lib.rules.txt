@@ -25,7 +25,7 @@ TARGET_LINK_LIBRARIES(sems_dsm_${sems_dsm_module_name} ${CMAKE_DL_LIBS} ${sems_d
 SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES OUTPUT_NAME ${sems_dsm_module_name})
 SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES PREFIX "")
 
-ADD_DEFINITIONS(-DMOD_NAME=\\\"${sems_dsm_module_name}\\\")
+ADD_DEFINITIONS(-DMOD_NAME="${sems_dsm_module_name}")
 
 INSTALL(
 	TARGETS sems_dsm_${sems_dsm_module_name}

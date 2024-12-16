@@ -10,6 +10,10 @@ INCLUDE_DIRECTORIES (lib_dbase)
 
 SET(sems_module_name diameter_client)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    FIND_PATH(OPENSSL_INCLUDE_DIR openssl/crypto.h HINTS /usr/local/Cellar/openssl@3/3.4.1/include )
+endif()
+
 IF(OPENSSL_FOUND)
 	ADD_DEFINITIONS(-DWITH_OPENSSL)
 	INCLUDE_DIRECTORIES(${OPENSSL_INCLUDE_DIR})

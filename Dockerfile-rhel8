@@ -1,15 +1,15 @@
 FROM almalinux:8
 
-RUN yum -y update
-
-RUN yum install -y epel-release \
-    && dnf config-manager --set-enabled powertools \
-    && yum install -y https://dev.mysql.com/get/mysql80-community-release-el7-1.noarch.rpm \
-    && yum install -y \
+RUN yum install -y epel-release
+RUN dnf config-manager --set-enabled powertools
+RUN yum install -y https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
+RUN yum install -y \
         git \
+        cmake3 \
         make \
         gcc-c++ \
         libevent-devel \
+        libev-devel \
         gsm-devel \
         opus-devel \
         speex-devel \
@@ -19,19 +19,29 @@ RUN yum install -y epel-release \
         zlib-devel \
         libcurl-devel \
         spandsp-devel \
+        man \
         mysql-connector-c++ \
-        python3-mysqlclient --nogpgcheck \
-    && ln -s /usr/lib64/libmysqlcppconn8.so.2 /usr/lib64/libmysqlcppconn.so
-
-WORKDIR /
-
-RUN git clone --depth 1 --branch python3-rhel7 https://github.com/hecko/sems.git
-
-WORKDIR /sems
+        rpm-build \
+        bcg729-devel codec2-devel flite-devel \
+        lame-devel libmpg123-devel libsamplerate-devel \
+        mysql-connector-c++-devel which man \
+        python3-mysqlclient --nogpgcheck
 
 RUN ln -s /usr/lib64/libpython3.6m.so /usr/lib64/libpython3.6.so
-RUN USE_SPANDSP=1 make
-RUN USE_SPANDSP=1 make install
+
+RUN mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+RUN mkdir -p /usr/src/sems
+COPY . /usr/src/sems
+WORKDIR /usr/src/sems
+RUN make rpmtar
+RUN rpmbuild -ba pkg/rpm/sems.spec
+RUN rpmbuild -bs pkg/rpm/sems.spec
+RUN ls -al /root/rpmbuild/RPMS
+
+# install all SEMS RPMs
+RUN rpm -i /root/rpmbuild/RPMS/x86_64/sems-*.rpm
+RUN /usr/sbin/sems -v
+RUN ls -al /etc/sems/sems.conf
 
 # Run SEMS with the specified configuration
-CMD ["/usr/local/sbin/sems", "-E", "-f", "/usr/local/etc/sems/sems.conf"]
+CMD ["/usr/sbin/sems", "-E", "-f", "/etc/sems/sems.conf"]

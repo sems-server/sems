@@ -5,9 +5,11 @@ RUN yum install -y epel-release \
     && dnf install -y https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm \
     && dnf install -y \
         git \
+        cmake3 \
         make \
         gcc-c++ \
         libevent-devel \
+        libev-devel \
         gsm-devel \
         opus-devel \
         speex-devel \
@@ -17,18 +19,36 @@ RUN yum install -y epel-release \
         zlib-devel \
         libcurl-devel \
         spandsp-devel \
+        man \
+        mysql-connector-c++-devel \
+        libsamplerate-devel \
+        libmpg123-devel \
+        lame-devel \
+        flite-devel \
+        codec2-devel \
+        bcg729-devel \
+        rpm-build \
         mysql-connector-c++ \
-        python3-mysqlclient --nogpgcheck \
-    && ln -s /usr/lib64/libmysqlcppconn8.so.2 /usr/lib64/libmysqlcppconn.so
+        which \
+        python3-mysqlclient --nogpgcheck
 
 WORKDIR /
 
-RUN git clone --depth 1 --branch python3-rhel7 https://github.com/hecko/sems.git
+RUN mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-WORKDIR /sems
+# get the sources
+RUN mkdir -p /usr/src/sems
+COPY . /usr/src/sems
+WORKDIR /usr/src/sems
+RUN make rpmtar
+RUN rpmbuild -ba pkg/rpm/sems.spec
+RUN rpmbuild -bs pkg/rpm/sems.spec
+RUN ls -al /root/rpmbuild/RPMS
 
-RUN USE_SPANDSP=1 make
-RUN USE_SPANDSP=1 make install
+# install SEMS from RPMs
+RUN rpm -i /root/rpmbuild/RPMS/x86_64/sems-*.rpm
+RUN /usr/sbin/sems -v
+RUN ls -al /etc/sems/sems.conf
 
 # Run SEMS with the specified configuration
 CMD ["/usr/local/sbin/sems", "-E", "-f", "/usr/local/etc/sems/sems.conf"]

@@ -19,11 +19,10 @@ export USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)"
 	dh $@
 
 override_dh_auto_build:
-	$(MAKE) \
-	cfg_target=/etc/sems/ prefix=/usr \
-	exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
-	exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
-	DESTDIR=$(CURDIR)/debian/sems
+	dh_auto_build -- \
+		exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
+		exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
+		DESTDIR=$(CURDIR)/debian/sems
 
 override_dh_auto_install:
 	$(MAKE) -C core/ install \

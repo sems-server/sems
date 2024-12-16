@@ -5,6 +5,8 @@ WebConference.cpp
 WebConferenceDialog.cpp
 )
 
+INCLUDE_DIRECTORIES(${LIBEVENT2_INCLUDE_DIR})
+
 set (webconference_audio_files
 0.wav
 1.wav
