@@ -1,13 +1,27 @@
 $Id$
 
-creating sems rpm packages
+# Prerequisites
+
+This procedure has been tested on RHEL7
+
+```
+# some of the pakages might be in EPEL repo!
+yum install cmake rpm-build bcg729-devel cmake3 codec2-devel flite-devel lame-devel libmpg123-devel libsamplerate-devel
+~/rpmbuild/SOURCES
+```
+
+# Creating SEMS RPM packages
 
 - get a clean checkout
 - run "make dist"
-- cp the created sems-X.X.X.tar.gz to /usr/src/redhat/SOURCES (redhat)  or
+- cp the created sems-X.X.X.tar.gz to ~/rpmbuild/SOURCES as master.tar.gz (redhat)  or
 - cp the created sems-X.X.X.tar.gz to /usr/src/packages/SOURCES (suse)
-- run rpmbuild -ba rpm/spec.redhat (redhat)  or 
-- run rpmbuild -ba rpm/spec.suse (suse)
+
+```
+# example
+cp sems-1.7-dev-499-g402d6d2-dirty.tar.gz ~/rpmbuild/SOURCES/master.tar.gz
+rpmbuild -ba pkg/rpm/sems.spec
+```
 
 You will find src.rpm under /usr/src/[redhat|packages]/SRPMS
 and binary rpm under /usr/src/[redhat|packages]/RPMS/i386

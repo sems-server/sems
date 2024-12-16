@@ -4,10 +4,10 @@
 
 Summary:	SIP Express Media Server, an extensible SIP media server
 Name:		sems
-Version:	1.7.0
-Release:	2.%{build_timestamp}%{?dist}
+Version:	1.8.0
+Release:	1%{?dist}
 URL:		https://github.com/sems-server/%{name}
-Source0:        https://github.com/sems-server/sems/archive/master.tar.gz
+Source0:        https://github.com/sems-server/sems/archive/%{name}.tar.gz
 
 License:	GPLv2+
 BuildRequires:	bcg729-devel
@@ -40,7 +40,6 @@ you to extend SEMS and write your own applications and integrate new
 codec. Voice-mail, announcement and echo plug-ins are already included.
 SEMS supports g711u, g711a, GSM06.10 and wav file.
 
-%if 0%{?_with_python}
 %package	conf_auth
 Summary:	Conference with authorization
 Requires:	%{name}%{?_isa} = %{version}-%{release}
@@ -48,7 +47,6 @@ Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
 
 %description	conf_auth
 Conference with authorization by PIN-numbers.
-%endif
 
 %package	conference
 Summary:	Conferencing application
@@ -141,14 +139,13 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 %description	ilbc
 iLBC support for SEMS.
 
-%if 0%{?_with_python}
 %package	ivr
 Summary:	IVR functionality for SEMS
-Requires:	python2 >= 2.3
+Requires:	python3
 Requires:	%{name}%{?_isa} = %{version}-%{release}
 
 %description	ivr
-IVR functionality for SEMS.
+IVR functionality for SEMS using Python for iteraction.
 
 %package	mailbox
 Summary:	Mailbox application
@@ -159,7 +156,6 @@ Requires:	%{name}-ivr%{?_isa} = %{version}-%{release}
 The mailbox application is a mailbox where callers can leave messages
 for offline or unavailable users and the users can dial in to check their
 messages. It uses an IMAP server as back-end to store the voice messages.
-%endif
 
 %package	mp3
 Summary:	mp3 support for SEMS
@@ -175,7 +171,6 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 %description	opus
 Opus support for SEMS.
 
-%if 0%{?_with_python}
 %package	pin_collect
 Summary:	Collects a PIN
 Requires:	%{name}%{?_isa} = %{version}-%{release}
@@ -187,15 +182,14 @@ This application collects a PIN and then transfers using a
 
 %package	python
 Summary:	Python bindings for SEMS
-#BuildRequires:	python2 >= 2.3
-#BuildRequires:	python2-sip-devel
+BuildRequires:	python3
+BuildRequires:	python3-devel
 %{?_sip_api:Requires: sip-api(%{_sip_api_major}) >= %{_sip_api}}
-#Requires:	python2 >= 2.3
+Requires:	python3
 Requires:	%{name}%{?_isa} = %{version}-%{release}
 
 %description	python
 Python bindings for SEMS.
-%endif
 
 %if 0%{?_with_rtmp}
 %package	rtmp
@@ -227,15 +221,16 @@ XMLRPC servers.
 
 
 %prep
-# Temporary fix for adding versioning to the archive from the master
-cd ../SOURCES && tar -zxf master.tar.gz --transform s/sems-master/%{name}-%{version}/ && rm -f master.tar.gz
-tar cvzf master.tar.gz sems-1.7.0/ && cd ../BUILD
+cd ../SOURCES && tar xzfv sems.tar.gz --transform s/sems/%{name}-%{version}/
+cd ../SOURCES && rm -rf sems.tra.gz && tar czfv %{name}.tar.gz %{name}-%{version}/
 
-%autosetup -p1
-mv ./apps/dsm/fsmc/readme.txt  ./apps/dsm/fsmc/Readme.fsmc.txt
+#%autosetup -p1
+#mv ./apps/dsm/fsmc/readme.txt  ./apps/dsm/fsmc/Readme.fsmc.txt
 
 %build
-%{cmake} .. -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG \
+mkdir -p %{_builddir}/%{name}-%{version}-build
+cd %{_builddir}/%{name}-%{version}-build
+%{cmake3} %{_builddir}/%{name}-%{version} -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG \
 	-DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG \
 	-DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG \
 	-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
@@ -264,34 +259,43 @@ mv ./apps/dsm/fsmc/readme.txt  ./apps/dsm/fsmc/Readme.fsmc.txt
 	-DSEMS_LIBDIR=lib64 \
 	-DSEMS_DOC_PREFIX=/usr/share/doc
 
-%cmake_build
+%cmake3_build
 
 %install
-%cmake_install
+# Clean up the buildroot directory
+# rm -rf %{buildroot}
+cd %{_builddir}/%{name}-%{version}-build
 
+# Perform CMake installation
+%cmake3_install
+
+# Navigate to the build directory (if required for additional steps)
+cd %{_builddir}/%{name}-%{version}
+
+# Install system configuration file
 install -D -m 0644 -p pkg/rpm/sems.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 
-# install systemd files
+# Install systemd service and tmpfiles configuration
 install -D -m 0644 -p pkg/rpm/sems.systemd.service %{buildroot}%{_unitdir}/%{name}.service
 install -D -m 0644 -p pkg/rpm/sems.systemd.tmpfiles.d.conf %{buildroot}%{_tmpfilesdir}/%{name}.conf
 
+# Create runtime and spool directories
 mkdir -p %{buildroot}%{_localstatedir}/run/%{name}
 mkdir -p %{buildroot}%{_localstatedir}/spool/%{name}/voicebox
 
-# Remove installed docs
+# Remove installed documentation that isn't required
 rm -rf %{buildroot}%{_docdir}/%{name}
 rm -rf %{buildroot}%{_sysconfdir}/%{name}/default.template.sample
 rm -rf %{buildroot}%{_sysconfdir}/%{name}/sems.conf.default
 
-# remove currently empty conf-file
-rm -f %{buildroot}%{_sysconfdir}/%{name}/etc/conf_auth.conf
-
-# add empty directories for audiofiles
+# Add directories for audio files
 mkdir -p %{buildroot}%{_datadir}/%{name}/audio/ann_b2b
 mkdir -p %{buildroot}%{_datadir}/%{name}/audio/announcement
 mkdir -p %{buildroot}%{_datadir}/%{name}/audio/announce_transfer
 
+# Debug: List the contents of the buildroot directory for verification
 ls -laR %{buildroot}
+
 
 %pre
 getent passwd %{name} >/dev/null || \
@@ -351,7 +355,6 @@ getent passwd %{name} >/dev/null || \
 %config(noreplace) %{_sysconfdir}/%{name}/etc/voicebox.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/voicemail.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/webconference.conf
-
 %config(noreplace) %{_sysconfdir}/%{name}/etc/auth_b2b.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/call_timer.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/cc_call_timer.conf
@@ -384,7 +387,6 @@ getent passwd %{name} >/dev/null || \
 %doc doc/Readme.call_timer.txt
 %doc doc/Readme.callback.txt
 %doc doc/Readme.click2dial.txt
-%doc doc/Readme.conf_auth.txt
 %doc doc/Readme.echo.txt
 %doc doc/Readme.jsonrpc.txt
 %doc doc/Readme.monitoring.txt
@@ -541,13 +543,10 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/plug-in/wav.so
 %{_libdir}/%{name}/plug-in/webconference.so
 
-%if 0%{?_with_python}
 %files conf_auth
- currently empty
-%config(noreplace) %{_sysconfdir}/%{name}/etc/conf_auth.conf
+%config(noreplace) /etc/sems/etc/conf_auth.conf
+%config(noreplace) %{_libdir}/%{name}/ivr/conf_auth.py*
 %doc doc/Readme.conf_auth.txt
-%{_libdir}/%{name}/ivr/conf_auth.py*
-%endif
 
 %files conference
 %config(noreplace) %{_sysconfdir}/%{name}/etc/conference.conf
@@ -580,9 +579,7 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/dsm/mod_groups.so
 %{_libdir}/%{name}/dsm/mod_monitoring.so
 %{_libdir}/%{name}/dsm/mod_mysql.so
-%if 0%{?_with_python}
 %{_libdir}/%{name}/dsm/mod_py.so
-%endif
 %{_libdir}/%{name}/dsm/mod_redis.so
 %{_libdir}/%{name}/dsm/mod_regex.so
 %{_libdir}/%{name}/dsm/mod_sbc.so
@@ -625,13 +622,23 @@ getent passwd %{name} >/dev/null || \
 %doc doc/Readme.iLBC.txt
 %{_libdir}/%{name}/plug-in/ilbc.so
 
-%if 0%{?_with_python}
 %files ivr
 %config(noreplace) %{_sysconfdir}/%{name}/etc/ivr.conf
-%doc doc/Readme.ivr.txt
-%dir %{_libdir}/%{name}/ivr/
+%config(noreplace) %{_sysconfdir}/%{name}/etc/ivr_test.conf
+%config(noreplace) %{_sysconfdir}/%{name}/etc/ivr_test2.conf
+%config(noreplace) %{_datadir}/%{name}/audio/ivr_test/adios.wav
+%config(noreplace) %{_datadir}/%{name}/audio/ivr_test/quattro_formaggi.wav
+%config(noreplace) %{_datadir}/%{name}/audio/ivr_test/test.wav
+%config(noreplace) %{_datadir}/%{name}/audio/ivr_test2/adios.wav
+%config(noreplace) %{_datadir}/%{name}/audio/ivr_test2/quattro_formaggi.wav
+%config(noreplace) %{_datadir}/%{name}/audio/ivr_test2/test.wav
+%config(noreplace) %{_libdir}/%{name}/ivr/ivr_test.py*
+%config(noreplace) %{_libdir}/%{name}/ivr/ivr_test2.py*
 %{_libdir}/%{name}/plug-in/ivr.so
 %{_libdir}/%{name}/ivr/log.py*
+
+%doc doc/Readme.ivr.txt
+%dir %{_libdir}/%{name}/plug-in/
 
 %files mailbox
 %config(noreplace) %{_sysconfdir}/%{name}/etc/mailbox.conf
@@ -657,7 +664,6 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/ivr/imap_mailbox/MailboxURL.py*
 %{_libdir}/%{name}/ivr/imap_mailbox/__init__.py*
 %{_libdir}/%{name}/ivr/imap_mailbox/imap4ext.py*
-%endif
 
 %files mp3
 %doc doc/Readme.mp3plugin.txt
@@ -666,21 +672,19 @@ getent passwd %{name} >/dev/null || \
 %files opus
 %{_libdir}/%{name}/plug-in/opus.so
 
-%if 0%{?_with_python}
 %files pin_collect
 %config(noreplace) %{_sysconfdir}/%{name}/etc/pin_collect.conf
 %doc doc/Readme.pin_collect.txt
 %dir %{_datadir}/%{name}/audio/pin_collect/
-%{_datadir}/%{name}/audio/pin_collect/enter_pin.wav
-%{_datadir}/%{name}/audio/pin_collect/welcome.wav
-%{_libdir}/%{name}/ivr/pin_collect.py*
+%config(noreplace) %{_datadir}/%{name}/audio/pin_collect/enter_pin.wav
+%config(noreplace) %{_datadir}/%{name}/audio/pin_collect/welcome.wav
+%config(noreplace) %{_libdir}/%{name}/ivr/pin_collect.py*
 
 %files python
-%config(noreplace) %{_sysconfdir}/%{name}/etc/py_sems.conf
+#%config(noreplace) %{_sysconfdir}/%{name}/etc/py_sems.conf
 %doc doc/Readme.py_sems.txt
-%{_libdir}/%{name}/plug-in/py_sems.so
-%{_libdir}/%{name}/plug-in/py_sems_log.py*
-%endif
+#%{_libdir}/%{name}/plug-in/py_sems.so
+#%{_libdir}/%{name}/plug-in/py_sems_log.py*
 
 %if 0%{?_with_rtmp}
 %files rtmp
