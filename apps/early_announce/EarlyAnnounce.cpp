@@ -332,7 +332,7 @@ AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req, const string&
   string language = get_header_keyvalue(iptel_app_param,"Language");
   string announce_file = "";
 
-  get_announce_file(req.domain, req.user, language, &announce_file);
+  get_announce_file(req.user, req.domain, language, &announce_file);
  
   return new EarlyAnnounceDialog(announce_file);
 }
