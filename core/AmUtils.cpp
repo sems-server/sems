@@ -57,6 +57,21 @@
 static char _int2str_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9' };
 
 
+string ulonglong2str(unsigned long long int val)
+{
+  char buffer[64] = {0};
+  int i = 62;
+  lldiv_t d;
+
+  d.quot = val;
+  do {
+    d = lldiv(d.quot,10);
+    buffer[i] = _int2str_lookup[d.rem];
+  } while(--i && d.quot);
+
+  return string((char*)(buffer+i+1));
+}
+
 string int2str(unsigned int val)
 {
   char buffer[64] = {0};
@@ -365,6 +380,51 @@ bool str2long(char*& str, long& result, char sep)
  error_char:
   DBG("str2long: unexpected char 0x%x in %s\n", *str, init);
   return false;
+}
+
+bool str2ulonglong(const string& str, unsigned long long int& result)
+{
+  char* s = (char*)str.c_str();
+  return str2ulonglong(s,result);
+}
+
+bool str2ulonglong(char*& str, unsigned long long int& result, char sep)
+{
+  unsigned long long int ret = 0;
+  int i = 0;
+  char* init = str;
+  bool eol = false;
+
+  for (; (*str != '\0') && (*str == ' '); str++);
+
+  for (; *str != '\0';str++) {
+    if ( (*str <= '9' ) && (*str >= '0') ) {
+      ret = ret*10 + *str-'0';
+      i++;
+      if ( i>20 ) { goto error_digits; }
+    } else {
+      eol = false;
+      switch (*str){
+        case 0xd:
+        case 0xa:
+        case 0x0:
+          eol = true;
+      }
+      if ( (*str != sep) && !eol ) { goto error_char; }
+      break;
+    }
+  }
+
+  result = ret;
+  return true;
+
+  error_digits:
+    INFO("str2ulonglong: too many letters in [%s]\n", init);
+    return false;
+
+  error_char:
+    INFO("str2ulonglong: unexpected char 0x%x in %s\n", *str, init);
+    return false;
 }
 
 bool str2bool(const string &s, bool &dst)

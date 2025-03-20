@@ -77,6 +77,11 @@ string long2str(long int val);
  */
 string longlong2str(long long int val);
 
+/**
+ * Convert an unsigned long long integer to a string.
+ */
+string ulonglong2str(unsigned long long int val);
+
 /** 
  * Convert a a byte to a string using hexdecimal representation.
  */
@@ -157,6 +162,23 @@ bool str2long(const string& str, long& result);
  * @return true on success
  */
 bool str2long(char*& str, long& result, char sep = ' ');
+
+/**
+ * Convert a string to an unsigned long long integer.
+ * @param str    [in]  string to convert.
+ * @param result [out] result integer.
+ * @return true on success.
+ */
+bool str2ulonglong(const string& str, unsigned long long int& result);
+
+/**
+ * Internal version of preceeding 'str2longlong' method.
+ * @param str    [in,out] gets incremented until sep char or error occurs.
+ * @param result [out] result of the function.
+ * @param sep    [in] character seprating the number to convert and the next token.
+ * @return false when conversion failed.
+ */
+bool str2ulonglong(char*& str, unsigned long long int& result, char sep = ' ');
 
 /* translates string value into bool, returns false on error */
 bool str2bool(const string &s, bool &dst);
