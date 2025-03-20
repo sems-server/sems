@@ -322,7 +322,7 @@ void AmSdp::print(string& body) const
 {
   string out_buf = "v="+int2str(version)+"\r\n"
     "o="+origin.user+" "+int2str(origin.sessId)+" "+
-    int2str(origin.sessV)+" IN ";
+    ulonglong2str(origin.sessV)+" IN ";
 
   if (!origin.conn.address.empty())
     if (origin.conn.address.find(".") != std::string::npos)
@@ -1257,7 +1257,10 @@ static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
 	    break;
 	  }
 	  string version(origin_line, int(next-origin_line)-1);
-	  str2i(version, origin.sessV);
+
+	  if (!str2ulonglong(version, origin.sessV))
+	    { WARN("str2ulonglong() failed: 0x%llx/%llu",origin.sessV,origin.sessV); }
+
 	  origin_line = next;
 	  origin_st = NETTYPE;
 	  break;
