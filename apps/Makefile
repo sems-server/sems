@@ -9,7 +9,7 @@ local_exclude_app_modules += mobile_push
 # Have external dependencies:
 local_exclude_app_modules += db_reg_agent
 local_exclude_app_modules += gateway
-local_exclude_app_modules += jsonrpc
+# local_exclude_app_modules += jsonrpc
 local_exclude_app_modules += mp3
 local_exclude_app_modules += py_sems
 local_exclude_app_modules += twit

@@ -13,6 +13,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Update Dockerfiles to use correct repo and branch
+        run: |
+          for file in Dockerfile-*; do
+            [ -f "$file" ] || continue
+            sed -i "s|RUN git clone --depth 1 --branch [^ ]* https://github.com/[^ ]*|RUN git clone --depth 1 --branch ${GITHUB_REF#refs/heads/} https://github.com/${GITHUB_REPOSITORY}|" "$file"
+            cat "$file"
+          done
+
       - name: Build image based on RHEL7
         run: docker build -t sems -f Dockerfile-rhel7 .
 

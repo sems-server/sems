@@ -56,7 +56,7 @@
 using std::set;
 
 
-#define PYFILE_REGEX "(.+)\\.(py|pyc|pyo)$"
+#define PYFILE_REGEX "(.+)\\.(py|pyc)$"
 
 
 EXPORT_SESSION_FACTORY(PySemsFactory,MOD_NAME);

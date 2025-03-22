@@ -13,7 +13,7 @@ set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 PROJECT (SEMS)
 
 SET(SEMS_MAJOR_VERSION 1)
-SET(SEMS_MINOR_VERSION 7)
+SET(SEMS_MINOR_VERSION 8)
 SET(SEMS_BUILD_VERSION 0)
 SET(SEMS_EXTRA_VERSION dev)
 
@@ -53,9 +53,9 @@ OPTION(SEMS_USE_G729          "Build with bcg729 library" OFF)
 OPTION(SEMS_USE_CODEC2        "Build with codec2 library" OFF)
 OPTION(SEMS_USE_TTS           "Build with Text-to-speech support (requires Flite)" OFF)
 OPTION(SEMS_USE_OPENSSL       "Build with OpenSSL" OFF)
-OPTION(SEMS_USE_MONITORING    "Build with monitoring support" OFF)
+OPTION(SEMS_USE_MONITORING    "Build with monitoring support" ON)
 OPTION(SEMS_USE_IPV6          "Build with IPv6 support" OFF)
-OPTION(SEMS_USE_PYTHON        "Build with Python modules" OFF)
+OPTION(SEMS_USE_PYTHON        "Build with Python modules" ON)
 
 # add -lm and -lpthread / -lthr to all targets
 
@@ -184,10 +184,10 @@ ENDIF(SEMS_USE_CODEC2)
 
 # build in support for monitoring?
 IF(SEMS_USE_MONITORING)
-	MESSAGE(STATUS "Enable monitoring: YES")
+	MESSAGE(STATUS "Enable monitoring: YES (default)")
 	ADD_DEFINITIONS(-DUSE_MONITORING)
 ELSE(SEMS_USE_MONITORING)
-	MESSAGE(STATUS "Enable monitoring: NO (default)")
+	MESSAGE(STATUS "Enable monitoring: NO")
 ENDIF(SEMS_USE_MONITORING)
 
 IF(SEMS_USE_IPV6)
@@ -229,7 +229,7 @@ IF(SEMS_USE_PYTHON)
 		SET(PYTHONLIBS_FOUND TRUE)
 		MESSAGE(STATUS "Found Python includes:	${PYTHON_INCLUDE_PATH}/Python.h")
 		MESSAGE(STATUS "Found Python library: ${PYTHON_LIBRARIES}")
-		MESSAGE(STATUS "Using Python: YES")
+		MESSAGE(STATUS "Using Python: YES ${PYTHONLIBS_FOUND} ${PYTHON_LIBRARIES}")
 	ELSE(PYTHONLIBS_FOUND OR PYTHON_LIBRARIES)
 		MESSAGE(STATUS "Using Python: NO")
 	ENDIF(PYTHONLIBS_FOUND OR PYTHON_LIBRARIES)
@@ -242,7 +242,7 @@ IF(SEMS_USE_PYTHON)
 		MESSAGE(STATUS "Using SIP: NO")
 	ENDIF(SIP_FOUND)
 ELSE(SEMS_USE_PYTHON)
-	MESSAGE(STATUS "Using Python modules: NO (default)")
+	MESSAGE(STATUS "Using Python modules: NO")
 ENDIF(SEMS_USE_PYTHON)
 
 # Let's try to find MySQL++ development files

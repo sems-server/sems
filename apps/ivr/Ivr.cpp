@@ -54,7 +54,7 @@ using std::set;
 using std::string;
 
 
-#define PYFILE_REGEX "(.+)\\.(py|pyc|pyo)$"
+#define PYFILE_REGEX "(.+)\\.(py|pyc)$"
 
 
 EXPORT_SESSION_FACTORY(IvrFactory,MOD_NAME);
@@ -949,10 +949,10 @@ PyObject * getPySipRequest(const AmSipRequest& r)
   return IvrSipRequest_FromPtr(new AmSipRequest(r));
 }
 
-void safe_Py_DECREF(PyObject* pyo)
+void safe_Py_DECREF(PyObject* pyc)
 {
   PYLOCK;
-  Py_DECREF(pyo);
+  Py_DECREF(pyc);
 }
 
 struct ObjScope
@@ -975,8 +975,8 @@ void IvrDialog::onSipReply(const AmSipRequest& req,
 void IvrDialog::onSipRequest(const AmSipRequest& r)
 {
   mReq = r;
-  ObjScope pyo(getPySipRequest(r));
-  callPyEventHandler("onSipRequest","(O)", pyo.obj);
+  ObjScope pyc(getPySipRequest(r));
+  callPyEventHandler("onSipRequest","(O)", pyc.obj);
   AmB2BCallerSession::onSipRequest(r);
 }
 

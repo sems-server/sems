@@ -1,0 +1,34 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: SEMS
+Upstream-Contact: semsdev@lists.iptel.org
+Source: http://www.iptel.org/sems
+
+Files: *
+Copyright:
+ 2005-2014 Raphael Coeffic <rco@iptel.org>
+ 2010-2014 FRAFOS GmbH
+ 2005-2014 Stefan Sayer <stefan.sayer@frafos.com>
+ 2002-2005 FhG Fokus
+ 2006-2010 iptelorg GmbH
+ 2007-2009 IPTEGO GmbH
+ 2007-2013 Juha Heinanen <jh@tutpro.com>
+ 2007 Andreas Granig <agranig@sipwise.com>
+ 2009-2010 TelTech Systems Inc.
+ 2006-2007 Maxim Sobolev <sobomax@sippysoft.com>
+ 2010 Anton Zagorskiy amberovsky@gmail.com
+ 2011-2012 Peter Lemenkov <lemenkov@gmail.com>
+ Various others (see README file)
+License: GPL-2.0+ OpenSSL exception
+ On Debian systems, the full text of the GNU General Public
+ License version 2 can be found in the file `/usr/share/common-licenses/GPL-2'.
+ * Exception: permission to copy, modify, propagate, and distribute a work
+ * formed by combining OpenSSL toolkit software and the code in this file,
+ * such as linking with software components and libraries released under
+ * OpenSSL project license.
+
+Files: debian/*
+Copyright: 2014 Victor Seva <linuxmaniac@torreviejawireless.org>
+           2008-2014, Stefan Sayer <stefan.sayer@frafos.com>
+License: GPL-2+
+ On Debian systems, the full text of the GNU General Public
+ License version 2 can be found in the file `/usr/share/common-licenses/GPL-2'.

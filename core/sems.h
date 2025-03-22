@@ -28,8 +28,8 @@
 #ifndef _sems_h_
 #define _sems_h_
 
-#define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
-#define MOD_CFG_PATH        "/usr/local/etc/sems/etc/"
+#define CONFIG_FILE         "/etc/sems/sems.conf"
+#define MOD_CFG_PATH        "/etc/sems/etc/"
 #define ANNOUNCE_PATH       "/usr/local/lib/sems/audio"
 #define ANNOUNCE_FILE       "default.wav"
 #define PLUG_IN_PATH        "/usr/local/lib/sems/plug-in"

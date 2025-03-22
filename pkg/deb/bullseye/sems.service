@@ -1,0 +1,15 @@
+[Unit]
+Description=SIP Media Server
+After=network.target
+
+[Service]
+Type=simple
+User=sems
+Group=sems
+Environment='CFGFILE=/etc/sems/sems.conf'
+EnvironmentFile=-/etc/default/sems
+PIDFile=/run/sems/sems.pid
+Restart=on-failure
+StartLimitInterval=10
+StartLimitBurst=5
+ExecStart=/usr/sbin/sems -E -u sems -g sems -P $PIDFile -f $CFGFILE
