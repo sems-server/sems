@@ -45,23 +45,14 @@ RUN yum install -y epel-release \
         python3-mysqlclient --nogpgcheck \
         rpm-build
 
-# RUN ln -s /usr/lib64/libmysqlcppconn8.so.2 /usr/lib64/libmysqlcppconn.so
 RUN ln -s /usr/lib64/libpython3.6m.so /usr/lib64/libpython3.6.so
 RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
 
-WORKDIR /
-
-RUN git clone --depth 1 --branch fb https://github.com/hecko/sems.git
-
-WORKDIR /sems
-
-# build binaries from sources
 RUN mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-
-# build RPMs from sources
-WORKDIR /sems
-RUN make rpmtar
-RUN rpmbuild -ba pkg/rpm/sems.spec
+COPY sems.tar.gz /root/rpmbuild/SOURCES/sems.tar.gz
+WORKDIR /root
+COPY pkg/rpm/sems.spec sems.spec
+RUN rpmbuild -ba sems.spec
 RUN ls -al /root/rpmbuild/RPMS
 
 # install SEMS from RPMs

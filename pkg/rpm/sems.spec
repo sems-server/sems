@@ -5,7 +5,7 @@
 Summary:	SIP Express Media Server, an extensible SIP media server
 Name:		sems
 Version:    1.8.0
-Release:    tes.mar.1%{?dist}
+Release:    1%{?dist}
 URL:		https://github.com/sems-server/%{name}
 Source0:    https://github.com/sems-server/sems/archive/%{name}.tar.gz
 
