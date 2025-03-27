@@ -168,7 +168,11 @@ int ConferenceFactory::onLoad()
 
   /* Get default audio from MySQL */
 
-  string mysql_server, mysql_user, mysql_passwd, mysql_db, mysql_ca_cert;
+  string mysql_server;
+  string mysql_user;
+  string mysql_passwd;
+  string mysql_db;
+  string mysql_ca_cert;
 
   mysql_server = cfg.getParameter("mysql_server");
   if (mysql_server.empty()) {
@@ -449,11 +453,17 @@ void ConferenceDialog::onInvite(const AmSipRequest& req)
   }
 
   len = extra_headers.length();
-  for (i = 0; i < len; i++) {
-    if (extra_headers[i] == '|') extra_headers[i] = '\n';
-  }
-  if (extra_headers[len - 1] != '\n') {
-      extra_headers += '\n';
+  if (len > 0) {
+    DBG("Processing extra headers: '%s'\n", extra_headers.c_str());
+    for (i = 0; i < len; i++) {
+      if (extra_headers[i] == '|') {
+          extra_headers[i] = '\n';
+      }
+    }
+    if (extra_headers[len - 1] != '\n') {
+          extra_headers += '\n';
+    }
+    DBG("Extra headers processed: '%s'\n", extra_headers.c_str());
   }
 
   if (dialout_suffix.length() == 0) {
