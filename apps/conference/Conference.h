@@ -46,16 +46,18 @@ using std::string;
 class ConferenceStatus;
 class ConferenceStatusContainer;
 
+enum {
+  CS_normal = 0,
+  CS_dialing_out,
+  CS_dialed_out,
+  CS_dialout_connected
+};
 
-enum { CS_normal=0,
-       CS_dialing_out,
-       CS_dialed_out,
-       CS_dialout_connected };
-
-enum { DoConfConnect = 100,
-       DoConfDisconnect,
-       DoConfRinging,
-       DoConfError
+enum {
+  DoConfConnect = 100,
+  DoConfDisconnect,
+  DoConfRinging,
+  DoConfError
 };
 
 /** \brief Event to trigger connecting/disconnecting between dialout session and main conference session */
@@ -63,17 +65,12 @@ struct DialoutConfEvent : public AmEvent {
 
   string conf_id;
 
-  DialoutConfEvent(int event_id,
-		   const string& conf_id)
-    : AmEvent(event_id),
-      conf_id(conf_id)
-  {}
+  DialoutConfEvent(int event_id, const string &conf_id) : AmEvent(event_id), conf_id(conf_id) {}
 };
 
 /** \brief Factory for conference sessions */
-class ConferenceFactory : public AmSessionFactory
-{
-  static AmSessionEventHandlerFactory* session_timer_f;
+class ConferenceFactory : public AmSessionFactory {
+  static AmSessionEventHandlerFactory *session_timer_f;
   static AmConfigReader cfg;
 
 public:
@@ -86,54 +83,51 @@ public:
   static unsigned int MaxParticipants;
   static bool UseRFC4240Rooms;
 
-  static void setupSessionTimer(AmSession* s);
+  static void setupSessionTimer(AmSession *s);
 
 #ifdef USE_MYSQL
   static mysqlpp::Connection Connection;
 #endif
 
-  ConferenceFactory(const string& _app_name);
-  virtual AmSession* onInvite(const AmSipRequest&, const string& app_name,
-			      const map<string,string>& app_params);
-  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name,
-			     const map<string,string>& app_params);
+  ConferenceFactory(const string &_app_name);
+  virtual AmSession *onInvite(const AmSipRequest &, const string &app_name,
+                              const map<string, string> &app_params);
+  virtual AmSession *onRefer(const AmSipRequest &req, const string &app_name,
+                             const map<string, string> &app_params);
   virtual int onLoad();
 };
 
 /** \brief session logic implementation of conference sessions */
-class ConferenceDialog : public AmSession
-{
-  AmPlaylist  play_list;
+class ConferenceDialog : public AmSession {
+  AmPlaylist play_list;
 
   unique_ptr<AmAudioFile> LonelyUserFile;
   unique_ptr<AmAudioFile> JoinSound;
   unique_ptr<AmAudioFile> DropSound;
-  unique_ptr<AmRingTone>  RingTone;
-  unique_ptr<AmRingTone>  ErrorTone;
+  unique_ptr<AmRingTone> RingTone;
+  unique_ptr<AmRingTone> ErrorTone;
 
-
-  string                        conf_id;
+  string conf_id;
   unique_ptr<AmConferenceChannel> channel;
 
-  int                           state;
-  string                        dtmf_seq;
-  bool                          dialedout;
-  string                        dialout_suffix;
-  string                        dialout_id;
+  int state;
+  string dtmf_seq;
+  bool dialedout;
+  string dialout_suffix;
+  string dialout_id;
   unique_ptr<AmConferenceChannel> dialout_channel;
 
-  bool                          allow_dialout;
+  bool allow_dialout;
 
-  string                        from_header;
-  string                        extra_headers;
-  string                        language;
+  string from_header;
+  string extra_headers;
+  string language;
 
-  bool                          listen_only;
+  bool listen_only;
 
-  unique_ptr<AmSipRequest>        transfer_req;
+  unique_ptr<AmSipRequest> transfer_req;
 
-
-  void createDialoutParticipant(const string& uri);
+  void createDialoutParticipant(const string &uri);
   void disconnectDialout();
   void connectMainChannel();
   void closeChannels();
@@ -142,27 +136,24 @@ class ConferenceDialog : public AmSession
 #ifdef WITH_SAS_TTS
   void sayTTS(string text);
   string last_sas;
-  cst_voice* tts_voice;
-  vector<AmAudioFile*> TTSFiles;
+  cst_voice *tts_voice;
+  vector<AmAudioFile *> TTSFiles;
 #endif
 
 public:
-  ConferenceDialog(const string& conf_id,
-		   AmConferenceChannel* dialout_channel=0);
+  ConferenceDialog(const string &conf_id, AmConferenceChannel *dialout_channel = 0);
 
   ~ConferenceDialog();
 
-  void process(AmEvent* ev);
+  void process(AmEvent *ev);
   void onStart();
   void onDtmf(int event, int duration);
-  void onInvite(const AmSipRequest& req);
+  void onInvite(const AmSipRequest &req);
   void onSessionStart();
-  void onBye(const AmSipRequest& req);
+  void onBye(const AmSipRequest &req);
 
-  void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipRequest& req,
-		  const AmSipReply& reply,
-		  AmBasicSipDialog::Status old_dlg_status);
+  void onSipRequest(const AmSipRequest &req);
+  void onSipReply(const AmSipRequest &req, const AmSipReply &reply, AmBasicSipDialog::Status old_dlg_status);
 
 #ifdef WITH_SAS_TTS
   void onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx);

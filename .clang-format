@@ -1,0 +1,10 @@
+BasedOnStyle: LLVM 
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+SortIncludes: false
+ColumnLimit: 110
+PointerAlignment: Right
+AllowShortEnumsOnASingleLine: false
+BreakBeforeBraces: Custom
+InsertBraces: true
