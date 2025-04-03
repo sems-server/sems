@@ -67,7 +67,13 @@ int SCPyModule::preload() {
     printf("Python version %s\n", Py_GetVersion());
   }
 
-  PyEval_InitThreads();
+#ifdef PY_VERSION_HEX
+#if PY_VERSION_HEX < 0x03070000
+  PyEval_InitThreads(); // No longer needed in Python 3.7+
+#endif
+#else
+#error "PY_VERSION_HEX is not defined. Please include the Python headers."
+#endif
 
   interp = PyThreadState_Get()->interp;
   tstate = PyThreadState_Get();
@@ -113,7 +119,10 @@ int SCPyModule::preload() {
     return -1;
   }
 
-  PyEval_ReleaseLock();
+  // Replace PyEval_ReleaseLock() with PyEval_SaveThread()
+  PyThreadState *state = PyEval_SaveThread(); // Releases the GIL in Python 3
+  (void)state; // Avoid unused variable warning if not used later
+
   return 0;
 }
 
