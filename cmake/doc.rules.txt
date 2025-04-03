@@ -2,14 +2,14 @@ MACRO(SEMS_INSTALL_DOCS doc_files doc_dirs)
 
 	FOREACH (doc_file ${doc_files})
 		INSTALL(
-			FILES ${doc_file} DESTINATION ${SEMS_DOC_PREFIX}/sems-${SEMS_VERSION}
+			FILES ${doc_file} DESTINATION ${SEMS_DOC_PREFIX}/sems-${FILE_VERSION}
 		)
 	ENDFOREACH(doc_file ${doc_files})
 
 	FOREACH (doc_dir ${doc_dirs})
 		INSTALL(
 			DIRECTORY ${doc_dir}
-			DESTINATION ${SEMS_DOC_PREFIX}/sems-${SEMS_VERSION}
+			DESTINATION ${SEMS_DOC_PREFIX}/sems-${FILE_VERSION}
 		)
 	ENDFOREACH(doc_dir ${doc_dirs})
 

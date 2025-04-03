@@ -3,27 +3,8 @@ else
 makefile_defs="1"
 export makefile_defs
 
-GIT := $(shell which git)
-
-ifneq ($(GIT),)
-   SCM_REV := $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; \
-        then git describe --always --dirty 2>/dev/null; \
-        else git describe --always 2>/dev/null; fi)
-endif
-
-#version number
-VERSION = 1
-PATCHLEVEL = 8
-SUBLEVEL = 0
-
-ifneq ($(SCM_REV),)
-RELEASE := $(SCM_REV)
-else
-REL_VERSION := $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
-RELEASE := $(REL_VERSION)$(EXTRAVERSION)
-endif
-
 APP_NAME ?= sems
+RELEASE ?= $(shell cat VERSION 2>/dev/null | tr -d ' \t\n' | sed 's/^v//' | sed 's/-/./g')
 SYSTEM_SAMPLECLOCK_RATE ?= 32000LL
 
 CPPFLAGS += -D_DEBUG \
@@ -96,7 +77,7 @@ USE_MONITORING=yes
 LONG_DEBUG_MESSAGE=yes
 
 # Is this a debug build or not?
-debug=no
+debug=yes
 
 # Propagate all unparsed SIP headers into AmSipReply. Disabled by default
 # because only special applications might need this and it brings higher memory
@@ -331,7 +312,7 @@ INSTALL_DOC = $(INSTALL) -m 644
 INSTALL_AUDIO = $(INSTALL) -m 644
 
 #export stuff to sub-makes
-export REL_VERSION RELEASE OS ARCH
+export RELEASE OS ARCH
 export CPPFLAGS CXXFLAGS LDFLAGS CFLAGS LIB_LDFLAGS
 export CXX CC LD
 export DESTDIR PREFIX prefix basedir

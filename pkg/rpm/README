@@ -1,0 +1,5 @@
+# Build RPMs using docker (or podman)
+
+* change version and release in file VERSION
+* change the build_rpms.sh script as required
+* run the build_rpms.sh script

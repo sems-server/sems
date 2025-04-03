@@ -1,38 +1,42 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 IF(COMMAND cmake_policy)
-	# Don't do automatic escaping of variables
-	CMAKE_POLICY(SET CMP0005 OLD)
-	CMAKE_POLICY(SET CMP0003 NEW)
+       CMAKE_POLICY(SET CMP0005 NEW)
 ENDIF(COMMAND cmake_policy)
-
 
 # Add path for additional FindXXX.cmake scenarios
 set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 PROJECT (SEMS)
 
-SET(SEMS_MAJOR_VERSION 1)
-SET(SEMS_MINOR_VERSION 7)
-SET(SEMS_BUILD_VERSION 0)
-SET(SEMS_EXTRA_VERSION dev)
+# Read the version from the VERSION file
+execute_process(
+    COMMAND cat "${CMAKE_SOURCE_DIR}/VERSION"
+    OUTPUT_VARIABLE FILE_VERSION_RAW
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-IF(EXISTS ${CMAKE_SOURCE_DIR}/.git)
-	SET(SEMS_VERSION
-	    "${SEMS_MAJOR_VERSION}.${SEMS_MINOR_VERSION}.${SEMS_BUILD_VERSION}-${SEMS_EXTRA_VERSION}")
-ELSE(EXISTS ${CMAKE_SOURCE_DIR}/.git)
-	SET(SEMS_VERSION
-	    "${SEMS_MAJOR_VERSION}.${SEMS_MINOR_VERSION}.${SEMS_BUILD_VERSION}")
-ENDIF(EXISTS ${CMAKE_SOURCE_DIR}/.git)
+# If the file is missing or empty, fail with an error
+if(NOT FILE_VERSION_RAW)
+    message(FATAL_ERROR "VERSION file is missing or empty! Please create it.")
+endif()
 
-ADD_DEFINITIONS(-DSEMS_VERSION=\\\"${SEMS_VERSION}\\\")
-ADD_DEFINITIONS(-DARCH=\\\"${CMAKE_SYSTEM_PROCESSOR}\\\")
-ADD_DEFINITIONS(-DOS=\\\"${CMAKE_SYSTEM_NAME}\\\")
+# Clean up version string: replace dashes with dots and remove 'v' prefix
+string(REGEX REPLACE "^v" "" FILE_VERSION "${FILE_VERSION_RAW}")
+string(REGEX REPLACE "-" "." FILE_VERSION "${FILE_VERSION}")
+
+# Print version for debugging
+message(STATUS "SEMS_VERSION: ${FILE_VERSION}")
+
+# Pass version as a compile definition
+add_definitions(-DSEMS_VERSION="${FILE_VERSION}")
+ADD_DEFINITIONS(-DARCH="${CMAKE_SYSTEM_PROCESSOR}")
+ADD_DEFINITIONS(-DOS="${CMAKE_SYSTEM_NAME}")
 
 ADD_DEFINITIONS(-DSYSTEM_SAMPLECLOCK_RATE=32000LL)
-ADD_DEFINITIONS(-DSEMS_APP_NAME=\\\"sems\\\")
+ADD_DEFINITIONS(-DSEMS_APP_NAME="sems")
 
-MESSAGE(STATUS "Configuring ${CMAKE_PROJECT_NAME} v. ${SEMS_VERSION}")
+MESSAGE(STATUS "Configuring ${CMAKE_PROJECT_NAME} v. ${FILE_VERSION}")
 
 IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT MSVC_IDE)
 	message(FATAL_ERROR "In-source builds are not allowed.
@@ -53,9 +57,9 @@ OPTION(SEMS_USE_G729          "Build with bcg729 library" OFF)
 OPTION(SEMS_USE_CODEC2        "Build with codec2 library" OFF)
 OPTION(SEMS_USE_TTS           "Build with Text-to-speech support (requires Flite)" OFF)
 OPTION(SEMS_USE_OPENSSL       "Build with OpenSSL" OFF)
-OPTION(SEMS_USE_MONITORING    "Build with monitoring support" OFF)
+OPTION(SEMS_USE_MONITORING    "Build with monitoring support" ON)
 OPTION(SEMS_USE_IPV6          "Build with IPv6 support" OFF)
-OPTION(SEMS_USE_PYTHON        "Build with Python modules" OFF)
+OPTION(SEMS_USE_PYTHON        "Build with Python modules" ON)
 
 # add -lm and -lpthread / -lthr to all targets
 
@@ -184,10 +188,10 @@ ENDIF(SEMS_USE_CODEC2)
 
 # build in support for monitoring?
 IF(SEMS_USE_MONITORING)
-	MESSAGE(STATUS "Enable monitoring: YES")
+	MESSAGE(STATUS "Enable monitoring: YES (default)")
 	ADD_DEFINITIONS(-DUSE_MONITORING)
 ELSE(SEMS_USE_MONITORING)
-	MESSAGE(STATUS "Enable monitoring: NO (default)")
+	MESSAGE(STATUS "Enable monitoring: NO")
 ENDIF(SEMS_USE_MONITORING)
 
 IF(SEMS_USE_IPV6)
@@ -229,7 +233,7 @@ IF(SEMS_USE_PYTHON)
 		SET(PYTHONLIBS_FOUND TRUE)
 		MESSAGE(STATUS "Found Python includes:	${PYTHON_INCLUDE_PATH}/Python.h")
 		MESSAGE(STATUS "Found Python library: ${PYTHON_LIBRARIES}")
-		MESSAGE(STATUS "Using Python: YES")
+		MESSAGE(STATUS "Using Python: YES ${PYTHONLIBS_FOUND} ${PYTHON_LIBRARIES}")
 	ELSE(PYTHONLIBS_FOUND OR PYTHON_LIBRARIES)
 		MESSAGE(STATUS "Using Python: NO")
 	ENDIF(PYTHONLIBS_FOUND OR PYTHON_LIBRARIES)
@@ -242,7 +246,7 @@ IF(SEMS_USE_PYTHON)
 		MESSAGE(STATUS "Using SIP: NO")
 	ENDIF(SIP_FOUND)
 ELSE(SEMS_USE_PYTHON)
-	MESSAGE(STATUS "Using Python modules: NO (default)")
+	MESSAGE(STATUS "Using Python modules: NO")
 ENDIF(SEMS_USE_PYTHON)
 
 # Let's try to find MySQL++ development files

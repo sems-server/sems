@@ -214,12 +214,29 @@ Creating packages on debian (ubuntu, ...):
 
    install sems and sems-python-modules packages in .. using dpkg.
 
+
 Build and run in container
 
    # build
-   docker build -t sems-rhel8 -f Dockerfile-rhel8
+   docker build -t sems-rhel8 -f Dockerfile-rhel8 .
    # test-run in foreground
    podman run --rm -it --name sems sems-rhel8
+
+
+Build in container and extract RPMs from the built container:
+
+   mkdir -p /tmp/sems-rpms
+   # build
+   docker build -t sems-rhel7 -f Dockerfile-rhel7 .
+   # create container instance from the image
+   docker create --name temp-sems-rhel7 sems-rhel7
+   # extract RPMs into host system
+   docker cp temp-sems-rhel7:/root/rpmbuild/RPMS /tmp/sems-rpms
+   # remove temporary container
+   docker rm temp-sems-rhel7
+   # list available SEMS RPMs
+   ls -al /tmp/sems-rpms/RPMS/x86_64/
+
 
 Installed files using 'make install':
 
@@ -273,6 +290,7 @@ Authors:
     Joe Stusick
     Jose-Luis Millan
     Juha Heinanen
+    Marcel Hecko
     Matthew Williams
     Michael Furmur
     Ovidiu Sas
