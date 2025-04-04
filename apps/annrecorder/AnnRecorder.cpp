@@ -60,14 +60,14 @@ AmDynInvokeFactory* AnnRecorderFactory::message_storage_fact = NULL;
 
 const char* MsgStrError(int e) {
   switch (e) {
-  case MSG_OK: return "MSG_OK"; break;
-  case MSG_EMSGEXISTS: return "MSG_EMSGEXISTS"; break;
-  case MSG_EUSRNOTFOUND: return "MSG_EUSRNOTFOUND"; break;
-  case MSG_EMSGNOTFOUND: return "MSG_EMSGNOTFOUND"; break;
-  case MSG_EALREADYCLOSED: return "MSG_EALREADYCLOSED"; break;
-  case MSG_EREADERROR: return "MSG_EREADERROR"; break;
-  case MSG_ENOSPC: return "MSG_ENOSPC"; break;
-  case MSG_ESTORAGE: return "MSG_ESTORAGE"; break;
+  case MSG_OK: return "MSG_OK";
+  case MSG_EMSGEXISTS: return "MSG_EMSGEXISTS";
+  case MSG_EUSRNOTFOUND: return "MSG_EUSRNOTFOUND";
+  case MSG_EMSGNOTFOUND: return "MSG_EMSGNOTFOUND";
+  case MSG_EALREADYCLOSED: return "MSG_EALREADYCLOSED";
+  case MSG_EREADERROR: return "MSG_EREADERROR";
+  case MSG_ENOSPC: return "MSG_ENOSPC";
+  case MSG_ESTORAGE: return "MSG_ESTORAGE";
   default: return "Unknown Error";
   }
 }
