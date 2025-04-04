@@ -463,7 +463,7 @@ int ServerConnection::handleRequest(AAAMessage* req) {
     AAAFreeMessage(&reply);
     return 0;
 
-  }; break;
+  };
 
   case AAA_CC_DPR: { // Disconnect-Peer-Request
     string disconnect_cause = "UNKNOWN";
@@ -522,7 +522,7 @@ int ServerConnection::handleRequest(AAAMessage* req) {
 
     return 0;
 
-  }; break;
+  };
 
   default: {
     ERROR("ignoring unknown request with command code %i\n", 
