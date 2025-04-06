@@ -209,10 +209,10 @@ private:
 
  protected:
   /** Terminate our leg and forget the other. */
-  virtual void terminateLeg();
+  virtual void terminateLeg(const string &cancel_hdrs = "");
 
   /** Terminate the other leg and forget it.*/
-  virtual void terminateOtherLeg();
+  virtual void terminateOtherLeg(const string &cancel_hdrs = "");
 
 
   /** @see AmSession */
@@ -416,8 +416,8 @@ class AmB2BCallerSession: public AmB2BSession
   void onSystemEvent(AmSystemEvent* ev);
 
   // @see AmB2BSession
-  void terminateLeg();
-  void terminateOtherLeg();
+  void terminateLeg(const string &cancel_hdrs = "");
+  void terminateOtherLeg(const string &cancel_hdrs = "");
   virtual void onB2BEvent(B2BEvent* ev);
 
   AmSipRequest* getInviteReq() { return &invite_req; }

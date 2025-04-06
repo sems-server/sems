@@ -303,7 +303,12 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 
   case B2BTerminateLeg:
     DBG("terminateLeg()\n");
-    terminateLeg();
+    std::map<string,string>::const_iterator it;
+    it= ev->params.find("cancel_hdrs");
+    if (it != ev->params.end())
+      terminateLeg(it->second);
+    else
+      terminateLeg();
     break;
   }
 
@@ -619,19 +624,24 @@ bool AmB2BSession::onOtherReply(const AmSipReply& reply)
   return false;
 }
 
-void AmB2BSession::terminateLeg()
+void AmB2BSession::terminateLeg(const string &cancel_hdrs)
 {
   setStopped();
 
   clearRtpReceiverRelay();
 
-  dlg->bye("", SIP_FLAGS_VERBATIM);
+  dlg->bye(cancel_hdrs, SIP_FLAGS_VERBATIM);
 }
 
-void AmB2BSession::terminateOtherLeg()
+void AmB2BSession::terminateOtherLeg(const string &cancel_hdrs)
 {
-  if (!other_id.empty())
-    relayEvent(new B2BEvent(B2BTerminateLeg));
+  if (!other_id.empty()) {
+    B2BEvent* ev = new B2BEvent(B2BTerminateLeg);
+    if (!cancel_hdrs.empty()) {
+      ev->params["cancel_hdrs"]= cancel_hdrs;
+    }
+    relayEvent(ev);
+  }
 }
 
 void AmB2BSession::onRtpTimeout() {
@@ -1013,14 +1023,14 @@ void AmB2BCallerSession::set_sip_relay_early_media_sdp(bool r)
   sip_relay_early_media_sdp = r; 
 }
 
-void AmB2BCallerSession::terminateLeg()
+void AmB2BCallerSession::terminateLeg(const string &cancel_hdrs)
 {
-  AmB2BSession::terminateLeg();
+  AmB2BSession::terminateLeg(cancel_hdrs);
 }
 
-void AmB2BCallerSession::terminateOtherLeg()
+void AmB2BCallerSession::terminateOtherLeg(const string &cancel_hdrs)
 {
-  AmB2BSession::terminateOtherLeg();
+  AmB2BSession::terminateOtherLeg(cancel_hdrs);
   callee_status = None;
 }
 
@@ -1160,7 +1170,7 @@ void AmB2BCallerSession::onInvite2xx(const AmSipReply& reply)
 
 void AmB2BCallerSession::onCancel(const AmSipRequest& req)
 {
-  terminateOtherLeg();
+  terminateOtherLeg(req.hdrs);
   terminateLeg();
 }
 
