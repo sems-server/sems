@@ -12,7 +12,7 @@ RUN apt install -y \
          devscripts libbcg729-dev
 WORKDIR /
 
-RUN git clone --depth 1 --branch master https://github.com/sems/sems.git
+RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
 
 WORKDIR /sems
 
