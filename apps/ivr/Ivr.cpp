@@ -373,7 +373,11 @@ void IvrFactory::init_python_interpreter(const string& script_path)
     Py_Initialize();
   }
 
+  // PyEval_InitThreads is deprecated since Python 3.9
+  // and is a no-op since Python 3.7 where GIL is initialized automatically
+#if PY_VERSION_HEX < 0x03070000
   PyEval_InitThreads();
+#endif
   set_sys_path(script_path);
   import_ivr_builtins();
   PyEval_SaveThread();
