@@ -64,18 +64,12 @@ static const WebRtc_UWord16 kOneBitEqualProbInitIndex[1] = {1};
 
 
 /* coefficients for the stepwise rate estimation */
-
-
-static const WebRtc_Word32 acnQ10 =  426;
-static const WebRtc_Word32 bcnQ10 = -581224;
-static const WebRtc_Word32 ccnQ10 =  722631;
-static const WebRtc_Word32 lbcnQ10 = -402874;
 #define DPMIN_Q10     -10240 // -10.00 in Q10
 #define DPMAX_Q10      10240 // 10.00 in Q10
 #define MINBITS_Q10    10240  /* 10.0 in Q10 */
 #define IS_SWB_12KHZ       1
 
-__inline WebRtc_UWord32 stepwise(WebRtc_Word32 dinQ10) {
+static __inline WebRtc_UWord32 stepwise(WebRtc_Word32 dinQ10) {
 
   WebRtc_Word32 ind, diQ10, dtQ10;
 
@@ -93,7 +87,7 @@ __inline WebRtc_UWord32 stepwise(WebRtc_Word32 dinQ10) {
 }
 
 
-__inline short log2_Q10_B( int x )
+static __inline short log2_Q10_B( int x )
 {
   int zeros;
   short frac;
