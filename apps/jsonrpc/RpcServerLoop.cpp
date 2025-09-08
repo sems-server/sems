@@ -103,9 +103,14 @@ int setnonblock(int fd)
 
 static void read_cb(struct ev_loop *loop, struct ev_io *w, int revents) { 	
 
+  // offsetof is conditionally supported for non-standard-layout types
+  // but is widely used in systems programming
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-offsetof"
   struct JsonrpcNetstringsConnection *peer= 
     ((struct JsonrpcNetstringsConnection*) 
      (((char*)w) - offsetof(JsonrpcNetstringsConnection,ev_read)));
+#pragma GCC diagnostic pop
 
   DBG("read_cb in connection %p\n", peer);
 
