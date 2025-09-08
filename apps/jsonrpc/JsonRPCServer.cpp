@@ -130,7 +130,7 @@ int JsonRpcServer::processMessage(char* msgbuf, unsigned int* msg_size,
       DBG("received reply for unknown request");
       *msg_size = 0;
 
-      if (peer->flags && JsonrpcPeerConnection::FL_CLOSE_WRONG_REPLY) {
+      if (peer->flags & JsonrpcPeerConnection::FL_CLOSE_WRONG_REPLY) {
 	INFO("closing connection after unknown reply id %s received\n", id.c_str());
 	return -2;
       }
