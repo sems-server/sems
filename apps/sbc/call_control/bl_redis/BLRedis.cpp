@@ -219,7 +219,7 @@ int CCBLRedis::handle_redis_reply(redisContext* redis_context, redisReply* reply
   case REDIS_REPLY_STRING:
     if (reply->len>=0) {
       if (full_logging) {
-	DBG("REDIS: %.*s\n", reply->len, reply->str);
+	DBG("REDIS: %.*s\n", (int)reply->len, reply->str);
       }
       hit = true;
     } break;
@@ -236,7 +236,7 @@ int CCBLRedis::handle_redis_reply(redisContext* redis_context, redisReply* reply
   case REDIS_REPLY_ARRAY: {
     for (size_t i=0;i<reply->elements;i++) {
       switch(reply->element[i]->type) {
-      case REDIS_REPLY_ERROR: ERROR("REDIS ERROR: %.*s\n", reply->element[i]->len,
+      case REDIS_REPLY_ERROR: ERROR("REDIS ERROR: %.*s\n", (int)reply->element[i]->len,
 				    reply->element[i]->str);
 	return RWT_E_WRITE;
 
@@ -258,7 +258,7 @@ int CCBLRedis::handle_redis_reply(redisContext* redis_context, redisReply* reply
       case REDIS_REPLY_STRING:
 	if (full_logging) {
 	  if (reply->element[i]->len >= 0) {
-	    DBG("REDIS: %.*s\n", reply->element[i]->len, reply->element[i]->str); 
+	    DBG("REDIS: %.*s\n", (int)reply->element[i]->len, reply->element[i]->str); 
 	  }
 	}
 	if (reply->element[i]->len >= 0) {
