@@ -67,7 +67,11 @@ int SCPyModule::preload() {
     printf("Python version %s\n", Py_GetVersion());
   }
 
+  // PyEval_InitThreads is deprecated since Python 3.9
+  // and is a no-op since Python 3.7 where GIL is initialized automatically
+#if PY_VERSION_HEX < 0x03070000
   PyEval_InitThreads();
+#endif
 
   interp = PyThreadState_Get()->interp;
   tstate = PyThreadState_Get();
@@ -113,7 +117,13 @@ int SCPyModule::preload() {
     return -1;
   }
 
+  // PyEval_ReleaseLock is deprecated since Python 3.2
+  // Use PyEval_SaveThread instead for modern Python versions
+#if PY_VERSION_HEX >= 0x03020000
+  PyEval_SaveThread();
+#else
   PyEval_ReleaseLock();
+#endif
   return 0;
 }
 
