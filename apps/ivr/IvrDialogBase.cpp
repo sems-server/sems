@@ -468,8 +468,8 @@ IvrDialogBase_refer(IvrDialogBase *self, PyObject* args)
     
   char* refer_to=0;
   int expires = -1;
-  char * referred_by = "";
-  char * extrahdrs = "";
+  const char * referred_by = "";
+  const char * extrahdrs = "";
   if(!PyArg_ParseTuple(args, "s|iss", &refer_to, &expires, &referred_by, &extrahdrs))
     return NULL;
     
@@ -791,5 +791,5 @@ PyTypeObject IvrDialogBaseType = {
   0,                         /* tp_weaklist */
   0,                         /* tp_del */
   0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
+  nullptr,                   /* tp_finalize */
 };
