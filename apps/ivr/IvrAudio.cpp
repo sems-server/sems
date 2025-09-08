@@ -287,11 +287,11 @@ PyTypeObject IvrAudioFileType = {
   0,                         /* tp_init */
   0,                         /* tp_alloc */
   IvrAudioFile_new,          /* tp_new */
-  0,                         /* tp_free */
-  0,                         /* *tp_is_gc */
-  0,                         /* tp_bases */
-  0,                         /* tp_mro */
-  0,                         /* tp_cache */
+  nullptr,                   /* tp_free */
+  nullptr,                   /* *tp_is_gc */
+  nullptr,                   /* tp_bases */
+  nullptr,                   /* tp_mro */
+  nullptr,                   /* tp_cache */
   nullptr,                   /* tp_subclasses */
   nullptr,                   /* tp_weaklist */
   nullptr,                   /* tp_del */
