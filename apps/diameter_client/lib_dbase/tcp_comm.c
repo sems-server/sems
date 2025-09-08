@@ -427,11 +427,13 @@ int do_read(dia_tcp_conn* conn_st, rd_buf_t *p)
 int tcp_send(dia_tcp_conn* conn_st, char* buf, int len) {
   int n;
   int sockfd;
+#ifdef WITH_OPENSSL
   fd_set rw_fd_set;
   struct timeval tv;
 
   tv.tv_sec = 0;
   tv.tv_usec = WANT_RW_TIMEOUT_USEC;
+#endif
 
 
   if (!conn_st) {
