@@ -133,9 +133,9 @@ PyTypeObject IvrNullAudioType = {
   0,                         /* tp_bases */
   0,                         /* tp_mro */
   0,                         /* tp_cache */
-  0,                         /* tp_subclasses */
-  0,                         /* tp_weaklist */
-  0,                         /* tp_del */
+  nullptr,                   /* tp_subclasses */
+  nullptr,                   /* tp_weaklist */
+  nullptr,                   /* tp_del */
   0,                         /* tp_version_tag */
   nullptr,                   /* tp_finalize */
 };
