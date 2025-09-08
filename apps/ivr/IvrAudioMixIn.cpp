@@ -142,5 +142,5 @@ PyTypeObject IvrAudioMixInType = {
   0,                         /* tp_weaklist */
   0,                         /* tp_del */
   0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
+  nullptr,                   /* tp_finalize */
 };

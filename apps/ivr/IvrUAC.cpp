@@ -44,8 +44,8 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
   char* from;
   char* from_uri;
   char* to;
-  char* local_tag = "";
-  char* hdrs = "";
+  const char* local_tag = "";
+  const char* hdrs = "";
   PyObject *sp = NULL;
 
   if(!PyArg_ParseTuple(args,"ssssss|ssO", &user, &app_name, &r_uri,
@@ -139,5 +139,5 @@ PyTypeObject IvrUACType = {
   0,                         /* tp_weaklist */
   0,                         /* tp_del */
   0,                         /* tp_version_tag */
-  0,                         /* tp_finalize */
+  nullptr,                   /* tp_finalize */
 };
