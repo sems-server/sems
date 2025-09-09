@@ -2,7 +2,7 @@ FROM almalinux:10
 
 RUN dnf install -y epel-release \
     && dnf config-manager --set-enabled crb \
-    && dnf install -y https://repo.mysql.com/mysql84-community-release-el10.noarch.rpm \
+    && dnf install -y https://repo.mysql.com/mysql84-community-release-el10.rpm \
     && dnf install -y \
         git \
         cmake \
