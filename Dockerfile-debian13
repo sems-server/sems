@@ -14,8 +14,7 @@ RUN apt install -y devscripts libbcg729-dev
 RUN pip install sip --break-system-packages
 WORKDIR /
 
-# RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
-RUN  git clone --depth 1 --branch master https://github.com/hecko/sems.git
+RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
 
 WORKDIR /sems
 
