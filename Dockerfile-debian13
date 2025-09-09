@@ -1,22 +1,29 @@
 FROM debian:13
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt update
 RUN apt install -y \
          git debhelper g++ make libspandsp-dev flite1-dev \
          libspeex-dev libgsm1-dev libopus-dev libssl-dev python3-dev \
-         python3.11-dev libev-dev \
-         python3-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
+         python3-pip libev-dev \
+         openssl libev-dev libmysqlcppconn-dev libevent-dev \
          libxml2-dev libcurl4-openssl-dev libhiredis-dev
 
-RUN apt install -y \
-         devscripts libbcg729-dev
+RUN apt install -y devscripts libbcg729-dev
+RUN pip install sip --break-system-packages
 WORKDIR /
 
-RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
+# RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
+RUN git clone --depth 1 --branch master https://github.com/hecko/sems.git
+RUN ls -al 
 
 WORKDIR /sems
 
-RUN ln -s pkg/deb/trixie ./debian
+RUN ls -al
+RUN mkdir ./debian
+RUN mv pkg/deb/trixie/* ./debian
+RUN ls -al ./debian/
 RUN dch -b -v 1.8.0 "sems"
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
