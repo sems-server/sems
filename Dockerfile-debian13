@@ -15,15 +15,11 @@ RUN pip install sip --break-system-packages
 WORKDIR /
 
 # RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
-RUN git clone --depth 1 --branch master https://github.com/hecko/sems.git
-RUN ls -al 
+RUN  git clone --depth 1 --branch master https://github.com/hecko/sems.git
 
 WORKDIR /sems
 
-RUN ls -al
-RUN mkdir ./debian
-RUN mv pkg/deb/trixie/* ./debian
-RUN ls -al ./debian/
+RUN mv pkg/deb/trixie ./debian
 RUN dch -b -v 1.8.0 "sems"
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
