@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Build image based on RHEL7
         run: docker build -t sems_el7 -f Dockerfile-rhel7 .
@@ -30,10 +30,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Build image based on Debian 11
         run: docker build -t sems_deb11 -f Dockerfile-debian11 .
 
       - name: Build image based on Debian 12
         run: docker build -t sems_deb12 -f Dockerfile-debian12 .
+
+      - name: Build image based on Debian 13
+        run: docker build -t sems_deb13 -f Dockerfile-debian13 .

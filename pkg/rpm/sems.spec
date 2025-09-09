@@ -13,7 +13,7 @@ URL:        https://github.com/sems-server/%{name}
 Source0:    %{name}-%{version}.tar.gz
 
 License:	GPLv2+
-BuildRequires:	bcg729-devel
+
 BuildRequires:	cmake3
 BuildRequires:	codec2-devel
 BuildRequires:	flite-devel
@@ -30,6 +30,11 @@ BuildRequires:	opus-devel
 BuildRequires:	spandsp-devel
 BuildRequires:	speex-devel
 BuildRequires:	systemd
+# we dont have RHEL 10 package available for bcg729-devel yet
+%if 0%{?rhel} != 10
+BuildRequires:	bcg729-devel
+%endif
+
 
 Requires(pre):  /usr/sbin/useradd
 Requires(post): systemd-units
@@ -110,6 +115,8 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 This is a wrapper around the g722 codec from the spandsp library.
 
 
+# we dont have RHEL 10 package available for bcg729-devel yet
+%if 0%{?rhel} != 10
 %package	g729
 Summary:	G.729 support for SEMS
 BuildRequires:	bcg729-devel
@@ -117,6 +124,7 @@ Requires:	%{name}%{?_isa} = %{version}-%{release}
 
 %description	g729
 This is a wrapper around the g729 codec from the bcg729 library.
+%endif
 
 %if 0%{?_with_gateway}
 %package	gateway
@@ -263,7 +271,11 @@ echo 'Using cmake_build: %{?cmake3_build}'
         -DSEMS_USE_ZRTP=NO \
         -DSEMS_USE_MP3=yes \
         -DSEMS_USE_ILBC=yes \
+%if 0%{?rhel} == 10
+        -DSEMS_USE_G729=no \
+%else
         -DSEMS_USE_G729=yes \
+%endif
         -DSEMS_USE_CODEC2=yes \
         -DSEMS_USE_OPUS=yes \
         -DSEMS_USE_TTS=yes \
@@ -620,9 +632,12 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/plug-in/g722.so
 
 
+# we dont have RHEL 10 package available for dependencies yet
+%if 0%{?rhel} != 10
 %files g729
 %doc core/plug-in/g729/Readme.g729.md
 %{_libdir}/%{name}/plug-in/g729.so
+%endif
 
 %if 0%{?_with_gateway}
 %files gateway
