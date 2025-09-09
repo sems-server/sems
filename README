@@ -70,7 +70,6 @@ Applications:
  Announcements (Prompts, Ringbacktones, Pre-call-prompts):
   * announcement   plays an announcement
 
-
   * ann_b2b        pre-call-announcement, plays announcement 
                    before connecting the callee in B2BUA mode
  
@@ -82,7 +81,6 @@ Applications:
                    optionally continues the call in B2BUA mode
 
   * precoded_announce plays preencoded announcements
-
 
  Voicemail/Mailbox
   * voicebox       users can dial in to the voicebox to check
@@ -99,9 +97,7 @@ Applications:
                    as email, saves them to a voicebox, or
                    both
 
-
  Conferencing
-
   * conference     enables many people to talk together 
                    at the same time
 
@@ -117,22 +113,55 @@ Applications:
                    the call into a conference
 
  App development
-
   * dsm            DSM state machine scripting (use this)
 
   * ivr            embedded Python interpreter for simple apps
   
   * py_sems        another embedded Python interpreter
 
- Misc
-  * echo           test module to echo the caller's voice
- 
+ Call Control and Routing
+  * click2dial     XMLRPC-enabled way to initiate authenticated calls
 
   * callback       reject the call, call back caller later and have 
-                   her enter a number to call in b2bua with media relay
+                   caller enter a number to call in b2bua with media relay
                    mode
 
-  * reg_agent     SIP REGISTER to register SEMS' contact to an aor
+  * mobile_push    mobile push notification support for call routing
+
+ Registration and Authentication  
+  * reg_agent      SIP REGISTER to register SEMS' contact to an aor
+
+  * registrar_client  SIP registrar client functionality
+
+  * db_reg_agent   database-based registration agent using MySQL++
+
+ Protocol Support and Integration
+  * diameter_client  simple DIAMETER client implementation for AAA integration
+
+  * jsonrpc        JSON-RPC protocol version 2.0 over TCP/Netstrings
+
+  * xmlrpc2di      makes DI interfaces accessible via XMLRPC, also XMLRPC client
+
+ Monitoring and Management
+  * monitoring     in-memory AVP DB for call monitoring and generic data storage
+
+  * msg_storage    message storage functionality
+
+  * mwi           Message Waiting Indication (MWI) support
+
+ Media Processing
+  * mp3           MP3 codec support and media processing
+
+  * rtmp          RTMP (Real-Time Messaging Protocol) support
+
+ Example and Test Applications  
+  * echo          test module to echo the caller's voice
+
+  * early_dbprompt  early media database prompts example
+
+  * gateway       ISDN gateway functionality (requires mISDN)
+
+  * twit          example Twitter integration application
 
 
 Developing and customizing Applications and services:
