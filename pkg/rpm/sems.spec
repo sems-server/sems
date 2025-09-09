@@ -701,10 +701,7 @@ getent passwd %{name} >/dev/null || \
 %config(noreplace) %{_libdir}/%{name}/ivr/pin_collect.py*
 
 %files python
-#%config(noreplace) %{_sysconfdir}/%{name}/etc/py_sems.conf
 %doc doc/Readme.py_sems.txt
-#%{_libdir}/%{name}/plug-in/py_sems.so
-#%{_libdir}/%{name}/plug-in/py_sems_log.py*
 
 %if 0%{?_with_rtmp}
 %files rtmp
