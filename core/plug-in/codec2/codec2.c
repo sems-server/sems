@@ -238,7 +238,7 @@ int pcm16_2_codec2(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   const int in_buffer_offset_next = c2enc->samples_per_frame * 2;
 
   while (blocks.quot--) {
-    codec2_encode(codec2, out_buf + out_buffer_offset, in_buf + in_buffer_offset);
+    codec2_encode(codec2, out_buf + out_buffer_offset, (short int*)(in_buf + in_buffer_offset));
     out_buffer_offset += c2enc->nbyte;
     in_buffer_offset += in_buffer_offset_next;
   }
@@ -284,7 +284,7 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   const int out_buffer_offset_next = c2enc->samples_per_frame * 2;
 
   while (blocks.quot--) {
-    codec2_decode(codec2, out_buf + out_buffer_offset, in_buf + in_buffer_offset);
+    codec2_decode(codec2, (short int*)(out_buf + out_buffer_offset), in_buf + in_buffer_offset);
     out_buffer_offset += out_buffer_offset_next;
     in_buffer_offset += c2enc->nbyte;
   }
