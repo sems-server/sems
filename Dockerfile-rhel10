@@ -1,0 +1,53 @@
+FROM almalinux:10
+
+RUN dnf install -y epel-release \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y https://repo.mysql.com/mysql84-community-release-el10.rpm \
+    && dnf install -y \
+        git \
+        cmake \
+        make \
+        gcc-c++ \
+        libevent-devel \
+        libev-devel \
+        gsm-devel \
+        opus-devel \
+        speex-devel \
+        openssl-devel \
+        python3-devel \
+        hiredis-devel \
+        zlib-devel \
+        libcurl-devel \
+        spandsp-devel \
+        man \
+        mysql-connector-c++-devel \
+        libsamplerate-devel \
+        libmpg123-devel \
+        lame-devel \
+        flite-devel \
+        codec2-devel \
+        rpm-build \
+        mysql-connector-c++ \
+        which \
+        python3-mysqlclient --nogpgcheck
+
+WORKDIR /
+
+RUN mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+# get the sources
+RUN mkdir -p /usr/src/sems
+COPY . /usr/src/sems
+WORKDIR /usr/src/sems
+RUN make rpmtar
+RUN rpmbuild -ba pkg/rpm/sems.spec
+RUN rpmbuild -bs pkg/rpm/sems.spec
+RUN ls -al /root/rpmbuild/RPMS
+
+# install SEMS from RPMs
+RUN rpm -i /root/rpmbuild/RPMS/x86_64/sems-*.rpm
+RUN /usr/sbin/sems -v
+RUN ls -al /etc/sems/sems.conf
+
+# Run SEMS with the specified configuration
+CMD ["/usr/local/sbin/sems", "-E", "-f", "/usr/local/etc/sems/sems.conf"]

@@ -1,0 +1,30 @@
+FROM debian:13
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update
+RUN apt install -y \
+         git debhelper g++ make libspandsp-dev flite1-dev \
+         libspeex-dev libgsm1-dev libopus-dev libssl-dev python3-dev \
+         python3-pip libev-dev \
+         openssl libev-dev libmysqlcppconn-dev libevent-dev \
+         libxml2-dev libcurl4-openssl-dev libhiredis-dev
+
+RUN apt install -y devscripts libbcg729-dev
+RUN pip install sip --break-system-packages
+WORKDIR /
+
+RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
+
+WORKDIR /sems
+
+RUN mv pkg/deb/trixie ./debian
+RUN dch -b -v 1.8.0 "sems"
+RUN dpkg-buildpackage -rfakeroot -us -uc
+RUN ls -al ..
+
+RUN dpkg -i ../sems_*.deb
+RUN /usr/sbin/sems -v
+
+# Run SEMS with the specified configuration
+CMD ["/usr/sbin/sems", "-E", "-f", "/etc/sems/sems.conf"]
