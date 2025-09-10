@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
 /* Speex constants */
 #define SPEEX_FRAME_MS			 20

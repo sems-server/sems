@@ -200,21 +200,35 @@ Requirements:
  o Python for the ivr (embedded python interpreter) and py_sems
  o flite speech synthesizer for TTS in the ivr
  o lame >= 3.95 for mp3 file output, mpg123 for mp3 playback
- o spandsp library for DTMF detection and PLC
-    (SEMS has its own implementations for both)
+ o spandsp library for DTMF detection and PLC (SEMS has its own implementations for both)
  o libZRTP SDK (http://zfoneproject.com) for ZRTP
  o libev for jsonrpc
 
 Supported environments:
 
-  SEMS server hes been tested with the following:
+  SEMS server hes been build-tested with the following:
     * RHEL 7 with Python 3
     * RHEL 8 with Python 3
     * RHEL 9 with Python 3
+    * RHEL 10 with Python 3
     * Debian 11 with Python 3
     * Debian 12 with Python 3
+    * Debian 13 with Python 3
 
   Please see appropriate Dockerfiles
+
+Building from source
+
+```
+  $ git clone git@github.com:sems-server/sems.git
+  $ cd sems
+  $ mkdir -p build && cd build
+  $ cmake ..
+  $ make
+  $ ctest -V
+  $ ./core/sems -v
+  $ sudo make install
+```
 
 Creating packages on debian (ubuntu, ...):
 
@@ -224,10 +238,10 @@ Creating packages on debian (ubuntu, ...):
    install dependencies (those below or let dpkg-buildpackage below tell you
    which ones):
    $ sudo apt-get install debhelper g++ make libspandsp-dev flite1-dev \
-         libspeex-dev libgsm1-dev libopus-dev libssl-dev python-dev \
-	 python-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
-	 libxml2-dev libcurl4-openssl-dev libhiredis-dev
-   
+                          libspeex-dev libgsm1-dev libopus-dev libssl-dev python-dev \
+                          python-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
+                          libxml2-dev libcurl4-openssl-dev libhiredis-dev
+
    get the source: 
    $ git clone https://github.com/sems-server/sems.git
 
