@@ -10,7 +10,7 @@ case "$1" in
     exit 0
   ;;
   *)
-    echo "postinst called with unknown argument \$1'" >&2
+    echo "postinst called with unknown argument $1'" >&2
     exit 1
   ;;
 esac
