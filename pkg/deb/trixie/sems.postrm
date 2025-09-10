@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+#DEBHELPER#
+
+if [ "$1" = "purge" ] ; then
+  # remove user/group on purge
+  if [ -x "$(command -v deluser)" ]; then
+    deluser --quiet --remove-home sems >/dev/null 2>&1 || true
+  else
+    echo >&2 "not removing sems system account because deluser command was not found"
+  fi
+  # remove /etc/sems if empty
+  rmdir /etc/sems || true
+fi
+
+exit 0

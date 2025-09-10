@@ -11,26 +11,32 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Build image based on RHEL7
-        run: docker build -t sems -f Dockerfile-rhel7 .
+        run: docker build -t sems_el7 -f Dockerfile-rhel7 .
 
       - name: Build image based on RHEL8
-        run: docker build -t sems -f Dockerfile-rhel8 .
+        run: docker build -t sems_el8 -f Dockerfile-rhel8 .
 
       - name: Build image based on RHEL9
-        run: docker build -t sems -f Dockerfile-rhel9 .
+        run: docker build -t sems_el9 -f Dockerfile-rhel9 .
+
+      - name: Build image based on RHEL10
+        run: docker build -t sems_el10 -f Dockerfile-rhel10 .
 
   deb_test_build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Build image based on Debian 11
-        run: docker build -t sems -f Dockerfile-debian11 .
+        run: docker build -t sems_deb11 -f Dockerfile-debian11 .
 
       - name: Build image based on Debian 12
-        run: docker build -t sems -f Dockerfile-debian12 .
+        run: docker build -t sems_deb12 -f Dockerfile-debian12 .
+
+      - name: Build image based on Debian 13
+        run: docker build -t sems_deb13 -f Dockerfile-debian13 .
