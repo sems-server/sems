@@ -41,7 +41,7 @@ Description: Debugging symbols for Sems SIP Express Media Server
  features voicemail, conferencing, announcements, pre-call announcements,
  prepaid service, calling card service etc.
  .
- This package contains the debugging sysmbols.
+ This package contains the debugging symbols.
 
 Package: libsems1-dev
 Architecture: any
