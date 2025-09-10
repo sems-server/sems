@@ -396,5 +396,11 @@ int Speex_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf,
     frames_out++;  
   }
     
-  return frames_out*ss->frame_size*sizeof(short);
+  unsigned long bytes = (unsigned long)frames_out*ss->frame_size*sizeof(short);
+
+  if (bytes > INT_MAX) {
+    WARN("Speex_2_Pcm16: too many bytes to return %lu. Will continue, but report this to SEMS developers ASAP.\n", bytes);
+  }
+
+  return (int)bytes;
 }
