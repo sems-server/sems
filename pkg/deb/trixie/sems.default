@@ -5,7 +5,7 @@
 # Don't start with default config as we need to deploy the ngcp-templates first
 SEMS_RUN="no"
 
-# ser configuration file
+# sems configuration file
 SEMS_CFG_FILE="/etc/sems/sems.conf"
 
 # user to run SEMS as
