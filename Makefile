@@ -85,7 +85,7 @@ tar:
 rpmtar: 
 	rm -rf /tmp/_tar1
 	rm -rf /tmp/_tar2
-	rm -rf "/root/rpmbuild/SOURCES/$(NAME)-*.tar.gz"
+	rm -rf "~/rpmbuild/SOURCES/$(NAME)-*.tar.gz"
 	$(TAR) -C .. \
 	--exclude=$(notdir $(CURDIR))/tmp \
 	--exclude=core/$(notdir $(CURDIR))/tmp \
@@ -107,10 +107,10 @@ rpmtar:
                             mv /tmp/_tar1/$(notdir $(CURDIR)) \
                                /tmp/_tar2/"$(NAME)-$(RELEASE)" && \
                             (cd /tmp/_tar2 && $(TAR) \
-                                            -zcf /root/rpmbuild/SOURCES/"$(NAME)-$(RELEASE)".tar.gz \
+                                            -zcf ~/rpmbuild/SOURCES/"$(NAME)-$(RELEASE)".tar.gz \
                                                        "$(NAME)-$(RELEASE)" ) ; \
                             rm -rf /tmp/_tar1 /tmp/_tar2;
-	ls -al /root/rpmbuild/SOURCES/$(NAME)-*.tar.gz
+	ls -al ~/rpmbuild/SOURCES/$(NAME)-*.tar.gz
 
 .PHONY: doc
 doc:
