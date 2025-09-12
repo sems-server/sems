@@ -1,7 +1,8 @@
 # defines
 %global build_timestamp %(date +"%Y%m%d%H%M")
 %define _unpackaged_files_terminate_build 0
-%define version %(cat VERSION 2>/dev/null | tr -d ' \t\n' | sed 's/^v//' | sed 's/-/./g')
+# Hardcode version for now to avoid parsing issues in COPR
+%define version 1.8.0.dev_1
 %global debug_package %{nil}
 
 
@@ -14,6 +15,7 @@ Source0:    %{name}-%{version}.tar.gz
 
 License:	GPLv2+
 
+BuildRequires:	epel-release
 BuildRequires:	cmake3
 BuildRequires:	codec2-devel
 BuildRequires:	flite-devel
@@ -22,6 +24,8 @@ BuildRequires:	gsm-devel
 BuildRequires:	hiredis-devel
 BuildRequires:	lame-devel
 BuildRequires:	libevent-devel
+# Available in CRB repos
+BuildRequires:	libev-devel
 BuildRequires:	libmpg123-devel
 BuildRequires:	libsamplerate-devel
 BuildRequires:  mysql-connector-c++-devel
@@ -231,18 +235,9 @@ stats UDP server). Additionally, it can be used as client to access
 XMLRPC servers.
 
 %prep
-if [ ! -f %{SOURCE0} ]; then
-    echo "Source tarball not found, creating it..."
-    make rpmtar
-fi
-%setup -q
+%autosetup -p1
 
 %build
-cd %{_builddir}/%{name}-%{version}
-
-echo 'Orig cmake: %{?cmake3}'
-echo 'Orig cmake_build: %{?cmake3_build}'
-
 %if 0%{?rhel} <= 9
 echo "Build for RHEL8 and lower ('%{?rhel}')"
 mkdir -p redhat-linux-build
@@ -250,9 +245,6 @@ cd redhat-linux-build
 %define cmake3 cmake3 -S .. -B .
 %define cmake3_build cmake3 --build . -j20 --verbose
 %endif
-
-echo 'Using cmake: %{?cmake3}'
-echo 'Using cmake_build: %{?cmake3_build}'
 
 %{cmake3} \
         -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG \
@@ -294,10 +286,12 @@ echo 'Using cmake_build: %{?cmake3_build}'
 # Clean up the buildroot directory
 rm -rf %{buildroot}
 
+# Install from the build directory
 cd redhat-linux-build
 DESTDIR=%{buildroot} cmake3 --install .
 
-cd %{_builddir}/%{name}-%{version}
+# Return to source directory for additional files
+cd ..
 
 # Install system configuration file
 install -D -m 0644 -p pkg/rpm/sems.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/%{name}
