@@ -1,8 +1,8 @@
 # defines
 %global build_timestamp %(date +"%Y%m%d%H%M")
 %define _unpackaged_files_terminate_build 0
-# Hardcode version for now to avoid parsing issues in COPR
-%define version 1.8.0.dev_1
+%define version %(cat VERSION 2>/dev/null | tr -d ' \t\n' | sed 's/^v//' | sed 's/-/./g')
+
 %global debug_package %{nil}
 
 
