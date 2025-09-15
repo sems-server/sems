@@ -57,7 +57,7 @@
 /*! \page Readme SEMS Readme file
  * SEMS Readme file:
  * 
- * \verbinclude README
+ * \verbinclude README.md
  * 
  */
 

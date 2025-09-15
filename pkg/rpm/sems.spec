@@ -391,7 +391,7 @@ getent passwd %{name} >/dev/null || \
 %config(noreplace) %{_sysconfdir}/%{name}/etc/symmetricrtp.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/transparent.sbcprofile.conf
 
-%doc README
+%doc README.md
 %doc core/plug-in/adpcm/README_G711
 %doc doc/figures
 %doc doc/Howtostart_noproxy.txt
