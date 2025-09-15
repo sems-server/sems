@@ -655,8 +655,8 @@ int _trans_layer::send_sf_error_reply(const trans_ticket* tt, const sip_msg* req
 				      const cstring& hdrs, const cstring& body)
 {
     char to_tag_buf[SL_TOTAG_LEN];
-    cstring to_tag(to_tag_buf,SL_TOTAG_LEN);
     compute_sl_to_tag(to_tag_buf,req);
+    cstring to_tag(to_tag_buf,SL_TOTAG_LEN);
 
     sip_msg reply;
     reply.u.reply = new sip_reply(reply_code,reason);
