@@ -55,5 +55,5 @@ src_install () {
 	emake PREFIX=/usr cfg_target="/etc/sems/" DESTDIR="${D}" install || die
 	newinitd "${FILESDIR}"/sems.rc6 sems
 	newconfd "${FILESDIR}"/sems.confd sems
-	dodoc README
+	dodoc README.md
 }
