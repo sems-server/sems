@@ -83,6 +83,7 @@ tar:
 # the tarball can be used for rpm building 
 .PHONY: rpmtar
 rpmtar: 
+	$(eval RPM_VERSION := $(shell grep "^%define version" pkg/rpm/sems.spec | awk '{print $$3}'))
 	rm -rf /tmp/_tar1
 	rm -rf /tmp/_tar2
 	rm -rf "~/rpmbuild/SOURCES/$(NAME)-*.tar.gz"
@@ -105,10 +106,10 @@ rpmtar:
                         (mkdir -p /tmp/_tar1; mkdir -p /tmp/_tar2 ; \
                             cd /tmp/_tar1; $(TAR) -xf - ) && \
                             mv /tmp/_tar1/$(notdir $(CURDIR)) \
-                               /tmp/_tar2/"$(NAME)-$(RELEASE)" && \
+                               /tmp/_tar2/"$(NAME)-$(RPM_VERSION)" && \
                             (cd /tmp/_tar2 && $(TAR) \
-                                            -zcf ~/rpmbuild/SOURCES/"$(NAME)-$(RELEASE)".tar.gz \
-                                                       "$(NAME)-$(RELEASE)" ) ; \
+                                            -zcf ~/rpmbuild/SOURCES/"$(NAME)-$(RPM_VERSION)".tar.gz \
+                                                       "$(NAME)-$(RPM_VERSION)" ) ; \
                             rm -rf /tmp/_tar1 /tmp/_tar2;
 	ls -al ~/rpmbuild/SOURCES/$(NAME)-*.tar.gz
 
