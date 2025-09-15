@@ -376,20 +376,59 @@ bool curl_run_post(DSMSession* sc_sess, const string& par1, const string& par2,
     return false;
   }
 
-  struct curl_httppost *post=NULL;
-  struct curl_httppost *last=NULL;
-  string post_vars;
-  vector<string> p_vars=explode(par2, ";");
-  for (vector<string>::iterator it=
-	 p_vars.begin();it != p_vars.end();it++) {
-    string varname = (it->size() && ((*it)[0]=='$')) ? (it->substr(1)) : (*it);
-    DBG("adding '%s' = '%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
+  // Build POST data: prefer curl_mime on libcurl >= 7.56.0, fallback to deprecated form API otherwise
+  vector<string> p_vars = explode(par2, ";");
+
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800) // 7.56.0
+  // New API using multipart MIME (works for simple fields too)
+  curl_mime* mime = curl_mime_init(m_curl_handle);
+  if (!mime) {
+    ERROR("curl_mime_init failed\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    curl_easy_cleanup(m_curl_handle);
+    return false;
+  }
+
+  for (vector<string>::iterator it = p_vars.begin(); it != p_vars.end(); ++it) {
+    string varname = (it->size() && ((*it)[0] == '$')) ? (it->substr(1)) : (*it);
+    const string& value = sc_sess->var[varname];
+    DBG("adding '%s' = '%s'\n", varname.c_str(), value.c_str());
+
+    curl_mimepart* part = curl_mime_addpart(mime);
+    if (!part ||
+        curl_mime_name(part, varname.c_str()) != CURLE_OK ||
+        curl_mime_data(part, value.c_str(), CURL_ZERO_TERMINATED) != CURLE_OK) {
+      ERROR("building MIME part for '%s'\n", varname.c_str());
+      curl_mime_free(mime);
+      sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+      curl_easy_cleanup(m_curl_handle);
+      return false;
+    }
+  }
+
+  if (curl_easy_setopt(m_curl_handle, CURLOPT_MIMEPOST, mime) != CURLE_OK) {
+    ERROR("setting CURLOPT_MIMEPOST\n");
+    curl_mime_free(mime);
+    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    curl_easy_cleanup(m_curl_handle);
+    return false;
+  }
+#else
+  // Legacy API for older libcurl (e.g., RHEL7 ~ 7.29.0)
+  struct curl_httppost* post = NULL;
+  struct curl_httppost* last = NULL;
+  for (vector<string>::iterator it = p_vars.begin(); it != p_vars.end(); ++it) {
+    string varname = (it->size() && ((*it)[0] == '$')) ? (it->substr(1)) : (*it);
+    const string& value = sc_sess->var[varname];
+    DBG("adding '%s' = '%s'\n", varname.c_str(), value.c_str());
     curl_formadd(&post, &last,
-		 CURLFORM_COPYNAME, varname.c_str(),
-		 CURLFORM_COPYCONTENTS, sc_sess->var[varname].c_str(), CURLFORM_END);
+                 CURLFORM_COPYNAME, varname.c_str(),
+                 CURLFORM_COPYCONTENTS, value.c_str(),
+                 CURLFORM_END);
   }
 
   curl_easy_setopt(m_curl_handle, CURLOPT_HTTPPOST, post);
+#endif
 
   CURLcode rescode = curl_easy_perform(m_curl_handle);
 
@@ -403,7 +442,13 @@ bool curl_run_post(DSMSession* sc_sess, const string& par1, const string& par2,
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
     res = true;
   }
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+  // Note: CURLOPT_MIMEPOST takes ownership for the duration of the easy handle,
+  // but we should still free our mime structure afterwards.
+  curl_mime_free(mime);
+#else
   curl_formfree(post);
+#endif
   curl_easy_cleanup(m_curl_handle);
   return res;
 }
