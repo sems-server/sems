@@ -1,7 +1,7 @@
 # defines
 %global build_timestamp %(date +"%Y%m%d%H%M")
 %define _unpackaged_files_terminate_build 0
-%define version %(cat VERSION 2>/dev/null | tr -d ' \t\n' | sed 's/^v//' | sed 's/-/./g')
+%define version 2.0.0.dev_1
 
 %global debug_package %{nil}
 
