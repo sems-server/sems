@@ -1,5 +1,9 @@
 # SIP Express Media Server (SEMS)
 
+[![Build distribution packages](https://github.com/sems-server/sems/actions/workflows/build_test.yml/badge.svg)](https://github.com/sems-server/sems/actions/workflows/build_test.yml)
+
+[![Copr build status](https://copr.fedorainfracloud.org/coprs/marcel-hecko/sems/package/sems/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/marcel-hecko/sems/package/sems/)
+
 ## Introduction
 
 SEMS is a free, high performance, extensible media server for SIP (RFC3261) based VoIP services.
