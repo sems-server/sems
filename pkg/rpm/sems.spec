@@ -1,7 +1,7 @@
 # defines
 %global build_timestamp %(date +"%Y%m%d%H%M")
 %define _unpackaged_files_terminate_build 0
-%define version 2.0.0.dev_1
+%define version 2.0.0
 
 %global debug_package %{nil}
 
