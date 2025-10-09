@@ -1484,6 +1484,11 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	+ copy_hdrs_len(req->route)
 	+ copy_hdrs_len(req->contacts);
 
+    // RFC 3261 8.1.1.7: UAC MUST insert Max-Forwards into each request
+    string max_fwd_val = int2str(AmConfig::MaxForwards);
+    cstring max_fwd_cstr = stl2cstr(max_fwd_val);
+    request_len += 16/* 'Max-Forwards: ' + CRLF */ + max_fwd_cstr.len;
+
     request_len += hdrs.len;
     request_len += content_length_len(zero);
     request_len += 2/* CRLF end-of-headers*/;
@@ -1505,6 +1510,14 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     cseq_wr(&c,get_cseq(req)->num_str,cancel_str);
     copy_hdrs_wr(&c,req->route);
     copy_hdrs_wr(&c,req->contacts);
+
+    // Write Max-Forwards header (RFC 3261 8.1.1.7)
+    memcpy(c,"Max-Forwards: ",14);
+    c += 14;
+    memcpy(c,max_fwd_cstr.s,max_fwd_cstr.len);
+    c += max_fwd_cstr.len;
+    *c++ = CR;
+    *c++ = LF;
 
     if (hdrs.len) {
       memcpy(c,hdrs.s,hdrs.len);
@@ -1531,10 +1544,11 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     p_msg->local_socket = req->local_socket;
     inc_ref(p_msg->local_socket);
 
-    DBG("Sending to %s:%i:\n<%.*s>\n",
+    DBG("Sending CANCEL with Max-Forwards: %s to %s:%i\n",
+	max_fwd_val.c_str(),
 	get_addr_str(&p_msg->remote_ip).c_str(),
-	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
-	p_msg->len,p_msg->buf);
+	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port));
+    DBG("CANCEL message:\n<%.*s>\n",p_msg->len,p_msg->buf);
 
     int send_err = p_msg->send(t->flags);
     if(send_err < 0){
