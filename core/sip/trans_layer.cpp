@@ -1484,6 +1484,35 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	+ copy_hdrs_len(req->route)
 	+ copy_hdrs_len(req->contacts);
 
+	// Try to inherit the Max-Forwards header from the original INVITE so that
+	// the CANCEL mirrors it exactly (RFC 3261 §9.1). We still keep a fallback
+	// to the configured default to remain robust against malformed upstream
+	// traffic that might have omitted the header.
+	sip_header* max_fwd_hdr = nullptr;
+	for (std::list<sip_header*>::const_iterator hdr_it = req->hdrs.begin();
+	     hdr_it != req->hdrs.end(); ++hdr_it) {
+	    if ((*hdr_it)->type == sip_header::H_MAX_FORWARDS) {
+		max_fwd_hdr = *hdr_it;
+		break;
+	    }
+	}
+
+	string max_fwd_val;       // fallback value if the INVITE did not provide one
+	cstring max_fwd_cstr;     // cached cstring view of the fallback
+	string max_fwd_log_value; // used for DBG output later on
+
+	if (max_fwd_hdr) {
+	    request_len += copy_hdr_len(max_fwd_hdr);
+	    max_fwd_log_value.assign(max_fwd_hdr->value.s, max_fwd_hdr->value.len);
+	} else {
+	    max_fwd_val = int2str(AmConfig::MaxForwards);
+	    max_fwd_cstr = stl2cstr(max_fwd_val);
+	    request_len += SIP_HDR_COLSP_LEN(SIP_HDR_MAX_FORWARDS)
+		+ max_fwd_cstr.len
+		+ SIP_HDR_LEN(CRLF);
+	    max_fwd_log_value = max_fwd_val;
+	}
+
     request_len += hdrs.len;
     request_len += content_length_len(zero);
     request_len += 2/* CRLF end-of-headers*/;
@@ -1505,6 +1534,20 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     cseq_wr(&c,get_cseq(req)->num_str,cancel_str);
     copy_hdrs_wr(&c,req->route);
     copy_hdrs_wr(&c,req->contacts);
+
+	// Emit Max-Forwards either by copying the INVITE header verbatim or by
+	// falling back to the freshly generated value described above.
+	if (max_fwd_hdr) {
+	    copy_hdr_wr(&c, max_fwd_hdr);
+	} else {
+	    memcpy(c, SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS),
+	           SIP_HDR_COLSP_LEN(SIP_HDR_MAX_FORWARDS));
+	    c += SIP_HDR_COLSP_LEN(SIP_HDR_MAX_FORWARDS);
+	    memcpy(c, max_fwd_cstr.s, max_fwd_cstr.len);
+	    c += max_fwd_cstr.len;
+	    memcpy(c, CRLF, SIP_HDR_LEN(CRLF));
+	    c += SIP_HDR_LEN(CRLF);
+	}
 
     if (hdrs.len) {
       memcpy(c,hdrs.s,hdrs.len);
@@ -1531,10 +1574,11 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     p_msg->local_socket = req->local_socket;
     inc_ref(p_msg->local_socket);
 
-    DBG("Sending to %s:%i:\n<%.*s>\n",
-	get_addr_str(&p_msg->remote_ip).c_str(),
-	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
-	p_msg->len,p_msg->buf);
+	DBG("Sending CANCEL with Max-Forwards: %s to %s:%i\n",
+	    max_fwd_log_value.c_str(),
+	    get_addr_str(&p_msg->remote_ip).c_str(),
+	    ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port));
+    DBG("CANCEL message:\n<%.*s>\n",p_msg->len,p_msg->buf);
 
     int send_err = p_msg->send(t->flags);
     if(send_err < 0){
@@ -2284,8 +2328,37 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     
     ack_len += cseq_len(get_cseq(inv)->num_str,method);
 
-    if(!inv->route.empty())
- 	ack_len += copy_hdrs_len(inv->route);
+	if (!inv->route.empty()) {
+	    ack_len += copy_hdrs_len(inv->route);
+	}
+
+	// ACK for non-2xx replies should preserve the original Max-Forwards
+	// header as well (RFC 3261 §13.2.2.4 combined with §8.1.1.6). We reuse
+	// the parsed header whenever possible and generate a fallback otherwise.
+	sip_header* ack_max_fwd_hdr = nullptr;
+	for (std::list<sip_header*>::const_iterator hdr_it = inv->hdrs.begin(); hdr_it != inv->hdrs.end(); ++hdr_it) {
+	    if ((*hdr_it)->type == sip_header::H_MAX_FORWARDS) {
+		ack_max_fwd_hdr = *hdr_it;
+		break;
+	    }
+	}
+
+	string ack_max_fwd_val;
+	cstring ack_max_fwd_cstr;
+	string ack_max_fwd_log_value;
+
+	if (ack_max_fwd_hdr) {
+	    ack_len += copy_hdr_len(ack_max_fwd_hdr);
+	    ack_max_fwd_log_value.assign(ack_max_fwd_hdr->value.s,
+	                                 ack_max_fwd_hdr->value.len);
+	} else {
+	    ack_max_fwd_val = int2str(AmConfig::MaxForwards);
+	    ack_max_fwd_cstr = stl2cstr(ack_max_fwd_val);
+	    ack_len += SIP_HDR_COLSP_LEN(SIP_HDR_MAX_FORWARDS)
+		+ ack_max_fwd_cstr.len
+		+ SIP_HDR_LEN(CRLF);
+	    ack_max_fwd_log_value = ack_max_fwd_val;
+	}
 
     cstring content_len("0");
     ack_len += content_length_len(content_len);
@@ -2305,15 +2378,29 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     
     cseq_wr(&c,get_cseq(inv)->num_str,method);
 
-    if(!inv->route.empty())
-	 copy_hdrs_wr(&c,inv->route);
+	if (!inv->route.empty()) {
+	    copy_hdrs_wr(&c,inv->route);
+	}
+
+	if (ack_max_fwd_hdr) {
+	    copy_hdr_wr(&c, ack_max_fwd_hdr);
+	} else {
+	    memcpy(c, SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS),
+	           SIP_HDR_COLSP_LEN(SIP_HDR_MAX_FORWARDS));
+	    c += SIP_HDR_COLSP_LEN(SIP_HDR_MAX_FORWARDS);
+	    memcpy(c, ack_max_fwd_cstr.s, ack_max_fwd_cstr.len);
+	    c += ack_max_fwd_cstr.len;
+	    memcpy(c, CRLF, SIP_HDR_LEN(CRLF));
+	    c += SIP_HDR_LEN(CRLF);
+	}
 
     content_length_wr(&c,content_len);
     
     *c++ = CR;
     *c++ = LF;
 
-    DBG("About to send ACK\n");
+	DBG("About to send non-2xx ACK with Max-Forwards: %s\n",
+	    ack_max_fwd_log_value.c_str());
 
     assert(inv->local_socket);
     int send_err = inv->local_socket->send(&inv->remote_ip,ack_buf,
