@@ -61,6 +61,11 @@ trans_bucket::~trans_bucket()
 static inline bool compare_branch(sip_trans* t, sip_msg* msg,
 				  const char* branch, unsigned int branch_len)
 {
+    if(!t->msg->via_p1) {
+	WARN("Transaction has NULL via_p1, cannot match branch\n");
+	return false;
+    }
+
     if(t->msg->via_p1->branch.len != branch_len + MAGIC_BRANCH_LEN)
 	return false;
 
