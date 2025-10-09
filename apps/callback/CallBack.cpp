@@ -280,10 +280,14 @@ void CallBackDialog::onDtmf(int event, int duration)
       } else {
 	state = CBTellingNumber;
 	play_list.flush();
+	DBG("playing back entered number '%s' (length: %zu)\n", 
+	    call_number.c_str(), call_number.length());
 	for (size_t i=0;i<call_number.length();i++) {
-	  string num = "";
-	  num[0] = call_number[i]; // this works? 
-	  DBG("adding '%s' to playlist.\n", num.c_str());
+	  // Convert character digit to integer, then to string to match prompt key
+	  int digit = call_number[i] - '0';
+	  string num = int2str(digit);
+	  DBG("adding digit prompt '%s' (from char '%c', digit %d) to playlist.\n", 
+	      num.c_str(), call_number[i], digit);
 	  prompts.addToPlaylist(num,
 				(long)this, play_list);
 	}
