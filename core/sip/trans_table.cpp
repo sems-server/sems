@@ -61,6 +61,13 @@ trans_bucket::~trans_bucket()
 static inline bool compare_branch(sip_trans* t, sip_msg* msg,
 				  const char* branch, unsigned int branch_len)
 {
+    if(!t || !t->msg || !t->msg->via_p1) {
+	ERROR("BUG: Invalid transaction in compare_branch (t=%p, msg=%p, via_p1=%p)\n",
+	      (void*)t, t ? (void*)t->msg : NULL,
+	      (t && t->msg) ? (void*)t->msg->via_p1 : NULL);
+	return false;
+    }
+
     if(t->msg->via_p1->branch.len != branch_len + MAGIC_BRANCH_LEN)
 	return false;
 
@@ -287,8 +294,14 @@ sip_trans* trans_bucket::match_reply(sip_msg* msg)
 
     trans_list::iterator it = elmts.begin();
     for(;it!=elmts.end();++it) {
-	
+
 	if((*it)->type != TT_UAC){
+	    continue;
+	}
+
+	// Defensive NULL check - should never happen but prevents crash
+	if(!(*it)->msg || !(*it)->msg->via_p1) {
+	    ERROR("BUG: Invalid transaction in match_reply\n");
 	    continue;
 	}
 
