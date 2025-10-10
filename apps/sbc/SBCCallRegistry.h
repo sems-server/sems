@@ -54,6 +54,7 @@ class SBCCallRegistry
 
   static void addCall(const string& ltag, const SBCCallRegistryEntry& other_dlg);
   static void updateCall(const string& ltag, const string& other_rtag);
+  static void updateCallId(const string& ltag, const string& new_callid);
   static bool lookupCall(const string& ltag, SBCCallRegistryEntry& other_dlg);
   static void removeCall(const string& ltag);
 };

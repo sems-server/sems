@@ -182,6 +182,9 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
     dlg->setCallid(caller->dlg->getCallid());
     dlg->setExtLocalTag(caller->dlg->getRemoteTag());
     dlg->cseq = caller->dlg->r_cseq;
+    // Update registry with the actual Call-ID that will be used in SIP messages
+    // The A->B mapping uses the caller's (A-leg's) local tag as the key
+    SBCCallRegistry::updateCallId(caller->dlg->getLocalTag(), caller->dlg->getCallid());
   }
 
   // copy RTP rate limit from caller leg
@@ -411,8 +414,12 @@ void SBCCallLeg::applyBProfile()
   }
 
   // was read from caller but reading directly from profile now
-  if (!call_profile.callid.empty()) 
+  if (!call_profile.callid.empty()) {
     dlg->setCallid(call_profile.callid);
+    // Update registry with the actual Call-ID that will be used in SIP messages
+    // The A->B mapping uses the other leg's (A-leg's) local tag as the key
+    SBCCallRegistry::updateCallId(getOtherId(), call_profile.callid);
+  }
 
   dlg->setContact(call_profile.bleg_contact);
 }

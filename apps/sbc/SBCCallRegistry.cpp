@@ -50,6 +50,19 @@ void SBCCallRegistry::updateCall(const string& ltag, const string& other_rtag) {
   DBG("SBCCallRegistry: Updated call '%s' - rtag to: '%s'\n", ltag.c_str(), other_rtag.c_str());
 }
 
+void SBCCallRegistry::updateCallId(const string& ltag, const string& new_callid) {
+  registry_mutex.lock();
+
+  std::map<string, SBCCallRegistryEntry>::iterator it = registry.find(ltag);
+  if (it != registry.end()) {
+    it->second.callid = new_callid;
+  }
+
+  registry_mutex.unlock();
+
+  DBG("SBCCallRegistry: Updated call '%s' - callid to: '%s'\n", ltag.c_str(), new_callid.c_str());
+}
+
 bool SBCCallRegistry::lookupCall(const string& ltag, SBCCallRegistryEntry& other_dlg) {
   bool res = false;
 
