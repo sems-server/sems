@@ -27,9 +27,12 @@ static void replaceRtcpAttr(SdpMedia &m, const string& relay_address, int rtcp_p
     try {
       if (a->attribute == "rtcp") {
         RtcpAddress addr(a->value);
+        string old_value = a->value;
         addr.setPort(rtcp_port);
         if (addr.hasAddress()) addr.setAddress(relay_address);
         a->value = addr.print();
+        DBG("replaced RTCP attribute: '%s' -> '%s' (address: %s, port: %d)\n",
+            old_value.c_str(), a->value.c_str(), relay_address.c_str(), rtcp_port);
       }
     }
     catch (const exception &e) {
@@ -781,12 +784,12 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
 	  if (a_leg) {
 	    audio_stream_it->a.setLocalIP(relay_address);
 	    it->port = audio_stream_it->a.getLocalPort();
-            replaceRtcpAttr(*it, relay_address, audio_stream_it->a.getLocalRtcpPort());
+            replaceRtcpAttr(*it, relay_public_address, audio_stream_it->a.getLocalRtcpPort());
 	  }
 	  else {
 	    audio_stream_it->b.setLocalIP(relay_address);
 	    it->port = audio_stream_it->b.getLocalPort();
-            replaceRtcpAttr(*it, relay_address, audio_stream_it->b.getLocalRtcpPort());
+            replaceRtcpAttr(*it, relay_public_address, audio_stream_it->b.getLocalRtcpPort());
 	  }
 	  if(!replaced_ports.empty()) replaced_ports += "/";
 	  replaced_ports += int2str(it->port);
@@ -816,14 +819,14 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
 	      (*relay_stream_it)->a.setLocalIP(relay_address);
 	    }
 	    it->port = (*relay_stream_it)->a.getLocalPort();
-            replaceRtcpAttr(*it, relay_address, (*relay_stream_it)->a.getLocalRtcpPort());
+            replaceRtcpAttr(*it, relay_public_address, (*relay_stream_it)->a.getLocalRtcpPort());
 	  }
 	  else {
 	    if(!(*relay_stream_it)->b.hasLocalSocket()){
 	      (*relay_stream_it)->b.setLocalIP(relay_address);
 	    }
 	    it->port = (*relay_stream_it)->b.getLocalPort();
-            replaceRtcpAttr(*it, relay_address, (*relay_stream_it)->b.getLocalRtcpPort());
+            replaceRtcpAttr(*it, relay_public_address, (*relay_stream_it)->b.getLocalRtcpPort());
 	  }
 	  if(!replaced_ports.empty()) replaced_ports += "/";
 	  replaced_ports += int2str(it->port);
