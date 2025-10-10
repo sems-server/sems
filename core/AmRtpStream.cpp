@@ -881,6 +881,26 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
       mem.freePacket(p);
       return;
     }
+    else if (!active) {
+      // In pure relay mode (active==false), drop packets that don't match
+      // relay criteria instead of buffering them. Buffering non-relayed packets
+      // in relay-only mode leads to buffer pool exhaustion since they are never
+      // consumed (no media processing thread in pure relay mode).
+      //
+      // Packets that fail relay criteria and trigger this path:
+      // - Unexpected payload types not in negotiated SDP
+      // - Comfort Noise (CN, PT 13) when not explicitly negotiated
+      // - Redundancy/FEC packets (RED, FEC) sent without negotiation
+      // - Old payload types during SDP renegotiation (race condition)
+      // - Dynamic PT mismatches between legs
+      // - telephone-event when not in relay_raw mode and active=false
+      DBG("dropping non-relayed packet (payload %d) in relay-only mode (stream [%p])\n",
+          p->payload, this);
+      mem.freePacket(p);
+      return;
+    }
+    // else: transcoding mode (active==true) - allow fall-through to buffer
+    // the packet for local processing
   }
 
 #ifndef WITH_ZRTP
