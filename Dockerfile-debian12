@@ -6,7 +6,10 @@ RUN apt install -y \
          libspeex-dev libgsm1-dev libopus-dev libssl-dev python3-dev \
          python3.11-dev libev-dev \
          python3-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
-         libxml2-dev libcurl4-openssl-dev libhiredis-dev
+         libxml2-dev libcurl4-openssl-dev libhiredis-dev \
+	 libsamplerate-dev libmp3lame-dev libcodec2-dev \
+	 cmake dh-cmake dh-cmake-compat dh-sequence-cmake
+
 
 RUN apt install -y \
          devscripts libbcg729-dev
@@ -17,7 +20,7 @@ RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
 WORKDIR /sems
 
 RUN ln -s pkg/deb/bookworm ./debian
-RUN dch -b -v 1.8.0 "sems"
+# RUN dch -b -v 1.8.0 "sems"
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
 
