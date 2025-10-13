@@ -1,4 +1,10 @@
-sems (1.8.0~dev) UNRELEASED; urgency=medium
+sems (2.0.0) unstable; urgency=medium
+
+  * SEMS 2.0.0 release
+
+ -- Arnd Schmitter <arnd@lgcm.de>  Mon, 13 Oct 2025 12:48:34 +0200
+
+sems (1.8.0~dev) unstable; urgency=medium
 
   * Devel version
 
