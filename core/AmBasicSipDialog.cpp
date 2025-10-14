@@ -193,7 +193,7 @@ int AmBasicSipDialog::getOutboundIf()
   string dest_uri;
   string dest_ip;
   string local_ip;
-  multimap<string,unsigned short>::iterator if_it;
+  unsigned short outbound_if_idx = 0;
 
   list<sip_destination> ip_list;
   if(!next_hop.empty() && 
@@ -244,15 +244,15 @@ int AmBasicSipDialog::getOutboundIf()
     goto error;
   }
 
-  if_it = AmConfig::LocalSIPIP2If.find(local_ip);
-  if(if_it == AmConfig::LocalSIPIP2If.end()){
+  // Resolve the interface index with bracket-normalized IP handling.
+  if(!AmConfig::lookupLocalSIPInterface(local_ip, outbound_if_idx)){
     ERROR("Could not find a local interface for resolved local IP (local_tag='%s';local_ip='%s')",
 	  local_tag.c_str(), local_ip.c_str());
     goto error;
   }
 
-  setOutboundInterface(if_it->second);
-  return if_it->second;
+  setOutboundInterface(outbound_if_idx);
+  return outbound_if_idx;
 
  error:
   WARN("Error while computing outbound interface: default interface will be used instead.");

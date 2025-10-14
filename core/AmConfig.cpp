@@ -783,6 +783,39 @@ int AmConfig::insert_SIP_interface_mapping(const SIP_interface& intf) {
   return 0;
 }
 
+bool AmConfig::lookupLocalSIPInterface(const string& local_ip, unsigned short& if_idx)
+{
+  if(local_ip.empty())
+    return false;
+
+  // Fast path: return immediately when the key matches verbatim.
+  map<string,unsigned short>::iterator it = LocalSIPIP2If.find(local_ip);
+  if(it != LocalSIPIP2If.end()) {
+    if_idx = it->second;
+    return true;
+  }
+
+  if(local_ip.size() > 1 && local_ip.front() == '[' && local_ip.back() == ']') {
+    // Allow callers to drop IPv6 brackets while keeping stored entries intact.
+    string unbracketed = local_ip.substr(1, local_ip.size() - 2);
+    it = LocalSIPIP2If.find(unbracketed);
+    if(it != LocalSIPIP2If.end()) {
+      if_idx = it->second;
+      return true;
+    }
+  } else if(local_ip.find(':') != string::npos) {
+    // Invent brackets for IPv6 literals saved without them in configuration.
+    string bracketed = "[" + local_ip + "]";
+    it = LocalSIPIP2If.find(bracketed);
+    if(it != LocalSIPIP2If.end()) {
+      if_idx = it->second;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 static int readSIPInterface(AmConfigReader& cfg, const string& i_name)
 {
   AmConfig::SIP_interface intf;
@@ -1089,11 +1122,14 @@ static void fillMissingLocalSIPIPfromSysIntfs() {
       if(addr_it == intf_it->addrs.begin())
 	continue;
 
-      if(AmConfig::LocalSIPIP2If.find(intf_it->addrs.front().addr)
-	 == AmConfig::LocalSIPIP2If.end()) {
-	DBG("mapping unmapped IP address '%s' to interface #%u \n",
-	    intf_it->addrs.front().addr.c_str(), idx);
-	AmConfig::LocalSIPIP2If[intf_it->addrs.front().addr] = idx;
+      const string& primary_addr = intf_it->addrs.front().addr;
+      unsigned short existing_if = 0;
+      // Reuse helper so bracket formatting stays consistent across lookups.
+      if(!AmConfig::lookupLocalSIPInterface(primary_addr, existing_if)) {
+        // Only add entries the helper cannot already resolve.
+        DBG("mapping unmapped IP address '%s' to interface #%u \n",
+            primary_addr.c_str(), idx);
+        AmConfig::LocalSIPIP2If[primary_addr] = idx;
       }
     }
   }
