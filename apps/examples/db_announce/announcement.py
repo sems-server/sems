@@ -9,62 +9,70 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 # Use, copying, modification, and distribution without written
-# permission is not allowed. 
+# permission is not allowed.
 
 import os, MySQLdb
 
 from log import *
 from ivr import *
 
-APPLICATION = 'announcement'
+APPLICATION = "announcement"
 
-GREETING_MSG = 'greeting_msg'
+GREETING_MSG = "greeting_msg"
+
 
 class IvrDialog(IvrDialogBase):
 
-    DB_HOST = 'localhost'
-    DB_USER = 'sems'
-    DB_PASSWD = ''
-    DB_DB = 'sems'
+    DB_HOST = "localhost"
+    DB_USER = "sems"
+    DB_PASSWD = ""
+    DB_DB = "sems"
 
     def __init__(self):
 
         try:
-            if config['mysql_server']:
-                self.DB_HOST = config['mysql_server']
+            if config["mysql_server"]:
+                self.DB_HOST = config["mysql_server"]
         except KeyError:
             pass
 
         try:
-            if config['mysql_user']:
-                self.DB_USER = config['mysql_user']
+            if config["mysql_user"]:
+                self.DB_USER = config["mysql_user"]
         except KeyError:
             pass
 
         try:
-            if config['mysql_passwd']:
-                self.DB_PASSWD = config['mysql_passwd']
+            if config["mysql_passwd"]:
+                self.DB_PASSWD = config["mysql_passwd"]
         except KeyError:
             pass
 
         try:
-            if config['mysql_db']:
-                self.DB_DB = config['mysql_db']
+            if config["mysql_db"]:
+                self.DB_DB = config["mysql_db"]
         except KeyError:
             pass
 
         try:
-            self.db = MySQLdb.connect(host=self.DB_HOST,\
-                                      user=self.DB_USER,\
-                                      passwd=self.DB_PASSWD,\
-                                      db=self.DB_DB)
+            self.db = MySQLdb.connect(
+                host=self.DB_HOST,
+                user=self.DB_USER,
+                passwd=self.DB_PASSWD,
+                db=self.DB_DB,
+            )
         except MySQLdb.Error as e:
-            error(APPLICATION + ": cannot open database: " +\
-                  str(e.args[0]) + ":" + e.args[1])
+            error(
+                APPLICATION
+                + ": cannot open database: "
+                + str(e.args[0])
+                + ":"
+                + e.args[1]
+            )
             return False
 
         self.audio = dict()
-        
+
         return True
 
     def onSessionStart(self, hdrs):
@@ -72,7 +80,7 @@ class IvrDialog(IvrDialogBase):
         if not self.__init__():
             self.bye()
             self.stopSession()
-            
+
         self.language = getHeader(hdrs, "P-Language")
 
         if not self.language:
@@ -83,16 +91,16 @@ class IvrDialog(IvrDialogBase):
             return
 
         self.enqueue(self.audio[GREETING_MSG], None)
-        
+
     def onEmptyQueue(self):
 
         if not self.queueIsEmpty():
             return
-        
+
         self.sendBye()
 
         return
-    
+
     def onBye(self):
 
         self.db.close()
@@ -116,7 +124,17 @@ class IvrDialog(IvrDialogBase):
 
             if start > 2:
 
-                cursor.execute("SELECT audio FROM user_audio WHERE application='" + APPLICATION + "' AND message='" + msg + "' AND domain='" +  self.dialog.domain + "' AND userid='" + self.dialog.user + "'")
+                cursor.execute(
+                    "SELECT audio FROM user_audio WHERE application='"
+                    + APPLICATION
+                    + "' AND message='"
+                    + msg
+                    + "' AND domain='"
+                    + self.dialog.domain
+                    + "' AND userid='"
+                    + self.dialog.user
+                    + "'"
+                )
 
                 if cursor.rowcount > 0:
                     self.getFromTemp(cursor.fetchone()[0], msg, wav)
@@ -125,14 +143,32 @@ class IvrDialog(IvrDialogBase):
 
             if start > 1:
 
-                cursor.execute("SELECT audio FROM domain_audio WHERE application='" + APPLICATION + "' AND message='" + msg + "' AND domain='" + self.dialog.domain + "' AND language='" + self.language + "'")
+                cursor.execute(
+                    "SELECT audio FROM domain_audio WHERE application='"
+                    + APPLICATION
+                    + "' AND message='"
+                    + msg
+                    + "' AND domain='"
+                    + self.dialog.domain
+                    + "' AND language='"
+                    + self.language
+                    + "'"
+                )
 
                 if cursor.rowcount > 0:
                     self.getFromTemp(cursor.fetchone()[0], msg, wav)
                     cursor.close()
                     return True
-            
-            cursor.execute("SELECT audio FROM default_audio WHERE application='" + APPLICATION + "' AND message='" + msg + "' AND language='" + (self.language) + "'")
+
+            cursor.execute(
+                "SELECT audio FROM default_audio WHERE application='"
+                + APPLICATION
+                + "' AND message='"
+                + msg
+                + "' AND language='"
+                + (self.language)
+                + "'"
+            )
 
             if cursor.rowcount > 0:
                 self.getFromTemp(cursor.fetchone()[0], msg, wav)
@@ -144,10 +180,15 @@ class IvrDialog(IvrDialogBase):
                 return False
 
         except MySQLdb.Error as e:
-            error(APPLICATION + ": error in accessing database: " +\
-                  str(e.args[0]) + ":" + e.args[1])
+            error(
+                APPLICATION
+                + ": error in accessing database: "
+                + str(e.args[0])
+                + ":"
+                + e.args[1]
+            )
             return False
-        
+
     def getFromTemp(self, audio, msg, wav):
 
         fp = os.tmpfile()

@@ -9,6 +9,7 @@
 
 from PyQt4 import QtCore, QtGui
 
+
 class Ui_participant(object):
     def setupUi(self, participant):
         participant.setObjectName("participant")
@@ -42,8 +43,23 @@ class Ui_participant(object):
         QtCore.QMetaObject.connectSlotsByName(participant)
 
     def retranslateUi(self, participant):
-        participant.setWindowTitle(QtGui.QApplication.translate("participant", "mapf", None, QtGui.QApplication.UnicodeUTF8))
-        self.l_status.setText(QtGui.QApplication.translate("participant", "status", None, QtGui.QApplication.UnicodeUTF8))
-        self.bt_ciao.setText(QtGui.QApplication.translate("participant", "ciao", None, QtGui.QApplication.UnicodeUTF8))
-        self.cb_muted.setText(QtGui.QApplication.translate("participant", "muted", None, QtGui.QApplication.UnicodeUTF8))
-
+        participant.setWindowTitle(
+            QtGui.QApplication.translate(
+                "participant", "mapf", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.l_status.setText(
+            QtGui.QApplication.translate(
+                "participant", "status", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.bt_ciao.setText(
+            QtGui.QApplication.translate(
+                "participant", "ciao", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.cb_muted.setText(
+            QtGui.QApplication.translate(
+                "participant", "muted", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )

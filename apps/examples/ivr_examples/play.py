@@ -6,6 +6,7 @@ from log import *
 from ivr import *
 from p_app_param.p_app_param import *
 
+
 class IvrDialog(IvrDialogBase):
 
     def onInvite(self, hdrs):
@@ -19,20 +20,20 @@ class IvrDialog(IvrDialogBase):
         if not self.file:
             self.file = "/tmp/default.wav"
         return True
-            
+
     def onSessionStart(self):
         self.announcement = IvrAudioFile()
         self.announcement.open(self.file, ivr.AUDIO_READ, False)
         self.enqueue(self.announcement, None)
         return
-        
+
     def onEmptyQueue(self):
         if not self.queueIsEmpty():
             return
         self.bye()
         self.stopSession()
         return
-    
+
     def onBye(self):
         self.stopSession()
         return

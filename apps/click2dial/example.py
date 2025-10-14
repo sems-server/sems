@@ -25,11 +25,16 @@ auth_realm = "iptel.org"
 announce_file = "default_en"
 
 from xmlrpclib import *
+
 s = ServerProxy(xmlrpc_url)
 s.dial_auth_b2b(
-        "click2dial", announce_file, 
-        "sip:" + caller_user + "@" + caller_domain, 
-        "sip:" + callee_user + "@" + callee_domain, 
-        "sip:" + caller_user + "@" + proxy + ";sw_domain=" + caller_domain,
-        "sip:" + callee_user + "@" + proxy + ";sw_domain=" + callee_domain,
-        auth_realm, auth_user, auth_pass)
+    "click2dial",
+    announce_file,
+    "sip:" + caller_user + "@" + caller_domain,
+    "sip:" + callee_user + "@" + callee_domain,
+    "sip:" + caller_user + "@" + proxy + ";sw_domain=" + caller_domain,
+    "sip:" + callee_user + "@" + proxy + ";sw_domain=" + callee_domain,
+    auth_realm,
+    auth_user,
+    auth_pass,
+)

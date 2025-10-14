@@ -9,6 +9,7 @@
 
 from PyQt4 import QtCore, QtGui
 
+
 class Ui_account(object):
     def setupUi(self, account):
         account.setObjectName("account")
@@ -38,22 +39,62 @@ class Ui_account(object):
         self.gridLayout.addWidget(self.e_pwd, 3, 1, 1, 1)
         self.buttonBox = QtGui.QDialogButtonBox(account)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout.addWidget(self.buttonBox, 4, 0, 1, 2)
 
         self.retranslateUi(account)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), account.accept)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), account.reject)
+        QtCore.QObject.connect(
+            self.buttonBox, QtCore.SIGNAL("accepted()"), account.accept
+        )
+        QtCore.QObject.connect(
+            self.buttonBox, QtCore.SIGNAL("rejected()"), account.reject
+        )
         QtCore.QMetaObject.connectSlotsByName(account)
 
     def retranslateUi(self, account):
-        account.setWindowTitle(QtGui.QApplication.translate("account", "Set account", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_4.setText(QtGui.QApplication.translate("account", "Enter a SIP account to make calls", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("account", "User", None, QtGui.QApplication.UnicodeUTF8))
-        self.e_user.setText(QtGui.QApplication.translate("account", "username", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_2.setText(QtGui.QApplication.translate("account", "Domain", None, QtGui.QApplication.UnicodeUTF8))
-        self.e_domain.setText(QtGui.QApplication.translate("account", "iptel.org", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_3.setText(QtGui.QApplication.translate("account", "Password", None, QtGui.QApplication.UnicodeUTF8))
-        self.e_pwd.setText(QtGui.QApplication.translate("account", "password", None, QtGui.QApplication.UnicodeUTF8))
-
+        account.setWindowTitle(
+            QtGui.QApplication.translate(
+                "account", "Set account", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_4.setText(
+            QtGui.QApplication.translate(
+                "account",
+                "Enter a SIP account to make calls",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.label.setText(
+            QtGui.QApplication.translate(
+                "account", "User", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.e_user.setText(
+            QtGui.QApplication.translate(
+                "account", "username", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_2.setText(
+            QtGui.QApplication.translate(
+                "account", "Domain", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.e_domain.setText(
+            QtGui.QApplication.translate(
+                "account", "iptel.org", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label_3.setText(
+            QtGui.QApplication.translate(
+                "account", "Password", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.e_pwd.setText(
+            QtGui.QApplication.translate(
+                "account", "password", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )

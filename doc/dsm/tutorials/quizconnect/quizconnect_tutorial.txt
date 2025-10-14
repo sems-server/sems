@@ -417,13 +417,13 @@ DSM also saves the states that were visited and the transitions to monitoring. L
 so we see two calls running the quizconnect_callee diagram in ENTER_PIN state, and one running the quizconnect_caller in WAIT_CALLEE.
 
 two simple scripts are also useful:
-$ ./sems-sessions-states.py
+$ ./sems_sessions_states.py
 calls: 3
 call id                                 state
 6ABC60BB-4C72F4BF0005C7FD-B6A45B70     WAIT_CALLEE
 19D97994-4C72F4BF0006A862-B65D5B70     ENTER_PIN
 3EC2A856-4C72F4BF00062B82-B65D5B70     ENTER_PIN
-$ ./sems-get-session.py 6ABC60BB-4C72F4BF0005C7FD-B6A45B70
+$ ./sems_get_session.py 6ABC60BB-4C72F4BF0005C7FD-B6A45B70
 calls: 3
 attrib                                 val
 from                "bee" <sip:5@192.168.5.106>
@@ -437,37 +437,38 @@ dir                 in
 
 
 -------------------------------------------------------
-$ cat sems-sessions-states.py
-#!/usr/bin/python
-from xmlrpclib import *
+$ cat sems_sessions_states.py
+#!/usr/bin/python3
+from xmlrpc.client import *
+
 s = ServerProxy("http://127.0.0.1:8090")
-print "calls: %d" % s.calls()
+print("calls: %d" % s.calls())
 calls_states =  s.getAttributeActive("dsm_state")
-print "call id                                 state"
+print("call id                                 state")
 for state in calls_states:
-        print state[0] + "     " + state[1]
+    print(state[0] + "     " + state[1])
 -------------------------------------------------------
 
 
 -------------------------------------------------------
-$ cat sems-get-session.py
-#!/usr/bin/python
+$ cat sems_get_session.py
+#!/usr/bin/python3
 import sys
-from xmlrpclib import *
+from xmlrpc.client import *
 
 if len(sys.argv) != 2:
-        print "usage: %s <call_id>" % sys.argv[0]
+        print("usage: %s <call_id>" % sys.argv[0])
         sys.exit(1)
 
 s = ServerProxy("http://127.0.0.1:8090")
-print "calls: %d" % s.calls()
+print("calls: %d" % s.calls())
 calls_states =  s.get(sys.argv[1])
 if len(calls_states)==0:
-        print "call not found"
+        print("call not found")
         sys.exit(1)
-print "attrib                                 val"
+print("attrib                                 val")
 for state in calls_states[0].items():
-        print str(state[0]).ljust(20) + str(state[1])
+        print(str(state[0]).ljust(20) + str(state[1]))
 -------------------------------------------------------
 
 so, what is next? entering the PIN number, of course. that should be simple:
