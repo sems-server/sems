@@ -29,6 +29,7 @@
 
 #include "trans_layer.h"
 #include "sip_parser.h"
+#include "defs.h"
 #include "trans_table.h"
 #include "parse_cseq.h"
 #include "parse_from_to.h"
