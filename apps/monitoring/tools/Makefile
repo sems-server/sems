@@ -1,7 +1,7 @@
 COREPATH_TOOLS ?= ../../../core
 include $(COREPATH_TOOLS)/../Makefile.defs
 
-monitoring_scripts = $(wildcard sems-*)
+monitoring_scripts = $(wildcard sems_*)
 
 all: install_tools
 install: install_tools
@@ -9,7 +9,7 @@ install: install_tools
 install_tools: $(DESTDIR)$(bin_prefix)/$(bin_dir)
 	@set -e ; \
 	for r in $(monitoring_scripts)  ; do \
-		x=`echo $$r | sed s/sems-/$(APP_NAME)-/g` ; \
+		x=`echo $$r | sed s/sems_/$(APP_NAME)_/g` ; \
 		echo "installing $$r -> $$x" ; \
 		$(INSTALL_TOUCH) $(DESTDIR)$(bin_prefix)/$(bin_dir)/$$x ; \
 		$(INSTALL_BIN) $$r $(DESTDIR)$(bin_prefix)/$(bin_dir)/$$x ; \

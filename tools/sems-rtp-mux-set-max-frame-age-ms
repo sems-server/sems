@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/sh
 if test "$1" = "" ; then
   echo "usage: $0 <mux_max_frame_age_ms>"
   exit 1
