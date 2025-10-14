@@ -60,7 +60,7 @@ class IvrDialog(IvrDialogBase):
         outfile = self.voice_msg.exportRaw()
         outfile.seek(0)
         msg = outfile.read()
-        enc_msg = base64.encodestring(msg)
+        enc_msg = base64.encodebytes(msg).decode('ascii')
         msg = (
             "From: voicemail@tweety\n"
             + "MIME-Version: 1.0\n"
