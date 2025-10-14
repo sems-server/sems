@@ -24,7 +24,7 @@ auth_realm = "iptel.org"
 
 announce_file = "default_en"
 
-from xmlrpclib import *
+from xmlrpc.client import *
 
 s = ServerProxy(xmlrpc_url)
 s.dial_auth_b2b(
