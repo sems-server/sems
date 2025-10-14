@@ -28,6 +28,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_uriparser);
   FCTMF_SUITE_CALL(test_jsonarg);
   FCTMF_SUITE_CALL(test_replaces);
+  FCTMF_SUITE_CALL(test_amconfig);
 } FCT_END();
 
 

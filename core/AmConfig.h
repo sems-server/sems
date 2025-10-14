@@ -175,6 +175,8 @@ struct AmConfig
   static int insert_RTP_interface(const RTP_interface& intf);
   static int finalizeIPConfig();
 
+  static bool lookupLocalSIPInterface(const string& local_ip, unsigned short& if_idx);
+
   static void dump_Ifs();
 
   /** number of session (signaling/application) processor threads */
