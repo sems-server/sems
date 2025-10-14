@@ -9,6 +9,7 @@
 
 from PyQt4 import QtCore, QtGui
 
+
 class Ui_callbox(object):
     def setupUi(self, callbox):
         callbox.setObjectName("callbox")
@@ -24,17 +25,34 @@ class Ui_callbox(object):
         self.gridLayout.addWidget(self.num, 0, 1, 1, 1)
         self.buttonBox = QtGui.QDialogButtonBox(callbox)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 2)
 
         self.retranslateUi(callbox)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), callbox.accept)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), callbox.reject)
+        QtCore.QObject.connect(
+            self.buttonBox, QtCore.SIGNAL("accepted()"), callbox.accept
+        )
+        QtCore.QObject.connect(
+            self.buttonBox, QtCore.SIGNAL("rejected()"), callbox.reject
+        )
         QtCore.QMetaObject.connectSlotsByName(callbox)
 
     def retranslateUi(self, callbox):
-        callbox.setWindowTitle(QtGui.QApplication.translate("callbox", "call", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("callbox", "calll", None, QtGui.QApplication.UnicodeUTF8))
-        self.num.setText(QtGui.QApplication.translate("callbox", "+49", None, QtGui.QApplication.UnicodeUTF8))
-
+        callbox.setWindowTitle(
+            QtGui.QApplication.translate(
+                "callbox", "call", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label.setText(
+            QtGui.QApplication.translate(
+                "callbox", "calll", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.num.setText(
+            QtGui.QApplication.translate(
+                "callbox", "+49", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )

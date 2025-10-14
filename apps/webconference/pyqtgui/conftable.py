@@ -9,6 +9,7 @@
 
 from PyQt4 import QtCore, QtGui
 
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -30,10 +31,12 @@ class Ui_MainWindow(object):
         self.gridLayout_2 = QtGui.QGridLayout(self.frame_main)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.label = QtGui.QLabel(self.frame_main)
-        self.label.setStyleSheet("""QLabel { 
+        self.label.setStyleSheet(
+            """QLabel { 
     background-color: rgb(170, 200, 255);
 }
-""")
+"""
+        )
         self.label.setFrameShape(QtGui.QFrame.Box)
         self.label.setFrameShadow(QtGui.QFrame.Sunken)
         self.label.setLineWidth(3)
@@ -57,14 +60,37 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuSettings.menuAction())
 
         self.retranslateUi(MainWindow)
-        QtCore.QObject.connect(self.actionQuit, QtCore.SIGNAL("activated()"), MainWindow.close)
+        QtCore.QObject.connect(
+            self.actionQuit, QtCore.SIGNAL("activated()"), MainWindow.close
+        )
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "conference call", None, QtGui.QApplication.UnicodeUTF8))
-        self.buttonNew.setText(QtGui.QApplication.translate("MainWindow", "Call someone", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("MainWindow", "iptel.org\n"
-"webconference", None, QtGui.QApplication.UnicodeUTF8))
-        self.menuSettings.setTitle(QtGui.QApplication.translate("MainWindow", "Menu", None, QtGui.QApplication.UnicodeUTF8))
-        self.actionQuit.setText(QtGui.QApplication.translate("MainWindow", "Quit", None, QtGui.QApplication.UnicodeUTF8))
-
+        MainWindow.setWindowTitle(
+            QtGui.QApplication.translate(
+                "MainWindow", "conference call", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.buttonNew.setText(
+            QtGui.QApplication.translate(
+                "MainWindow", "Call someone", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.label.setText(
+            QtGui.QApplication.translate(
+                "MainWindow",
+                "iptel.org\n" "webconference",
+                None,
+                QtGui.QApplication.UnicodeUTF8,
+            )
+        )
+        self.menuSettings.setTitle(
+            QtGui.QApplication.translate(
+                "MainWindow", "Menu", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.actionQuit.setText(
+            QtGui.QApplication.translate(
+                "MainWindow", "Quit", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )

@@ -104,7 +104,7 @@ The SBC profiles may be reloaded while the server is running. A set of
   sems-sbc-set-activeprofile <active_profile>   set active_profile
   sems-sbc-teardown-call <call_ltag>            tear down call (use e.g.
                                                 monitoring's
-                                                sems-list-active-calls to
+                                                sems_list_active_calls.py to
                                                 get the ltag)
 
 The xmlrpc2di module must be loaded and the XMLRPC control server bound
