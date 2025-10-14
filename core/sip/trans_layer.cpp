@@ -2632,17 +2632,15 @@ int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
     
     // try with alternative address
     char local_ip[NI_MAXHOST];
-    if(am_inet_ntop(&from,local_ip,NI_MAXHOST) != NULL) {
-	map<string,unsigned short>::iterator if_it =
-	    AmConfig::LocalSIPIP2If.find(local_ip);
-	if(if_it == AmConfig::LocalSIPIP2If.end()){
-	    ERROR("Could not find a local interface for "
+	if(am_inet_ntop(&from,local_ip,NI_MAXHOST) != NULL) {
+	unsigned short if_idx = 0;
+	// Delegate to config helper so IPv6 wrappers are handled uniformly.
+	if(AmConfig::lookupLocalSIPInterface(string(local_ip), if_idx)) {
+		return if_idx;
+	}
+	ERROR("Could not find a local interface for "
 		  "resolved local IP (local_ip='%s')",
 		  local_ip);
-	}
-	else {
-	    return if_it->second;
-	}
     }
 
     // no matching interface

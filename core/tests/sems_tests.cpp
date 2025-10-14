@@ -30,6 +30,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_replaces);
   FCTMF_SUITE_CALL(test_parser);
   FCTMF_SUITE_CALL(test_extensions);
+  FCTMF_SUITE_CALL(test_amconfig);
 } FCT_END();
 
 
