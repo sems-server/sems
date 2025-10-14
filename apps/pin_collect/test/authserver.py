@@ -7,7 +7,7 @@ class AuthServer:
         self.keys = {}
 
     def authorize(self, room, pin):
-        if self.keys.has_key(room):
+        if room in self.keys:
             if self.keys[room] == pin:
                 return "OK"
             else:
