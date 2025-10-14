@@ -43,7 +43,7 @@ class IMAP4_MsgBODY:
             raise IMAP4.error("could not retrieve part %s/%i" % (self.uid, part + 1))
 
         msg = d[0][1]
-        msg = base64.decodestring(msg)
+        msg = base64.decodebytes(msg)
         if filename is None:
             out_file = os.tmpfile()
         else:
