@@ -1,7 +1,9 @@
 # defines
 %global build_timestamp %(date +"%Y%m%d%H%M")
 %define _unpackaged_files_terminate_build 0
-%define version 2.0.0
+# Pull the package version directly from the upstream VERSION file.
+# The packaging helper copies VERSION into the RPM SOURCES directory beforehand.
+%global version %(if [ -f %{_sourcedir}/VERSION ]; then sed -e 's/^v//' -e 's/[-_~]/./g' %{_sourcedir}/VERSION | tr -d '\r\n'; else echo 0.0.0; fi)
 
 %global debug_package %{nil}
 

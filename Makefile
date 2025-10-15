@@ -79,11 +79,11 @@ tar:
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp
 
-# the rpmtar target creates source tar.gz file, with versions taken from rpm spec file
+# the rpmtar target creates source tar.gz file, with version taken from VERSION file
 # the tarball can be used for rpm building 
 .PHONY: rpmtar
 rpmtar: 
-	$(eval RPM_VERSION := $(shell grep "^%define version" pkg/rpm/sems.spec | awk '{print $$3}'))
+	$(eval RPM_VERSION := $(shell sed -e 's/^v//' -e 's/[-_~]/./g' VERSION | tr -d '\r\n'))
 	rm -rf /tmp/_tar1
 	rm -rf /tmp/_tar2
 	rm -rf "~/rpmbuild/SOURCES/$(NAME)-*.tar.gz"
@@ -111,6 +111,7 @@ rpmtar:
                                             -zcf ~/rpmbuild/SOURCES/"$(NAME)-$(RPM_VERSION)".tar.gz \
                                                        "$(NAME)-$(RPM_VERSION)" ) ; \
                             rm -rf /tmp/_tar1 /tmp/_tar2;
+	cp VERSION ~/rpmbuild/SOURCES/VERSION
 	ls -al ~/rpmbuild/SOURCES/$(NAME)-*.tar.gz
 
 .PHONY: doc
