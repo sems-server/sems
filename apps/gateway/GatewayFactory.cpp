@@ -26,7 +26,7 @@ GatewayFactory::GatewayFactory(const string& _app_name)
 
 int GatewayFactory::onLoad()
 {
-    INFO("gateway version %s loading (mISDN) ...\n", GW_VERSION);
+    INFO("gateway version %s loading (mISDN) ...\n", SEMS_VERSION);
     if (gwconf.loadFile(AmConfig::ModConfigPath + string(MODULE_NAME)+ ".conf")) {
 //  if (gwconf.loadFile(AmConfig::ModConfigPath +"gateway.conf")) {
         DBG("cant load conf file %s/%s.conf\n",AmConfig::ModConfigPath.c_str(),MODULE_NAME);

@@ -4,7 +4,7 @@ makefile_defs="1"
 export makefile_defs
 
 APP_NAME ?= sems
-RELEASE ?= $(shell cat VERSION 2>/dev/null | tr -d ' \t\n' | sed 's/^v//' | sed 's/-/./g')
+RELEASE ?= $(shell cat VERSION 2>/dev/null | sed 's/^[ \t]*//;s/[ \t]*$$//' | tr -d '\r\n')
 SYSTEM_SAMPLECLOCK_RATE ?= 32000LL
 
 CPPFLAGS += -D_DEBUG \

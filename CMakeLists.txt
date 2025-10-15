@@ -7,36 +7,52 @@ ENDIF(COMMAND cmake_policy)
 # Add path for additional FindXXX.cmake scenarios
 set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-PROJECT (SEMS)
-
-# Read the version from the VERSION file
-execute_process(
-    COMMAND cat "${CMAKE_SOURCE_DIR}/VERSION"
-    OUTPUT_VARIABLE FILE_VERSION_RAW
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-# If the file is missing or empty, fail with an error
-if(NOT FILE_VERSION_RAW)
-    message(FATAL_ERROR "VERSION file is missing or empty! Please create it.")
+# Read the version from the VERSION file once and derive a CMake-friendly value
+set(SEMS_VERSION_FILE "${CMAKE_SOURCE_DIR}/VERSION")
+if(NOT EXISTS "${SEMS_VERSION_FILE}")
+	message(FATAL_ERROR "VERSION file is missing! Please create it.")
 endif()
 
-# Clean up version string: replace dashes with dots and remove 'v' prefix
-string(REGEX REPLACE "^v" "" FILE_VERSION "${FILE_VERSION_RAW}")
-string(REGEX REPLACE "-" "." FILE_VERSION "${FILE_VERSION}")
+file(READ "${SEMS_VERSION_FILE}" FILE_VERSION_RAW)
+string(STRIP "${FILE_VERSION_RAW}" FILE_VERSION_RAW)
+if(NOT FILE_VERSION_RAW)
+	message(FATAL_ERROR "VERSION file is empty! Please provide a semantic version.")
+endif()
+
+# Preserve the raw version string for runtime/reporting purposes
+set(SEMS_VERSION "${FILE_VERSION_RAW}")
+
+# Derive a CMake-friendly version number for project metadata (digits and dots)
+set(PROJECT_VERSION_SANITIZED_SOURCE "${SEMS_VERSION}")
+string(REGEX REPLACE "^v" "" PROJECT_VERSION_SANITIZED_SOURCE "${PROJECT_VERSION_SANITIZED_SOURCE}")
+string(REGEX REPLACE "[-_~]" "." PROJECT_VERSION_SANITIZED_SOURCE "${PROJECT_VERSION_SANITIZED_SOURCE}")
+string(REGEX MATCH "^[0-9]+(\\.[0-9]+)*" PROJECT_VERSION_SANITIZED "${PROJECT_VERSION_SANITIZED_SOURCE}")
+if(NOT PROJECT_VERSION_SANITIZED)
+	set(PROJECT_VERSION_SANITIZED "0.0.0")
+endif()
+
+project(SEMS VERSION "${PROJECT_VERSION_SANITIZED}")
+
+# Make the sanitized version available to subdirectories and packaging helpers
+set(FILE_VERSION "${PROJECT_VERSION}" CACHE INTERNAL "SEMS release version")
 
 # Print version for debugging
-message(STATUS "SEMS_VERSION: ${FILE_VERSION}")
+message(STATUS "SEMS_VERSION: ${SEMS_VERSION}")
 
 # Pass version as a compile definition
-add_definitions(-DSEMS_VERSION="${FILE_VERSION}")
+add_definitions(-DSEMS_VERSION="${SEMS_VERSION}")
 ADD_DEFINITIONS(-DARCH="${CMAKE_SYSTEM_PROCESSOR}")
 ADD_DEFINITIONS(-DOS="${CMAKE_SYSTEM_NAME}")
 
 ADD_DEFINITIONS(-DSYSTEM_SAMPLECLOCK_RATE=32000LL)
 ADD_DEFINITIONS(-DSEMS_APP_NAME="sems")
 
-MESSAGE(STATUS "Configuring ${CMAKE_PROJECT_NAME} v. ${FILE_VERSION}")
+MESSAGE(STATUS "Configuring ${CMAKE_PROJECT_NAME} v. ${PROJECT_VERSION}")
+
+set(SEMS_SOURCE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
+if (EXISTS "${SEMS_SOURCE_INCLUDE_DIR}")
+	include_directories("${SEMS_SOURCE_INCLUDE_DIR}")
+endif()
 
 IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT MSVC_IDE)
 	message(FATAL_ERROR "In-source builds are not allowed.
