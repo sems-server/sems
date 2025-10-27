@@ -1,12 +1,11 @@
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/template.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/template.rules.txt)
 
-MACRO(SEMS_INSTALL_CONFIGS config_files)
-	FOREACH (config_file ${config_files})
-		IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf )
-			SEMS_GEN_TEMPLATE(${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
-			INSTALL(
-				FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
-			)
-		ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf )
-	ENDFOREACH (config_file ${config_files})
-ENDMACRO(SEMS_INSTALL_CONFIGS)
+macro(SEMS_INSTALL_CONFIGS config_files)
+  foreach(config_file ${config_files})
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
+      sems_gen_template(${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
+      install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf
+              DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+    endif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
+  endforeach(config_file ${config_files})
+endmacro(SEMS_INSTALL_CONFIGS)
