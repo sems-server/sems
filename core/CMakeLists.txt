@@ -1,92 +1,121 @@
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/template.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/template.rules.txt)
 
-FILE (GLOB sems_core_SRCS "Am*.cpp" LowcFE.cpp SipCtrlInterface.cpp crc4.cpp jsonArg.cpp jsonxx.cpp log.cpp md5.cpp)
-FILE (GLOB sems_sip_SRCS "sip/*.cpp")
-FILE (GLOB sems_tests_SRCS "tests/*.cpp" "plug-in/uac_auth/UACAuth.cpp" "../apps/sbc/*.cpp")
+file(
+  GLOB
+  sems_core_SRCS
+  "Am*.cpp"
+  LowcFE.cpp
+  SipCtrlInterface.cpp
+  crc4.cpp
+  jsonArg.cpp
+  jsonxx.cpp
+  log.cpp
+  md5.cpp)
+file(GLOB sems_sip_SRCS "sip/*.cpp")
+file(GLOB sems_tests_SRCS "tests/*.cpp" "plug-in/uac_auth/UACAuth.cpp"
+     "../apps/sbc/*.cpp")
 
-set (audio_files
-beep.wav
-default_en.wav
-)
+set(audio_files beep.wav default_en.wav)
 
-INCLUDE_DIRECTORIES (ampi)
-INCLUDE_DIRECTORIES (amci)
+include_directories(ampi)
+include_directories(amci)
 
-ADD_LIBRARY (sems_core STATIC ${sems_core_SRCS})
-ADD_LIBRARY (sems_sip STATIC ${sems_sip_SRCS})
+add_library(sems_core STATIC ${sems_core_SRCS})
+add_library(sems_sip STATIC ${sems_sip_SRCS})
 
-ADD_EXECUTABLE (sems sems.cpp)
-ADD_EXECUTABLE(sems_tests ${sems_tests_SRCS})
+add_executable(sems sems.cpp)
+add_executable(sems_tests ${sems_tests_SRCS})
 
-FOREACH (EXE_TARGET sems sems_tests)
+foreach(EXE_TARGET sems sems_tests)
 
-	# This allows symbols defined in the SIP stack but not used
-	# by the core itself to be included in the executable and
-	# thus be available for modules
-	IF(APPLE)
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} -Wl,-force_load sems_core -Wl,-force_load sems_sip event event_pthreads -rdynamic)
-	ELSE()
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} -Wl,--whole-archive sems_core sems_sip -Wl,--no-whole-archive event event_pthreads -rdynamic)
-	ENDIF()
+  # This allows symbols defined in the SIP stack but not used by the core itself
+  # to be included in the executable and thus be available for modules
+  if(APPLE)
+    target_link_libraries(
+      ${EXE_TARGET}
+      ${CMAKE_DL_LIBS}
+      -Wl,-force_load
+      sems_core
+      -Wl,-force_load
+      sems_sip
+      event
+      event_pthreads
+      -rdynamic)
+  else()
+    target_link_libraries(
+      ${EXE_TARGET}
+      ${CMAKE_DL_LIBS}
+      -Wl,--whole-archive
+      sems_core
+      sems_sip
+      -Wl,--no-whole-archive
+      event
+      event_pthreads
+      -rdynamic)
+  endif()
 
-	IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} execinfo)
-	ELSE(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} resolv)
-	ENDIF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    target_link_libraries(${EXE_TARGET} execinfo)
+  else(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    target_link_libraries(${EXE_TARGET} resolv)
+  endif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 
-	IF(SPANDSP_FOUND)
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} spandsp)
-	ENDIF(SPANDSP_FOUND)
+  if(SPANDSP_FOUND)
+    target_link_libraries(${EXE_TARGET} ${CMAKE_DL_LIBS} spandsp)
+  endif(SPANDSP_FOUND)
 
-	IF(LIBSAMPLERATE_FOUND)
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} ${LIBSAMPLERATE_LIBRARIES})
-	ELSE(LIBSAMPLERATE_FOUND)
-		TARGET_SOURCES (${EXE_TARGET} PRIVATE "resample/resample.cpp")
-	ENDIF(LIBSAMPLERATE_FOUND)
+  if(LIBSAMPLERATE_FOUND)
+    target_link_libraries(${EXE_TARGET} ${CMAKE_DL_LIBS}
+                          ${LIBSAMPLERATE_LIBRARIES})
+  else(LIBSAMPLERATE_FOUND)
+    target_sources(${EXE_TARGET} PRIVATE "resample/resample.cpp")
+  endif(LIBSAMPLERATE_FOUND)
 
-	IF(LIBZRTP_FOUND)
-		TARGET_LINK_LIBRARIES(${EXE_TARGET} ${CMAKE_DL_LIBS} ${LIBZRTP_LIBRARIES})
-	ENDIF(LIBZRTP_FOUND)
+  if(LIBZRTP_FOUND)
+    target_link_libraries(${EXE_TARGET} ${CMAKE_DL_LIBS} ${LIBZRTP_LIBRARIES})
+  endif(LIBZRTP_FOUND)
 
-ENDFOREACH (EXE_TARGET)
+endforeach(EXE_TARGET)
 
-ADD_SUBDIRECTORY(plug-in)
+add_subdirectory(plug-in)
 
 # Enable testing
 add_test(NAME Tests COMMAND sems_tests)
 
 # Create config-file from template
-CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf.sample ${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf)
-CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/sems.conf.sample ${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
+configure_file(${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf.sample
+               ${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf)
+configure_file(${CMAKE_SOURCE_DIR}/core/etc/sems.conf.sample
+               ${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
 
-# We use custom regen instead of *.conf templates to use it for both traditional make and CMake
-SEMS_GEN_TEMPLATE(${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
-SEMS_GEN_TEMPLATE(${CMAKE_SOURCE_DIR}/core/sems.h)
+# We use custom regen instead of *.conf templates to use it for both traditional
+# make and CMake
+sems_gen_template(${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
+sems_gen_template(${CMAKE_SOURCE_DIR}/core/sems.h)
 
 # Installation of main SEMS executable
-INSTALL(TARGETS sems RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
+install(TARGETS sems RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
 
 # Installation of config-files
-INSTALL(FILES ./etc/sems.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/)
-INSTALL(FILES ./etc/app_mapping.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
-IF(LIBZRTP_FOUND)
-INSTALL(FILES ./etc/zrtp.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
-ENDIF(LIBZRTP_FOUND)
+install(FILES ./etc/sems.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/)
+install(FILES ./etc/app_mapping.conf
+        DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+if(LIBZRTP_FOUND)
+  install(FILES ./etc/zrtp.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+endif(LIBZRTP_FOUND)
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
 
-SET(doc_dirs ../doc/figures)
-SET(doc_files
-	../doc/Applications.txt
-	../doc/Howtostart_noproxy.txt
-	../doc/Howtostart_simpleproxy.txt
-	../doc/Howtostart_voicemail.txt
-	../doc/CHANGELOG
-	../doc/COPYING
-	../doc/Tuning.txt
-)
+set(doc_dirs ../doc/figures)
+set(doc_files
+    ../doc/Applications.txt
+    ../doc/Howtostart_noproxy.txt
+    ../doc/Howtostart_simpleproxy.txt
+    ../doc/Howtostart_voicemail.txt
+    ../doc/CHANGELOG
+    ../doc/COPYING
+    ../doc/Tuning.txt)
 
-SEMS_INSTALL_DOCS("${doc_files}" "${doc_dirs}")
-SEMS_INSTALL_AUDIO("" "${audio_files}")
+sems_install_docs("${doc_files}" "${doc_dirs}")
+sems_install_audio("" "${audio_files}")

@@ -1,5 +1,5 @@
-FILE (GLOB isac_SRCS isac.c "libisac/*.c")
-INCLUDE_DIRECTORIES (libisac)
+file(GLOB isac_SRCS isac.c "libisac/*.c")
+include_directories(libisac)
 
-SET(sems_module_name isac)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+set(sems_module_name isac)
+include(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

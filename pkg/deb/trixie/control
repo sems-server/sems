@@ -18,7 +18,8 @@ Build-Depends: debhelper (>= 9~),
                libxml2-dev,
                libbcg729-dev (>= 1.1.1),
                openssl,
-               python3-dev
+               python3-dev,
+               cmake (>= 3.17)
 Standards-Version: 3.9.5
 
 Package: sems

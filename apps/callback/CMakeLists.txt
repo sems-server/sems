@@ -1,6 +1,4 @@
-set (callback_SRCS
-CallBack.cpp
-)
+set(callback_SRCS CallBack.cpp)
 
-SET(sems_module_name callback)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+set(sems_module_name callback)
+include(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

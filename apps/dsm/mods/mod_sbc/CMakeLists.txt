@@ -1,10 +1,7 @@
-set (mod_sbc_SRCS
-ModSbc.cpp
-)
+set(mod_sbc_SRCS ModSbc.cpp)
 
-INCLUDE_DIRECTORIES (../../../sbc)
-INCLUDE_DIRECTORIES (../../../sbc/call_control/dsm)
+include_directories(../../../sbc)
+include_directories(../../../sbc/call_control/dsm)
 
-SET(sems_dsm_module_name mod_sbc)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)
-
+set(sems_dsm_module_name mod_sbc)
+include(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)

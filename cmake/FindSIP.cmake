@@ -1,26 +1,31 @@
-FIND_PACKAGE(PythonLibs)
+# Requires CMake 3.17+ with FindPython3
+if(NOT Python3_FOUND)
+  find_package(
+    Python3
+    COMPONENTS Interpreter Development
+    QUIET)
+endif()
 
-IF(PYTHONLIBS_FOUND OR PYTHON_LIBRARIES)
+if(Python3_FOUND)
 
-	GET_FILENAME_COMPONENT(PYTHON_LD_PATH ${PYTHON_LIBRARIES} PATH)
+  get_filename_component(PYTHON_LD_PATH ${Python3_LIBRARIES} PATH)
 
-	FIND_PATH(SIP_INCLUDE_DIR sip.h PATHS ${PYTHON_INCLUDE_PATH})
-	FIND_PROGRAM(SIP_BINARY python3-sip)
+  find_path(SIP_INCLUDE_DIR sip.h PATHS ${Python3_INCLUDE_DIRS})
+  find_program(SIP_BINARY python3-sip)
 
-	IF(SIP_INCLUDE_DIR AND SIP_BINARY)
-		SET(SIP_FOUND TRUE)
-	ENDIF(SIP_INCLUDE_DIR AND SIP_BINARY)
+  if(SIP_INCLUDE_DIR AND SIP_BINARY)
+    set(SIP_FOUND TRUE)
+  endif(SIP_INCLUDE_DIR AND SIP_BINARY)
 
-	IF(SIP_FOUND)
-		IF (NOT SIP_FIND_QUIETLY)
-			MESSAGE(STATUS "Found sip includes:	${SIP_INCLUDE_DIR}/sip.h")
-			MESSAGE(STATUS "Found sip binary:	${SIP_BINARY}")
-		ENDIF (NOT SIP_FIND_QUIETLY)
-	ELSE(SIP_FOUND)
-		IF (SIP_FIND_REQUIRED)
-			MESSAGE(FATAL_ERROR "Could NOT find sip development files")
-		ENDIF (SIP_FIND_REQUIRED)
-	ENDIF(SIP_FOUND)
+  if(SIP_FOUND)
+    if(NOT SIP_FIND_QUIETLY)
+      message(STATUS "Found sip includes:	${SIP_INCLUDE_DIR}/sip.h")
+      message(STATUS "Found sip binary:	${SIP_BINARY}")
+    endif(NOT SIP_FIND_QUIETLY)
+  else(SIP_FOUND)
+    if(SIP_FIND_REQUIRED)
+      message(FATAL_ERROR "Could NOT find sip development files")
+    endif(SIP_FIND_REQUIRED)
+  endif(SIP_FOUND)
 
-ENDIF(PYTHONLIBS_FOUND OR PYTHON_LIBRARIES)
-
+endif(Python3_FOUND)

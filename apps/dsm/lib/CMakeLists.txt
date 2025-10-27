@@ -1,6 +1,2 @@
-
-SET(sems_dsm_script_names
-	inbound_call.dsm
-	outbound_call.dsm
-)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/dsm.script.rules.txt)
+set(sems_dsm_script_names inbound_call.dsm outbound_call.dsm)
+include(${CMAKE_SOURCE_DIR}/cmake/dsm.script.rules.txt)

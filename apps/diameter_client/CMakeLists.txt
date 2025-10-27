@@ -1,23 +1,20 @@
-set (diameter_client_SRCS
-DiameterClient.cpp
-ServerConnection.cpp
-lib_dbase/avp.c
-lib_dbase/diameter_msg.c
-lib_dbase/tcp_comm.c
-)
+set(diameter_client_SRCS
+    DiameterClient.cpp ServerConnection.cpp lib_dbase/avp.c
+    lib_dbase/diameter_msg.c lib_dbase/tcp_comm.c)
 
-INCLUDE_DIRECTORIES (lib_dbase)
+include_directories(lib_dbase)
 
-SET(sems_module_name diameter_client)
+set(sems_module_name diameter_client)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    FIND_PATH(OPENSSL_INCLUDE_DIR openssl/crypto.h HINTS /usr/local/Cellar/openssl@3/3.4.1/include )
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  find_path(OPENSSL_INCLUDE_DIR openssl/crypto.h
+            HINTS /usr/local/Cellar/openssl@3/3.4.1/include)
 endif()
 
-IF(OPENSSL_FOUND)
-	ADD_DEFINITIONS(-DWITH_OPENSSL)
-	INCLUDE_DIRECTORIES(${OPENSSL_INCLUDE_DIR})
-	SET(sems_module_libs ${sems_module_libs} ${OPENSSL_LIBRARIES})
-ENDIF(OPENSSL_FOUND)
+if(OPENSSL_FOUND)
+  add_definitions(-DWITH_OPENSSL)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+  set(sems_module_libs ${sems_module_libs} ${OPENSSL_LIBRARIES})
+endif(OPENSSL_FOUND)
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
