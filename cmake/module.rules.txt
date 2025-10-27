@@ -1,50 +1,54 @@
 # A place for common parts of SEMS modules rules
 #
 # We adding sems_ prefix to the internal name of the library to avoid nasty
-# issue then this name is equals to external library, our module links to.
-# E.g. the issue, then speex module should be linked to -lspeex
+# issue then this name is equals to external library, our module links to. E.g.
+# the issue, then speex module should be linked to -lspeex
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
-ADD_LIBRARY(sems_${sems_module_name} MODULE ${${sems_module_name}_SRCS})
+add_library(sems_${sems_module_name} MODULE ${${sems_module_name}_SRCS})
 
-IF(APPLE)
-	SET(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
-		"${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress")
-	SET(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
-		"${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress")
-ENDIF(APPLE)
+if(APPLE)
+  set(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
+      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress"
+  )
+  set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
+      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress"
+  )
+endif(APPLE)
 
-ADD_DEFINITIONS(-DMOD_NAME="${sems_module_name}")
+add_definitions(-DMOD_NAME="${sems_module_name}")
 
-# all modules should be linked against ${CMAKE_DL_LIBS} at least
-# and with additional ${sems_module_libs} if they exists
-TARGET_LINK_LIBRARIES(sems_${sems_module_name} ${CMAKE_DL_LIBS} ${sems_module_libs})
+# all modules should be linked against ${CMAKE_DL_LIBS} at least and with
+# additional ${sems_module_libs} if they exists
+target_link_libraries(sems_${sems_module_name} ${CMAKE_DL_LIBS}
+                      ${sems_module_libs})
 
-SET_TARGET_PROPERTIES(sems_${sems_module_name} PROPERTIES OUTPUT_NAME ${sems_module_name})
-SET_TARGET_PROPERTIES(sems_${sems_module_name} PROPERTIES PREFIX "")
+set_target_properties(sems_${sems_module_name} PROPERTIES OUTPUT_NAME
+                                                          ${sems_module_name})
+set_target_properties(sems_${sems_module_name} PROPERTIES PREFIX "")
 
-INSTALL(
-	TARGETS sems_${sems_module_name}
-	LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in/
-)
+install(TARGETS sems_${sems_module_name}
+        LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in/)
 
-IF(NOT DEFINED ${sems_module_name}_docs)
-	IF(EXISTS ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
-		SET(${sems_module_name}_docs ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
-	ENDIF(EXISTS ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
-ENDIF(NOT DEFINED ${sems_module_name}_docs)
+if(NOT DEFINED ${sems_module_name}_docs)
+  if(EXISTS ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
+    set(${sems_module_name}_docs
+        ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
+  endif(EXISTS ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
+endif(NOT DEFINED ${sems_module_name}_docs)
 
-SEMS_INSTALL_DOCS("${${sems_module_name}_docs}" "${${sems_module_name}_doc_dirs}")
+sems_install_docs("${${sems_module_name}_docs}"
+                  "${${sems_module_name}_doc_dirs}")
 
-IF(NOT DEFINED ${sems_module_name}_config_files)
-	SEMS_INSTALL_CONFIGS("${sems_module_name}")
-ELSE(NOT DEFINED ${sems_module_name}_config_files)
-	SEMS_INSTALL_CONFIGS("${${sems_module_name}_config_files}")
-ENDIF(NOT DEFINED ${sems_module_name}_config_files)
+if(NOT DEFINED ${sems_module_name}_config_files)
+  sems_install_configs("${sems_module_name}")
+else(NOT DEFINED ${sems_module_name}_config_files)
+  sems_install_configs("${${sems_module_name}_config_files}")
+endif(NOT DEFINED ${sems_module_name}_config_files)
 
-IF(DEFINED ${sems_module_name}_audio_files)
-	SEMS_INSTALL_AUDIO("${sems_module_name}" "${${sems_module_name}_audio_files}")
-ENDIF(DEFINED ${sems_module_name}_audio_files)
+if(DEFINED ${sems_module_name}_audio_files)
+  sems_install_audio("${sems_module_name}" "${${sems_module_name}_audio_files}")
+endif(DEFINED ${sems_module_name}_audio_files)

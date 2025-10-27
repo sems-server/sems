@@ -1,15 +1,35 @@
-MACRO(PYTHON_SOURCES_COMPILE python_files sems_python_dir)
-	FOREACH (python_file ${python_files})
-		MESSAGE(STATUS "Will compile file ${CMAKE_CURRENT_SOURCE_DIR}/${python_file} to pyc file")
-		EXECUTE_PROCESS(COMMAND python3 -m compileall -b ${CMAKE_CURRENT_SOURCE_DIR})
-		EXECUTE_PROCESS(COMMAND python -c "import py_compile; py_compile.compile('${CMAKE_CURRENT_SOURCE_DIR}/${python_file}')")
-		EXECUTE_PROCESS(COMMAND python -O -c "import py_compile; py_compile.compile('${CMAKE_CURRENT_SOURCE_DIR}/${python_file}')")
-		SET(pyc_file "${CMAKE_CURRENT_SOURCE_DIR}/${python_file}c")
-		IF(NOT EXISTS ${pyc_file})
-			MESSAGE(FATAL_ERROR "Python compilation failed for ${python_file}. The .pyc file ${pyc_file} Was not generated!")
-		ELSE()
-			MESSAGE(STATUS "Successfully compiled ${python_file} to ${pyc_file}")
-		ENDIF()
-		INSTALL (FILES ${python_file} ${python_file}c DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/${sems_python_dir})
-	ENDFOREACH(python_file ${python_files})
-ENDMACRO(PYTHON_SOURCES_COMPILE python_files sems_python_dir)
+macro(PYTHON_SOURCES_COMPILE python_files sems_python_dir)
+  foreach(python_file ${python_files})
+    message(
+      STATUS
+        "Will compile file ${CMAKE_CURRENT_SOURCE_DIR}/${python_file} to pyc file"
+    )
+    execute_process(COMMAND python3 -m compileall -b
+                            ${CMAKE_CURRENT_SOURCE_DIR})
+    execute_process(
+      COMMAND
+        python -c
+        "import py_compile; py_compile.compile('${CMAKE_CURRENT_SOURCE_DIR}/${python_file}')"
+    )
+    execute_process(
+      COMMAND
+        python -O -c
+        "import py_compile; py_compile.compile('${CMAKE_CURRENT_SOURCE_DIR}/${python_file}')"
+    )
+    set(pyc_file "${CMAKE_CURRENT_SOURCE_DIR}/${python_file}c")
+    if(NOT EXISTS ${pyc_file})
+      message(
+        FATAL_ERROR
+          "Python compilation failed for ${python_file}. The .pyc file ${pyc_file} Was not generated!"
+      )
+    else()
+      message(STATUS "Successfully compiled ${python_file} to ${pyc_file}")
+    endif()
+    install(
+      FILES ${python_file} ${python_file}c
+      DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/${sems_python_dir})
+  endforeach(python_file ${python_files})
+endmacro(
+  PYTHON_SOURCES_COMPILE
+  python_files
+  sems_python_dir)

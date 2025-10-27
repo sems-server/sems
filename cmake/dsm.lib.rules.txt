@@ -1,39 +1,42 @@
 # A place for common parts of SEMS DSM modules rules
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 
 # We must add base apps/dsm directory as INCLUDEDIR
-INCLUDE_DIRECTORIES (../..)
+include_directories(../..)
 
 # We adding sems_dsm_ prefix to the internal name of the library to avoid nasty
-# issue then this name is equals to external library, our module links to.
-# E.g. the issue, then speex module should be linked to -lspeex
+# issue then this name is equals to external library, our module links to. E.g.
+# the issue, then speex module should be linked to -lspeex
 
-ADD_LIBRARY(sems_dsm_${sems_dsm_module_name} MODULE ${${sems_dsm_module_name}_SRCS})
+add_library(sems_dsm_${sems_dsm_module_name} MODULE
+            ${${sems_dsm_module_name}_SRCS})
 
-IF(APPLE)
-	SET(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
-		"${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress")
-	SET(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
-		"${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress")
-ENDIF(APPLE)
+if(APPLE)
+  set(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
+      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress"
+  )
+  set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
+      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress"
+  )
+endif(APPLE)
 
-# all modules should be linked against ${CMAKE_DL_LIBS} at least
-# and with additional ${sems_dsm_module_libs} if they exists
-TARGET_LINK_LIBRARIES(sems_dsm_${sems_dsm_module_name} ${CMAKE_DL_LIBS} ${sems_dsm_module_libs})
+# all modules should be linked against ${CMAKE_DL_LIBS} at least and with
+# additional ${sems_dsm_module_libs} if they exists
+target_link_libraries(sems_dsm_${sems_dsm_module_name} ${CMAKE_DL_LIBS}
+                      ${sems_dsm_module_libs})
 
-SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES OUTPUT_NAME ${sems_dsm_module_name})
-SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES PREFIX "")
+set_target_properties(sems_dsm_${sems_dsm_module_name}
+                      PROPERTIES OUTPUT_NAME ${sems_dsm_module_name})
+set_target_properties(sems_dsm_${sems_dsm_module_name} PROPERTIES PREFIX "")
 
-ADD_DEFINITIONS(-DMOD_NAME="${sems_dsm_module_name}")
+add_definitions(-DMOD_NAME="${sems_dsm_module_name}")
 
-INSTALL(
-	TARGETS sems_dsm_${sems_dsm_module_name}
-	LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/dsm/
-)
+install(TARGETS sems_dsm_${sems_dsm_module_name}
+        LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/dsm/)
 
-IF(NOT DEFINED ${sems_dsm_module_name}_config_files)
-	SEMS_INSTALL_CONFIGS("${sems_dsm_module_name}")
-ELSE(NOT DEFINED ${sems_dsm_module_name}_config_files)
-	SEMS_INSTALL_CONFIGS("${${sems_dsm_module_name}_config_files}")
-ENDIF(NOT DEFINED ${sems_dsm_module_name}_config_files)
+if(NOT DEFINED ${sems_dsm_module_name}_config_files)
+  sems_install_configs("${sems_dsm_module_name}")
+else(NOT DEFINED ${sems_dsm_module_name}_config_files)
+  sems_install_configs("${${sems_dsm_module_name}_config_files}")
+endif(NOT DEFINED ${sems_dsm_module_name}_config_files)
