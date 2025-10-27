@@ -1,12 +1,9 @@
-set (db_reg_agent_SRCS
-DBRegAgent.cpp
-RegistrationTimer.cpp
-)
+set(db_reg_agent_SRCS DBRegAgent.cpp RegistrationTimer.cpp)
 
-INCLUDE_DIRECTORIES(/usr/include/mysql)
-INCLUDE_DIRECTORIES(${MYSQLPP_INCLUDE_DIR}/mysql++)
-ADD_DEFINITIONS(-DHAS_OFFER_ANSWER)
-SET(sems_module_libs ${sems_module_libs} ${MYSQLPP_LIBRARIES})
+include_directories(/usr/include/mysql)
+include_directories(${MYSQLPP_INCLUDE_DIR}/mysql++)
+add_definitions(-DHAS_OFFER_ANSWER)
+set(sems_module_libs ${sems_module_libs} ${MYSQLPP_LIBRARIES})
 
-SET(sems_module_name db_reg_agent)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+set(sems_module_name db_reg_agent)
+include(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

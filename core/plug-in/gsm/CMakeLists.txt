@@ -1,9 +1,7 @@
-set (gsm_SRCS
- gsm.c
-)
+set(gsm_SRCS gsm.c)
 
-INCLUDE_DIRECTORIES(${GSM_INCLUDE_DIR})
+include_directories(${GSM_INCLUDE_DIR})
 
-SET(sems_module_name gsm)
-SET(sems_module_libs ${GSM_LIBRARIES})
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+set(sems_module_name gsm)
+set(sems_module_libs ${GSM_LIBRARIES})
+include(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

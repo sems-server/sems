@@ -1,11 +1,7 @@
-set (mod_redis_SRCS
-DRedisConnection.cpp
-ModRedis.cpp
-)
+set(mod_redis_SRCS DRedisConnection.cpp ModRedis.cpp)
 
-INCLUDE_DIRECTORIES(${HIREDIS_INCLUDE_DIRS})
+include_directories(${HIREDIS_INCLUDE_DIRS})
 
-SET(sems_dsm_module_name mod_redis)
-SET(sems_dsm_module_libs ${HIREDIS_LIBRARIES})
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)
-
+set(sems_dsm_module_name mod_redis)
+set(sems_dsm_module_libs ${HIREDIS_LIBRARIES})
+include(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)

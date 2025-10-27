@@ -1,10 +1,6 @@
-set (mod_conference_SRCS
-ModConference.cpp
-)
+set(mod_conference_SRCS ModConference.cpp)
 
-INCLUDE_DIRECTORIES(${LIBEVENT2_INCLUDE_DIR})
+include_directories(${LIBEVENT2_INCLUDE_DIR})
 
-SET(sems_dsm_module_name mod_conference)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)
-
-
+set(sems_dsm_module_name mod_conference)
+include(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)

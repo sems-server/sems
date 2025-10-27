@@ -1,9 +1,7 @@
-set (opus_SRCS
-opus.c
-)
+set(opus_SRCS opus.c)
 
-#module_cflags  = -ansi # -DNOFPU
+# module_cflags  = -ansi # -DNOFPU
 
-SET(sems_module_name opus)
-SET(sems_module_libs ${OPUS_LIBRARIES})
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+set(sems_module_name opus)
+set(sems_module_libs ${OPUS_LIBRARIES})
+include(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

@@ -1,14 +1,7 @@
-set (mod_py_SRCS
-ModPy.cpp
-PyDSM.cpp
-PyDSMSession.cpp
-)
+set(mod_py_SRCS ModPy.cpp PyDSM.cpp PyDSMSession.cpp)
 
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
+include_directories(${Python3_INCLUDE_DIRS})
+link_libraries(${Python3_LIBRARIES})
 
-EXECUTE_PROCESS(COMMAND python-config --libs OUTPUT_VARIABLE PYTHON_LIB_FLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PYTHON_LIB_FLAGS}")
-
-SET(sems_dsm_module_name mod_py)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)
-
+set(sems_dsm_module_name mod_py)
+include(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)

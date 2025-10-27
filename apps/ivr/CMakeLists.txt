@@ -1,17 +1,17 @@
-FILE (GLOB ivr_SRCS "*.cpp")
+file(GLOB ivr_SRCS "*.cpp")
 
-IF(FLITE_FOUND)
-	INCLUDE_DIRECTORIES(${FLITE_INCLUDE_DIR}/flite)
-	ADD_DEFINITIONS(-DIVR_WITH_TTS)
-	SET(sems_module_libs flite_cmu_us_kal flite_usenglish flite_cmulex ${FLITE_LIBRARIES})
-ENDIF(FLITE_FOUND)
+if(FLITE_FOUND)
+  include_directories(${FLITE_INCLUDE_DIR}/flite)
+  add_definitions(-DIVR_WITH_TTS)
+  set(sems_module_libs flite_cmu_us_kal flite_usenglish flite_cmulex
+                       ${FLITE_LIBRARIES})
+endif(FLITE_FOUND)
 
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
-EXECUTE_PROCESS(COMMAND python-config --libs OUTPUT_VARIABLE PYTHON_LIB_FLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PYTHON_LIB_FLAGS}")
+include_directories(${Python3_INCLUDE_DIRS})
+link_libraries(${Python3_LIBRARIES})
 
-SET(sems_module_name ivr)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
+set(sems_module_name ivr)
+include(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+include(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
 
-PYTHON_SOURCES_COMPILE(py/log.py ivr)
+python_sources_compile(py/log.py ivr)

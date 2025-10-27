@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Debian VoIP Team <pkg-voip-maintainers@lists.alioth.debian.org>
 Uploaders: Victor Seva <linuxmaniac@torreviejawireless.org>
 Build-Depends: debhelper (>= 9~),
+               cmake (>= 3.17),
                flite-dev,
                libcurl4-openssl-dev | libcurl4-gnutls-dev,
                libev-dev,
