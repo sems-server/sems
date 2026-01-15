@@ -726,8 +726,10 @@ IvrDialog::~IvrDialog()
 
 void IvrDialog::setPyPtrs(PyObject *mod, PyObject *dlg, AmArg *sp)
 {
-  assert(py_mod = mod);
-  assert(py_dlg = dlg);
+  py_mod = mod;
+  py_dlg = dlg;
+  assert(py_mod != NULL);
+  assert(py_dlg != NULL);
   Py_INCREF(py_mod);
   Py_INCREF(py_dlg);
 
