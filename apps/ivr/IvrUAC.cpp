@@ -61,7 +61,11 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
       int size = PyList_Size(sp);
       for (int ii = 0; ii < size; ii++) {
         PyObject *item = PyList_GetItem(sp, ii);
+        if (!PyUnicode_Check(item))
+          continue;
         const char *str = PyUnicode_AsUTF8(item);
+        if (str == NULL)
+          continue;
         session_params->push(string(str));
       }
     } else if(PyDict_Check(sp)) {
@@ -71,8 +75,13 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
       PyObject *key, *value;
       Py_ssize_t pos = 0;
       while (PyDict_Next(sp, &pos, &key, &value)) {
-        if(PyUnicode_Check(value))
-          (*session_params)[PyUnicode_AsUTF8(key)] = PyUnicode_AsUTF8(value);
+        if (!PyUnicode_Check(key) || !PyUnicode_Check(value))
+          continue;
+        const char *key_str = PyUnicode_AsUTF8(key);
+        const char *val_str = PyUnicode_AsUTF8(value);
+        if (key_str == NULL || val_str == NULL)
+          continue;
+        (*session_params)[key_str] = val_str;
       }
     }
   }
