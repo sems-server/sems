@@ -334,7 +334,7 @@ void Monitor::getCount(const AmArg& args, AmArg& ret) {
     gettimeofday(&to, NULL);
   }
 
-  unsigned int res = 0;
+  long long res = 0;
 
   LogBucket& bucket = getLogBucket(args[0].asCStr());
   bucket.log_lock.lock();
@@ -369,7 +369,7 @@ void Monitor::getCount(const AmArg& args, AmArg& ret) {
   }
   bucket.log_lock.unlock();
 
-  ret.push((int)res);
+  ret.push(res);
 }
 
 // Expected args:
@@ -426,7 +426,7 @@ void Monitor::getAllCounts(const AmArg& args, AmArg& ret) {
       truncate_samples(v, now);
       list<SampleInfo::time_cnt>::iterator v_it = v.begin();
 
-      unsigned int res = 0;
+      long long res = 0;
 
       while (v_it != v.end() && timercmp(&(v_it->time), &to, >))
         v_it++;
@@ -437,7 +437,7 @@ void Monitor::getAllCounts(const AmArg& args, AmArg& ret) {
         }
       }
 
-      ret[s_it->first] = (int)res;
+      ret[s_it->first] = res;
     }
 
   }
