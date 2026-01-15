@@ -359,7 +359,7 @@ void Monitor::getCount(const AmArg& args, AmArg& ret) {
       while (v_it != v.end() && timercmp(&(v_it->time), &to, >))
 	v_it++;
       if (v_it != v.end()) {
-	while (timercmp(&(v_it->time), &from, >=) && v_it != v.end()) {
+	while (v_it != v.end() && timercmp(&(v_it->time), &from, >=)) {
 	  res += v_it->counter;
 	  v_it++;
 	}
@@ -428,10 +428,10 @@ void Monitor::getAllCounts(const AmArg& args, AmArg& ret) {
 
       unsigned int res = 0;
 
-      while (timercmp(&(v_it->time), &to, >) && v_it != v.end())
+      while (v_it != v.end() && timercmp(&(v_it->time), &to, >))
         v_it++;
       if (v_it != v.end()) {
-        while (timercmp(&(v_it->time), &from, >=) && v_it != v.end()) {
+        while (v_it != v.end() && timercmp(&(v_it->time), &from, >=)) {
           res += v_it->counter;
           v_it++;
         }
