@@ -109,7 +109,7 @@ static PyGetSetDef IvrSipReply_getset[] = {
 
 PyTypeObject IvrSipReplyType = {
     
-  PyObject_HEAD_INIT(NULL)
+  PyVarObject_HEAD_INIT(NULL, 0)
   "ivr.IvrSipReply",        /*tp_name*/
   sizeof(IvrSipReply),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/

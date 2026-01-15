@@ -90,7 +90,7 @@ static PyGetSetDef IvrNullAudio_getseters[] = {
     
 PyTypeObject IvrNullAudioType = {
 	
-  PyObject_HEAD_INIT(NULL)
+  PyVarObject_HEAD_INIT(NULL, 0)
   "ivr.IvrNullAudio",        /*tp_name*/
   sizeof(IvrNullAudio),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/

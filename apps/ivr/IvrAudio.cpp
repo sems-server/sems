@@ -249,7 +249,7 @@ static PyGetSetDef IvrAudioFile_getseters[] = {
     
 PyTypeObject IvrAudioFileType = {
 	
-  PyObject_HEAD_INIT(NULL)
+  PyVarObject_HEAD_INIT(NULL, 0)
   "ivr.IvrAudioFile",        /*tp_name*/
   sizeof(IvrAudioFile),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
