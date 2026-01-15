@@ -670,6 +670,7 @@ void Monitor::listByRegex(const AmArg& args, AmArg& ret) {
       }
     } catch(...) {
       logs[i].log_lock.unlock();
+      regfree(&attr_reg);
       throw;
     }
     logs[i].log_lock.unlock();
