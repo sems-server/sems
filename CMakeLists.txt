@@ -59,6 +59,16 @@ option(SEMS_USE_OPENSSL "Build with OpenSSL" OFF)
 option(SEMS_USE_MONITORING "Build with monitoring support" ON)
 option(SEMS_USE_IPV6 "Build with IPv6 support" OFF)
 option(SEMS_USE_PYTHON "Build with Python modules" ON)
+option(SEMS_USE_ASAN "Build with AddressSanitizer (memory error detector)" OFF)
+
+# AddressSanitizer configuration
+if(SEMS_USE_ASAN)
+  message(STATUS "AddressSanitizer enabled")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+endif()
 
 # add -lm and -lpthread / -lthr to all targets
 

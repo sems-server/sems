@@ -43,3 +43,32 @@ jobs:
 
       - name: Build image based on Debian 13
         run: docker build -t sems_deb13 -f Dockerfile-debian13 .
+
+  asan_test:
+    runs-on: ubuntu-latest
+    name: ASAN Memory Check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libspandsp-dev libspeex-dev \
+            libgsm1-dev libopus-dev libssl-dev python3-dev libev-dev \
+            libevent-dev libxml2-dev libcurl4-openssl-dev libhiredis-dev
+
+      - name: Configure with ASAN
+        run: |
+          mkdir build && cd build
+          cmake .. -DSEMS_USE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Run tests with ASAN
+        run: |
+          cd build
+          ASAN_OPTIONS=detect_leaks=1:halt_on_error=0 ctest -V
+        continue-on-error: true
