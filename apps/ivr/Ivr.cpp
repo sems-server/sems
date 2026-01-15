@@ -364,6 +364,7 @@ void IvrFactory::import_ivr_builtins()
     ERROR("IvrFactory: please check your installation.\n");
     return;
   }
+  Py_DECREF(log_mod);
 }
 
 void IvrFactory::init_python_interpreter(const string& script_path)
