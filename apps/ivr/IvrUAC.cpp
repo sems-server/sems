@@ -92,7 +92,7 @@ static PyMethodDef IvrUAC_methods[] = {
 };
 
 PyTypeObject IvrUACType = {	
-  PyObject_HEAD_INIT(NULL)
+  PyVarObject_HEAD_INIT(NULL, 0)
   "ivr.IvrUAC",              /*tp_name*/
   sizeof(IvrUAC),            /*tp_basicsize*/
   0,                         /*tp_itemsize*/

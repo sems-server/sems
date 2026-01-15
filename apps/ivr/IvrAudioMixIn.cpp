@@ -95,7 +95,7 @@ static PyGetSetDef IvrAudioMixIn_getseters[] = {
     
 PyTypeObject IvrAudioMixInType = {
 	
-  PyObject_HEAD_INIT(NULL)
+  PyVarObject_HEAD_INIT(NULL, 0)
   "ivr.IvrAudioMixIn",        /*tp_name*/
   sizeof(IvrAudioMixIn),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/

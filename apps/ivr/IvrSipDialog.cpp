@@ -121,7 +121,7 @@ static PyGetSetDef IvrSipDialog_getset[] = {
 
 PyTypeObject IvrSipDialogType = {
     
-  PyObject_HEAD_INIT(NULL)
+  PyVarObject_HEAD_INIT(NULL, 0)
   "ivr.IvrSipDialog",        /*tp_name*/
   sizeof(IvrSipDialog),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/

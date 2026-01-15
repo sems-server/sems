@@ -744,7 +744,7 @@ static PyGetSetDef IvrDialogBase_getset[] = {
 
 PyTypeObject IvrDialogBaseType = {
     
-  PyObject_HEAD_INIT(NULL)
+  PyVarObject_HEAD_INIT(NULL, 0)
   "ivr.IvrDialogBase",       /*tp_name*/
   sizeof(IvrDialogBase),     /*tp_basicsize*/
   0,                         /*tp_itemsize*/
