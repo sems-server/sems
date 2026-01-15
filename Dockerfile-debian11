@@ -19,7 +19,7 @@ WORKDIR /sems
 RUN ls -al pkg/deb/bullseye/*
 RUN ln -s pkg/deb/bullseye ./debian
 RUN ls -al debian/*
-RUN dch -b -v 1.8.0 "sems"
+RUN dch -b -v $(cat VERSION) "sems"
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
 

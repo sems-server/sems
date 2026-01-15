@@ -19,7 +19,7 @@ RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
 WORKDIR /sems
 
 RUN mv pkg/deb/trixie ./debian
-RUN dch -b -v 1.8.0 "sems"
+RUN dch -b -v $(cat VERSION) "sems"
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
 
