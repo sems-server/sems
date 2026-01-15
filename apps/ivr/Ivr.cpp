@@ -144,6 +144,7 @@ extern "C" {
 	  pIvrFactory = (IvrFactory*)PyCapsule_GetPointer(ivrFactory, "ivrFactory");
 	Py_DECREF(ivrFactory);
       }
+      Py_DECREF(module);
     }
     if (pIvrFactory) 
       pIvrFactory->addDeferredThread(py_thread_object);
