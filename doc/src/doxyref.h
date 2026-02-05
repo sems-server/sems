@@ -67,9 +67,9 @@
  */
 
 /*! \page sems.conf.sample SEMS core configuration parameters
- * <p>The sample configuration file core/etc/sems.conf.sample 
- * explains all core configuration parameters. </p><p>If there is no 
- * configuration file present, 'make install' installs this file
+ * <p>The sample configuration file core/etc/sems.conf.sample
+ * explains all core configuration parameters. </p><p>If there is no
+ * configuration file present, the install target installs this file
  * into the default location.</p>
  * 
  * \verbinclude sems.conf.sample
@@ -104,7 +104,7 @@
  * means that most of that empty memory space for the stack is not really consumed anyway. 
  * If you allocate more than system memory for stack, though, thread creation may still fail
  * with ENOMEM.</p>
-  <p> You can compile SEMS with thread pool support (see Makefile.defs). This improves 
+  <p> You can compile SEMS with thread pool support. This improves
   performance a lot for high CPS applications, e.g. signaling only B2BUA apps. You should NOT use threadpool if your applications use operations which could be blocking for a longer time (e.g. sleep, remote server access which could possibly be non-responsive), because one blocked session (call) is blocking all the other sessions (calls) that are processed by the same thread. So, for example, if the application logic of one call queries a server synchronously which takes a few seconds to respond, all the other calls are blocked from processing SIP messages and application logic during that time.
 
 The reasons a thread pool gives a large performance boost over one-thread-per-call for high CPS applications presumably are that thread creation takes some time, and the thread scheduling is less efficient if there are very many active threads (as opposed to many sleeping threads like in usual media server applications, where the application/signaling threads sleep most of the time, while only the media/RTP processing threads are active).

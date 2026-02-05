@@ -431,4 +431,8 @@ add_subdirectory(apps)
 add_subdirectory(core)
 add_subdirectory(tools)
 
-# SET_DIRECTORY_PROPERTIES(ADDITIONAL_MAKE_CLEAN_FILES *~)
+# Documentation targets (doc, fulldoc)
+include(cmake/doxygen.cmake)
+
+# CPack configuration for source tarballs (rpmtar, package_source)
+include(cmake/cpack-source.cmake)

@@ -33,7 +33,7 @@ RUN mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 RUN mkdir -p /usr/src/sems
 COPY . /usr/src/sems
 WORKDIR /usr/src/sems
-RUN make rpmtar
+RUN mkdir -p build && cd build && cmake3 .. && make rpmtar
 RUN rpmbuild -ba pkg/rpm/sems.spec
 RUN rpmbuild -bs pkg/rpm/sems.spec
 RUN ls -al /root/rpmbuild/RPMS

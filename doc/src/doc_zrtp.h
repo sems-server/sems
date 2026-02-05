@@ -32,9 +32,8 @@
  * <p>Currrently, the newest version of the ZRTP SDK, and the one that works with SEMS, is available at 
  * <a href="https://github.com/traviscross/libzrtp">https://github.com/traviscross/libzrtp</a>.
  *
- *  <p>To build SEMS with ZRTP support, install the SDK and set WITH_ZRTP=yes in Makefile.defs,
- *  or build with <br>
- *   <pre> $ make WITH_ZRTP=yes</pre>
+ *  <p>To build SEMS with ZRTP support, install the SDK and build with CMake:<br>
+ *   <pre> $ cmake .. -DSEMS_USE_ZRTP=yes</pre>
  *  </p>
  * 
   <p>ZRTP can be enabled in sems.conf by the enable_zrtp config parameter, e.g. enable_zrtp=yes.</p>
@@ -50,9 +49,10 @@
   <p> There is support for some utility functions in a DSM module (see \ref dsm_mod_zrtp). 
   </p>
 
- *  <p>The <em>conference</em> application is enabled to tell the caller the SAS phrase
- *  if it is compiled with WITH_SAS_TTS option, set in apps/conference/Makefile. For this to work,
- *  the <a href="http://cmuflite.org">flite text-to-speech synthesizer</a> version 1.2 or 1.3 is needed.</p>
+ *  <p>The <em>conference</em> application can tell the caller the SAS phrase
+ *  if SEMS is compiled with text-to-speech support. For this to work,
+ *  the <a href="http://cmuflite.org">flite text-to-speech synthesizer</a> is needed.
+ *  Enable with: <pre>cmake .. -DSEMS_USE_ZRTP=yes -DSEMS_USE_TTS=yes</pre></p>
  *  
  *  \section zinyourapp How to use ZRTP in your application 
  *

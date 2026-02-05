@@ -390,7 +390,7 @@ loglevel=2
 #  cps_limit="100;503;Server overload"
 
 ###########################################################
-# if build with ZRTP support (see Makefile.defs)
+# if built with ZRTP support (cmake -DSEMS_USE_ZRTP=yes)
 # enable ZRTP support in endpoint calls:
 #enable_zrtp=yes (default: yes)
 #
@@ -406,7 +406,6 @@ loglevel=2
 # - controls how many threads should be created that
 #   process the application logic and in-dialog signaling. 
 #   This is only available if compiled with threadpool support!
-#   (set USE_THREADPOOL in Makefile.defs)
 #   Defaults to 10
 #
 # session_processor_threads=50

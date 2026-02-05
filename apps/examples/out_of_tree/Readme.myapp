@@ -3,13 +3,31 @@ MyApp
 
 This is an empty template for a SEMS application plug-in written in C++.
 
-It can reside out of the SEMS source tree and just needs the libsems1-dev
-package installed to be compiled. For this to work, in the Makefile the
-following needs to be defined:
- plug_in_name = myapp
- COREPATH ?=/usr/include/sems
- DEFSPATH ?=/usr/include/sems
- app_module_dir=.
- include $(COREPATH)/plug-in/Makefile.app_module
+It can reside out of the SEMS source tree and just needs the SEMS
+headers installed to be compiled.
 
+Building with CMake
+-------------------
 
+Create a CMakeLists.txt in your module directory:
+
+  cmake_minimum_required(VERSION 3.17)
+  project(myapp)
+
+  # Find SEMS headers (adjust path as needed)
+  set(SEMS_INCLUDE_DIR "/usr/include/sems" CACHE PATH "SEMS include directory")
+  include_directories(${SEMS_INCLUDE_DIR})
+  include_directories(${SEMS_INCLUDE_DIR}/amci)
+  include_directories(${SEMS_INCLUDE_DIR}/ampi)
+
+  # Build shared module
+  add_library(myapp MODULE MyApp.cpp)
+  set_target_properties(myapp PROPERTIES PREFIX "")
+
+Then build:
+
+  mkdir -p build && cd build
+  cmake ..
+  make
+
+The resulting myapp.so can be copied to the SEMS plug-in directory.

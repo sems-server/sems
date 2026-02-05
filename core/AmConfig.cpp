@@ -583,7 +583,6 @@ int AmConfig::readConfiguration()
 #else
     WARN("session_processor_threads specified in sems.conf,\n");
     WARN("but SEMS is compiled without SESSION_THREADPOOL support.\n");
-    WARN("set USE_THREADPOOL in Makefile.defs to enable session thread pool.\n");
     WARN("SEMS will start now, but every call will have its own thread.\n");    
 #endif
   }

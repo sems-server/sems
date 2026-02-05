@@ -57,6 +57,8 @@ Installing SEMS from source
 
    SEMS is compiled:
     $ cd sems-x.y.z/
+    $ mkdir -p build && cd build
+    $ cmake ..
     $ make
 
    Note:
@@ -65,7 +67,7 @@ Installing SEMS from source
           moment.
 
    Then SEMS is installed:
-    $ make install
+    $ sudo make install
 
    This will install
      * configuration in /usr/local/etc/sems/

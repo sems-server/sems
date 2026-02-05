@@ -4,7 +4,7 @@
 # mysql> create database business;
 # mysql> create table business.accounts (user VARCHAR(100), bal_int INT, bal_decimal INT);
 #
-# set TTS=y in apps/ivr/Makefile.defs, or rewrite with
+# Enable TTS with cmake -DSEMS_USE_TTS=yes, or rewrite with
 # enqueuing the parts of the sentence, like
 #  self.ttsfile1 = IvrAudioFile()
 #  self.ttsfile1.open("your_account_balance.wav", AUDIO_READ)
