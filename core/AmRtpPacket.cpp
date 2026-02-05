@@ -74,6 +74,13 @@ int AmRtpPacket::parse()
   assert(buffer);
   assert(b_size);
 
+  // Minimum size check: RTP header is 12 bytes
+  if (b_size < sizeof(rtp_hdr_t)) {
+    ERROR("RTP packet too small (%u bytes, need %zu)\n",
+          b_size, sizeof(rtp_hdr_t));
+    return -1;
+  }
+
   rtp_hdr_t* hdr = (rtp_hdr_t*)buffer;
   // ZRTP "Hello" packet has version == 0
   if ((hdr->version != RTP_VERSION) && (hdr->version != 0))
@@ -83,23 +90,31 @@ int AmRtpPacket::parse()
 	return -1;
       }
 
+  // CC is 4 bits (0-15), so cc*4 is max 60 bytes - no overflow possible
   data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
 
+  // Validate CSRC list fits in packet before accessing extension header
+  if (data_offset > b_size) {
+    ERROR("bad rtp packet: CSRC exceeds size (offset=%u;size=%u)\n",
+          data_offset, b_size);
+    return -1;
+  }
+
   if(hdr->x != 0) {
-    //#ifndef WITH_ZRTP 
-    //if (AmConfig::IgnoreRTPXHdrs) {
-    //  skip the extension header
-    //#endif
+    // Need 4 bytes for extension header (2 bytes profile + 2 bytes length)
     if (b_size >= data_offset + 4) {
-      data_offset +=
-	ntohs(((rtp_xhdr_t*) (buffer + data_offset))->len)*4;
+      // Extension length is count of 32-bit words after the 4-byte header
+      unsigned int ext_words = ntohs(((rtp_xhdr_t*) (buffer + data_offset))->len);
+      // Total extension size: 4-byte header + ext_words * 4 bytes
+      // Check for overflow: ext_words max is 65535, *4 = 262140, fits in unsigned int
+      unsigned int ext_size = 4 + (ext_words * 4);
+
+      if (ext_size > b_size - data_offset) {
+        ERROR("bad rtp packet: extension exceeds size\n");
+        return -1;
+      }
+      data_offset += ext_size;
     }
-    // #ifndef WITH_ZRTP
-    //   } else {
-    //     DBG("RTP extension headers not supported.\n");
-    //     return -1;
-    //   }
-    // #endif
   }
 
   payload = hdr->pt;
@@ -117,6 +132,11 @@ int AmRtpPacket::parse()
   d_size = b_size - data_offset;
 
   if(hdr->p){
+    // Need at least 1 byte to read padding length
+    if (d_size == 0) {
+      ERROR("bad rtp packet (padding set but no data)\n");
+      return -1;
+    }
     if (buffer[b_size-1]>=d_size){
       ERROR("bad rtp packet (invalid padding size) !\n");
       return -1;
