@@ -2,9 +2,8 @@
 #define __SOLARIS_H__
 
 /*
- * New compatibility code for Solaris.
- * This is conditionally included *in the Makefile.defs*, so it doesn't
- * need to be conditionalized here.
+ * Compatibility code for Solaris.
+ * This is conditionally included via CMakeLists.txt for Solaris builds.
  */
 
 #ifndef timeradd 

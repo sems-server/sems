@@ -27,9 +27,9 @@ Internally, the monitoring module keeps info in locked buckets of calls;
 thus lock contention can be minimized by adapting NUM_LOG_BUCKETS 
 (Monitoring.h), which defaults to 16 (should be ok for most cases).
 
-monitoring must be compile time enabled in Makefile.defs by setting 
- USE_MONITORING = yes
-and the monitoring module needs to be loaded.
+monitoring is enabled by default. To disable it, build with:
+ cmake .. -DSEMS_USE_MONITORING=no
+The monitoring module needs to be loaded in sems.conf.
 
 In monitoring.conf the option can be set to run a garbage collector thread.
 This will remove all info about finished sessions preiodically.

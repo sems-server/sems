@@ -178,16 +178,12 @@ xmlrpc2di.conf:
  export_di=yes
  direct_export=dsm;monitoring
 
-Now we go into the core directory, and start sems (If we have not built 
-sems binary yet, we enable monitoring in Makefile.defs:
-Makefile.defs:
- USE_MONITORING=yes
-and make SEMS and necessary applications: 
- make -C core
- make -C apps/dsm
- make -C apps/xmlrpc2di
- make -C apps/monitoring
-): 
+Now we go into the build directory and start sems. If we have not built
+sems binary yet, monitoring is enabled by default (or use cmake .. -DSEMS_USE_MONITORING=yes):
+ mkdir -p build && cd build
+ cmake ..
+ make
+Then start SEMS: 
 
 $ cd core
 $ ./sems -f etc/sems.conf -D 3 -E 

@@ -37,14 +37,15 @@ ZRTP in SEMS
    Currrently, the newest version of the ZRTP SDK, and the one that works
    with SEMS, is available at [15]https://github.com/juha-h/libzrtp
 
-   To build SEMS with ZRTP support, install the SDK and set WITH_ZRTP=yes
-   in Makefile.defs, or build with
- $ make WITH_ZRTP=yes
+   To build SEMS with ZRTP support, install the SDK and build with:
+   mkdir -p build && cd build
+   cmake .. -DSEMS_USE_ZRTP=yes
+   make
 
-   The conference application is enabled to tell the caller the SAS phrase
-   if it is compiled with WITH_SAS_TTS option, set in
-   apps/conference/Makefile. For this to work, the [16]flite
-   text-to-speech synthesizer version 1.2 or 1.3 is needed.
+   The conference application can tell the caller the SAS phrase if
+   SEMS is compiled with text-to-speech support. For this to work, the
+   flite text-to-speech synthesizer is needed:
+   cmake .. -DSEMS_USE_ZRTP=yes -DSEMS_USE_TTS=yes
 
 How to use ZRTP in your application
 

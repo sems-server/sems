@@ -37,7 +37,7 @@ Tuning SEMS for high load
    you allocate more than system memory for stack, though, thread creation
    may still fail with ENOMEM.
 
-   You can compile SEMS with thread pool support (see Makefile.defs). This
+   You can compile SEMS with thread pool support. This
    improves performance a lot for high CPS applications, e.g. signaling
    only B2BUA apps. You should NOT use threadpool if your applications use
    operations which could be blocking for a longer time (e.g. sleep,

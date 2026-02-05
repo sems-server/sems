@@ -1,14 +1,11 @@
-# This is provided and used by Fedora COPR builds
+# Minimal Makefile for COPR builds (CMake-based)
 # COPR provides outdir and spec variables when running make srpm
 
 srpm:
 	set -x
-	# see https://docs.pagure.org/copr.copr/user_documentation.html#make-srpm
 	echo "outdir=$(outdir) spec_path=$(spec)"
-	pwd
-	ls -al
 	mkdir -p ~/rpmbuild/SOURCES
-	make rpmtar
+	mkdir -p build && cd build && cmake3 .. && make rpmtar
 	rpmbuild -bs --define "_sourcedir $$HOME/rpmbuild/SOURCES" \
 		--define "_specdir $$(pwd)" \
 		--define "_builddir $$(pwd)" \

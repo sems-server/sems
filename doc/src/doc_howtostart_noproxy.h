@@ -49,17 +49,19 @@
      $ wget ftp.iptel.org/pub/sems/sems-latest.tar.gz
      $ tar xzvf sems-latest.tar.gz
    \endcode
-   SEMS is compiled:
+   SEMS is compiled using CMake:
    \code
     $ cd sems-x.y.z/
+    $ mkdir -p build && cd build
+    $ cmake ..
     $ make
    \endcode
-  \note Compilation may fail for some modules due to missing dependencies. 
+  \note Compilation may fail for some modules due to missing dependencies.
   For most modules, that can be ignored for the moment.
-  
-  Then SEMS is installed: 
+
+  Then SEMS is installed:
   \code
-    $ make install
+    $ sudo make install
   \endcode
   
   This will install

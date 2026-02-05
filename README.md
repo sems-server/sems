@@ -297,8 +297,13 @@ ls -al /tmp/sems-rpms/RPMS/x86_64/
 
 In the doc/ directory there is a set of files describing the
 applications shipped with SEMS, alongside some more documentation.
-Generate the doxygen documentation with 'make doc' in doc/doxygen_doc,
-that contains all these files as well.
+Generate the doxygen documentation with `make doc` in the build directory:
+```bash
+mkdir -p build && cd build
+cmake ..
+make doc
+```
+The generated documentation will be in doc/doxygen_doc.
 
 ## Support, mailing lists, bugs and contact
 
