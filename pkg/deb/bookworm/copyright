@@ -1,7 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: SEMS
-Upstream-Contact: semsdev@lists.iptel.org
-Source: http://www.iptel.org/sems
+Upstream-Contact: https://github.com/sems-server/sems/issues
+Source: https://github.com/sems-server/sems
 
 Files: *
 Copyright:
