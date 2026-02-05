@@ -27,8 +27,8 @@
   
   \subsection publicsip With a public SIP server
   Two accounts at a public SIP server are needed.
-  We recommend to use iptel.org's SIP service for testing, an account 
-  can be registered for free at <a href="http://iptel.org/service/">http://iptel.org/service/</a>.
+  You can use any public SIP service for testing, such as sip.linphone.org
+  or another SIP provider that offers free accounts.
   
   Any SIP phone, hardphone or softphone, can be used for testing. Cross-platform, 
   <a href="http://www.sip-communicator.org">sip-communicator</a> is recommended, for Linux 
@@ -44,10 +44,10 @@
   
   
   \section Installing Installing SEMS from source
-   First, the SEMS source is downloaded from iptel.org and extracted:
+   First, the SEMS source is downloaded from GitHub:
    \code
-     $ wget ftp.iptel.org/pub/sems/sems-latest.tar.gz
-     $ tar xzvf sems-latest.tar.gz
+     $ git clone https://github.com/sems-server/sems.git
+     $ cd sems
    \endcode
    SEMS is compiled using CMake:
    \code

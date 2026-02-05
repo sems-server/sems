@@ -4,13 +4,11 @@
 
 /*! \mainpage SEMS Documentation
  *  \section news News & Changes
- *  \arg \ref changelog 
+ *  \arg \ref changelog
  *
  *  \section general General
  *  \arg \ref Readme
- *  \arg <a href="http://ftp.iptel.org/pub/sems/sayer_sems_mar10.pdf">VoIP services with SEMS - presentation slides</a>
- *  \arg <a href="http://ftp.iptel.org/pub/sems/fosdem2012-sayer-sems-sbc.pdf">SBC as SBC - presentation slides</a>
- * 
+ *
  *  \section howtostart How to get started
  *  \arg \ref howtostart_noproxy
  *  \arg \ref howtostart_simpleproxy
@@ -18,7 +16,7 @@
  *
  *  \section userdoc User's documentation
  *  \arg \ref sems.conf.sample
- *  \arg \ref Compiling 
+ *  \arg \ref Compiling
  *  \arg \ref AppDoc
  *  \arg \ref ModuleDoc_dsm
  *  \arg \ref ModuleDoc_sbc
@@ -29,22 +27,13 @@
  *  \arg \ref Monitoring
  *
  *  \section developerdoc Developer's documentation
- *   \arg <a href="http://www.iptel.org/files/semsng-designoverview.pdf">
- *         SEMS Design Overview (outdated)</a>
- *   \arg <a href="http://www.iptel.org/files/semsng-app_module_tutorial.pdf">
- *     Application development tutorial</a> - find the sources in apps/examples/tutorial
+ *   \arg Application development tutorial - find the sources in apps/examples/tutorial
  *   \arg \ref AppDocExample
  *   \arg \ref ComponentDoc
  *
  *  \section weblinks Web sites
- *    \arg \b Main:  SEMS website http://iptel.org/sems
- *    \arg \b sems & semsdev Lists: List server http://lists.iptel.org
- *    \arg \b Bugs:  Bug tracker: http://bugtracker.iptel.org/sems
- * 
- *  \section outdated_doc Outdated documentation bits
- *  \arg installation instructions for tutorial applications: 
- *     <a href="http://www.iptel.org/sems/sems_application_development_tutorial"> 
- *    Application Development Tutorial </a>
+ *    \arg \b Main:  SEMS on GitHub https://github.com/sems-server/sems
+ *    \arg \b Issues:  GitHub Issues https://github.com/sems-server/sems/issues
  *
  */
 
