@@ -33,6 +33,7 @@
 #include "parse_cseq.h"
 #include "parse_from_to.h"
 #include "parse_route.h"
+#include "defs.h"
 #include "parse_100rel.h"
 #include "parse_extensions.h"
 #include "parse_next_hop.h"
@@ -68,6 +69,17 @@
 
 bool _trans_layer::accept_fr_without_totag = false;
 unsigned int _trans_layer::default_bl_ttl = DEFAULT_BL_TTL;
+
+static const sip_header* find_max_forwards_hdr(const sip_msg* msg)
+{
+	for(list<sip_header*>::const_iterator it = msg->hdrs.begin();
+		it != msg->hdrs.end(); ++it) {
+		if((*it)->type == sip_header::H_MAX_FORWARDS)
+			return *it;
+	}
+
+	return NULL;
+}
 
 bool _trans_layer::less_case_i::operator () (const string& lhs, const string& rhs) const
 {
@@ -349,6 +361,7 @@ int _trans_layer::send_reply(sip_msg* msg, const trans_ticket* tt,
 		// (necessary to match pre-RFC3261 non-200 ACKs)
 		t->to_tag.clear();
 	    }
+
 	    reply_len += copy_hdr_len(*it);
 	    break;
 
@@ -1472,6 +1485,16 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     cstring cancel_str("CANCEL");
     cstring zero("0");
 
+    const sip_header* mf_hdr = find_max_forwards_hdr(req);
+    string mf_str;
+    sip_header mf_tmp;
+    const sip_header* mf_to_copy = mf_hdr;
+    if(!mf_to_copy) {
+	mf_str = int2str(AmConfig::MaxForwards);
+	mf_tmp = sip_header(0, cstring(SIP_HDR_MAX_FORWARDS), stl2cstr(mf_str));
+	mf_to_copy = &mf_tmp;
+    }
+
     int request_len = request_line_len(cancel_str,
 				       req->u.request->ruri_str);
 
@@ -1483,6 +1506,8 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	+ cseq_len(get_cseq(req)->num_str,cancel_str)
 	+ copy_hdrs_len(req->route)
 	+ copy_hdrs_len(req->contacts);
+
+    request_len += copy_hdr_len(mf_to_copy);
 
     request_len += hdrs.len;
     request_len += content_length_len(zero);
@@ -1503,6 +1528,9 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     copy_hdr_wr(&c,req->from);
     copy_hdr_wr(&c,req->callid);
     cseq_wr(&c,get_cseq(req)->num_str,cancel_str);
+
+    copy_hdr_wr(&c,mf_to_copy);
+
     copy_hdrs_wr(&c,req->route);
     copy_hdrs_wr(&c,req->contacts);
 
@@ -2284,6 +2312,18 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     
     ack_len += cseq_len(get_cseq(inv)->num_str,method);
 
+    const sip_header* mf_hdr = find_max_forwards_hdr(inv);
+    string mf_str;
+    sip_header mf_tmp;
+    const sip_header* mf_to_copy = mf_hdr;
+    if(!mf_to_copy) {
+	mf_str = int2str(AmConfig::MaxForwards);
+	mf_tmp = sip_header(0, cstring(SIP_HDR_MAX_FORWARDS), stl2cstr(mf_str));
+	mf_to_copy = &mf_tmp;
+    }
+
+    ack_len += copy_hdr_len(mf_to_copy);
+
     if(!inv->route.empty())
  	ack_len += copy_hdrs_len(inv->route);
 
@@ -2304,6 +2344,8 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     copy_hdr_wr(&c,inv->callid);
     
     cseq_wr(&c,get_cseq(inv)->num_str,method);
+
+    copy_hdr_wr(&c,mf_to_copy);
 
     if(!inv->route.empty())
 	 copy_hdrs_wr(&c,inv->route);
