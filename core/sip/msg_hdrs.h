@@ -34,7 +34,7 @@
 #include "parse_common.h"
 #include "parse_via.h"
 
-inline int copy_hdr_len(sip_header* hdr)
+inline int copy_hdr_len(const sip_header* hdr)
 {
     return hdr->name.len + hdr->value.len
 	+ 4/* ': ' + CRLF */;
