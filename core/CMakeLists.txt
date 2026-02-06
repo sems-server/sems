@@ -34,22 +34,22 @@ foreach(EXE_TARGET sems sems_tests)
   if(APPLE)
     target_link_libraries(
       ${EXE_TARGET}
-      ${CMAKE_DL_LIBS}
       -Wl,-force_load
       sems_core
       -Wl,-force_load
       sems_sip
+      ${CMAKE_DL_LIBS}
       event
       event_pthreads
       -rdynamic)
   else()
     target_link_libraries(
       ${EXE_TARGET}
-      ${CMAKE_DL_LIBS}
       -Wl,--whole-archive
       sems_core
       sems_sip
       -Wl,--no-whole-archive
+      ${CMAKE_DL_LIBS}
       event
       event_pthreads
       -rdynamic)
