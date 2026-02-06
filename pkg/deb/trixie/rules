@@ -4,46 +4,42 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
-PYTHON_MODULES=ivr ivr-python2 conf_auth mailbox pin_collect
-
-EXCLUDED_MODULES=gateway examples mp3 twit
-
-EXCLUDED_DSM_MODULES=mod_aws
-EXCLUDED_DSM_PY_MODULES=mod_aws
-
-CPPFLAGS += -DHAVE_XMLRPCPP_SSL
-
-export USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)"
+.PHONY: override_dh_strip
 
 %:
-	dh $@
+	dh $@ --buildsystem=cmake
 
-override_dh_auto_build:
-	$(MAKE) \
-	cfg_target=/etc/sems/ prefix=/usr \
-	exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
-	exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
-	DESTDIR=$(CURDIR)/debian/sems
+override_dh_auto_configure:
+	dh_auto_configure --buildsystem=cmake -- \
+        -DCMAKE_C_FLAGS_RELEASE:STRING=-DNDEBUG \
+        -DCMAKE_CXX_FLAGS_RELEASE:STRING=-DNDEBUG \
+        -DCMAKE_Fortran_FLAGS_RELEASE:STRING=-DNDEBUG \
+        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+        -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+        -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
+        -DSYSCONF_INSTALL_DIR:PATH=/etc \
+        -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DSEMS_USE_SPANDSP=yes \
+        -DSEMS_USE_LIBSAMPLERATE=no \
+        -DSEMS_USE_ZRTP=no \
+        -DSEMS_USE_MP3=no \
+        -DSEMS_USE_ILBC=yes \
+        -DSEMS_USE_G729=yes \
+        -DSEMS_USE_CODEC2=no \
+        -DSEMS_USE_OPUS=yes \
+        -DSEMS_USE_TTS=yes \
+        -DSEMS_USE_OPENSSL=yes \
+        -DSEMS_USE_MONITORING=yes \
+        -DSEMS_USE_IPV6=yes \
+        -DSEMS_CFG_PREFIX= \
+        -DSEMS_AUDIO_PREFIX=/usr/share \
+        -DSEMS_EXEC_PREFIX=/usr \
+        -DSEMS_LIBDIR=lib \
+        -DSEMS_DOC_PREFIX=/usr/share/doc
 
 override_dh_auto_install:
-	$(MAKE) -C core/ install \
-		DESTDIR=$(CURDIR)/debian/sems \
-		prefix=/usr \
-		cfg_target=/etc/sems/
-
-	$(MAKE) -C apps/ install \
-		exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
-		exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
-		DESTDIR=$(CURDIR)/debian/sems \
-		prefix=/usr \
-		cfg_target=/etc/sems/
+	dh_auto_install -O--buildsystem=cmake --destdir=debian/sems
 
 override_dh_strip:
 	dh_strip --dbg-package=sems-dbg
-	# those binaries aren't automatically stripped
-	test -r $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getarch && \
-		strip --remove-section=.comment --remove-section=.note --strip-unneeded \
-		$(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getarch
-	test -r $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getos && \
-		strip --remove-section=.comment --remove-section=.note --strip-unneeded \
-		$(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getos
