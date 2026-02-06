@@ -62,6 +62,7 @@ static amci_codec_fmt_info_t g729_fmt_description[] =  { { AMCI_FMT_FRAME_LENGTH
 #define G729_BYTES_PER_FRAME     10
 #define G729_SAMPLES_PER_FRAME   10
 #define PCM_BYTES_PER_FRAME      160
+#define G729B_SID_BYTES          2
 
 BEGIN_EXPORTS( "g729", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
@@ -156,6 +157,14 @@ static int g729_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned 
     if (!h_codec)
       return -1;
 
+    /* G.729 Annex B SID frame (2 bytes) for comfort noise generation */
+    if (size == G729B_SID_BYTES) {
+        bcg729Decoder(codec->dec, in_buf, G729B_SID_BYTES,
+                      0 /* no erasure */, 1 /* SID frame */, 0 /* not RFC3389 */,
+                      (int16_t*)out_buf);
+        return PCM_BYTES_PER_FRAME;
+    }
+
     if (size % G729_BYTES_PER_FRAME != 0){
        ERROR("g729_2_pcm16: number of blocks should be integral (block size = %u)\n", G729_BYTES_PER_FRAME);
        return -1;
@@ -163,7 +172,9 @@ static int g729_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned 
 
     while(size >= G729_BYTES_PER_FRAME){
         /* Decode a frame  */
-        bcg729Decoder(codec->dec, in_buf, G729_BYTES_PER_FRAME, 0 /* no erasure */, 0 /* not SID */, 0 /* not RFC3389 */, (int16_t*)out_buf);
+        bcg729Decoder(codec->dec, in_buf, G729_BYTES_PER_FRAME,
+                      0 /* no erasure */, 0 /* not SID */, 0 /* not RFC3389 */,
+                      (int16_t*)out_buf);
 
         size -= G729_BYTES_PER_FRAME;
         in_buf += G729_BYTES_PER_FRAME;
