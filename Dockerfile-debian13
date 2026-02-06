@@ -12,10 +12,7 @@ RUN apt install -y \
 
 RUN apt install -y devscripts libbcg729-dev
 RUN pip install sip --break-system-packages
-WORKDIR /
-
-RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
-
+COPY . /sems
 WORKDIR /sems
 
 RUN mv pkg/deb/trixie ./debian

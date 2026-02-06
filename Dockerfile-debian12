@@ -13,10 +13,7 @@ RUN apt install -y \
 
 RUN apt install -y \
          devscripts libbcg729-dev
-WORKDIR /
-
-RUN git clone --depth 1 --branch master https://github.com/sems-server/sems.git
-
+COPY . /sems
 WORKDIR /sems
 
 RUN ln -s pkg/deb/bookworm ./debian
