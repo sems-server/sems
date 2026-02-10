@@ -11,6 +11,7 @@ srpm:
 		--define "_builddir $$(pwd)" \
 		--define "_srcrpmdir $(outdir)" \
 		--define "_rpmdir $$(pwd)" \
+		--define "version $$(cat VERSION)" \
 		$(spec)
 
 .PHONY: srpm
