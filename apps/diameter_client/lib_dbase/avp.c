@@ -386,12 +386,16 @@ char*  AAAConvertAVPToString(AAA_AVP *avp, char *dest, unsigned int destLen)
 	       "flags=%x;\nDataType=%u;VendorID=%u;DataLen=%u;\n",
 	       avp->prev,avp,avp->next,avp->packetType,avp->code,avp->flags,
 	       avp->type,avp->vendorId,avp->data.len);
+  if (l < 0 || (unsigned int)l >= destLen) l = destLen - 1;
   if ((it = avp->groupedHead)) {
     l+=snprintf(dest+l,destLen-l, "Group members:\n---\n");
+    if ((unsigned int)l >= destLen) l = destLen - 1;
     while (it) {
       DBG("print...\n");
       l+=strlen(AAAConvertAVPToString(it, dest+l, destLen-l));
+      if ((unsigned int)l >= destLen) l = destLen - 1;
       l+=snprintf(dest+l,destLen-l, "\n---\n");
+      if ((unsigned int)l >= destLen) l = destLen - 1;
       it = AAAGetNextAVP(it);
     }
   } else {

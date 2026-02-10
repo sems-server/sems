@@ -8,6 +8,9 @@ on:
     branches:
       - '**'
 
+permissions:
+  contents: read
+
 jobs:
   rpm_test_build:
     runs-on: ubuntu-latest
