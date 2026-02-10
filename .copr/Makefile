@@ -4,6 +4,7 @@
 srpm:
 	set -x
 	echo "outdir=$(outdir) spec_path=$(spec)"
+	yum install -y cmake3 || yum install -y cmake
 	mkdir -p ~/rpmbuild/SOURCES
 	mkdir -p build && cd build && cmake3 .. && make rpmtar
 	rpmbuild -bs --define "_sourcedir $$HOME/rpmbuild/SOURCES" \
