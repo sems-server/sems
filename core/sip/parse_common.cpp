@@ -256,10 +256,11 @@ static int _parse_gen_params(list<sip_avp*>* params, const char** c,
 		break;
 		
 	    case '\\':
-		if(!*(++(*c))){
+		if(*c + 1 >= end){
 		    DBG("Escape char in quoted str at EoT!!!\n");
 		    return MALFORMED_SIP_MSG;
 		}
+		++(*c);
 		break;
 	    }
 	    break;
