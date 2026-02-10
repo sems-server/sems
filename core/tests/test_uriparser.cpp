@@ -142,7 +142,8 @@ FCTMF_SUITE_BGN(test_uriparser) {
     FCT_TEST_BGN(uriparser_params_dname6) {
       AmUriParser p;
       size_t end;
-      fct_chk(p.parse_contact("<sip:alice@atlanta.com>;+g.3gpp.icsi-ref=\"urn%3Aurn-7%3A3gpp-service.ims.icsi.mmtel\";video;mobility=\"mobile\"", 0, end));
+      bool parsed = p.parse_contact("<sip:alice@atlanta.com>;+g.3gpp.icsi-ref=\"urn%3Aurn-7%3A3gpp-service.ims.icsi.mmtel\";video;mobility=\"mobile\"", 0, end);
+      fct_chk(parsed);
       fct_chk( p.params.size()==3);
     } FCT_TEST_END();
 } FCTMF_SUITE_END();
