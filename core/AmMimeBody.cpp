@@ -404,7 +404,7 @@ int AmMimeBody::findNextBoundary(unsigned char** beg, unsigned char** end)
 
   bool is_final = false;
 
-  for(;st != B_MATCHED && (c < *end-(b_end-b)); c++){
+  for(;st != B_MATCHED && (c < *end); c++){
 
     switch(st){
     case B_START: 
