@@ -2,6 +2,8 @@
 
 #include "AmMimeBody.h"
 
+using std::string;
+
 #define CRLF "\r\n"
 
 FCTMF_SUITE_BGN(test_mimebody) {
