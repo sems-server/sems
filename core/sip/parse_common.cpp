@@ -201,7 +201,7 @@ static int _parse_gen_params(list<sip_avp*>* params, const char** c,
 		
 	    case '\"':
 		st = VP_PVALUE_QUOTED;
-		beg = *c;
+		beg = *c + 1;
 		break;
 
 	    case ';':
@@ -250,7 +250,7 @@ static int _parse_gen_params(list<sip_avp*>* params, const char** c,
 
 	    case '\"':
 		st = VP_PARAM_SEP;
-		avp->value.set(beg,*c+1-beg);
+		avp->value.set(beg,*c-beg);
 		params->push_back(avp.release());
 		avp.reset(new sip_avp());
 		break;
