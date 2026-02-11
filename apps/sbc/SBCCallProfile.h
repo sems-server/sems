@@ -125,14 +125,13 @@ struct SBCCallProfile
   
   Contact contact;
 
-  class BLegContact
+  class LegContact
     : public AmUriParser
   {
     public:
-      bool readConfig(AmConfigReader &cfg);
+      bool readConfig(AmConfigReader &cfg, const string &prefix);
       bool evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req);
-      void infoPrint() const;
-  } bleg_contact;
+  } aleg_contact, bleg_contact;
 
   string callid;
 
