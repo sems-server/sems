@@ -8,6 +8,7 @@
 *.so
 *.swp
 *~
+.claude
 /CMakeCache.txt
 CMakeFiles/
 CTestTestfile.cmake

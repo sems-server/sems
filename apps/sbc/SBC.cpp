@@ -412,6 +412,9 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
   }
 
   if(req.max_forwards == 0) {
+    WARN("rejecting %s %s from %s:%d with 483 Too Many Hops (Max-Forwards=0)\n",
+         req.method.c_str(), req.r_uri.c_str(),
+         req.remote_ip.c_str(), req.remote_port);
     AmSipDialog::reply_error(req, 483, SIP_REPLY_TOO_MANY_HOPS);
     return;
   }

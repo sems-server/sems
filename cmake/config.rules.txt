@@ -4,8 +4,21 @@ macro(SEMS_INSTALL_CONFIGS config_files)
   foreach(config_file ${config_files})
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
       sems_gen_template(${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
+      # Always install the .dist reference copy
       install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf
-              DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+              DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
+              RENAME ${config_file}.conf.dist)
+      # Only install the actual config if it does not already exist
+      install(CODE "
+        set(_conf \"\$ENV{DESTDIR}${SEMS_CFG_PREFIX}/etc/sems/etc/${config_file}.conf\")
+        if(NOT EXISTS \"\${_conf}\")
+          file(INSTALL \"${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf\"
+               DESTINATION \"${SEMS_CFG_PREFIX}/etc/sems/etc/\")
+          message(STATUS \"Installing: \${_conf}\")
+        else()
+          message(STATUS \"Preserving existing: \${_conf}\")
+        endif()
+      ")
     endif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/etc/${config_file}.conf)
   endforeach(config_file ${config_files})
 endmacro(SEMS_INSTALL_CONFIGS)

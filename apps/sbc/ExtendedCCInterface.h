@@ -7,6 +7,7 @@
 class SBCCallLeg;
 struct SBCCallProfile;
 class SimpleRelayDialog;
+class AmRtpPacket;
 
 struct InitialInviteHandlerParams
 {
@@ -75,6 +76,14 @@ class ExtendedCCInterface
     virtual void resumeRequested(SBCCallLeg *call) { }
     virtual void resumeAccepted(SBCCallLeg *call) { }
     virtual void resumeRejected(SBCCallLeg *call) { }
+
+    // RTP relay hooks (called from RTP receiver thread)
+
+    /** called after an RTP packet has been successfully relayed to the
+     *  B2B peer leg. Can be used for RTP stream forking (e.g. SIPREC).
+     *  Note: called from RTP receiver thread - must be non-blocking. */
+    virtual void onAfterRTPRelay(SBCCallLeg *call, AmRtpPacket* p,
+                                 sockaddr_storage* remote_addr) { }
 
     /** Possibility to influence messages relayed to the B2B peer leg.
       return value:
