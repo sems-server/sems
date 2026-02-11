@@ -97,12 +97,48 @@ sems_gen_template(${CMAKE_SOURCE_DIR}/core/sems.h)
 # Installation of main SEMS executable
 install(TARGETS sems RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
 
-# Installation of config-files
-install(FILES ./etc/sems.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/)
+# Installation of config-files (preserve existing, install .dist as reference)
+install(FILES ./etc/sems.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/
+        RENAME sems.conf.dist)
+install(CODE "
+  set(_conf \"\$ENV{DESTDIR}${SEMS_CFG_PREFIX}/etc/sems/sems.conf\")
+  if(NOT EXISTS \"\${_conf}\")
+    file(INSTALL \"${CMAKE_CURRENT_SOURCE_DIR}/etc/sems.conf\"
+         DESTINATION \"${SEMS_CFG_PREFIX}/etc/sems/\")
+    message(STATUS \"Installing: \${_conf}\")
+  else()
+    message(STATUS \"Preserving existing: \${_conf}\")
+  endif()
+")
+
 install(FILES ./etc/app_mapping.conf
-        DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+        DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
+        RENAME app_mapping.conf.dist)
+install(CODE "
+  set(_conf \"\$ENV{DESTDIR}${SEMS_CFG_PREFIX}/etc/sems/etc/app_mapping.conf\")
+  if(NOT EXISTS \"\${_conf}\")
+    file(INSTALL \"${CMAKE_CURRENT_SOURCE_DIR}/etc/app_mapping.conf\"
+         DESTINATION \"${SEMS_CFG_PREFIX}/etc/sems/etc/\")
+    message(STATUS \"Installing: \${_conf}\")
+  else()
+    message(STATUS \"Preserving existing: \${_conf}\")
+  endif()
+")
+
 if(LIBZRTP_FOUND)
-  install(FILES ./etc/zrtp.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+  install(FILES ./etc/zrtp.conf
+          DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
+          RENAME zrtp.conf.dist)
+  install(CODE "
+    set(_conf \"\$ENV{DESTDIR}${SEMS_CFG_PREFIX}/etc/sems/etc/zrtp.conf\")
+    if(NOT EXISTS \"\${_conf}\")
+      file(INSTALL \"${CMAKE_CURRENT_SOURCE_DIR}/etc/zrtp.conf\"
+           DESTINATION \"${SEMS_CFG_PREFIX}/etc/sems/etc/\")
+      message(STATUS \"Installing: \${_conf}\")
+    else()
+      message(STATUS \"Preserving existing: \${_conf}\")
+    endif()
+  ")
 endif(LIBZRTP_FOUND)
 
 include(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)

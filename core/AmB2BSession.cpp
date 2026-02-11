@@ -189,6 +189,8 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 
 	// Check Max-Forwards first
 	if(req_ev->req.max_forwards == 0) {
+	  WARN("rejecting relayed %s with 483 Too Many Hops (Max-Forwards=0)\n",
+	       req_ev->req.method.c_str());
 	  relayError(req_ev->req.method,req_ev->req.cseq,
 		     true,483,SIP_REPLY_TOO_MANY_HOPS);
 	  return;

@@ -57,7 +57,7 @@ public:
       if (CCRegistrar::instance()->onLoad())
 	return -1;
 
-      DBG("template call control loaded.\n");
+      DBG("registrar call control loaded.\n");
 
       return 0;
     }
@@ -228,10 +228,14 @@ void CCRegistrar::start(const string& cc_name, const string& ltag,
   if (NULL == req)
     REFUSE_WITH_404;
 
-  if ((req->method == "INVITE") && (retarget(req->r_uri, values, call_profile))){  
+  if ((req->method == "INVITE") && (retarget(req->r_uri, values, call_profile))){
+      INFO("Registrar: retargeted INVITE '%s' -> '%s'\n",
+           req->r_uri.c_str(), call_profile->ruri.c_str());
       return;
   }
 
+  INFO("Registrar: no registration found for '%s', rejecting with 404\n",
+       req->r_uri.c_str());
   REFUSE_WITH_404;
 }
 
@@ -256,16 +260,22 @@ void CCRegistrar::route(const string& cc_name,
 	
 	
   if (ood_req->method == "REGISTER"){
+    INFO("Registrar: REGISTER from '%s', Contact: '%s', source: %s:%d\n",
+         ood_req->from.c_str(), ood_req->contact.c_str(),
+         ood_req->remote_ip.c_str(), ood_req->remote_port);
+
     RegisterCacheCtx reg_cache_ctx;
 
     // reply 200 if possible, else continue
     bool replied = RegisterCache::instance()->saveSingleContact(reg_cache_ctx, *ood_req);
 
     if(replied) {
-      DBG("replied!");
+      INFO("Registrar: registration saved for '%s'\n", ood_req->from.c_str());
       res.push(AmArg());
       AmArg& res_cmd = res.back();
       res_cmd[SBC_CC_ACTION] = SBC_CC_DROP_ACTION;
+    } else {
+      WARN("Registrar: failed to save registration for '%s'\n", ood_req->from.c_str());
     }
   } else {
     if (retarget(ood_req->r_uri, values, call_profile)){  

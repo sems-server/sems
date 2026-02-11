@@ -845,6 +845,8 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   ctx.app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
   if (req.max_forwards <= 0) {
+    WARN("rejecting INVITE %s from %s:%d with 483 Too Many Hops (Max-Forwards=%d)\n",
+         req.r_uri.c_str(), req.remote_ip.c_str(), req.remote_port, req.max_forwards);
     throw AmSession::Exception(483, SIP_REPLY_TOO_MANY_HOPS);
   }
 
@@ -1394,6 +1396,11 @@ void SBCCallLeg::onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
   for(list< ::atomic_int*>::iterator it = rtp_pegs.begin();
       it != rtp_pegs.end(); ++it) {
     (*it)->inc(p->getBufferSize());
+  }
+
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin();
+       i != cc_ext.end(); ++i) {
+    (*i)->onAfterRTPRelay(this, p, remote_addr);
   }
 }
 

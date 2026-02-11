@@ -55,13 +55,29 @@ The following applications are shipped with SEMS :
 
 ### Back-to-back User Agent
 
-* **sbc** - flexible SBC application, supports
-  - identity change
-  - header manipulation (filter etc)
-  - (multihomed) RTP relay, NAT handling, transcoding
-  - SIP authentication 
-  - Session timer, call timer, prepaid
-  - etc
+* **sbc** - flexible SBC (Session Border Controller) application, supports
+  - header manipulation and filtering
+  - (multihomed) RTP relay, NAT handling
+  - audio transcoding with codec mapping
+  - SIP authentication (UAC, A/B leg)
+  - session timer (SST) for both legs
+  - contact hiding and identity change
+  - SIP reply code/reason translation
+  - DTMF filtering and detection
+  - RTP bandwidth limiting
+  - registration caching and retargeting
+  - call_control modules:
+    - **cc_bl_redis** - Redis-based call blacklisting
+    - **cc_call_timer** - call duration limit enforcement
+    - **cc_ctl** - profile control via SIP headers
+    - **cc_dsm** - roles for DSM state machine scripting
+    - **cc_parallel_calls** - concurrent call limiting per user
+    - **cc_prepaid** - local credit-based call control
+    - **cc_prepaid_xmlrpc** - prepaid via external XMLRPC server
+    - **cc_registrar** - REGISTER caching and routing
+    - **cc_rest** - call control via REST API
+    - **cc_siprec** - SIPREC (RFC 7865/7866) call recording
+    - **cc_syslog_cdr** - call detail records via syslog
 
 ### Announcements (Prompts, Ringbacktones, Pre-call-prompts):
 
@@ -152,6 +168,15 @@ The following applications are shipped with SEMS :
 * **msg_storage** - message storage functionality
 
 * **mwi** - Message Waiting Indication (MWI) support
+
+### Recording
+
+* **siprec_srs** - minimal SIPREC Session Recording Server (RFC 7865/7866).
+  Receives recording INVITEs from SIPREC clients (such as cc_siprec),
+  records both call legs to separate WAV files, and saves the SIPREC
+  metadata XML. Can run on the same SEMS instance as the SBC for
+  self-contained call recording. See also **cc_siprec** under the SBC
+  call_control modules.
 
 ### Media Processing
 

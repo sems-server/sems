@@ -9,6 +9,7 @@ add_subdirectory(prepaid)
 # ADD_SUBDIRECTORY (prepaid_xmlrpc)
 add_subdirectory(registrar)
 # ADD_SUBDIRECTORY (rest)
+add_subdirectory(siprec)
 add_subdirectory(syslog_cdr)
 # This one is actually a template and isn't intended for any real use.
 # ADD_SUBDIRECTORY (template)
