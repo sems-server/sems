@@ -298,6 +298,11 @@ class CallLeg: public AmB2BSession
     virtual void terminateOtherLeg();
     virtual void terminateLeg();
 
+    /** Headers to include in outgoing CANCEL to B-legs when relaying
+     *  cancellation (e.g. Reason header per RFC 3326). Set by subclasses
+     *  before calling stopCall(). */
+    string cancel_reason_hdrs;
+
     /** change RTP mode (and AmB2BMedia if needed) but do not send reINVITE
      *
      * Changes the mode for all peer legs as well.

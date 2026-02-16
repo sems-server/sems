@@ -65,6 +65,21 @@ struct B2BEvent: public AmEvent
   { }
 };
 
+/** \brief B2B event to terminate a call leg, optionally carrying headers
+ *  (e.g. Reason header from CANCEL per RFC 3326) */
+struct B2BTerminateLegEvent: public B2BEvent
+{
+  string hdrs;
+
+  B2BTerminateLegEvent()
+    : B2BEvent(B2BTerminateLeg)
+  {}
+
+  B2BTerminateLegEvent(const string& hdrs)
+    : B2BEvent(B2BTerminateLeg), hdrs(hdrs)
+  {}
+};
+
 /** \brief base class for SIP event in B2B session */
 struct B2BSipEvent: public B2BEvent
 {
@@ -211,8 +226,16 @@ private:
   /** Terminate our leg and forget the other. */
   virtual void terminateLeg();
 
+  /** Terminate our leg with additional headers (e.g. Reason from CANCEL).
+   *  Uses CANCEL for early dialogs and BYE for connected dialogs. */
+  virtual void terminateLeg(const string& hdrs);
+
   /** Terminate the other leg and forget it.*/
   virtual void terminateOtherLeg();
+
+  /** Terminate the other leg, passing additional headers to include
+   *  in the outgoing CANCEL/BYE (e.g. Reason header per RFC 3326). */
+  virtual void terminateOtherLeg(const string& hdrs);
 
 
   /** @see AmSession */

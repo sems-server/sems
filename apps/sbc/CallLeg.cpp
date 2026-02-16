@@ -288,8 +288,11 @@ void CallLeg::terminateOtherLeg()
     // all other legs in such case?
     terminateNotConnectedLegs(); // terminates all except the one identified by other_id
   }
-  
-  AmB2BSession::terminateOtherLeg();
+
+  if (!cancel_reason_hdrs.empty())
+    AmB2BSession::terminateOtherLeg(cancel_reason_hdrs);
+  else
+    AmB2BSession::terminateOtherLeg();
 
   // remove this one from the list of other legs
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
@@ -312,7 +315,10 @@ void CallLeg::terminateNotConnectedLegs()
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
     if (i->id != getOtherId()) {
       i->releaseMediaSession();
-      AmSessionContainer::instance()->postEvent(i->id, new B2BEvent(B2BTerminateLeg));
+      if (!cancel_reason_hdrs.empty())
+        AmSessionContainer::instance()->postEvent(i->id, new B2BTerminateLegEvent(cancel_reason_hdrs));
+      else
+        AmSessionContainer::instance()->postEvent(i->id, new B2BEvent(B2BTerminateLeg));
     }
     else {
       found = true; // other_id is there
@@ -1076,7 +1082,10 @@ void CallLeg::onCancel(const AmSipRequest& req)
 
 void CallLeg::terminateLeg()
 {
-  AmB2BSession::terminateLeg();
+  if (!cancel_reason_hdrs.empty())
+    AmB2BSession::terminateLeg(cancel_reason_hdrs);
+  else
+    AmB2BSession::terminateLeg();
 }
 
 // was for caller only

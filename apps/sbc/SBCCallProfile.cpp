@@ -358,6 +358,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   append_headers_req = cfg.getParameter("append_headers_req");
   aleg_append_headers_req = cfg.getParameter("aleg_append_headers_req");
 
+  relay_cancel_reason =
+    cfg.getParameter("relay_cancel_reason", "yes") == "yes";
+
   refuse_with = cfg.getParameter("refuse_with");
 
   rtprelay_enabled = cfg.getParameter("enable_rtprelay");

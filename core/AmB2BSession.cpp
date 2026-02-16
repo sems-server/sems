@@ -303,10 +303,15 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
     }
     return;
 
-  case B2BTerminateLeg:
+  case B2BTerminateLeg: {
     DBG("terminateLeg()\n");
-    terminateLeg();
+    B2BTerminateLegEvent* te = dynamic_cast<B2BTerminateLegEvent*>(ev);
+    if (te && !te->hdrs.empty())
+      terminateLeg(te->hdrs);
+    else
+      terminateLeg();
     break;
+  }
   }
 
   //ERROR("unknown event caught\n");
@@ -630,10 +635,31 @@ void AmB2BSession::terminateLeg()
   dlg->bye("", SIP_FLAGS_VERBATIM);
 }
 
+void AmB2BSession::terminateLeg(const string& hdrs)
+{
+  setStopped();
+
+  clearRtpReceiverRelay();
+
+  AmBasicSipDialog::Status dlg_status = dlg->getStatus();
+  if (dlg_status < AmBasicSipDialog::Connected) {
+    // early dialog: send CANCEL with headers (e.g. Reason per RFC 3326)
+    dlg->cancel(hdrs);
+  } else {
+    dlg->bye(hdrs, SIP_FLAGS_VERBATIM);
+  }
+}
+
 void AmB2BSession::terminateOtherLeg()
 {
   if (!other_id.empty())
     relayEvent(new B2BEvent(B2BTerminateLeg));
+}
+
+void AmB2BSession::terminateOtherLeg(const string& hdrs)
+{
+  if (!other_id.empty())
+    relayEvent(new B2BTerminateLegEvent(hdrs));
 }
 
 void AmB2BSession::onRtpTimeout() {

@@ -1382,6 +1382,20 @@ void SBCCallLeg::onCallFailed(CallFailureReason reason, const AmSipReply *reply)
   }
 }
 
+void SBCCallLeg::onCancel(const AmSipRequest& req)
+{
+  if (a_leg && call_profile.relay_cancel_reason) {
+    // Extract Reason header from incoming CANCEL for relay to B-leg(s)
+    // per RFC 3326 (The Reason Header Field for the Session Initiation Protocol)
+    string reason = getHeader(req.hdrs, SIP_HDR_REASON);
+    if (!reason.empty()) {
+      cancel_reason_hdrs = SIP_HDR_COLSP(SIP_HDR_REASON) + reason + CRLF;
+      DBG("relaying Reason header from CANCEL: '%s'\n", reason.c_str());
+    }
+  }
+  CallLeg::onCancel(req);
+}
+
 bool SBCCallLeg::onBeforeRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
 {
   if(rtp_relay_rate_limit.get() &&

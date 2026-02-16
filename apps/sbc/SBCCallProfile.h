@@ -195,6 +195,8 @@ struct SBCCallProfile
   string append_headers_req;
   string aleg_append_headers_req;
 
+  bool relay_cancel_reason = true;
+
   string refuse_with;
 
   string rtprelay_enabled;

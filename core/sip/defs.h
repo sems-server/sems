@@ -54,6 +54,7 @@
 #define SIP_HDR_EVENT            "Event"
 #define SIP_HDR_SUBSCRIPTION_STATE "Subscription-State"
 #define SIP_HDR_REPLACES          "Replaces"
+#define SIP_HDR_REASON            "Reason"
 
 #define SIP_HDR_COL(_hdr)       _hdr ":"
 #define SIP_HDR_COLSP(_hdr)     SIP_HDR_COL(_hdr) " "

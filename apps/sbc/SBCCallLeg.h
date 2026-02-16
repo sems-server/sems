@@ -123,6 +123,10 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** handler called when the call is refused with a non-ok reply or canceled */
   virtual void onCallFailed(CallFailureReason reason, const AmSipReply *reply);
 
+  /** handler called when CANCEL is received; extracts Reason header
+   *  for relay to B-leg(s) per RFC 3326 if configured */
+  virtual void onCancel(const AmSipRequest& req);
+
   /** handler called when the second leg is connected */
   virtual void onCallConnected(const AmSipReply& reply);
 
