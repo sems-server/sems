@@ -1,10 +1,16 @@
 #include <string.h>
 #include <assert.h>
+#include <set>
+#include <string>
 
 #include "log.h"
 #include  <AmSipHeaders.h>
+#include <AmThread.h>
 #include "parse_common.h"
 #include "parse_extensions.h"
+
+using std::string;
+using std::set;
 
 /**
  * some header's body =  [option-tag *(COMMA option-tag)
@@ -14,10 +20,15 @@
 
 int parse_extension(const char *begin, int len)
 {
-  // simple, for now: only one extension to parse here
-  if (len == SIP_HDR_LEN(SIP_EXT_100REL) && 
+  if (len == SIP_HDR_LEN(SIP_EXT_100REL) &&
       memcmp(begin, SIP_EXT_100REL, len) == 0)
     return SIP_EXTENSION_100REL;
+  if (len == SIP_HDR_LEN(SIP_EXT_TIMER) &&
+      memcmp(begin, SIP_EXT_TIMER, len) == 0)
+    return SIP_EXTENSION_TIMER;
+  if (len == SIP_HDR_LEN(SIP_EXT_REPLACES) &&
+      memcmp(begin, SIP_EXT_REPLACES, len) == 0)
+    return SIP_EXTENSION_REPLACES;
   return 0;
 }
 
@@ -27,7 +38,7 @@ bool parse_extensions(unsigned *extensions, const char *start, int len)
   const char *pos;
   int ext;
   unsigned mask = 0;
-  
+
   enum {
     EAT_WS,
     OVER_TAG,
@@ -54,7 +65,7 @@ bool parse_extensions(unsigned *extensions, const char *start, int len)
 
       default:
         if (! IS_TOKEN(*pos)) {
-          INFO("invalid extensions header content <%.*s>: illegal char `%c'", 
+          INFO("invalid extensions header content <%.*s>: illegal char `%c'",
               len, start, *pos);
           return false;
         }
@@ -73,4 +84,72 @@ bool parse_extensions(unsigned *extensions, const char *start, int len)
   *extensions = mask;
   DBG("mask of parsed extensions: 0x%x.\n", mask);
   return true;
+}
+
+// --- Supported extensions registry (RFC 3261 Section 8.2.2.3) ---
+
+static AmMutex supported_ext_mutex;
+static set<string> supported_extensions;
+
+void register_supported_extension(const string& option_tag)
+{
+    supported_ext_mutex.lock();
+    supported_extensions.insert(option_tag);
+    DBG("Registered supported SIP extension: %s\n", option_tag.c_str());
+    supported_ext_mutex.unlock();
+}
+
+bool is_extension_supported(const string& option_tag)
+{
+    supported_ext_mutex.lock();
+    bool found = supported_extensions.find(option_tag) != supported_extensions.end();
+    supported_ext_mutex.unlock();
+    return found;
+}
+
+string get_unsupported_extensions(const char* require_value, unsigned int len)
+{
+    string unsupported;
+    const char* pos = require_value;
+    const char* end = require_value + len;
+    const char* tag_start = NULL;
+
+    enum { EAT_WS, OVER_TAG } state = EAT_WS;
+
+    for(; pos <= end; pos++) {
+	// Treat end-of-string as a delimiter
+	char ch = (pos < end) ? *pos : ',';
+
+	switch(ch) {
+	case ' ': case '\t': case ',': case CR: case LF:
+	    if(state == OVER_TAG && tag_start) {
+		// Found end of a tag
+		const char* tag_end = pos;
+		// Trim trailing whitespace
+		while(tag_end > tag_start &&
+		      (*(tag_end-1) == ' ' || *(tag_end-1) == '\t'))
+		    tag_end--;
+
+		if(tag_end > tag_start) {
+		    string tag(tag_start, tag_end - tag_start);
+		    if(!is_extension_supported(tag)) {
+			if(!unsupported.empty())
+			    unsupported += ", ";
+			unsupported += tag;
+		    }
+		}
+		state = EAT_WS;
+		tag_start = NULL;
+	    }
+	    break;
+	default:
+	    if(state == EAT_WS) {
+		state = OVER_TAG;
+		tag_start = pos;
+	    }
+	    break;
+	}
+    }
+
+    return unsupported;
 }

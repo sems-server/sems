@@ -47,6 +47,7 @@
 #include "sip/udp_trsp.h"
 #include "sip/ip_util.h"
 #include "sip/tcp_trsp.h"
+#include "sip/parse_extensions.h"
 
 #include "log.h"
 
@@ -221,6 +222,10 @@ int _SipCtrlInterface::load()
     } else {
 	DBG("assuming SIP default settings.\n");
     }
+
+    // Register core-supported SIP extensions (RFC 3261 Section 8.2.2.3)
+    register_supported_extension(SIP_EXT_100REL);
+    register_supported_extension(SIP_EXT_REPLACES);
 
     if(alloc_udp_structs() < 0) {
 	ERROR("no enough memory to alloc UDP structs");
@@ -652,11 +657,44 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.via1 = c2stlstr(msg->via1->value);
     if(msg->vias.size() > 1) {
 	req.first_hop = false;
-    } 
+    }
     else {
 	sip_via* via1 = (sip_via*)msg->via1->p;
 	assert(via1); // gets parsed in parse_sip_msg()
 	req.first_hop = (via1->parms.size() == 1);
+    }
+
+    // RFC 3261 Section 8.2.2.3: Check Require header for unsupported extensions.
+    // ACK cannot be responded to with an error, so skip the check.
+    if(msg->u.request->method != sip_request::ACK) {
+
+	string all_unsupported;
+
+	for(list<sip_header*>::const_iterator it = msg->hdrs.begin();
+	    it != msg->hdrs.end(); ++it) {
+
+	    if((*it)->type == sip_header::H_REQUIRE) {
+		string unsupported = get_unsupported_extensions(
+		    (*it)->value.s, (*it)->value.len);
+
+		if(!unsupported.empty()) {
+		    if(!all_unsupported.empty())
+			all_unsupported += ", ";
+		    all_unsupported += unsupported;
+		}
+	    }
+	}
+
+	if(!all_unsupported.empty()) {
+	    string unsupported_hdr = SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED)
+		+ all_unsupported + CRLF;
+
+	    trans_layer::instance()->send_sf_error_reply(
+		&tt, msg, 420, SIP_REPLY_BAD_EXTENSION,
+		stl2cstr(unsupported_hdr));
+
+	    return false;
+	}
     }
 
     return true;

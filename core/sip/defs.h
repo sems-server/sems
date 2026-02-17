@@ -63,6 +63,8 @@
 #define SIP_HDR_LEN(_hdr)       (sizeof(_hdr) - /*0-term*/1)
 
 #define SIP_EXT_100REL          "100rel"
+#define SIP_EXT_TIMER           "timer"
+#define SIP_EXT_REPLACES        "replaces"
 
 #define SIP_HDR_SESSION_EXPIRES_COMPACT "x"
 #define SIP_HDR_SUPPORTED_COMPACT "k"
