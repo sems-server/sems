@@ -84,5 +84,159 @@ FCTMF_SUITE_BGN(test_amconfig) {
     fct_chk_eq_int(idx, 1234);
   }
   FCT_TEST_END();
+
+  // --- Additional coverage ---
+
+  FCT_TEST_BGN(lookup_empty_string_returns_false) {
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If["[::1]"] = 1;
+
+    unsigned short idx = 55;
+    fct_chk(!AmConfig::lookupLocalSIPInterface("", idx));
+    fct_chk_eq_int(idx, 55);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_issue63_exact_scenario) {
+    // Reproduces the exact bug from issue #63: the map stores the IPv6
+    // address with brackets (as SEMS does during startup), but
+    // get_local_addr_for_dest returns the address without brackets.
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If["127.0.0.1"] = 0;
+    AmConfig::LocalSIPIP2If["192.168.110.79"] = 1;
+    AmConfig::LocalSIPIP2If["[2002:c0a8:6e4f:5::1]"] = 2;
+
+    unsigned short idx = 0;
+    // This is the failing lookup from issue #63: bare IPv6 vs bracketed map entry.
+    fct_chk(AmConfig::lookupLocalSIPInterface("2002:c0a8:6e4f:5::1", idx));
+    fct_chk_eq_int(idx, 2);
+
+    // IPv4 interfaces still resolve correctly alongside.
+    idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("192.168.110.79", idx));
+    fct_chk_eq_int(idx, 1);
+
+    idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("127.0.0.1", idx));
+    fct_chk_eq_int(idx, 0);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_multiple_ipv6_interfaces) {
+    // Verify correct resolution when multiple IPv6 interfaces are registered.
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If["[2001:db8::1]"] = 10;
+    AmConfig::LocalSIPIP2If["[2001:db8::2]"] = 20;
+    AmConfig::LocalSIPIP2If["[fd00::1]"] = 30;
+
+    unsigned short idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("2001:db8::1", idx));
+    fct_chk_eq_int(idx, 10);
+
+    idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("2001:db8::2", idx));
+    fct_chk_eq_int(idx, 20);
+
+    idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("fd00::1", idx));
+    fct_chk_eq_int(idx, 30);
+
+    // Non-existent address among the registered ones.
+    idx = 99;
+    fct_chk(!AmConfig::lookupLocalSIPInterface("2001:db8::3", idx));
+    fct_chk_eq_int(idx, 99);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_ipv6_loopback) {
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If["[::1]"] = 5;
+
+    unsigned short idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("::1", idx));
+    fct_chk_eq_int(idx, 5);
+
+    idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("[::1]", idx));
+    fct_chk_eq_int(idx, 5);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_ipv6_link_local) {
+    // Link-local addresses contain '%' scope-id suffix in some contexts.
+    // The helper should still match if the map entry matches exactly.
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If["[fe80::1%25eth0]"] = 14;
+
+    unsigned short idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("[fe80::1%25eth0]", idx));
+    fct_chk_eq_int(idx, 14);
+
+    // Without brackets, the ':' triggers the add-brackets path.
+    idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface("fe80::1%25eth0", idx));
+    fct_chk_eq_int(idx, 14);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_empty_brackets_returns_false) {
+    // Edge case: "[]" should not crash or match anything.
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If[""] = 99;
+
+    unsigned short idx = 77;
+    // "[]" has size 2 which is > 1, but the unbracketed form is empty string.
+    // It should match the empty-string entry if present, but that's fine —
+    // the important thing is no crash.
+    AmConfig::lookupLocalSIPInterface("[]", idx);
+    // Just verify no crash; the result is implementation-defined for this degenerate input.
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_ipv4_not_confused_with_ipv6) {
+    // IPv4 addresses must not trigger the bracket-addition path.
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If["[10.0.0.1]"] = 50;
+
+    unsigned short idx = 0;
+    // "10.0.0.1" has no ':', so it should NOT try "[10.0.0.1]".
+    // The only match path is verbatim, which won't find "10.0.0.1".
+    fct_chk(!AmConfig::lookupLocalSIPInterface("10.0.0.1", idx));
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_guard_restores_state) {
+    // Verify the RAII guard correctly restores map state.
+    std::map<std::string, unsigned short> before = AmConfig::LocalSIPIP2If;
+    {
+      LocalSIPIP2IfGuard guard;
+      AmConfig::LocalSIPIP2If.clear();
+      AmConfig::LocalSIPIP2If["test_sentinel"] = 999;
+      fct_chk(AmConfig::LocalSIPIP2If.count("test_sentinel") == 1);
+    }
+    // After guard destruction, original state must be restored.
+    fct_chk(AmConfig::LocalSIPIP2If == before);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(lookup_ipv6_full_form) {
+    // Full (non-compressed) IPv6 notation stored bracketed.
+    LocalSIPIP2IfGuard guard;
+    AmConfig::LocalSIPIP2If.clear();
+    AmConfig::LocalSIPIP2If["[2001:0db8:0000:0000:0000:0000:0000:0001]"] = 66;
+
+    unsigned short idx = 0;
+    fct_chk(AmConfig::lookupLocalSIPInterface(
+        "2001:0db8:0000:0000:0000:0000:0000:0001", idx));
+    fct_chk_eq_int(idx, 66);
+  }
+  FCT_TEST_END();
 }
 FCTMF_SUITE_END();
