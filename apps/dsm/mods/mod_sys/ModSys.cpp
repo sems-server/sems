@@ -36,6 +36,7 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 SC_EXPORT(MOD_CLS_NAME);
 
@@ -284,11 +285,13 @@ EXEC_ACTION_START(SCUnlinkArrayAction) {
 
 EXEC_ACTION_START(SCTmpNamAction) {
   string varname = resolveVars(arg, sess, sc_sess, event_params);
-  char fname[L_tmpnam];
-  if (!tmpnam(fname)) {
-    ERROR("unique name cannot be generated\n");
+  char fname[] = "/tmp/sems_XXXXXX";
+  int fd = mkstemp(fname);
+  if (fd < 0) {
+    ERROR("unique name cannot be generated: %s\n", strerror(errno));
     sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
   } else {
+    close(fd);
     sc_sess->var[varname] = fname;
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);
   }

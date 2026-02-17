@@ -264,9 +264,8 @@ fctstr_safe_cpy(char *dst, char const *src, size_t num)
 #if defined(WIN32) && _MSC_VER >= 1400
     strncpy_s(dst, num, src, _TRUNCATE);
 #else
-    strncpy(dst, src, num);
+    snprintf(dst, num, "%s", src);
 #endif
-    dst[num-1] = '\0';
 }
 
 /* Isolate the vsnprintf implementation */
@@ -757,6 +756,8 @@ static int
 fct_nlist__init2(fct_nlist_t *list, size_t start_sz)
 {
     FCT_ASSERT( list != NULL );
+    list->avail_itm_num = 0;
+    list->used_itm_num = 0;
     if ( start_sz == 0 )
     {
         list->itm_list = NULL;
