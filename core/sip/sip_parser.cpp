@@ -544,7 +544,51 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
     err = parse_headers(msg,&c,end);
 
     if(!err){
-	msg->body.set(c,msg->len - (c - msg->buf));
+	int available_body_len = msg->len - (c - msg->buf);
+
+	if(msg->content_length) {
+	    // RFC 3261 Section 18.3: If Content-Length is present,
+	    // the body is taken to be exactly that many bytes.
+	    const char* cl_s = msg->content_length->value.s;
+	    unsigned int cl_len = msg->content_length->value.len;
+	    int cl_value = 0;
+
+	    // Skip leading whitespace
+	    while(cl_len > 0 && (*cl_s == ' ' || *cl_s == '\t')) {
+		cl_s++; cl_len--;
+	    }
+
+	    if(cl_len == 0) {
+		err_msg = (char*)"Invalid Content-Length value";
+		return MALFORMED_SIP_MSG;
+	    }
+
+	    for(unsigned int i = 0; i < cl_len; i++) {
+		if(cl_s[i] >= '0' && cl_s[i] <= '9') {
+		    cl_value = cl_value * 10 + (cl_s[i] - '0');
+		    if(cl_value > 65535) {
+			err_msg = (char*)"Content-Length value too large";
+			return MALFORMED_SIP_MSG;
+		    }
+		} else if(cl_s[i] == ' ' || cl_s[i] == '\t') {
+		    // trailing whitespace - stop parsing
+		    break;
+		} else {
+		    err_msg = (char*)"Invalid Content-Length value";
+		    return MALFORMED_SIP_MSG;
+		}
+	    }
+
+	    if(cl_value > available_body_len) {
+		err_msg = (char*)"Content-Length exceeds available body data";
+		return MALFORMED_SIP_MSG;
+	    }
+
+	    msg->body.set(c, cl_value);
+	} else {
+	    // No Content-Length: use all remaining bytes
+	    msg->body.set(c, available_body_len);
+	}
     }
 
     if(!msg->via1 ||

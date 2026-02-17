@@ -28,11 +28,14 @@
 #include "SessionTimer.h"
 #include "AmUtils.h"
 #include "AmSipHeaders.h"
+#include "sip/parse_extensions.h"
 
 EXPORT_SESSION_EVENT_HANDLER_FACTORY(SessionTimerFactory, MOD_NAME);
 
 int SessionTimerFactory::onLoad()
 {
+  // Register "timer" as a supported SIP extension (RFC 3261 Section 8.2.2.3)
+  register_supported_extension(TIMER_OPTION_TAG);
   return 0;
 }
 
