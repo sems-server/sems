@@ -673,7 +673,13 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	for(list<sip_header*>::const_iterator it = msg->hdrs.begin();
 	    it != msg->hdrs.end(); ++it) {
 
-	    if((*it)->type == sip_header::H_REQUIRE) {
+	    if((*it)->type == sip_header::H_REQUIRE ||
+	       // Proxy-Require is H_OTHER; match by name (RFC 3261 Section 16.3)
+	       ((*it)->type == sip_header::H_OTHER &&
+		(*it)->name.len == SIP_HDR_LEN(SIP_HDR_PROXY_REQUIRE) &&
+		!memcmp((*it)->name.s, SIP_HDR_PROXY_REQUIRE,
+			SIP_HDR_LEN(SIP_HDR_PROXY_REQUIRE)))) {
+
 		string unsupported = get_unsupported_extensions(
 		    (*it)->value.s, (*it)->value.len);
 

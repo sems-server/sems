@@ -646,6 +646,19 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 	return MALFORMED_SIP_MSG;
     }
 
+    // RFC 3261 Section 8.1.1.5: CSeq method MUST match request method
+    if(msg->type == SIP_REQUEST) {
+	sip_cseq* cs = (sip_cseq*)msg->cseq->p;
+	if(cs->method != msg->u.request->method ||
+	   (cs->method == sip_request::OTHER_METHOD &&
+	    (cs->method_str.len != msg->u.request->method_str.len ||
+	     memcmp(cs->method_str.s, msg->u.request->method_str.s,
+		    cs->method_str.len)))) {
+	    err_msg = (char*)"CSeq method does not match request method";
+	    return MALFORMED_SIP_MSG;
+	}
+    }
+
     unique_ptr<sip_from_to> from(new sip_from_to());
     if(parse_from_to(from.get(), msg->from->value.s, msg->from->value.len) != 0) {
 	err_msg = (char*)"could not parse From hf";
