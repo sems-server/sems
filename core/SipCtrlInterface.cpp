@@ -48,6 +48,7 @@
 #include "sip/ip_util.h"
 #include "sip/tcp_trsp.h"
 #include "sip/parse_extensions.h"
+#include "sip/parse_common.h"
 
 #include "log.h"
 
@@ -677,8 +678,8 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	       // Proxy-Require is H_OTHER; match by name (RFC 3261 Section 16.3)
 	       ((*it)->type == sip_header::H_OTHER &&
 		(*it)->name.len == SIP_HDR_LEN(SIP_HDR_PROXY_REQUIRE) &&
-		!memcmp((*it)->name.s, SIP_HDR_PROXY_REQUIRE,
-			SIP_HDR_LEN(SIP_HDR_PROXY_REQUIRE)))) {
+		!lower_cmp((*it)->name.s, SIP_HDR_PROXY_REQUIRE,
+			   SIP_HDR_LEN(SIP_HDR_PROXY_REQUIRE)))) {
 
 		string unsupported = get_unsupported_extensions(
 		    (*it)->value.s, (*it)->value.len);

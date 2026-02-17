@@ -144,4 +144,65 @@ FCTMF_SUITE_BGN(test_parser) {
         fct_chk(msg.body.len == 19);
     } FCT_TEST_END();
 
+    // --- CSeq method validation (RFC 3261 Section 8.1.1.5) ---
+
+    FCT_TEST_BGN(cseq_method_match) {
+        // INVITE request with CSeq INVITE => OK
+        const char* raw =
+            SIP_REQ_PREFIX
+            "\r\n";
+        sip_msg msg;
+        char* err_msg = NULL;
+        int rc = try_parse(raw, strlen(raw), msg, err_msg);
+        fct_chk(rc == 0);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(cseq_method_mismatch_known) {
+        // INVITE request but CSeq says BYE
+        const char* raw =
+            "INVITE sip:bob@example.com SIP/2.0\r\n"
+            "Via: SIP/2.0/UDP 192.0.2.1;branch=z9hG4bK776\r\n"
+            "To: <sip:bob@example.com>\r\n"
+            "From: <sip:alice@example.com>;tag=1234\r\n"
+            "Call-ID: abc123@192.0.2.1\r\n"
+            "CSeq: 1 BYE\r\n"
+            "\r\n";
+        sip_msg msg;
+        char* err_msg = NULL;
+        int rc = try_parse(raw, strlen(raw), msg, err_msg);
+        fct_chk(rc == MALFORMED_SIP_MSG);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(cseq_method_mismatch_other) {
+        // FOOBAR request but CSeq says BAZQUX (both OTHER_METHOD)
+        const char* raw =
+            "FOOBAR sip:bob@example.com SIP/2.0\r\n"
+            "Via: SIP/2.0/UDP 192.0.2.1;branch=z9hG4bK776\r\n"
+            "To: <sip:bob@example.com>\r\n"
+            "From: <sip:alice@example.com>;tag=1234\r\n"
+            "Call-ID: abc123@192.0.2.1\r\n"
+            "CSeq: 1 BAZQUX\r\n"
+            "\r\n";
+        sip_msg msg;
+        char* err_msg = NULL;
+        int rc = try_parse(raw, strlen(raw), msg, err_msg);
+        fct_chk(rc == MALFORMED_SIP_MSG);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(cseq_method_match_other) {
+        // FOOBAR request with CSeq FOOBAR => OK
+        const char* raw =
+            "FOOBAR sip:bob@example.com SIP/2.0\r\n"
+            "Via: SIP/2.0/UDP 192.0.2.1;branch=z9hG4bK776\r\n"
+            "To: <sip:bob@example.com>\r\n"
+            "From: <sip:alice@example.com>;tag=1234\r\n"
+            "Call-ID: abc123@192.0.2.1\r\n"
+            "CSeq: 1 FOOBAR\r\n"
+            "\r\n";
+        sip_msg msg;
+        char* err_msg = NULL;
+        int rc = try_parse(raw, strlen(raw), msg, err_msg);
+        fct_chk(rc == 0);
+    } FCT_TEST_END();
+
 } FCTMF_SUITE_END();
