@@ -795,8 +795,8 @@ bool AmConfig::lookupLocalSIPInterface(const string& local_ip, unsigned short& i
     return true;
   }
 
-  if(local_ip.size() > 1 && local_ip.front() == '[' && local_ip.back() == ']') {
-    // Allow callers to drop IPv6 brackets while keeping stored entries intact.
+  if(local_ip.size() > 2 && local_ip.front() == '[' && local_ip.back() == ']') {
+    // Strip IPv6 brackets; size > 2 ensures the inner address is non-empty.
     string unbracketed = local_ip.substr(1, local_ip.size() - 2);
     it = LocalSIPIP2If.find(unbracketed);
     if(it != LocalSIPIP2If.end()) {
