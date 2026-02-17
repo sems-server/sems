@@ -142,8 +142,19 @@ string get_unsupported_extensions(const char* require_value, unsigned int len)
 	    break;
 	default:
 	    if(state == EAT_WS) {
+		// Starting a new option-tag: validate first character
+		if(!IS_TOKEN(ch)) {
+		    // Invalid character in option-tag: reject malformed header
+		    return string();
+		}
 		state = OVER_TAG;
 		tag_start = pos;
+	    } else { // state == OVER_TAG
+		// Continuing an option-tag: validate character
+		if(!IS_TOKEN(ch)) {
+		    // Invalid character in option-tag: reject malformed header
+		    return string();
+		}
 	    }
 	    break;
 	}
