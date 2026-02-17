@@ -565,11 +565,13 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 
 	    for(unsigned int i = 0; i < cl_len; i++) {
 		if(cl_s[i] >= '0' && cl_s[i] <= '9') {
-		    cl_value = cl_value * 10 + (cl_s[i] - '0');
-		    if(cl_value > 65535) {
+		    int digit = cl_s[i] - '0';
+		    // Check for overflow before performing the multiplication and addition.
+		    if(cl_value > (65535 - digit) / 10) {
 			err_msg = (char*)"Content-Length value too large";
 			return MALFORMED_SIP_MSG;
 		    }
+		    cl_value = cl_value * 10 + digit;
 		} else if(cl_s[i] == ' ' || cl_s[i] == '\t') {
 		    // trailing whitespace - stop parsing
 		    break;
