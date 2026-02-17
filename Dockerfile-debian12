@@ -17,7 +17,6 @@ COPY . /sems
 WORKDIR /sems
 
 RUN ln -s pkg/deb/bookworm ./debian
-# RUN dch -b -v 1.8.0 "sems"
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
 
