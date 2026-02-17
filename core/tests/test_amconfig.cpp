@@ -169,33 +169,34 @@ FCTMF_SUITE_BGN(test_amconfig) {
   FCT_TEST_BGN(lookup_ipv6_link_local) {
     // Link-local addresses contain '%' scope-id suffix in some contexts.
     // The helper should still match if the map entry matches exactly.
+    // Note: string literals are stored in variables to avoid '%' in
+    // fct_chk's stringified condition (printf format string).
     LocalSIPIP2IfGuard guard;
     AmConfig::LocalSIPIP2If.clear();
-    AmConfig::LocalSIPIP2If["[fe80::1%25eth0]"] = 14;
+    const std::string link_local_bracketed = "[fe80::1%25eth0]";
+    const std::string link_local_bare      = "fe80::1%25eth0";
+    AmConfig::LocalSIPIP2If[link_local_bracketed] = 14;
 
     unsigned short idx = 0;
-    fct_chk(AmConfig::lookupLocalSIPInterface("[fe80::1%25eth0]", idx));
+    fct_chk(AmConfig::lookupLocalSIPInterface(link_local_bracketed, idx));
     fct_chk_eq_int(idx, 14);
 
     // Without brackets, the ':' triggers the add-brackets path.
     idx = 0;
-    fct_chk(AmConfig::lookupLocalSIPInterface("fe80::1%25eth0", idx));
+    fct_chk(AmConfig::lookupLocalSIPInterface(link_local_bare, idx));
     fct_chk_eq_int(idx, 14);
   }
   FCT_TEST_END();
 
   FCT_TEST_BGN(lookup_empty_brackets_returns_false) {
-    // Edge case: "[]" should not crash or match anything.
+    // Edge case: "[]" should not match anything and must not modify idx.
     LocalSIPIP2IfGuard guard;
     AmConfig::LocalSIPIP2If.clear();
     AmConfig::LocalSIPIP2If[""] = 99;
 
     unsigned short idx = 77;
-    // "[]" has size 2 which is > 1, but the unbracketed form is empty string.
-    // It should match the empty-string entry if present, but that's fine —
-    // the important thing is no crash.
-    AmConfig::lookupLocalSIPInterface("[]", idx);
-    // Just verify no crash; the result is implementation-defined for this degenerate input.
+    fct_chk(!AmConfig::lookupLocalSIPInterface("[]", idx));
+    fct_chk_eq_int(idx, 77);
   }
   FCT_TEST_END();
 
