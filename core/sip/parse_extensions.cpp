@@ -93,20 +93,18 @@ static set<string> supported_extensions;
 
 void register_supported_extension(const string& option_tag)
 {
-    supported_ext_mutex.lock();
+    AmLock l(supported_ext_mutex);
     supported_extensions.insert(option_tag);
     DBG("Registered supported SIP extension: %s\n", option_tag.c_str());
-    supported_ext_mutex.unlock();
 }
+
 
 bool is_extension_supported(const string& option_tag)
 {
-    supported_ext_mutex.lock();
+    AmLock l(supported_ext_mutex);
     bool found = supported_extensions.find(option_tag) != supported_extensions.end();
-    supported_ext_mutex.unlock();
     return found;
 }
-
 string get_unsupported_extensions(const char* require_value, unsigned int len)
 {
     string unsupported;
