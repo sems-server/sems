@@ -542,7 +542,11 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
 	  (it->filter_list.find(method) != it->filter_list.end());
 	if (is_filtered) {
 	  DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
-	  dlg->reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
+	  // RFC 3261 Section 8.2.6: 405 MUST include Allow header
+	  dlg->reply(req, 405, "Method Not Allowed", NULL,
+		     SIP_HDR_COLSP(SIP_HDR_ALLOW)
+		     "INVITE, ACK, BYE, CANCEL, OPTIONS, PRACK, INFO, UPDATE, NOTIFY, REFER" CRLF,
+		     SIP_FLAGS_VERBATIM);
 	  return;
 	}
       }

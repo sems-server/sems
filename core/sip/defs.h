@@ -30,6 +30,7 @@
 #define SIP_HDR_SUPPORTED       "Supported"
 #define SIP_HDR_UNSUPPORTED     "Unsupported"
 #define SIP_HDR_REQUIRE         "Require"
+#define SIP_HDR_PROXY_REQUIRE   "Proxy-Require"
 #define SIP_HDR_SERVER          "Server"
 #define SIP_HDR_USER_AGENT      "User-Agent"
 #define SIP_HDR_MAX_FORWARDS    "Max-Forwards"
