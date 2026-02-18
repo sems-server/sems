@@ -1,11 +1,25 @@
-find_path(LIBZRTP_INCLUDE_DIR zrtp.h HINTS /usr/include/zrtp)
-find_library(LIBZRTP_LIBRARIES NAMES zrtp)
+find_path(LIBZRTP_INCLUDE_DIR
+    NAMES zrtp
+    PATHS /usr/local/include /usr/include
+)
 
-if(LIBZRTP_INCLUDE_DIR AND LIBZRTP_LIBRARIES)
+find_library(LIBZRTP_LIBRARY
+  NAME zrtp
+  PATHS /usr/local/lib /usr/lib
+)
+
+find_library(BN_LIBRARY
+  NAME bn
+  PATHS /usr/local/lib /usr/lib
+)
+
+
+if(LIBZRTP_INCLUDE_DIR AND LIBZRTP_LIBRARY AND BN_LIBRARY)
   set(LIBZRTP_FOUND TRUE)
-endif(LIBZRTP_INCLUDE_DIR AND LIBZRTP_LIBRARIES)
+endif()
 
 if(LIBZRTP_FOUND)
+  set( LIBZRTP_LIBRARIES ${LIBZRTP_LIBRARY} ${BN_LIBRARY} )
   if(NOT Libzrtp_FIND_QUIETLY)
     message(STATUS "Found libzrtp includes:	${LIBZRTP_INCLUDE_DIR}/zrtp/zrtp.h")
     message(STATUS "Found libzrtp library: ${LIBZRTP_LIBRARIES}")
