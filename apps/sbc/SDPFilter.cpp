@@ -235,8 +235,7 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, const string &advertised_ip) {
     sdp.origin.user = "-";
     if (!advertised_ip.empty()) {
       sdp.origin.conn.address = advertised_ip;
-      // SdpConnection::ipv4/ipv6 seems not to be used so we won't replace it there
-      // TODO: replace in attributes
+      sdp.origin.conn.addrType = (advertised_ip.find(':') != string::npos) ? AT_V6 : AT_V4;
     }
   }
 

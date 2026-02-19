@@ -20,6 +20,7 @@ using namespace std;
 static B2BMediaStatistics b2b_stats;
 
 static const string zero_ip("0.0.0.0");
+static const string zero_ip6("::");
 
 static void replaceRtcpAttr(SdpMedia &m, const string& relay_address, int rtcp_port)
 {
@@ -747,7 +748,8 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
   SdpConnection orig_conn = parser_sdp.conn; // needed for the 'quick workaround' for non-audio media
 
   // place relay_address in connection address
-  if (!parser_sdp.conn.address.empty() && (parser_sdp.conn.address != zero_ip)) {
+  if (!parser_sdp.conn.address.empty() &&
+      parser_sdp.conn.address != zero_ip && parser_sdp.conn.address != zero_ip6) {
     parser_sdp.conn.address = relay_public_address;
     DBG("new connection address: %s",parser_sdp.conn.address.c_str());
   }
@@ -773,7 +775,8 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
       }
 
       if(it->port) { // if stream active
-	if (!it->conn.address.empty() && (parser_sdp.conn.address != zero_ip)) {
+	if (!it->conn.address.empty() &&
+	    parser_sdp.conn.address != zero_ip && parser_sdp.conn.address != zero_ip6) {
 	  it->conn.address = relay_public_address;
 	  DBG("new stream connection address: %s",it->conn.address.c_str());
 	}
@@ -806,7 +809,8 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
       }
 
       if(it->port) { // if stream active
-	if (!it->conn.address.empty() && (parser_sdp.conn.address != zero_ip)) {
+	if (!it->conn.address.empty() &&
+	    parser_sdp.conn.address != zero_ip && parser_sdp.conn.address != zero_ip6) {
 	  it->conn.address = relay_public_address;
 	  DBG("new stream connection address: %s",it->conn.address.c_str());
 	}
