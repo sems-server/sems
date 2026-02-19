@@ -40,6 +40,7 @@
 
 #include "log.h"
 
+#include <climits>
 #include <memory>
 using std::unique_ptr;
 
@@ -596,7 +597,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 		if(cl_s[i] >= '0' && cl_s[i] <= '9') {
 		    int digit = cl_s[i] - '0';
 		    // Check for overflow before performing the multiplication and addition.
-		    if(cl_value > (65535 - digit) / 10) {
+		    if(cl_value > (INT_MAX - digit) / 10) {
 			err_msg = (char*)"Content-Length value too large";
 			return MALFORMED_SIP_MSG;
 		    }
