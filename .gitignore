@@ -9,6 +9,7 @@
 *.swp
 *~
 .claude
+CLAUDE.local.md
 /CMakeCache.txt
 CMakeFiles/
 CTestTestfile.cmake
