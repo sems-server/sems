@@ -46,6 +46,7 @@ using std::list;
 #define INCOMPLETE_SIP_MSG -5
 #define MALFORMED_URI      -6
 #define MALFORMED_FLINE    -7
+#define MALFORMED_SIP_VERSION -8
 
 #define IS_IN(c,l,r) (((c)>=(l))&&((c)<=(r)))
 

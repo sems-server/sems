@@ -29,6 +29,7 @@
 
 #include "trans_layer.h"
 #include "sip_parser.h"
+#include "parse_common.h"
 #include "trans_table.h"
 #include "parse_cseq.h"
 #include "parse_from_to.h"
@@ -1620,7 +1621,18 @@ void _trans_layer::received_msg(sip_msg* msg)
 
 	DBG("Message was: \"%.*s\"\n",msg->len,msg->buf);
 
-	if((err != MALFORMED_FLINE)
+	// RFC 3261 Section 8.2.2.1: 505 for unsupported SIP version
+	if((err == MALFORMED_SIP_VERSION)
+	   && (msg->type == SIP_REQUEST)
+	   && (msg->u.request->method != sip_request::ACK)
+	   && msg->via1 && msg->from && msg->to
+	   && msg->cseq && msg->callid){
+
+	    send_sl_reply(msg,505,cstring("Version Not Supported"),
+			  cstring(),cstring());
+	}
+	else if((err != MALFORMED_FLINE)
+	   && (err != MALFORMED_SIP_VERSION)
 	   && (msg->type == SIP_REQUEST)
 	   && (msg->u.request->method != sip_request::ACK)){
 
@@ -2555,7 +2567,7 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	unsigned int retr_timer = (type == STIMER_E) ?
 	    E_TIMER << n : G_TIMER << n;
 
-	if(retr_timer<<n > T2_TIMER) {
+	if(retr_timer > T2_TIMER) {
 	    tr->reset_timer((n<<16) | type, T2_TIMER, bucket->get_id());
 	}
 	else {

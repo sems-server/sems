@@ -644,6 +644,15 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     if(req.max_forwards < 0)
 	req.max_forwards = AmConfig::MaxForwards;
 
+    // RFC 3261 Section 8.2.2.2: reject with 483 if Max-Forwards is 0
+    // (OPTIONS may still be handled locally)
+    if(req.max_forwards == 0
+       && msg->u.request->method != sip_request::OPTIONS) {
+	trans_layer::instance()->
+	    send_sf_error_reply(&tt, msg, 483, "Too Many Hops");
+	return false;
+    }
+
     req.remote_ip = get_addr_str(&msg->remote_ip);
     req.remote_ip_is_ipv6 = (msg->remote_ip.ss_family != AF_INET);
     req.remote_port = am_get_port(&msg->remote_ip);
