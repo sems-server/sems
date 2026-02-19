@@ -61,7 +61,7 @@ Available options:
 | SEMS_USE_TTS            | OFF      | Build with text-to-speech (Flite)      |
 | SEMS_USE_OPENSSL        | OFF      | Build with OpenSSL                     |
 | SEMS_USE_MONITORING     | ON       | Build with monitoring support          |
-| SEMS_USE_IPV6           | OFF      | Build with IPv6 support                |
+| SEMS_USE_IPV6           | ON       | Build with IPv6 support                |
 | SEMS_USE_PYTHON         | ON       | Build with Python modules              |
 | SEMS_USE_ASAN           | OFF      | Build with AddressSanitizer            |
 +-------------------------+----------+----------------------------------------+

@@ -57,7 +57,7 @@ option(SEMS_USE_CODEC2 "Build with codec2 library" OFF)
 option(SEMS_USE_TTS "Build with Text-to-speech support (requires Flite)" OFF)
 option(SEMS_USE_OPENSSL "Build with OpenSSL" OFF)
 option(SEMS_USE_MONITORING "Build with monitoring support" ON)
-option(SEMS_USE_IPV6 "Build with IPv6 support" OFF)
+option(SEMS_USE_IPV6 "Build with IPv6 support" ON)
 option(SEMS_USE_PYTHON "Build with Python modules" ON)
 option(SEMS_USE_ASAN "Build with AddressSanitizer (memory error detector)" OFF)
 
@@ -205,9 +205,9 @@ endif(SEMS_USE_MONITORING)
 
 if(SEMS_USE_IPV6)
   add_definitions(-DSUPPORT_IPV6)
-  message(STATUS "Enable IPv6 support: YES")
+  message(STATUS "Enable IPv6 support: YES (default)")
 else(SEMS_USE_IPV6)
-  message(STATUS "Enable IPv6 support: NO (default)")
+  message(STATUS "Enable IPv6 support: NO")
 endif(SEMS_USE_IPV6)
 
 # Let's try to find GSM library and header files
