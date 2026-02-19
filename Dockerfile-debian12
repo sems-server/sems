@@ -16,6 +16,7 @@ RUN apt install -y \
 COPY . /sems
 WORKDIR /sems
 
+RUN mkdir -p build && cd build && cmake .. && make sems_tests && ./core/sems_tests
 RUN ln -s pkg/deb/bookworm ./debian
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
