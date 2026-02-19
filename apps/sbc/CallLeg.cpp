@@ -1524,10 +1524,12 @@ void CallLeg::acceptPendingInvite(AmSipRequest *invite)
     m.payloads.push_back(SdpPayload(0));
   }
 
-  if (!s.conn.address.empty()) s.conn.address = "0.0.0.0";
+  // use address-family-appropriate zero address
+  const string zero_addr = (s.conn.addrType == AT_V6) ? "::" : "0.0.0.0";
+  if (!s.conn.address.empty()) s.conn.address = zero_addr;
   for (vector<SdpMedia>::iterator i = s.media.begin(); i != s.media.end(); ++i) {
     //i->port = 0;
-    if (!i->conn.address.empty()) i->conn.address = "0.0.0.0";
+    if (!i->conn.address.empty()) i->conn.address = zero_addr;
   }
 
   AmMimeBody body;

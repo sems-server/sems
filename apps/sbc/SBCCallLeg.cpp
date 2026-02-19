@@ -1786,12 +1786,12 @@ void SBCCallLeg::resumeRejected()
 static void replace_address(SdpConnection &c, const string &ip)
 {
   if (!c.address.empty()) {
-    if (c.addrType == AT_V4) {
-      c.address = ip;
-      return;
-    }
-    // TODO: IPv6?
-    DBG("unsupported address type for replacing IP");
+    c.address = ip;
+    // update address type to match the replacement IP
+    if (ip.find(':') != string::npos)
+      c.addrType = AT_V6;
+    else
+      c.addrType = AT_V4;
   }
 }
 
@@ -1808,7 +1808,8 @@ static void alterHoldRequest(AmSdp &sdp, SBCCallProfile::HoldSettings::Activity 
 void SBCCallLeg::alterHoldRequestImpl(AmSdp &sdp)
 {
   if (call_profile.hold_settings.mark_zero_connection(a_leg)) {
-    static const string zero("0.0.0.0");
+    // use address-family-appropriate zero address for hold
+    const string zero = (sdp.conn.addrType == AT_V6) ? "::" : "0.0.0.0";
     ::alterHoldRequest(sdp, call_profile.hold_settings.activity(a_leg), zero);
   }
   else {
@@ -1850,12 +1851,15 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
   if (s) sdp.parse((const char*)s->getPayload());
   if (sdp.media.empty()) {
     // established SDP is not valid! generate complete fake
+    // detect address family from advertised IP
+    string adv_ip = advertisedIP();
+    bool is_v6 = (adv_ip.find(':') != string::npos);
     sdp.version = 0;
     sdp.origin.user = "sems";
     sdp.sessionName = "sems";
     sdp.conn.network = NT_IN;
-    sdp.conn.addrType = AT_V4;
-    sdp.conn.address = "0.0.0.0";
+    sdp.conn.addrType = is_v6 ? AT_V6 : AT_V4;
+    sdp.conn.address = is_v6 ? "::" : "0.0.0.0";
 
     sdp.media.push_back(SdpMedia());
     SdpMedia &m = sdp.media.back();

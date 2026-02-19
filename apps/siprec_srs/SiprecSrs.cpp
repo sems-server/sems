@@ -154,12 +154,14 @@ bool SiprecSrsSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer) {
   answer.origin.sessId = (unsigned int)time(NULL);
   answer.origin.sessV = 1;
   answer.sessionName = "SIPREC SRS";
+  // derive address type from offer (follow the caller's address family)
+  int addr_type = offer.conn.address.empty() ? AT_V4 : offer.conn.addrType;
   answer.conn.network = NT_IN;
-  answer.conn.addrType = AT_V4;
-  answer.conn.address = advertisedIP(AT_V4);
+  answer.conn.addrType = addr_type;
+  answer.conn.address = advertisedIP(addr_type);
   answer.media.clear();
 
-  string local_ip = localMediaIP(AT_V4);
+  string local_ip = localMediaIP(addr_type);
   int leg = 0;
 
   for (vector<SdpMedia>::const_iterator m_it = offer.media.begin();

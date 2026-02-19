@@ -265,8 +265,8 @@ public:
 	    }
 	}
 	
-	//TODO: find a solution for IPv6
 	h->port = htons(e->port);
+	// sin_port and sin6_port occupy the same offset in sockaddr
 	if(h->port) {
 	    ((sockaddr_in*)sa)->sin_port = h->port;
 	}
@@ -281,8 +281,9 @@ public:
 	    return 0;
 	}
 
-	// target must be resolved first
-	return resolver::instance()->resolve_name(e->target.c_str(),h,sa,IPv4);
+	// target must be resolved first (try both A and AAAA)
+	return resolver::instance()->resolve_name(e->target.c_str(),
+						  h,sa,(address_type)(IPv4|IPv6));
     }
 };
 
@@ -307,7 +308,7 @@ dns_entry* dns_entry::make_entry(dns_rr_type t)
     case dns_r_srv:
 	return new dns_srv_entry();
     case dns_r_a:
-    //case dns_r_aaaa:
+    case dns_r_aaaa:
 	return new dns_ip_entry();
     case dns_r_naptr:
 	return new dns_naptr_entry();
@@ -452,14 +453,16 @@ string ip_entry::to_str()
 {
     if(type == IPv4) {
 	unsigned char* cp = (unsigned char*)&addr;
-	return int2str(cp[0]) + 
-	    "." + int2str(cp[1]) + 
-	    "." + int2str(cp[2]) + 
+	return int2str(cp[0]) +
+	    "." + int2str(cp[1]) +
+	    "." + int2str(cp[2]) +
 	    "." + int2str(cp[3]);
     }
     else {
-	// not supported yet...
-	return "[IPv6]";
+	char buf[INET6_ADDRSTRLEN];
+	if(inet_ntop(AF_INET6, &addr6, buf, sizeof(buf)))
+	    return string(buf);
+	return "[IPv6:unknown]";
     }
 }
 
@@ -498,22 +501,35 @@ string ip_port_entry::to_str()
 
 dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, unsigned char* begin, unsigned char* end)
 {
-    if(rr->type != dns_r_a)
-	return NULL;
+    if(rr->type == dns_r_a) {
+	DBG("A:\tTTL=%i\t%s\t%i.%i.%i.%i\n",
+	    ns_rr_ttl(*rr),
+	    ns_rr_name(*rr),
+	    ns_rr_rdata(*rr)[0],
+	    ns_rr_rdata(*rr)[1],
+	    ns_rr_rdata(*rr)[2],
+	    ns_rr_rdata(*rr)[3]);
 
-    DBG("A:\tTTL=%i\t%s\t%i.%i.%i.%i\n",
-	ns_rr_ttl(*rr),
-	ns_rr_name(*rr),
-	ns_rr_rdata(*rr)[0],
-	ns_rr_rdata(*rr)[1],
-	ns_rr_rdata(*rr)[2],
-	ns_rr_rdata(*rr)[3]);
-    
-    ip_entry* new_ip = new ip_entry();
-    new_ip->type = IPv4;
-    memcpy(&(new_ip->addr), ns_rr_rdata(*rr), sizeof(in_addr));
+	ip_entry* new_ip = new ip_entry();
+	new_ip->type = IPv4;
+	memcpy(&(new_ip->addr), ns_rr_rdata(*rr), sizeof(in_addr));
+	return new_ip;
+    }
+    else if(rr->type == dns_r_aaaa) {
+	char addr_str[INET6_ADDRSTRLEN];
+	inet_ntop(AF_INET6, ns_rr_rdata(*rr), addr_str, sizeof(addr_str));
+	DBG("AAAA:\tTTL=%i\t%s\t%s\n",
+	    ns_rr_ttl(*rr),
+	    ns_rr_name(*rr),
+	    addr_str);
 
-    return new_ip;
+	ip_entry* new_ip = new ip_entry();
+	new_ip->type = IPv6;
+	memcpy(&(new_ip->addr6), ns_rr_rdata(*rr), sizeof(in6_addr));
+	return new_ip;
+    }
+
+    return NULL;
 }
 
 dns_base_entry* dns_srv_entry::get_rr(dns_record* rr, unsigned char* begin, unsigned char* end)
@@ -931,30 +947,36 @@ int _resolver::resolve_name(const char* name,
     }
 
     // no valid IP, query the DNS
-    dns_entry_map entry_map;
-    if(query_dns(name,entry_map,t) < 0) {
-	return -1;
-    }
+    // try primary record type first, then AAAA as fallback for A queries
+    dns_rr_type try_types[] = { t, dns_r_aaaa };
+    int num_types = (t == dns_r_a && (types & IPv6)) ? 2 : 1;
 
-    for(dns_entry_map::iterator it = entry_map.begin();
-	it != entry_map.end(); it++) {
-
-	if(!it->second) continue;
-
-	b = cache.get_bucket(hashlittle(it->first.c_str(),
-					it->first.length(),0));
-	// cache the new record
-	if(b->insert(it->first,it->second)) {
-	    // cache insert successful
-	    DBG("new DNS cache entry: '%s' -> %s",
-		it->first.c_str(), it->second->to_str().c_str());
+    for(int qi = 0; qi < num_types; qi++) {
+	dns_entry_map entry_map;
+	if(query_dns(name,entry_map,try_types[qi]) < 0) {
+	    continue; // try next query type
 	}
-    }
 
-    e = entry_map.fetch(name);
-    if(e) {
-	// now we should have a valid IP
-	return e->next_ip(h,sa);
+	for(dns_entry_map::iterator it = entry_map.begin();
+	    it != entry_map.end(); it++) {
+
+	    if(!it->second) continue;
+
+	    dns_bucket* qb = cache.get_bucket(hashlittle(it->first.c_str(),
+							 it->first.length(),0));
+	    // cache the new record
+	    if(qb->insert(it->first,it->second)) {
+		// cache insert successful
+		DBG("new DNS cache entry: '%s' -> %s",
+		    it->first.c_str(), it->second->to_str().c_str());
+	    }
+	}
+
+	e = entry_map.fetch(name);
+	if(e) {
+	    // now we should have a valid IP
+	    return e->next_ip(h,sa);
+	}
     }
 
     return -1;
@@ -1032,7 +1054,7 @@ int _resolver::set_destination_ip(const cstring& next_hop,
 
 		if(!resolver::instance()->resolve_name(srv_name.c_str(),
 						       h_dns,remote_ip,
-						       IPv4,dns_r_srv)){
+						       (address_type)(IPv4|IPv6),dns_r_srv)){
 		    return 0;
 		}
 
@@ -1044,7 +1066,7 @@ int _resolver::set_destination_ip(const cstring& next_hop,
 	memset(remote_ip,0,sizeof(sockaddr_storage));
 	int err = resolver::instance()->resolve_name(nh.c_str(),
 						     h_dns,remote_ip,
-						     IPv4);
+						     (address_type)(IPv4|IPv6));
 	if(err < 0){
 	    ERROR("Unresolvable Request URI domain\n");
 	    return -478;

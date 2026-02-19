@@ -4,6 +4,7 @@
 
 #include "RtpReceiver.h"
 #include "log.h"
+#include "sip/ip_util.h"
 
 #include <unistd.h>
 #include <cstring>
@@ -135,24 +136,36 @@ unsigned short RtpReceiver::init(const string& local_ip, unsigned short port,
   wav_path_ = wav_path;
   codec_ = codec_pt;
 
-  // Create and bind UDP socket
-  sd_ = socket(AF_INET, SOCK_DGRAM, 0);
+  // Create and bind UDP socket (dual-stack: supports both IPv4 and IPv6)
+  struct sockaddr_storage local_addr;
+  memset(&local_addr, 0, sizeof(local_addr));
+  int af = AF_INET;
+
+  if (local_ip.empty() || local_ip == "0.0.0.0") {
+    SAv4(&local_addr)->sin_family = AF_INET;
+    SAv4(&local_addr)->sin_port = htons(port);
+    SAv4(&local_addr)->sin_addr.s_addr = INADDR_ANY;
+  } else if (local_ip == "::") {
+    af = AF_INET6;
+    SAv6(&local_addr)->sin6_family = AF_INET6;
+    SAv6(&local_addr)->sin6_port = htons(port);
+    SAv6(&local_addr)->sin6_addr = in6addr_any;
+  } else {
+    if (am_inet_pton(local_ip.c_str(), &local_addr) != 1) {
+      ERROR("SRS RtpReceiver: invalid local IP '%s'\n", local_ip.c_str());
+      return 0;
+    }
+    af = local_addr.ss_family;
+    am_set_port(&local_addr, port);
+  }
+
+  sd_ = socket(af, SOCK_DGRAM, 0);
   if (sd_ < 0) {
     ERROR("SRS RtpReceiver: socket() failed: %s\n", strerror(errno));
     return 0;
   }
 
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
-  if (local_ip.empty() || local_ip == "0.0.0.0") {
-    addr.sin_addr.s_addr = INADDR_ANY;
-  } else {
-    inet_pton(AF_INET, local_ip.c_str(), &addr.sin_addr);
-  }
-
-  if (bind(sd_, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+  if (bind(sd_, (struct sockaddr*)&local_addr, SA_len(&local_addr)) < 0) {
     ERROR("SRS RtpReceiver: bind() port %u failed: %s\n",
           port, strerror(errno));
     close(sd_);
