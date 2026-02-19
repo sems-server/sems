@@ -219,9 +219,13 @@ int AmRtpAudio::receive(unsigned long long system_ts)
     }
 
     size = decode(size);
-    if(size <= 0){
+    if(size < 0){
       ERROR("decode() returned %i\n",size);
       return -1;
+    }
+    if(size == 0){
+      DBG("decode() returned 0, skipping packet\n");
+      continue;
     }
 
     // This only works because the possible ratio (Rate/TSRate)
