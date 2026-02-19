@@ -15,6 +15,7 @@ RUN pip install sip --break-system-packages
 COPY . /sems
 WORKDIR /sems
 
+RUN mkdir -p build && cd build && cmake .. && make sems_tests && ./core/sems_tests
 RUN mv pkg/deb/trixie ./debian
 RUN dch -b -v $(cat VERSION) "sems"
 RUN dpkg-buildpackage -rfakeroot -us -uc

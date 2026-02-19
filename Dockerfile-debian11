@@ -13,6 +13,7 @@ RUN apt install -y \
 COPY . /sems
 WORKDIR /sems
 
+RUN mkdir -p build && cd build && cmake .. && make sems_tests && ./core/sems_tests
 RUN ls -al pkg/deb/bullseye/*
 RUN ln -s pkg/deb/bullseye ./debian
 RUN ls -al debian/*
