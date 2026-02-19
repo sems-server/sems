@@ -267,7 +267,8 @@ static int parse_first_line(sip_msg* msg, char** c, char* end)
 	FL_REASON,
 
 	FL_EOL,
-	FL_ERR
+	FL_ERR,
+	FL_BAD_VERSION
     };
 
     char* beg = *c;
@@ -316,20 +317,30 @@ static int parse_first_line(sip_msg* msg, char** c, char* end)
 	    break;
 
 #undef case_SIPVER
-#define case_SIPVER(ch1,st1,st2)		\
-	    case st1:				\
-		switch(**c){			\
-		case ch1:			\
-		    st = st2;			\
-		    break;			\
-		default:			\
-		    st = FL_ERR;		\
-		    break;			\
-		}				\
-		break
 
-	case_SIPVER('2',FL_SIPVER_DIG1,FL_SIPVER_SEP);
-	case_SIPVER('.',FL_SIPVER_SEP,FL_SIPVER_DIG2);
+	case FL_SIPVER_DIG1:
+	    if(**c == '2'){
+		st = FL_SIPVER_SEP;
+	    }
+	    else if(is_request){
+		st = FL_BAD_VERSION;
+	    }
+	    else {
+		st = FL_ERR;
+	    }
+	    break;
+
+	case FL_SIPVER_SEP:
+	    if(**c == '.'){
+		st = FL_SIPVER_DIG2;
+	    }
+	    else if(is_request){
+		st = FL_BAD_VERSION;
+	    }
+	    else {
+		st = FL_ERR;
+	    }
+	    break;
 
 	case FL_SIPVER_DIG2:
 	    if(**c == '0'){
@@ -341,8 +352,11 @@ static int parse_first_line(sip_msg* msg, char** c, char* end)
 		    st = FL_SIPVER_SP;
 		}
 	    }
+	    else if(is_request){
+		st = FL_BAD_VERSION;
+	    }
 	    else {
-	      st = FL_ERR;
+		st = FL_ERR;
 	    }
 	    break;
 
@@ -439,12 +453,21 @@ static int parse_first_line(sip_msg* msg, char** c, char* end)
 	case FL_ERR:
 	    return MALFORMED_SIP_MSG;
 
+	case FL_BAD_VERSION:
+	    switch(**c){
+	    case_CR_LF;
+	    }
+	    break;
+
 	case_ST_CR(**c);
 
 	case ST_LF:
 	case ST_CRLF:
 	    if(saved_st == FL_REASON){
 		msg->u.reply->reason.set(beg,*c-(st==ST_CRLF?2:1)-beg);
+	    }
+	    if(saved_st == FL_BAD_VERSION){
+		return MALFORMED_SIP_VERSION;
 	    }
 	    return 0;
 
@@ -537,6 +560,12 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
     int err = parse_first_line(msg,&c,end);
 
     if(err) {
+	if(err == MALFORMED_SIP_VERSION) {
+	    // RFC 3261 Section 8.2.2.1: parse headers so we can send 505
+	    err_msg = (char*)"Version Not Supported";
+	    parse_headers(msg,&c,end);
+	    return MALFORMED_SIP_VERSION;
+	}
 	err_msg = (char*)"Could not parse first line";
 	return MALFORMED_FLINE;
     }
