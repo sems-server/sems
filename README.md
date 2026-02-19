@@ -260,6 +260,74 @@ ctest -V
 sudo make install
 ```
 
+## Build Options
+
+### Feature Flags (`SEMS_USE_*`)
+
+These CMake options control optional features and codec support. Pass them with `-D` on the cmake command line, e.g. `cmake -DSEMS_USE_OPUS=ON ..`
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `SEMS_USE_OPUS` | `OFF` | Build with Opus codec support |
+| `SEMS_USE_SPANDSP` | `OFF` | Build with spandsp (DTMF detection, G.722 codec) |
+| `SEMS_USE_LIBSAMPLERATE` | `OFF` | Build with libsamplerate (external resampler); when OFF uses internal resampler |
+| `SEMS_USE_ZRTP` | `OFF` | Build with ZRTP encryption support |
+| `SEMS_USE_MP3` | `OFF` | Build with MP3 support (requires LAME; optionally mpg123 for decoding) |
+| `SEMS_USE_ILBC` | `ON` | Build with iLBC codec (external library or bundled fallback) |
+| `SEMS_USE_G729` | `OFF` | Build with G.729 codec (requires bcg729) |
+| `SEMS_USE_CODEC2` | `OFF` | Build with Codec2 support |
+| `SEMS_USE_TTS` | `OFF` | Build with text-to-speech support (requires Flite) |
+| `SEMS_USE_OPENSSL` | `OFF` | Build with OpenSSL support |
+| `SEMS_USE_MONITORING` | `ON` | Build with monitoring support (monitoring app + mod_monitoring DSM module) |
+| `SEMS_USE_IPV6` | `OFF` | Build with IPv6 support |
+| `SEMS_USE_PYTHON` | `ON` | Build Python-dependent modules (ivr, conf_auth, mailbox, pin_collect, mod_py) |
+| `SEMS_USE_ASAN` | `OFF` | Build with AddressSanitizer (memory error detector) |
+
+Some modules are also auto-detected based on whether their library is installed (e.g. `conference` requires libevent2, `db_reg_agent` requires MySQL++, `jsonrpc` requires libev).
+
+### Excluding Modules
+
+You can exclude specific modules from the build using these CMake variables. Module names are space- or semicolon-separated:
+
+| Variable | Scope |
+|----------|-------|
+| `EXCLUDE_APP_MODULES` | Application modules in `apps/` |
+| `EXCLUDE_DSM_MODULES` | DSM scripting modules in `apps/dsm/mods/` |
+| `EXCLUDE_CORE_MODULES` | Core plug-in modules (codecs etc.) in `core/plug-in/` |
+
+Examples:
+
+```bash
+# Exclude specific application modules (space-separated)
+cmake -DEXCLUDE_APP_MODULES="voicemail webconference click2dial" ..
+
+# Exclude DSM modules
+cmake -DEXCLUDE_DSM_MODULES="mod_conference mod_py" ..
+
+# Exclude core plug-in modules
+cmake -DEXCLUDE_CORE_MODULES="echo adpcm" ..
+
+# Combine feature flags and module exclusions
+cmake -DSEMS_USE_PYTHON=OFF -DEXCLUDE_APP_MODULES="voicemail webconference" ..
+```
+
+Excluded modules will produce a status message during configuration, e.g.:
+```
+-- Excluding app module: voicemail
+-- Excluding app module: webconference
+```
+
+### Path Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SEMS_CFG_PREFIX` | (empty) | Configuration files prefix |
+| `SEMS_AUDIO_PREFIX` | `/usr/local/lib` | Audio files prefix |
+| `SEMS_EXEC_PREFIX` | `/usr/local` | Executable files prefix |
+| `SEMS_RUNDIR_PREFIX` | `/var/local/run` | Runtime directory prefix |
+| `SEMS_LIBDIR` | `lib` | Library directory name |
+| `SEMS_DOC_PREFIX` | `/usr/share/doc` | Documentation prefix |
+
 ## Creating packages on debian (ubuntu, ...)
 
 Install debian package build tools:
