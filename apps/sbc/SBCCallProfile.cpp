@@ -1807,7 +1807,7 @@ bool SBCCallProfile::LegContact::readConfig(AmConfigReader &cfg, const string &p
   string params = cfg.getParameter(prefix+"contact_params");
   if(params.empty()) return true;
   if(!parse_params(params,pos)) {
-    ERROR("bleg_contact_params parsing failed");
+    ERROR("%scontact_params parsing failed", prefix.c_str());
     return false;
   }
   return true;
