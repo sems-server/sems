@@ -1,27 +1,20 @@
-find_path(LIBZRTP_INCLUDE_DIR
-    NAMES zrtp
-    PATHS /usr/local/include /usr/include
-)
+find_path(LIBZRTP_INCLUDE_DIR libzrtp/zrtp.h)
+find_library(LIBZRTP_LIBRARIES NAMES zrtp)
 
-find_library(LIBZRTP_LIBRARY
-  NAME zrtp
-  PATHS /usr/local/lib /usr/lib
-)
+# bnlib (Colin Plumb's big-number library) is sometimes installed as a
+# separate archive alongside libzrtp.  Append it when present.
+find_library(LIBBN_LIBRARY NAMES bn)
 
-find_library(BN_LIBRARY
-  NAME bn
-  PATHS /usr/local/lib /usr/lib
-)
-
-
-if(LIBZRTP_INCLUDE_DIR AND LIBZRTP_LIBRARY AND BN_LIBRARY)
+if(LIBZRTP_INCLUDE_DIR AND LIBZRTP_LIBRARIES)
   set(LIBZRTP_FOUND TRUE)
-endif()
+endif(LIBZRTP_INCLUDE_DIR AND LIBZRTP_LIBRARIES)
 
 if(LIBZRTP_FOUND)
-  set( LIBZRTP_LIBRARIES ${LIBZRTP_LIBRARY} ${BN_LIBRARY} )
+  if(LIBBN_LIBRARY)
+    list(APPEND LIBZRTP_LIBRARIES ${LIBBN_LIBRARY})
+  endif(LIBBN_LIBRARY)
   if(NOT Libzrtp_FIND_QUIETLY)
-    message(STATUS "Found libzrtp includes:	${LIBZRTP_INCLUDE_DIR}/zrtp/zrtp.h")
+    message(STATUS "Found libzrtp includes:	${LIBZRTP_INCLUDE_DIR}/libzrtp/zrtp.h")
     message(STATUS "Found libzrtp library: ${LIBZRTP_LIBRARIES}")
   endif(NOT Libzrtp_FIND_QUIETLY)
 else(LIBZRTP_FOUND)
