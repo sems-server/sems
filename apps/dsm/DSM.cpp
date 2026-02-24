@@ -368,8 +368,10 @@ bool DSMFactory::loadDiags(AmConfigReader& cfg, DSMStateDiagramCollection* m_dia
   for (vector<string>::iterator it=
 	 diags_names.begin(); it != diags_names.end(); it++) {
     if (!m_diags->loadFile(DiagPath+*it+".dsm", *it, DiagPath, ModPath, DebugDSM, CheckDSM)) {
-      ERROR("loading %s from %s\n", 
+      ERROR("loading diagram '%s' from '%s' failed\n",
 	    it->c_str(), (DiagPath+*it+".dsm").c_str());
+      ERROR("  Check that diag_path='%s' is correct and '%s' is readable by the SEMS process\n",
+	    DiagPath.c_str(), (DiagPath+*it+".dsm").c_str());
       return false;
     }
   }

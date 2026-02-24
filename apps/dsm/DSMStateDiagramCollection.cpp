@@ -30,6 +30,7 @@
 #include <fstream>
 using std::ifstream;
 
+#include <cerrno>
 #include <dirent.h>
 
 DSMStateDiagramCollection::DSMStateDiagramCollection() {
@@ -44,8 +45,16 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 
   ifstream ifs(filename.c_str());
   if (!ifs.good()) {
-    ERROR("loading state diagram '%s'\n",
-	  filename.c_str());
+    ERROR("loading state diagram '%s': cannot open file (%s)\n",
+	  filename.c_str(), strerror(errno));
+
+    // Check if the user forgot the .dsm extension (common #include mistake)
+    string with_ext = filename + ".dsm";
+    ifstream test_ifs(with_ext.c_str());
+    if (test_ifs.good()) {
+      ERROR("  Hint: '%s' exists - did you mean to use '%s' in your #include directive?\n",
+	    with_ext.c_str(), with_ext.c_str());
+    }
     return false;
   }
 
@@ -92,6 +101,8 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	      if (name.rfind(".dsm") != (name.size() - 4)) continue;
 	      include_dir_name = include_name + "/" + name;
 	      if (!readFile(include_dir_name, name, current_load_path, s)) {
+		ERROR("  while processing '#include %s' (directory entry '%s') in '%s'\n",
+		      include_name.c_str(), include_dir_name.c_str(), filename.c_str());
 		(void)closedir(dp);
 		return false;
 	      }
@@ -102,8 +113,11 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	    return false;
 	  }
 	} else {
-	  if (!readFile(include_name, name, current_load_path, s))
+	  if (!readFile(include_name, name, current_load_path, s)) {
+	    ERROR("  while processing '#include %s' in '%s'\n",
+		  include_name.c_str(), filename.c_str());
 	    return false;
+	  }
 	}
 	continue;
       }
