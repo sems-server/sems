@@ -94,34 +94,45 @@ int get_announce_msg(const string &user, const string &domain,
 	    message + "' and language='" + language + "'";
     }
 
+    sql::Statement *stmt = NULL;
+    sql::ResultSet *result = NULL;
+
     try {
-	    
+
       DBG("Query string <%s>\n", query_string.c_str());
 
-      sql::Statement *stmt;
-      sql::ResultSet *result;
+      int ret = 1;
 
       stmt = connection->createStatement();
       result = stmt->executeQuery(query_string);
       if (result->next()) {
 	FILE *file;
 	file = fopen((*audio_file).c_str(), "wb");
-	string s = result->getString("audio");
-	fwrite(s.data(), 1, s.length(), file);
-	fclose(file);
-	return 1;
+	if (file == NULL) {
+	  ERROR("Cannot open file '%s': %s\n",
+		audio_file->c_str(), strerror(errno));
+	  *audio_file = "";
+	  ret = 0;
+	} else {
+	  string s = result->getString("audio");
+	  fwrite(s.data(), 1, s.length(), file);
+	  fclose(file);
+	}
       } else {
 	*audio_file = "";
-	return 1;
       }
 
-      delete stmt;
       delete result;
+      delete stmt;
+
+      return ret;
 
     }
 
     catch (sql::SQLException &er) {
 	ERROR("MySQL query error: %s\n", er.what());
+	delete result;
+	delete stmt;
 	*audio_file = "";
 	return 0;
     }
@@ -332,8 +343,13 @@ AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req, const string&
   string language = get_header_keyvalue(iptel_app_param,"Language");
   string announce_file = "";
 
+  if (get_announce_file == NULL) {
+    ERROR("early_announce module not initialized\n");
+    throw AmSession::Exception(500, MOD_NAME " not initialized");
+  }
+
   get_announce_file(req.user, req.domain, language, &announce_file);
- 
+
   return new EarlyAnnounceDialog(announce_file);
 }
 
