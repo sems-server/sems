@@ -39,6 +39,8 @@ using std::string;
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include <string>
 #endif
 
