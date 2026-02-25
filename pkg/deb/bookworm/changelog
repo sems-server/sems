@@ -1,4 +1,4 @@
-sems (2.1.0) bookworm
+sems (2.1.0) bookworm; urgency=medium
 
   * SEMS 2.1.0 release
 
