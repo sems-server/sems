@@ -17,23 +17,23 @@ static string arg2string(const AmArg &a)
   switch (a.getType()) {
     case AmArg::CStr:
       p = a.asCStr();
-      sprintf(tmp, "%c%zd/", CSTR_LABEL, strlen(p));
+      snprintf(tmp, sizeof(tmp), "%c%zd/", CSTR_LABEL, strlen(p));
       s = tmp;
       s += p;
       return s;
 
     case AmArg::Array:
-      sprintf(tmp, "%c%zd/", ARRAY_LABEL, a.size());
+      snprintf(tmp, sizeof(tmp), "%c%zd/", ARRAY_LABEL, a.size());
       s = tmp;
       for (size_t i = 0; i < a.size(); i ++) s += arg2string(a[i]);
       return s;
 
     case AmArg::Struct:
-      sprintf(tmp, "%c%zd/", STRUCT_LABEL, a.size());
+      snprintf(tmp, sizeof(tmp), "%c%zd/", STRUCT_LABEL, a.size());
       s = tmp;
       for (AmArg::ValueStruct::const_iterator it = a.asStruct()->begin();
            it != a.asStruct()->end(); ++it) {
-        sprintf(tmp, "%zd/", it->first.size());
+        snprintf(tmp, sizeof(tmp), "%zd/", it->first.size());
         s += tmp;
         s += it->first;
         s += arg2string(it->second);

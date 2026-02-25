@@ -204,16 +204,18 @@ bool AmEventDispatcher::broadcast(AmEvent* ev)
     for (size_t i=0;i<EVENT_DISPATCHER_BUCKETS;i++) {
       queues_mut[i].lock();
 
-      EvQueueMapIter it = queues[i].begin(); 
-      while (it != queues[i].end()) {
-	EvQueueMapIter this_evq = it;
-	it++;
-	queues_mut[i].unlock();
-	this_evq->second.q->postEvent(ev->clone());
-	queues_mut[i].lock();
+      std::vector<AmEventQueueInterface*> bucket_queues;
+      for (EvQueueMapIter it = queues[i].begin();
+	   it != queues[i].end(); ++it) {
+	bucket_queues.push_back(it->second.q);
+      }
+
+      queues_mut[i].unlock();
+
+      for (size_t j=0;j<bucket_queues.size();j++) {
+	bucket_queues[j]->postEvent(ev->clone());
 	posted = true;
       }
-      queues_mut[i].unlock();
     }
 
     delete ev;

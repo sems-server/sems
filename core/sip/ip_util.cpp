@@ -95,12 +95,20 @@ const char* am_inet_ntop_sip(const sockaddr_storage* addr, char* str, size_t siz
     }
   }
   else {
+    if(size < 4) {
+      ERROR("Buffer too small for IPv6 address\n");
+      return NULL;
+    }
+    str[0] = '[';
     if(!inet_ntop(AF_INET6,&sin6->sin6_addr,str+1,size-2)) {
       ERROR("Could not convert IPv6 address to string: %s",strerror(errno));
       return NULL;
     }
     size_t str_len = strlen(str);
-    str[0] = '[';
+    if(str_len + 2 > size) {
+      ERROR("Buffer too small for bracketed IPv6 address\n");
+      return NULL;
+    }
     str[str_len] = ']';
     str[str_len+1] = '\0';
   }

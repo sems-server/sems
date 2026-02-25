@@ -243,6 +243,10 @@ void __lds(int ll, unsigned int max_frames)
   // allocate string which will be filled with the demangled function name
   size_t funcnamesize = 256;
   char* funcname = (char*)malloc(funcnamesize);
+  if (!funcname) {
+    free(symbollist);
+    return;
+  }
 
   // iterate over the returned symbol lines. skip the first, it is the
   // address of this function.

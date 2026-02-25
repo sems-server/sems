@@ -174,7 +174,10 @@ sip_trans* trans_bucket::match_request(sip_msg* msg, unsigned int ttype)
 	sip_from_to* to = dynamic_cast<sip_from_to*>(msg->to->p);
 	sip_cseq* cseq = dynamic_cast<sip_cseq*>(msg->cseq->p);
 
-	assert(from && to && cseq);
+	if(!from || !to || !cseq) {
+	    ERROR("missing mandatory SIP headers (From/To/CSeq)\n");
+	    return t;
+	}
 
 	trans_list::iterator it = elmts.begin();
 	for(;it!=elmts.end();++it) {
@@ -207,11 +210,11 @@ sip_trans* trans_bucket::match_request(sip_msg* msg, unsigned int ttype)
 		continue;
 
 	    sip_from_to* it_from = dynamic_cast<sip_from_to*>((*it)->msg->from->p);
-	    if(from->tag.len != it_from->tag.len)
+	    if(!it_from || from->tag.len != it_from->tag.len)
 		continue;
 
 	    sip_cseq* it_cseq = dynamic_cast<sip_cseq*>((*it)->msg->cseq->p);
-	    if(cseq->num_str.len != it_cseq->num_str.len)
+	    if(!it_cseq || cseq->num_str.len != it_cseq->num_str.len)
 		continue;
 
 	    if(memcmp(from->tag.s,it_from->tag.s,from->tag.len))
@@ -244,7 +247,7 @@ sip_trans* trans_bucket::match_request(sip_msg* msg, unsigned int ttype)
 	    else { 
 		// non-ACK
 		sip_from_to* it_to = dynamic_cast<sip_from_to*>((*it)->msg->to->p);
-		if(to->tag.len != it_to->tag.len)
+		if(!it_to || to->tag.len != it_to->tag.len)
 		    continue;
 
 		if(memcmp(to->tag.s,it_to->tag.s,to->tag.len))
@@ -340,14 +343,15 @@ sip_trans* trans_bucket::match_200_ack(sip_trans* t, sip_msg* msg)
     sip_from_to* to = dynamic_cast<sip_from_to*>(msg->to->p);
     sip_cseq* cseq = dynamic_cast<sip_cseq*>(msg->cseq->p);
 
-    assert(from && to && cseq);
+    if(!from || !to || !cseq)
+	return NULL;
 
     sip_from_to* t_from = dynamic_cast<sip_from_to*>(t->msg->from->p);
-    if(from->tag.len != t_from->tag.len)
+    if(!t_from || from->tag.len != t_from->tag.len)
 	return NULL;
-    
+
     sip_cseq* t_cseq = dynamic_cast<sip_cseq*>(t->msg->cseq->p);
-    if(cseq->num != t_cseq->num)
+    if(!t_cseq || cseq->num != t_cseq->num)
 	return NULL;
 
     if(msg->callid->value.len != t->msg->callid->value.len)
@@ -390,19 +394,19 @@ sip_trans* trans_bucket::match_1xx_prack(sip_msg* msg)
 
 	sip_from_to* from = dynamic_cast<sip_from_to*>(msg->from->p);
 	sip_from_to* t_from = dynamic_cast<sip_from_to*>(t->msg->from->p);
-	if(from->tag.len != t_from->tag.len)
+	if(!from || !t_from || from->tag.len != t_from->tag.len)
 	    continue;
 
 	sip_from_to* to = dynamic_cast<sip_from_to*>(msg->to->p);
-	if(to->tag.len != t->to_tag.len)
+	if(!to || to->tag.len != t->to_tag.len)
 	    continue;
-	
+
 	if(msg->callid->value.len != t->msg->callid->value.len)
 	    continue;
 
 	sip_rack *rack = dynamic_cast<sip_rack *>(msg->rack->p);
 	sip_cseq* t_cseq = dynamic_cast<sip_cseq*>(t->msg->cseq->p);
-	if (rack->cseq != t_cseq->num)
+	if (!rack || !t_cseq || rack->cseq != t_cseq->num)
 	    continue;
 	
 	if (rack->rseq != t->last_rseq)

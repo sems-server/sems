@@ -74,4 +74,7 @@
 
 extern const char* progname;
 
+/** Process deferred signals from the signal handler (call from main loop). */
+void process_pending_signals();
+
 #endif

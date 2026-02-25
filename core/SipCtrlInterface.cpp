@@ -28,6 +28,7 @@
  */
 #include "SipCtrlInterface.h"
 
+#include "sems.h"
 #include "AmUtils.h"
 #include "AmSipMsg.h"
 #include "AmMimeBody.h"
@@ -400,7 +401,8 @@ int _SipCtrlInterface::run()
     }
 
     while (!stopped.get()) {
-        stopped.wait_for();
+        stopped.wait_for_to(500); // wake periodically to process signals
+	process_pending_signals();
     }
 
     DBG("SIP control interface ending\n");

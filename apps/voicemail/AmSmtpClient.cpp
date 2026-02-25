@@ -95,8 +95,13 @@ bool AmSmtpClient::connect(const string& _server_ip, unsigned short _server_port
   }
 
   sd = socket(PF_INET, SOCK_STREAM, 0);
+  if(sd < 0) {
+    ERROR("socket() failed: %s\n",strerror(errno));
+    return false;
+  }
   if(::connect(sd,(struct sockaddr *)&addr,sizeof(addr)) == -1) {
     ERROR("%s\n",strerror(errno));
+    close();
     return false;
   }
     

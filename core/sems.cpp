@@ -235,14 +235,22 @@ static bool apply_args(std::map<char,string>& args)
 /** Flag to mark the shutdown is in progress (in the main process) */
 static AmCondition<bool> is_shutting_down(false);
 
+/* Signal-safe flags - only written by signal handler, read by main loop */
+static volatile sig_atomic_t sig_usr1_received;
+static volatile sig_atomic_t sig_usr2_received;
+static volatile sig_atomic_t sig_hup_received;
+static volatile sig_atomic_t sig_shutdown_received;
+static volatile sig_atomic_t sig_unclean_shutdown;
+
 static void signal_handler(int sig)
 {
-  if (sig == SIGUSR1 || sig == SIGUSR2) {
-    DBG("brodcasting User event to %u sessions...\n",
-	AmSession::getSessionNum());
-    AmEventDispatcher::instance()->
-      broadcast(new AmSystemEvent(sig == SIGUSR1? 
-				  AmSystemEvent::User1 : AmSystemEvent::User2));
+  if (sig == SIGUSR1) {
+    sig_usr1_received = 1;
+    return;
+  }
+
+  if (sig == SIGUSR2) {
+    sig_usr2_received = 1;
     return;
   }
 
@@ -254,28 +262,57 @@ static void signal_handler(int sig)
     return;
   }
 
-  WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
-
   if (sig == SIGHUP) {
-    AmSessionContainer::instance()->broadcastShutdown();
+    sig_hup_received = 1;
     return;
   }
 
   if (sig == SIGTERM) {
-    AmSessionContainer::instance()->enableUncleanShutdown();
+    sig_unclean_shutdown = 1;
   }
 
   if (main_pid == getpid()) {
+    sig_shutdown_received = 1;
+  }
+  else {
+    _exit(0);
+  }
+}
+
+/** Process deferred signals from the signal handler (call from main loop). */
+void process_pending_signals()
+{
+  if (sig_usr1_received) {
+    sig_usr1_received = 0;
+    DBG("broadcasting User1 event to %u sessions...\n",
+	AmSession::getSessionNum());
+    AmEventDispatcher::instance()->
+      broadcast(new AmSystemEvent(AmSystemEvent::User1));
+  }
+  if (sig_usr2_received) {
+    sig_usr2_received = 0;
+    DBG("broadcasting User2 event to %u sessions...\n",
+	AmSession::getSessionNum());
+    AmEventDispatcher::instance()->
+      broadcast(new AmSystemEvent(AmSystemEvent::User2));
+  }
+  if (sig_hup_received) {
+    sig_hup_received = 0;
+    WARN("SIGHUP received.\n");
+    AmSessionContainer::instance()->broadcastShutdown();
+  }
+  if (sig_unclean_shutdown) {
+    sig_unclean_shutdown = 0;
+    WARN("SIGTERM received.\n");
+    AmSessionContainer::instance()->enableUncleanShutdown();
+  }
+  if (sig_shutdown_received) {
+    sig_shutdown_received = 0;
     if(!is_shutting_down.get()) {
       is_shutting_down.set(true);
-
       INFO("Stopping SIP stack after signal\n");
       sip_ctrl.stop();
     }
-  }
-  else {
-    /* exit other processes immediately */
-    exit(0);
   }
 }
 

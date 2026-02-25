@@ -121,6 +121,8 @@ int ChannelWritingFile::write_to_file(const void* buf, unsigned int len) {
 }
 
 void ChannelWritingFile::on_flushed() {
-  DBG("file on_flushed, deleting self\n");
-  delete this; // uh!
+  DBG("file on_flushed\n");
+  // Note: this object is owned by AmConferenceChannel and will be
+  // cleaned up when the channel is destroyed. Do not delete here
+  // as the parent still holds a raw pointer to us.
 }

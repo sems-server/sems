@@ -372,6 +372,11 @@ int tcp_trsp_socket::parse_input()
 	if(pst.orig_buf > (char*)input_buf) {
 
 	  int addr_shift = pst.orig_buf - (char*)input_buf;
+	  if(addr_shift < 0 || (unsigned int)addr_shift > input_len) {
+	    ERROR("parser state inconsistency: addr_shift=%d, input_len=%u\n",
+		  addr_shift, input_len);
+	    return -1;
+	  }
 	  memmove(input_buf, pst.orig_buf, input_len - addr_shift);
 
 	  pst.orig_buf = (char*)input_buf;

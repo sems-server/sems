@@ -94,6 +94,10 @@ int JsonrpcNetstringsConnection::connect(const string& host, int port,
   // }
 
   fd = socket(PF_INET, SOCK_STREAM, 0);
+  if(fd < 0) {
+    res_str = "socket() failed: " + string(strerror(errno));
+    return 300;
+  }
   sa.sin_port = htons(port);
   sa.sin_family = PF_INET;
 

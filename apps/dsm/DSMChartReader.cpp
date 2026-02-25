@@ -243,13 +243,15 @@ bool DSMChartReader::importModule(const string& mod_cmd, const string& mod_path)
   SCFactoryCreate fc = NULL;
   if ((fc = (SCFactoryCreate)dlsym(h_dl,SC_FACTORY_EXPORT_STR)) == NULL) {
     ERROR("invalid SC module '%s' (SC_EXPORT missing?)\n", fname.c_str());
+    dlclose(h_dl);
     return false;
   }
-   
+
   DSMModule* mod = (DSMModule*)fc();
   if (!mod) {
-    ERROR("module '%s' did not return functions.\n", 
+    ERROR("module '%s' did not return functions.\n",
 	  fname.c_str());
+    dlclose(h_dl);
     return false;
   }
   mods.push_back(mod);

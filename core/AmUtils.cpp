@@ -164,7 +164,7 @@ string long2hex(unsigned long val)
 /** Convert a double to a string. (from jsoncpp) */
 string double2str(double val) {
   char buffer[32];
-  sprintf(buffer, "%#.16g", val); 
+  snprintf(buffer, sizeof(buffer), "%#.16g", val);
   char* ch = buffer + strlen(buffer) - 1;
   if (*ch != '0') return buffer; // nothing to truncate, so save time
   while(ch > buffer && *ch == '0'){
@@ -523,8 +523,8 @@ std::string URL_encode(const std::string &s)
         else
         {
             escaped.append("%");
-            char buf[3];
-            sprintf(buf, "%.2X", (unsigned char)s[i]);
+            char buf[4];
+            snprintf(buf, sizeof(buf), "%.2X", (unsigned char)s[i]);
             escaped.append(buf);
         }
     }

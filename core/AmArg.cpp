@@ -202,7 +202,7 @@ void AmArg::pop_back(AmArg &a) {
     return;
   }
   a = v_array->back();
-  v_array->erase(v_array->end());
+  v_array->pop_back();
 }
 
 void AmArg::pop_back() {

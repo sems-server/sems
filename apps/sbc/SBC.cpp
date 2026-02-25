@@ -542,6 +542,11 @@ void SBCFactory::reloadProfiles(const AmArg& args, AmArg& ret) {
 }
 
 void SBCFactory::reloadProfile(const AmArg& args, AmArg& ret) {
+  if (!args.size()) {
+    ret.push(400);
+    ret.push("Parameters error: missing arguments");
+    return;
+  }
   bool failed = false;
   string res = "OK";
   AmArg p;
@@ -583,7 +588,7 @@ void SBCFactory::reloadProfile(const AmArg& args, AmArg& ret) {
 }
 
 void SBCFactory::loadProfile(const AmArg& args, AmArg& ret) {
-  if (!args[0].hasMember("name") || !args[0].hasMember("path")) {
+  if (!args.size() || !args[0].hasMember("name") || !args[0].hasMember("path")) {
     ret.push(400);
     ret.push("Parameters error: expected ['name': profile_name] "
 	     "and ['path': profile_path]");
@@ -623,7 +628,7 @@ void SBCFactory::getActiveProfile(const AmArg& args, AmArg& ret) {
 }
 
 void SBCFactory::setActiveProfile(const AmArg& args, AmArg& ret) {
-  if (!args[0].hasMember("active_profile")) {
+  if (!args.size() || !args[0].hasMember("active_profile")) {
     ret.push(400);
     ret.push("Parameters error: expected ['active_profile': <active_profile list>] ");
     return;
@@ -651,7 +656,7 @@ void SBCFactory::getRegexMapNames(const AmArg& args, AmArg& ret) {
 }
 
 void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
-  if (!args[0].hasMember("name") || !args[0].hasMember("file") ||
+  if (!args.size() || !args[0].hasMember("name") || !args[0].hasMember("file") ||
       !isArgCStr(args[0]["name"]) || !isArgCStr(args[0]["file"])) {
     ret.push(400);
     ret.push("Parameters error: expected ['name': <name>, 'file': <file name>]");
@@ -673,6 +678,11 @@ void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
 }
 
 void SBCFactory::loadCallcontrolModules(const AmArg& args, AmArg& ret) {
+  if (!args.size()) {
+    ret.push(400);
+    ret.push("Parameters error: missing arguments");
+    return;
+  }
   string load_cc_plugins = args[0].asCStr();
   if (!load_cc_plugins.empty()) {
     INFO("loading call control plugins '%s' from '%s'\n",
@@ -691,6 +701,11 @@ void SBCFactory::loadCallcontrolModules(const AmArg& args, AmArg& ret) {
 }
 
 void SBCFactory::postControlCmd(const AmArg& args, AmArg& ret) {
+  if (args.size()<2) {
+    ret.push(400);
+    ret.push("Parameters error: expected at least cmd and ltag");
+    return;
+  }
   SBCControlEvent* evt;
   if (args.size()<3) {
     evt = new SBCControlEvent(args[1].asCStr());
