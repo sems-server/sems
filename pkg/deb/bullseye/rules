@@ -21,12 +21,12 @@ override_dh_auto_configure:
         -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
         -DBUILD_SHARED_LIBS:BOOL=ON \
         -DSEMS_USE_SPANDSP=yes \
-        -DSEMS_USE_LIBSAMPLERATE=no \
+        -DSEMS_USE_LIBSAMPLERATE=yes \
         -DSEMS_USE_ZRTP=no \
-        -DSEMS_USE_MP3=no \
+        -DSEMS_USE_MP3=yes \
         -DSEMS_USE_ILBC=yes \
         -DSEMS_USE_G729=yes \
-        -DSEMS_USE_CODEC2=no \
+        -DSEMS_USE_CODEC2=yes \
         -DSEMS_USE_OPUS=yes \
         -DSEMS_USE_TTS=yes \
         -DSEMS_USE_OPENSSL=yes \

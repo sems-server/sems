@@ -23,10 +23,12 @@ BuildRequires:	gcc-c++
 BuildRequires:	gsm-devel
 BuildRequires:	hiredis-devel
 BuildRequires:	lame-devel
+BuildRequires:	libcurl-devel
 BuildRequires:	libevent-devel
 # Available in CRB repos
 BuildRequires:	libev-devel
 BuildRequires:	libmpg123-devel
+BuildRequires:	libxml2-devel
 BuildRequires:	libsamplerate-devel
 BuildRequires:  mysql-connector-c++-devel
 BuildRequires:	openssl-devel
@@ -597,6 +599,7 @@ getent passwd %{name} >/dev/null || \
 %doc doc/dsm
 %dir %{_libdir}/%{name}/dsm/
 %{_libdir}/%{name}/dsm/mod_conference.so
+%{_libdir}/%{name}/dsm/mod_curl.so
 %{_libdir}/%{name}/dsm/mod_dlg.so
 %{_libdir}/%{name}/dsm/mod_groups.so
 %{_libdir}/%{name}/dsm/mod_monitoring.so
@@ -609,6 +612,7 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/dsm/mod_sys.so
 %{_libdir}/%{name}/dsm/mod_uri.so
 %{_libdir}/%{name}/dsm/mod_utils.so
+%{_libdir}/%{name}/dsm/mod_xml.so
 %{_libdir}/%{name}/plug-in/dsm.so
 ## DSM scripts
 %{_libdir}/%{name}/dsm/early_dbprompt.dsm
