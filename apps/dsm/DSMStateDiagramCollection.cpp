@@ -47,14 +47,6 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
   if (!ifs.good()) {
     ERROR("loading state diagram '%s': cannot open file (%s)\n",
 	  filename.c_str(), strerror(errno));
-
-    // Check if the user forgot the .dsm extension (common #include mistake)
-    string with_ext = filename + ".dsm";
-    ifstream test_ifs(with_ext.c_str());
-    if (test_ifs.good()) {
-      ERROR("  Hint: '%s' exists - did you mean to use '%s' in your #include directive?\n",
-	    with_ext.c_str(), with_ext.c_str());
-    }
     return false;
   }
 
@@ -113,7 +105,18 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	    return false;
 	  }
 	} else {
-	  if (!readFile(include_name, name, current_load_path, s)) {
+	  // If path doesn't exist, try appending .dsm extension as fallback
+	  string actual_include = include_name;
+	  if (stat(include_name.c_str(), &status) != 0) {
+	    string with_ext = include_name + ".dsm";
+	    if (stat(with_ext.c_str(), &status) == 0 &&
+		!(status.st_mode & S_IFDIR)) {
+	      DBG("'%s' not found, using '%s'\n",
+		  include_name.c_str(), with_ext.c_str());
+	      actual_include = with_ext;
+	    }
+	  }
+	  if (!readFile(actual_include, name, current_load_path, s)) {
 	    ERROR("  while processing '#include %s' in '%s'\n",
 		  include_name.c_str(), filename.c_str());
 	    return false;
