@@ -9,7 +9,8 @@ RUN apt install -y \
          libxml2-dev libcurl4-openssl-dev libhiredis-dev
 
 RUN apt install -y \
-         devscripts libbcg729-dev
+         devscripts libbcg729-dev \
+         libsamplerate-dev libmp3lame-dev libcodec2-dev
 COPY . /sems
 WORKDIR /sems
 

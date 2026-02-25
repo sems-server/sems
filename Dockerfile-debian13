@@ -10,7 +10,8 @@ RUN apt install -y \
          openssl libev-dev libmysqlcppconn-dev libevent-dev \
          libxml2-dev libcurl4-openssl-dev libhiredis-dev
 
-RUN apt install -y devscripts libbcg729-dev
+RUN apt install -y devscripts libbcg729-dev \
+         libsamplerate-dev libmp3lame-dev libcodec2-dev
 RUN pip install sip --break-system-packages
 COPY . /sems
 WORKDIR /sems
