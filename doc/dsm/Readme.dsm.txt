@@ -62,9 +62,12 @@ A patch for fmsc 1.0.4 from the graphical FSM editor fsme
 click-n-drag fashion and compiled to SEMS DSM diagrams.
 
 DSM scripts can include other scripts by using the #include "script.dsm"
-directive. That loads a script from the load path (where the current 
-script resides), unless an absolute path is given (e.g. 
-#include "/path/to/script).
+directive. That loads a script from the load path (where the current
+script resides), unless an absolute path is given (e.g.
+#include "/path/to/script"). The .dsm extension is optional:
+#include "script" will automatically resolve to "script.dsm" if the
+bare path does not exist. If the path refers to a directory, all .dsm
+files in that directory are included.
 
 There is SIP Session Timer (RFC4028) support, which is configured in 
 dsm.conf. By default, session timers are turned not enabled.

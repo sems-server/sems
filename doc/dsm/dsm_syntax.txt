@@ -7,9 +7,15 @@ Syntax
 # comment, too
 
 #include "script.dsm"
+#include "script"
 #include "script_dir"
 #include "/path/to/anotherscript.dsm"
+#include "/path/to/anotherscript"
 #include "/path/to/script_dir"
+
+The .dsm extension is optional in #include directives: if the path does
+not exist as-is and appending ".dsm" matches a file, it is used
+automatically. Directory includes load all .dsm files from the directory.
 
 import(mod_name);
 
