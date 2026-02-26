@@ -110,7 +110,8 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	  if (stat(include_name.c_str(), &status) != 0) {
 	    string with_ext = include_name + ".dsm";
 	    if (stat(with_ext.c_str(), &status) == 0 &&
-		!(status.st_mode & S_IFDIR)) {
+		!(status.st_mode & S_IFDIR) &&
+		with_ext != filename) {
 	      DBG("'%s' not found, using '%s'\n",
 		  include_name.c_str(), with_ext.c_str());
 	      actual_include = with_ext;
