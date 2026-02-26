@@ -92,6 +92,9 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	      string name(ep->d_name);
 	      if (name.rfind(".dsm") != (name.size() - 4)) continue;
 	      include_dir_name = include_name + "/" + name;
+	      struct stat entry_status;
+	      if (stat(include_dir_name.c_str(), &entry_status) != 0 ||
+		  !S_ISREG(entry_status.st_mode)) continue;
 	      if (!readFile(include_dir_name, name, current_load_path, s)) {
 		ERROR("  while processing '#include %s' (directory entry '%s') in '%s'\n",
 		      include_name.c_str(), include_dir_name.c_str(), filename.c_str());
@@ -110,7 +113,7 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	  if (stat(include_name.c_str(), &status) != 0) {
 	    string with_ext = include_name + ".dsm";
 	    if (stat(with_ext.c_str(), &status) == 0 &&
-		!(status.st_mode & S_IFDIR) &&
+		S_ISREG(status.st_mode) &&
 		with_ext != filename) {
 	      DBG("'%s' not found, using '%s'\n",
 		  include_name.c_str(), with_ext.c_str());
