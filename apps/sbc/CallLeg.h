@@ -179,7 +179,7 @@ class CallLeg: public AmB2BSession
 
     /** terminate all other B legs than the connected one (should not be used
      * directly by successors, right?) */
-    void terminateNotConnectedLegs();
+    void terminateNotConnectedLegs(const string &cancel_hdrs = "");
 
     /** choose given B leg from the list of other B legs */
     bool setOther(const string &id, bool use_initial_sdp);
@@ -295,8 +295,8 @@ class CallLeg: public AmB2BSession
     virtual void resumeAccepted();
     virtual void resumeRejected() { }
 
-    virtual void terminateOtherLeg();
-    virtual void terminateLeg();
+    virtual void terminateOtherLeg(const string &cancel_hdrs = "");
+    virtual void terminateLeg(const string &cancel_hdrs = "");
 
     /** change RTP mode (and AmB2BMedia if needed) but do not send reINVITE
      *
@@ -329,7 +329,7 @@ class CallLeg: public AmB2BSession
 
     /** Terminate the whole B2B call (if there is no other leg only this one is
      * stopped). */
-    virtual void stopCall(const StatusChangeCause &cause);
+    virtual void stopCall(const StatusChangeCause &cause, const string &cancel_hdrs = "");
 
 
     /** Put remote party on hold (may change RTP relay mode!). Note that this
