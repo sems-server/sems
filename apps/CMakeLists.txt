@@ -12,6 +12,17 @@ macro(sems_add_app_module mod)
   endif()
 endmacro()
 
+set(EXTRA_APP_MODULES "" CACHE STRING
+    "Space- or semicolon-separated list of extra apps to include to the build")
+
+# Normalize: replace spaces with semicolons to form a proper CMake list
+string(REPLACE " " ";" _extra_app_list "${EXTRA_APP_MODULES}")
+
+foreach(mod IN LISTS _extra_app_list)
+    message(STATUS "Including extra app module: ${mod}")
+    sems_add_app_module(${mod})
+endforeach()
+
 sems_add_app_module(ann_b2b)
 sems_add_app_module(announce_transfer)
 sems_add_app_module(announcement)
