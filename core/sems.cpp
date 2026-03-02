@@ -347,6 +347,7 @@ int main(int argc, char* argv[])
   std::map<char,string> args;
   #ifndef DISABLE_DAEMON_MODE
   int fd[2] = {0,0};
+  bool pid_file_written = false;
   #endif
 
   progname = strrchr(argv[0], '/');
@@ -542,6 +543,7 @@ int main(int argc, char* argv[])
     if(write_pid_file()<0) {
       goto error;
     }
+    pid_file_written = true;
 
 #ifdef PROPAGATE_COREDUMP_SETTINGS
     if (have_limit) {
@@ -567,6 +569,11 @@ int main(int argc, char* argv[])
 	    strerror(errno));
       /* continue, leave it open */
     };
+  } else if(args.find('P') != args.end()) {
+    if(write_pid_file()<0) {
+      goto error;
+    }
+    pid_file_written = true;
   }
 
 #endif /* DISABLE_DAEMON_MODE */
@@ -669,7 +676,7 @@ int main(int argc, char* argv[])
   async_file_writer::instance()->join();
 
 #ifndef DISABLE_DAEMON_MODE
-  if (AmConfig::DaemonMode) {
+  if (pid_file_written) {
     unlink(AmConfig::DaemonPidFile.c_str());
   }
   if(fd[1]){
