@@ -280,7 +280,8 @@ int udp_trsp_socket::send(const sockaddr_storage* sa,
 /** @see trsp_socket */
 
 udp_trsp::udp_trsp(udp_trsp_socket* sock)
-    : transport(sock)
+    : transport(sock),
+      stop_requested(false)
 {
 }
 
@@ -319,12 +320,13 @@ void udp_trsp::run()
     INFO("Started SIP server UDP transport on %s:%i\n",
 	 sock->get_ip(),sock->get_port());
 
-    while(true){
+    while(!stop_requested){
 
 	//DBG("before recvmsg (%s:%i)\n",sock->get_ip(),sock->get_port());
 
 	buf_len = recvmsg(sock->get_sd(),&msg,0);
 	if(buf_len <= 0){
+	    if(stop_requested) return;
 	    if(!buf_len) continue;
 	    ERROR("recvfrom returned %d: %s\n",buf_len,strerror(errno));
 	    switch(errno){
@@ -393,7 +395,17 @@ void udp_trsp::run()
 /** @see AmThread */
 void udp_trsp::on_stop()
 {
+    stop_requested = true;
 
+    // Shut down the socket to unblock the recvmsg() call in run().
+    // shutdown() wakes blocked readers without closing the fd,
+    // so other threads sharing this socket also get unblocked.
+    if(sock) {
+	int sd = sock->get_sd();
+	if(sd > 0) {
+	    shutdown(sd, SHUT_RDWR);
+	}
+    }
 }
 
     

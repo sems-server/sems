@@ -112,9 +112,11 @@ class _wheeltimer:
 
     void process_current_timers();
 
+    AmSharedVar<bool> _stop_requested;
+
 protected:
     void run();
-    void on_stop(){}
+    void on_stop(){ _stop_requested.set(true); }
 
     _wheeltimer();
     ~_wheeltimer();

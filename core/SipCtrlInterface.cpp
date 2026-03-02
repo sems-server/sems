@@ -256,7 +256,8 @@ int _SipCtrlInterface::load()
 }
 
 _SipCtrlInterface::_SipCtrlInterface()
-    : stopped(false),
+    : on_idle_cb(NULL),
+      stopped(false),
       nr_udp_sockets(0), udp_sockets(NULL),
       nr_udp_servers(0), udp_servers(NULL),
       nr_tcp_sockets(0), tcp_sockets(NULL),
@@ -400,7 +401,8 @@ int _SipCtrlInterface::run()
     }
 
     while (!stopped.get()) {
-        stopped.wait_for();
+        stopped.wait_for_to(500);
+        if (on_idle_cb) on_idle_cb();
     }
 
     DBG("SIP control interface ending\n");
@@ -416,10 +418,31 @@ void _SipCtrlInterface::cleanup()
 {
     DBG("Stopping SIP control interface threads\n");
 
+    // 1. Stop the wheeltimer (it has an infinite loop that
+    //    must be signaled to exit before we tear down state).
+    wheeltimer::instance()->stop();
+
+    // 2. Signal all transport threads to stop.
+    //    on_stop() closes UDP sockets (unblocking recvmsg)
+    //    and breaks TCP event loops.
     if (NULL != udp_servers) {
 	for(int i=0; i<nr_udp_servers;i++){
 	    udp_servers[i]->stop();
-	    udp_servers[i]->join();
+	}
+    }
+
+    if (NULL != tcp_servers) {
+	for(int i=0; i<nr_tcp_servers;i++){
+	    tcp_servers[i]->stop();
+	}
+    }
+
+    // 3. Wait for all transport threads to finish before
+    //    deleting any objects they might still reference.
+    if (NULL != udp_servers) {
+	for(int i=0; i<nr_udp_servers;i++){
+	    while(!udp_servers[i]->is_stopped())
+		usleep(10000);
 	    delete udp_servers[i];
 	}
 
@@ -430,8 +453,8 @@ void _SipCtrlInterface::cleanup()
 
     if (NULL != tcp_servers) {
 	for(int i=0; i<nr_tcp_servers;i++){
-	    tcp_servers[i]->stop();
-	    tcp_servers[i]->join();
+	    while(!tcp_servers[i]->is_stopped())
+		usleep(10000);
 	    delete tcp_servers[i];
 	}
 
@@ -440,6 +463,11 @@ void _SipCtrlInterface::cleanup()
 	nr_tcp_servers = 0;
     }
 
+    // 4. Wait for the wheeltimer to finish.
+    while(!wheeltimer::instance()->is_stopped())
+	usleep(10000);
+
+    // 5. Now safe to tear down socket and transport state.
     trans_layer::instance()->clear_transports();
 
     if (NULL != udp_sockets) {
