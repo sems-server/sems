@@ -317,8 +317,10 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
   if(remote_telephone_event_pt.get())
     dtmf_sender.sendPacket(ts,remote_telephone_event_pt->payload_type,this);
 
-  if(!size)
+  if(!size) {
+    WARN("not sending RTP packet with zero payload data: pt=%d\n", payload);
     return -1;
+  }
 
   PayloadMappingTable::iterator it = pl_map.find(payload);
   if ((it == pl_map.end()) || (it->second.remote_pt < 0)) {
@@ -372,6 +374,8 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   last_payload = rp->payload;
 
   if(!rp->getDataSize()) {
+    WARN("discarding RTP packet with zero payload data: ssrc=0x%x, seq=%u, pt=%u\n",
+	 rp->ssrc, rp->sequence, rp->payload);
     mem.freePacket(rp);
     return RTP_EMPTY;
   }
@@ -873,7 +877,10 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
       }
       handleSymmetricRtp(&p->addr,false);
 
-      if (NULL != relay_stream &&
+      if (!p->getDataSize()) {
+	WARN("discarding relayed RTP packet with zero payload data: ssrc=0x%x, seq=%u, pt=%u\n",
+	     p->ssrc, p->sequence, p->payload);
+      } else if (NULL != relay_stream &&
 	  (!(relay_filter_dtmf && is_dtmf_packet))) {
         relay_stream->relay(p);
       }
