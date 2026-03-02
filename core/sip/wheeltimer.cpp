@@ -43,7 +43,8 @@ timer::~timer()
 }
 
 _wheeltimer::_wheeltimer()
-    : wall_clock(0)
+    : _stop_requested(false),
+      wall_clock(0)
 {
     struct timeval now;
     gettimeofday(&now,NULL);
@@ -90,7 +91,7 @@ void _wheeltimer::run()
   gettimeofday(&now, NULL);
   timeradd(&tick,&now,&next_tick);
 
-  while(true){
+  while(!_stop_requested.get()){
 
     gettimeofday(&now,NULL);
 

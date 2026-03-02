@@ -75,12 +75,14 @@ public:
 
 class udp_trsp: public transport
 {
+    volatile bool stop_requested;
+
 protected:
     /** @see AmThread */
     void run();
     /** @see AmThread */
     void on_stop();
-    
+
 public:
     /** @see transport */
     udp_trsp(udp_trsp_socket* sock);

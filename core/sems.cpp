@@ -232,50 +232,83 @@ static bool apply_args(std::map<char,string>& args)
   return true;
 }
 
-/** Flag to mark the shutdown is in progress (in the main process) */
-static AmCondition<bool> is_shutting_down(false);
+/*
+ * Signal flags — only volatile sig_atomic_t writes are
+ * async-signal-safe, so the handler just sets these and
+ * process_pending_signals() does the real work from the
+ * main thread context.
+ */
+static volatile sig_atomic_t sig_usr1_received;
+static volatile sig_atomic_t sig_usr2_received;
+static volatile sig_atomic_t sig_hup_received;
+static volatile sig_atomic_t sig_shutdown_received;
+static volatile sig_atomic_t sig_unclean_shutdown;
 
 static void signal_handler(int sig)
 {
-  if (sig == SIGUSR1 || sig == SIGUSR2) {
-    DBG("brodcasting User event to %u sessions...\n",
+  switch (sig) {
+  case SIGUSR1:
+    sig_usr1_received = 1;
+    return;
+  case SIGUSR2:
+    sig_usr2_received = 1;
+    return;
+  case SIGHUP:
+    sig_hup_received = 1;
+    return;
+  case SIGCHLD:
+    if (AmConfig::IgnoreSIGCHLD) return;
+    sig_shutdown_received = 1;
+    return;
+  case SIGPIPE:
+    if (AmConfig::IgnoreSIGPIPE) return;
+    sig_shutdown_received = 1;
+    return;
+  case SIGTERM:
+    sig_unclean_shutdown = 1;
+    /* fall through */
+  default:
+    sig_shutdown_received = 1;
+    return;
+  }
+}
+
+/**
+ * Process deferred signal actions from the main thread.
+ * Called periodically from the SIP control interface run loop.
+ */
+static void process_pending_signals()
+{
+  if (sig_usr1_received) {
+    sig_usr1_received = 0;
+    DBG("broadcasting User1 event to %u sessions...\n",
 	AmSession::getSessionNum());
     AmEventDispatcher::instance()->
-      broadcast(new AmSystemEvent(sig == SIGUSR1? 
-				  AmSystemEvent::User1 : AmSystemEvent::User2));
-    return;
+      broadcast(new AmSystemEvent(AmSystemEvent::User1));
   }
 
-  if (sig == SIGCHLD && AmConfig::IgnoreSIGCHLD) {
-    return;
+  if (sig_usr2_received) {
+    sig_usr2_received = 0;
+    DBG("broadcasting User2 event to %u sessions...\n",
+	AmSession::getSessionNum());
+    AmEventDispatcher::instance()->
+      broadcast(new AmSystemEvent(AmSystemEvent::User2));
   }
 
-  if (sig == SIGPIPE && AmConfig::IgnoreSIGPIPE) {
-    return;
-  }
-
-  WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
-
-  if (sig == SIGHUP) {
+  if (sig_hup_received) {
+    sig_hup_received = 0;
     AmSessionContainer::instance()->broadcastShutdown();
-    return;
   }
 
-  if (sig == SIGTERM) {
-    AmSessionContainer::instance()->enableUncleanShutdown();
-  }
-
-  if (main_pid == getpid()) {
-    if(!is_shutting_down.get()) {
-      is_shutting_down.set(true);
-
-      INFO("Stopping SIP stack after signal\n");
-      sip_ctrl.stop();
+  if (sig_shutdown_received) {
+    sig_shutdown_received = 0;
+    WARN("Shutdown signal received.\n");
+    if (sig_unclean_shutdown) {
+      sig_unclean_shutdown = 0;
+      AmSessionContainer::instance()->enableUncleanShutdown();
     }
-  }
-  else {
-    /* exit other processes immediately */
-    exit(0);
+    INFO("Stopping SIP stack after signal\n");
+    sip_ctrl.stop();
   }
 }
 
@@ -515,7 +548,7 @@ int main(int argc, char* argv[])
       }
       DBG("all children return OK. bye world!\n");
       close(fd[0]);
-      return 0;
+      _exit(0);
     }else {
       /* child */
       close(fd[0]);
@@ -535,9 +568,8 @@ int main(int argc, char* argv[])
     }else if (pid!=0){
       /*parent process => exit */
       close(fd[1]);
-      main_pid = getpid();
-      DBG("I'm out. pid: %d", main_pid);
-      return 0;
+      DBG("I'm out. pid: %d", (int)getpid());
+      _exit(0);
     }
 	
     if(write_pid_file()<0) {
@@ -646,6 +678,10 @@ int main(int argc, char* argv[])
   #endif
 
   INFO("SEMS " SEMS_VERSION " (" ARCH "/" OS") started");
+
+  // Register signal processing callback so signals are handled
+  // safely from the main thread rather than from signal context.
+  sip_ctrl.on_idle_cb = process_pending_signals;
 
   // running the server
   if(sip_ctrl.run() != -1)

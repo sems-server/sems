@@ -84,6 +84,11 @@ class _SipCtrlInterface:
 
 public:
 
+    /** Callback invoked periodically from the run() loop.
+     *  Used to process deferred work (e.g. signal handling)
+     *  without blocking the main loop.  May call stop(). */
+    void (*on_idle_cb)();
+
     static string outbound_host;
     static unsigned int outbound_port;
     static bool log_parsed_messages;
