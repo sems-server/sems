@@ -570,7 +570,7 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
   if (!s) return true; // SDP can't be empty, return error (true really used for failure?)
 
   char* next=0; size_t line_len = 0;
-  register parse_st state;
+  parse_st state;
   //default state
   state=SDP_DESCR;
   DBG("parsing SDP message...\n");
@@ -745,7 +745,7 @@ static char* parse_sdp_connection(AmSdp* sdp_msg, char* s, char t)
     return next_line;
   }
 
-  register sdp_connection_st state;
+  sdp_connection_st state;
   state = NET_TYPE;
 
   //DBG("parse_sdp_line_ex: parse_sdp_connection: parsing sdp connection\n");
@@ -821,7 +821,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 {
   SdpMedia m;
   
-  register sdp_media_st state;
+  sdp_media_st state;
   state = MEDIA;
   int parsing = 1;
   char* media_line=s;
@@ -999,8 +999,8 @@ static char* parse_sdp_attr(AmSdp* sdp_msg, char* s)
 
   SdpPayload payload;
 
-  register sdp_attr_rtpmap_st rtpmap_st;
-  register sdp_attr_fmtp_st fmtp_st;
+  sdp_attr_rtpmap_st rtpmap_st;
+  sdp_attr_fmtp_st fmtp_st;
   rtpmap_st = TYPE;
   fmtp_st = FORMAT;
   char* attr_line=s;
@@ -1209,7 +1209,7 @@ static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
   size_t line_len=0;
   line_end = skip_till_next_line(s, line_len);
   
-  register sdp_origin_st origin_st;
+  sdp_origin_st origin_st;
   origin_st = USER;
   int parsing = 1;
   

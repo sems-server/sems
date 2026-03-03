@@ -255,11 +255,13 @@ int MuxStreamQueue::send(unsigned char* buffer, unsigned int b_size,
   map<unsigned short, unsigned char>::iterator mux_id_it = stream_ids.find(rtp_dst_port);
   if (mux_id_it == stream_ids.end()) {
     // set up a new stream_id for port rtp_dst_port
-    for (stream_id=0;stream_id<=256;stream_id++) {
-      if (streamstates.find(stream_id)==streamstates.end())
+    unsigned int sid;
+    for (sid=0;sid<=255;sid++) {
+      if (streamstates.find((unsigned char)sid)==streamstates.end())
 	break;
     }
-    if (stream_id==256) {
+    stream_id = (unsigned char)sid;
+    if (sid>255) {
       ERROR("trying to send more than 256 streams on RTP MUX connection to  %s:%u\n", remote_ip.c_str(), remote_port);
       // or: find the oldest stream and overwrite that one
       return -1;

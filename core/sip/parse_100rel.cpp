@@ -16,7 +16,7 @@
 
 #define READ_NUMBER(_no, _c_, _end_) \
   do { \
-    register bool fin; \
+    bool fin; \
     (_no) = 0; \
     for (fin = false; !fin && (_c_) < (_end_); ) { \
       switch (*(_c_)) { \
