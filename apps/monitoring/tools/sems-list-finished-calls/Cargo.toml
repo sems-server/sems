@@ -1,0 +1,7 @@
+[package]
+name = "sems-list-finished-calls"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+sems-monitoring-lib = { path = "../sems-monitoring-lib" }

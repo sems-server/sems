@@ -430,6 +430,10 @@ getent passwd %{name} >/dev/null || \
 %{_sbindir}/%{name}_list_active_calls.py
 %{_sbindir}/%{name}_list_calls.py
 %{_sbindir}/%{name}_list_finished_calls.py
+%{_sbindir}/%{name}-get-callproperties
+%{_sbindir}/%{name}-list-active-calls
+%{_sbindir}/%{name}-list-calls
+%{_sbindir}/%{name}-list-finished-calls
 %{_sbindir}/%{name}-logfile-callextract
 %{_sbindir}/%{name}-rtp-mux-get-max-frame-age-ms
 %{_sbindir}/%{name}-rtp-mux-get-mtu-threshold

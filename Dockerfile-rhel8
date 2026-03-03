@@ -26,6 +26,7 @@ RUN yum install -y \
         bcg729-devel codec2-devel flite-devel \
         lame-devel libmpg123-devel libsamplerate-devel \
         mysql-connector-c++-devel which man \
+        cargo rust \
         python3-mysqlclient --nogpgcheck
 
 RUN ln -s /usr/lib64/libpython3.6m.so /usr/lib64/libpython3.6.so

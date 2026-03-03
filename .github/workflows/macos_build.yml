@@ -1,0 +1,63 @@
+name: macOS build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos_build:
+    runs-on: macos-26
+    name: macOS 26 build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          brew install libevent speex libgsm opus python@3 \
+            libev libxml2 curl hiredis spandsp pkg-config \
+            openssl rust
+          # CMakeLists.txt Darwin block expects MacPorts paths at /opt/local;
+          # symlink to Homebrew prefix so headers and libs are found.
+          sudo ln -s "$(brew --prefix)" /opt/local
+
+      - name: Configure
+        run: |
+          mkdir build && cd build
+          cmake .. \
+            -DSEMS_USE_SPANDSP=ON \
+            -DSEMS_USE_OPUS=ON \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix)"
+
+      - name: Build and run tests
+        run: |
+          cd build
+          make -j$(sysctl -n hw.ncpu) sems_tests
+          ./core/sems_tests
+          make -j$(sysctl -n hw.ncpu)
+
+      - name: Verify sems binary
+        run: |
+          cd build
+          ./core/sems -v
+          file ./core/sems
+          otool -L ./core/sems
+
+      - name: Verify shared libraries
+        run: ls build/apps/*/*.so | head -20
+
+      - name: Verify Rust monitoring tools
+        run: |
+          for tool in sems-list-calls sems-list-active-calls sems-list-finished-calls sems-get-callproperties; do
+            echo "OK: ${tool}"
+            file "apps/monitoring/tools/target/release/${tool}"
+          done
