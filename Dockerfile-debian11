@@ -6,7 +6,8 @@ RUN apt install -y \
          libspeex-dev libgsm1-dev libopus-dev libssl-dev python3-dev \
          python3.9-dev libev-dev \
          python3-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
-         libxml2-dev libcurl4-openssl-dev libhiredis-dev
+         libxml2-dev libcurl4-openssl-dev libhiredis-dev \
+         cargo rustc
 
 RUN apt install -y \
          devscripts libbcg729-dev \
