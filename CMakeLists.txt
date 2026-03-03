@@ -361,10 +361,10 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
   set(CMAKE_CXX_FLAGS
       "${CMAKE_CXX_FLAGS} -fno-common -DBSD44SOCKETS -D__DARWIN_UNIX03")
   set(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress -bundle"
+      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -undefined dynamic_lookup -bundle"
   )
   set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress -bundle"
+      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -undefined dynamic_lookup -bundle"
   )
 endif(${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
 
@@ -372,10 +372,10 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL iOS)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-common -DBSD44SOCKETS")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-common -DBSD44SOCKETS")
   set(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress -bundle"
+      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -undefined dynamic_lookup -bundle"
   )
   set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress -bundle"
+      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -undefined dynamic_lookup -bundle"
   )
   set(CMAKE_DL_LIBS ${CMAKE_DL_LIBS} gcc_eh)
 endif(${CMAKE_SYSTEM_NAME} STREQUAL iOS)
