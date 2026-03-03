@@ -8,7 +8,7 @@ User=sems
 Group=sems
 Environment='CFGFILE=/etc/sems/sems.conf'
 EnvironmentFile=-/etc/default/sems
-PIDFile=/run/sems/sems.pid
+Environment='PIDFile=/run/sems/sems.pid'
 Restart=on-failure
 StartLimitInterval=10
 StartLimitBurst=5
