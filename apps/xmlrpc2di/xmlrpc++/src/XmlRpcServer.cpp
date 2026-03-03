@@ -470,7 +470,7 @@ XmlRpcServer::generateHeader(std::string const& body)
     "Content-length: ";
 
   char buffLen[40];
-  sprintf(buffLen,"%zd\r\n\r\n", body.size());
+  snprintf(buffLen, sizeof(buffLen), "%zd\r\n\r\n", body.size());
 
   return header + buffLen;
 }

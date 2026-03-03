@@ -886,7 +886,7 @@ void AnswerMachineDialog::onSessionStart()
   setInOut(&playlist,&playlist);
 
   char now[15];
-  sprintf(now, "%d", (int) time(NULL));
+  snprintf(now, sizeof(now), "%d", (int) time(NULL));
   email_dict["ts"] = now;
 
   AmSession::onSessionStart();

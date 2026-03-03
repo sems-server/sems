@@ -30,7 +30,9 @@ struct parser_state
 
   void reset_hdr_parser() {
 #pragma GCC diagnostic push
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
     memset(&hdr,0,sizeof(sip_header));
 #pragma GCC diagnostic pop
     st = saved_st = 0;

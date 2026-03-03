@@ -90,7 +90,7 @@ static inline int skip_uri(const string& s, unsigned int pos)
   unsigned int len = s.length() - pos;
   unsigned int p = pos;
 
-  register int st = ST1;
+  int st = ST1;
 
   while(len) {
     switch(s[p]) {

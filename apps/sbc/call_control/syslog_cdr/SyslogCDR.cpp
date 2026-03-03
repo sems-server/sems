@@ -168,7 +168,7 @@ string timeString(time_t tv_sec) {
   struct tm tmp;
   if (!localtime_r(&tv_sec, &tmp) || strftime(outstr, sizeof(outstr), "%F %T", &tmp) == 0) {
     ERROR("converting time\n");
-    sprintf(outstr, "<unknown>");
+    snprintf(outstr, sizeof(outstr), "<unknown>");
   }
   return string(outstr);
 }

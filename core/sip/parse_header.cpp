@@ -147,13 +147,13 @@ int parse_header_type(sip_header* h)
 	switch(h->name.s[0]){
 	case 'f':
 	case 'F':
-	    if(!lower_cmp(h->name.s+1,SIP_HDR_FROM+1,FROM_len-1)){
+	    if(!lower_cmp(h->name.s+1,&SIP_HDR_FROM[1],FROM_len-1)){
 		h->type = sip_header::H_FROM;
 	    }
 	    break;
 	case 'c':
 	case 'C':
-	    if(!lower_cmp(h->name.s+1,SIP_HDR_CSEQ+1,CSEQ_len-1)){
+	    if(!lower_cmp(h->name.s+1,&SIP_HDR_CSEQ[1],CSEQ_len-1)){
 		h->type = sip_header::H_CSEQ;
 	    }
 	    break;
@@ -162,13 +162,13 @@ int parse_header_type(sip_header* h)
             switch(h->name.s[1]) {
 	    case 's':
 	    case 'S':
-                    if(!lower_cmp(h->name.s+2, SIP_HDR_RSEQ+2,
+                    if(!lower_cmp(h->name.s+2, &SIP_HDR_RSEQ[2],
                             SIP_HDR_LEN(SIP_HDR_RSEQ)-2))
                         h->type = sip_header::H_RSEQ;
                     break;
 	    case 'a':
 	    case 'A':
-                    if(!lower_cmp(h->name.s+2, SIP_HDR_RACK+2, 
+                    if(!lower_cmp(h->name.s+2, &SIP_HDR_RACK[2],
                             SIP_HDR_LEN(SIP_HDR_RACK)-2)) {
                         h->type = sip_header::H_RACK;
                     }
@@ -179,7 +179,7 @@ int parse_header_type(sip_header* h)
 	break;
 
     case ROUTE_len:
-	if(!lower_cmp(h->name.s+1,SIP_HDR_ROUTE+1,ROUTE_len-1)){
+	if(!lower_cmp(h->name.s+1,&SIP_HDR_ROUTE[1],ROUTE_len-1)){
 	    h->type = sip_header::H_ROUTE;
 	}
 	break;
@@ -193,14 +193,14 @@ int parse_header_type(sip_header* h)
 	    switch(h->name.s[1]){
 	    case 'a':
 	    case 'A':
-		if(!lower_cmp(h->name.s+2,SIP_HDR_CALL_ID+2,CALL_ID_len-2)){
+		if(!lower_cmp(h->name.s+2,&SIP_HDR_CALL_ID[2],CALL_ID_len-2)){
 		    h->type = sip_header::H_CALL_ID;
 		}
 		break;
 
 	    case 'o':
 	    case 'O':
-		if(!lower_cmp(h->name.s+2,SIP_HDR_CONTACT+2,CONTACT_len-2)){
+		if(!lower_cmp(h->name.s+2,&SIP_HDR_CONTACT[2],CONTACT_len-2)){
 		    h->type = sip_header::H_CONTACT;
 		}
 		break;
@@ -212,7 +212,7 @@ int parse_header_type(sip_header* h)
 	    break;
         case 'r':
         case 'R':
-            if (! lower_cmp(h->name.s+1, SIP_HDR_REQUIRE+1,
+            if (! lower_cmp(h->name.s+1, &SIP_HDR_REQUIRE[1],
                 SIP_HDR_LEN(SIP_HDR_REQUIRE)-1))
               h->type = sip_header::H_REQUIRE;
             break;

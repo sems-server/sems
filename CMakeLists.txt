@@ -7,6 +7,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 project(SEMS)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Read the version from the VERSION file
 execute_process(
   COMMAND cat "${CMAKE_SOURCE_DIR}/VERSION"
@@ -347,8 +350,12 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL SunOS)
 endif(${CMAKE_SYSTEM_NAME} STREQUAL SunOS)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
-  include_directories(/opt/local/include)
-  link_directories(/opt/local/lib)
+  if(EXISTS /opt/local/include)
+    include_directories(/opt/local/include)
+  endif()
+  if(EXISTS /opt/local/lib)
+    link_directories(/opt/local/lib)
+  endif()
   set(CMAKE_C_FLAGS
       "${CMAKE_C_FLAGS} -fno-common -DBSD44SOCKETS -D__DARWIN_UNIX03")
   set(CMAKE_CXX_FLAGS
