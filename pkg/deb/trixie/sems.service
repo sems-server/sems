@@ -13,3 +13,6 @@ Restart=on-failure
 StartLimitInterval=10
 StartLimitBurst=5
 ExecStart=/usr/sbin/sems -E $OPTIONS
+
+[Install]
+WantedBy=multi-user.target
