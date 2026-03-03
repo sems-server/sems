@@ -1,1 +1,7 @@
+# Configuration for SEMS - SIP Express Media Server
+#
+# This file is sourced by the sems systemd service.
+
+# Additional command line options for sems
+# Example: OPTIONS="-D 3" to enable debug logging
 OPTIONS=""

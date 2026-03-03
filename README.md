@@ -328,6 +328,18 @@ Excluded modules will produce a status message during configuration, e.g.:
 | `SEMS_LIBDIR` | `lib` | Library directory name |
 | `SEMS_DOC_PREFIX` | `/usr/share/doc` | Documentation prefix |
 
+## Running the service
+
+After installing SEMS from a package, enable and start the service:
+
+```bash
+systemctl enable sems
+systemctl start sems
+```
+
+Configuration: `/etc/sems/sems.conf`
+Logs: `journalctl -u sems`
+
 ## Creating packages on debian (ubuntu, ...)
 
 Install debian package build tools:

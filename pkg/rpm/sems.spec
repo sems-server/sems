@@ -333,6 +333,10 @@ getent passwd %{name} >/dev/null || \
 %systemd_preun %{name}.service
 
 
+%postun
+%systemd_postun_with_restart %{name}.service
+
+
 %files
 %dir %{_sysconfdir}/%{name}/
 %dir %{_sysconfdir}/%{name}/etc/

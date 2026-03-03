@@ -6,10 +6,10 @@ After=network.target
 Type=simple
 User=sems
 Group=sems
-Environment='CFGFILE=/etc/sems/sems.conf'
 EnvironmentFile=-/etc/default/sems
-PIDFile=/run/sems/sems.pid
+LimitCORE=infinity
+LimitNOFILE=100000
 Restart=on-failure
 StartLimitInterval=10
 StartLimitBurst=5
-ExecStart=/usr/sbin/sems -E -u sems -g sems -P $PIDFile -f $CFGFILE
+ExecStart=/usr/sbin/sems -E $OPTIONS

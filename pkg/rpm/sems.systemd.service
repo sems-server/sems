@@ -7,11 +7,12 @@ Type=simple
 User=sems
 Group=sems
 EnvironmentFile=-/etc/sysconfig/sems
-PIDFile=/run/sems/sems.pid
+LimitCORE=infinity
+LimitNOFILE=100000
 Restart=always
 StartLimitInterval=10
 StartLimitBurst=5
-ExecStart=/usr/sbin/sems -E -u sems -g sems -P /run/sems/sems.pid $OPTIONS
+ExecStart=/usr/sbin/sems -E $OPTIONS
 
 [Install]
 WantedBy=multi-user.target
