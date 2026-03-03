@@ -30,6 +30,7 @@ RUN dnf install -y epel-release \
         rpm-build \
         mysql-connector-c++ \
         which \
+        cargo rust \
         python3-mysqlclient --nogpgcheck
 
 WORKDIR /

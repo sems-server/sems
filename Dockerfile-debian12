@@ -8,7 +8,8 @@ RUN apt install -y \
          python3-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
          libxml2-dev libcurl4-openssl-dev libhiredis-dev \
 	 libsamplerate-dev libmp3lame-dev libcodec2-dev \
-	 cmake dh-cmake dh-cmake-compat dh-sequence-cmake
+	 cmake dh-cmake dh-cmake-compat dh-sequence-cmake \
+	 cargo rustc
 
 
 RUN apt install -y \

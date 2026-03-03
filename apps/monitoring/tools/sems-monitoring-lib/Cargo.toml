@@ -1,0 +1,10 @@
+[package]
+name = "sems-monitoring-lib"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+xmlrpc = { version = "0.15", default-features = false }
+# Pin transitive deps to versions compatible with Rust 1.48 (Debian 11)
+xml-rs = ">= 0.8, < 0.8.6"
+memchr = ">= 2.3, < 2.6"

@@ -11,7 +11,8 @@ RUN apt install -y \
          libxml2-dev libcurl4-openssl-dev libhiredis-dev
 
 RUN apt install -y devscripts libbcg729-dev \
-         libsamplerate-dev libmp3lame-dev libcodec2-dev
+         libsamplerate-dev libmp3lame-dev libcodec2-dev \
+         cargo rustc
 RUN pip install sip --break-system-packages
 COPY . /sems
 WORKDIR /sems
