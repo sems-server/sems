@@ -1,0 +1,62 @@
+name: FreeBSD build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freebsd_build:
+    runs-on: ubuntu-latest
+    name: FreeBSD ${{ matrix.release }} build
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ['13.5', '14.3', '15.0']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Build and test on FreeBSD ${{ matrix.release }}
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: ${{ matrix.release }}
+          usesh: true
+          prepare: |
+            pkg install -y cmake libevent speex gsm opus \
+              python3 libev libxml2 curl hiredis spandsp \
+              pkgconf openssl rust
+          run: |
+            set -e
+            freebsd-version
+
+            echo "=== Building SEMS (CMake) ==="
+            mkdir build && cd build
+            cmake .. \
+              -DSEMS_USE_SPANDSP=ON \
+              -DSEMS_USE_OPUS=ON
+            make -j$(sysctl -n hw.ncpu) sems_tests
+            ./core/sems_tests
+            make -j$(sysctl -n hw.ncpu)
+
+            echo "=== Verifying sems binary ==="
+            ./core/sems -v
+            file ./core/sems
+            ldd ./core/sems
+
+            echo "=== Verifying shared libraries ==="
+            ls ./apps/*/*.so | head -20
+
+            echo "=== Verifying Rust monitoring tools ==="
+            for tool in sems-list-calls sems-list-active-calls sems-list-finished-calls sems-get-callproperties; do
+              echo "OK: ${tool}"
+              file "../apps/monitoring/tools/target/release/${tool}"
+            done
