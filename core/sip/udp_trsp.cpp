@@ -46,6 +46,7 @@
 #include <netdb.h>
 
 #include <errno.h>
+#include <stddef.h>
 #include <string.h>
 
 #if defined IP_RECVDSTADDR
@@ -55,17 +56,17 @@
 #elif defined IP_PKTINFO
 # define DSTADDR_SOCKOPT IP_PKTINFO
 # define DSTADDR_DATASIZE (CMSG_SPACE(sizeof(struct in_pktinfo)))
-# define dstaddr(x) (&(((struct in_pktinfo *)(void *)(CMSG_DATA(x)))->ipi_addr))
+# define dstaddr(x) ((unsigned char *)CMSG_DATA(x) + offsetof(struct in_pktinfo, ipi_addr))
 #else
 # error "can't determine v4 socket option (IP_RECVDSTADDR or IP_PKTINFO)"
 #endif
 
 #if !defined IPV6_RECVPKTINFO
 # define DSTADDR6_SOCKOPT IPV6_PKTINFO
-# define dstaddr6(x) (&(((struct in6_pktinfo *)(void *)(CMSG_DATA(x)))->ipi6_addr))
+# define dstaddr6(x) ((unsigned char *)CMSG_DATA(x) + offsetof(struct in6_pktinfo, ipi6_addr))
 #elif defined IPV6_PKTINFO
 # define DSTADDR6_SOCKOPT IPV6_RECVPKTINFO
-# define dstaddr6(x) (&(((struct in6_pktinfo *)(void *)(CMSG_DATA(x)))->ipi6_addr))
+# define dstaddr6(x) ((unsigned char *)CMSG_DATA(x) + offsetof(struct in6_pktinfo, ipi6_addr))
 #else
 # error "cant't determine v6 socket option (IPV6_RECVPKTINFO or IPV6_PKTINFO)"
 #endif

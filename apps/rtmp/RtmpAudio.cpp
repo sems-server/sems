@@ -36,7 +36,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static void dump_audio(RTMPPacket *packet)
+static void __attribute__((unused)) dump_audio(RTMPPacket *packet)
 {
   static int dump_fd=0;
   if(dump_fd == 0){
@@ -52,7 +52,7 @@ static void dump_audio(RTMPPacket *packet)
   write(dump_fd,packet->m_body+1,pkg_size);
 }
 
-static void dump_audio(unsigned char* buffer, unsigned int size)
+static void __attribute__((unused)) dump_audio(unsigned char* buffer, unsigned int size)
 {
   static int dump_fd=0;
   if(dump_fd == 0){
@@ -171,13 +171,13 @@ int RtmpAudio::send(unsigned int user_ts, unsigned int size)
   RTMPPacket_Alloc(&packet,size+1);
   packet.m_nBodySize = size+1;
 
-// soundType 	(byte & 0x01) » 0 	
+// soundType 	(byte & 0x01) ï¿½ 0 	
 //   0: mono, 1: stereo
-// soundSize 	(byte & 0x02) » 1 	
+// soundSize 	(byte & 0x02) ï¿½ 1 	
 //   0: 8-bit, 1: 16-bit
-// soundRate 	(byte & 0x0C) » 2 	
+// soundRate 	(byte & 0x0C) ï¿½ 2 	
 //   0: 5.5 kHz, 1: 11 kHz, 2: 22 kHz, 3: 44 kHz
-// soundFormat 	(byte & 0xf0) » 4 	
+// soundFormat 	(byte & 0xf0) ï¿½ 4 	
 //   0: Uncompressed, 1: ADPCM, 2: MP3, 5: Nellymoser 8kHz mono, 6: Nellymoser, 11: Speex 
 
 
