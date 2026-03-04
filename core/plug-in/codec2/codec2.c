@@ -98,7 +98,7 @@ long sems_codec2_create(const int bps,
   } else if (bps == 1400) {
     mode = CODEC2_MODE_1400;
   } else {
-    ERROR("Error in mode: %s\n", bps);
+    ERROR("Error in mode: %d\n", bps);
     ERROR("Mode must be 3200, 2400, 1600 or 1400\n");
     free(c2enc);
     return -1;

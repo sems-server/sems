@@ -256,8 +256,8 @@ int _SipCtrlInterface::load()
 }
 
 _SipCtrlInterface::_SipCtrlInterface()
-    : on_idle_cb(NULL),
-      stopped(false),
+    : stopped(false),
+      on_idle_cb(NULL),
       nr_udp_sockets(0), udp_sockets(NULL),
       nr_udp_servers(0), udp_servers(NULL),
       nr_tcp_sockets(0), tcp_sockets(NULL),
