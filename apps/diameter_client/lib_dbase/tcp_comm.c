@@ -65,6 +65,33 @@ int do_read(dia_tcp_conn* conn_st, rd_buf_t *p);
 /* for printing error msg */
 BIO* bio_err = 0;
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+long tcp_ssl_dbg_cb(BIO *bio, int oper, const char *argp,
+		    size_t len, int argi, long argl,
+		    int retvalue, size_t *processed) {
+
+  if (oper & BIO_CB_RETURN)
+    return retvalue;
+
+  switch (oper) {
+  case BIO_CB_WRITE: {
+    char buf[256];
+    snprintf(buf, 256, "%s: %s", argp, BIO_method_name(bio));
+    INFO("%s", buf);
+  } break;
+
+  case BIO_CB_PUTS: {
+    char buf[2];
+    buf[0] = *argp;
+    buf[1] = '\0';
+    INFO("%s", buf);
+  } break;
+  default: break;
+  }
+
+  return retvalue;
+}
+#else
 long tcp_ssl_dbg_cb(BIO *bio, int oper, const char *argp,
 		    int argi, long argl, long retvalue) {
 
@@ -89,6 +116,7 @@ long tcp_ssl_dbg_cb(BIO *bio, int oper, const char *argp,
 
   return retvalue;
 }
+#endif
 
 static int password_cb(char *buf,int num,
 		       int rwflag,void *userdata) {
@@ -135,7 +163,11 @@ int tcp_init_tcp() {
   SSL_load_error_strings();
 #endif
   bio_err = BIO_new(BIO_s_null());
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  BIO_set_callback_ex(bio_err, tcp_ssl_dbg_cb);
+#else
   BIO_set_callback(bio_err, tcp_ssl_dbg_cb);
+#endif
 #endif
   return 0;
 }
