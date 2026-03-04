@@ -128,8 +128,12 @@ int check_cert(SSL * ssl, char* host) {
 
 int tcp_init_tcp() {
 #ifdef WITH_OPENSSL
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  OPENSSL_init_ssl(0, NULL);
+#else
   SSL_library_init();
   SSL_load_error_strings();
+#endif
   bio_err = BIO_new(BIO_s_null());
   BIO_set_callback(bio_err, tcp_ssl_dbg_cb);
 #endif
@@ -144,7 +148,11 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
   struct sockaddr_in serv_addr;
   struct hostent *server;
 #ifdef WITH_OPENSSL
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  const SSL_METHOD* meth;
+#else
   SSL_METHOD* meth;
+#endif
 #endif
     
   sockfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -192,11 +200,15 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
     return conn_st;
   }
 
-  meth=(SSL_METHOD *)TLSv1_client_method();
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  meth = TLS_client_method();
+#else
+  meth = (SSL_METHOD *)TLSv1_client_method();
+#endif
   conn_st->ctx = SSL_CTX_new(meth);
 
   if (!conn_st->ctx) {
-    ERROR("SSL: creating TLSv1_client_method context\n");
+    ERROR("SSL: creating SSL context\n");
     tcp_close_connection(conn_st);
     return 0;
   }
@@ -246,7 +258,7 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
   }
   
 #if (OPENSSL_VERSION_NUMBER < 0x00905100L)
-  SSL_CTX_set_verify_depth(ctx,1);
+  SSL_CTX_set_verify_depth(conn_st->ctx, 1);
 #endif
 
   conn_st->ssl=SSL_new(conn_st->ctx);
