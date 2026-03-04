@@ -308,7 +308,7 @@ int JsonrpcNetstringsConnection::netstringsBlockingWrite() {
     close();
     return REMOVE;
   }
-  char* ns_begin = msgbuf-(msg_size_s.length()+1);
+  char* ns_begin = snd_size + (sizeof(snd_size) - (msg_size_s.length()+1));
   memcpy(ns_begin, 
 	 msg_size_s.c_str(),
 	 msg_size_s.length());

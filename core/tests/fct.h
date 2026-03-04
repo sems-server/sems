@@ -3828,10 +3828,10 @@ _fct_chk_full_str(char const *s)
 
 #define fct_chk_eq_int(V1, V2) \
     fct_xchk(\
-        ((V1) == (V2)),\
+        ((int)(V1) == (int)(V2)),\
         "chq_eq_int: %d != %d",\
-        (V1),\
-        (V2)\
+        (int)(V1),\
+        (int)(V2)\
         )
 
 

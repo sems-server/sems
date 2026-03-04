@@ -822,7 +822,7 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
       PyErr_Fetch(&type, &value, &tb);
       if(PyErr_GivenExceptionMatches(type, SemsError)) {
         PyObject* args;
-        PyObject* dict;
+        PyObject* dict = NULL;
         bool error = false;
         if(PyDict_Check(value)) {
           dict = value;

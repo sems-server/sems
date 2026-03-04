@@ -104,7 +104,9 @@ int AmRtpPacket::parse()
     // Need 4 bytes for extension header (2 bytes profile + 2 bytes length)
     if (b_size >= data_offset + 4) {
       // Extension length is count of 32-bit words after the 4-byte header
-      unsigned int ext_words = ntohs(((rtp_xhdr_t*) (buffer + data_offset))->len);
+      u_int16 ext_len_net;
+      memcpy(&ext_len_net, buffer + data_offset + sizeof(u_int16), sizeof(u_int16));
+      unsigned int ext_words = ntohs(ext_len_net);
       // Total extension size: 4-byte header + ext_words * 4 bytes
       // Check for overflow: ext_words max is 65535, *4 = 262140, fits in unsigned int
       unsigned int ext_size = 4 + (ext_words * 4);

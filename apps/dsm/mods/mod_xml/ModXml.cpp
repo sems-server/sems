@@ -39,10 +39,8 @@ int xml_log_level = L_ERR;
 int MOD_CLS_NAME::preload() {
   DBG("initializing libxml2...\n");
   xmlInitParser();
-  initGenericErrorDefaultFunc(&handler);
   handler = (xmlGenericErrorFunc)xml_err_func;
   xmlSetGenericErrorFunc(NULL, &xml_err_func);
-  xmlKeepBlanksDefault(0);
   xmlIndentTreeOutput = 1; // doesn't seem to have effect :/
   return 0;
 }
@@ -123,7 +121,7 @@ EXEC_ACTION_START(MODXMLParseSIPMsgBodyAction) {
   xmlSetGenericErrorFunc(NULL, &xml_err_func);
 
   xmlDocPtr doc =
-    xmlReadMemory((const char*)b, msgbody->getLen(), "noname.xml", NULL, 0);
+    xmlReadMemory((const char*)b, msgbody->getLen(), "noname.xml", NULL, XML_PARSE_NOBLANKS);
   if (doc == NULL) {
     DBG("failed parsing XML document from '%s'\n", msgbody_var.c_str());
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
@@ -148,7 +146,7 @@ EXEC_ACTION_START(MODXMLParseAction) {
   xmlSetGenericErrorFunc(NULL, &xml_err_func);
 
   xmlDocPtr doc =
-    xmlReadMemory(xml_doc.c_str(), xml_doc.length(), "noname.xml", NULL, 0);
+    xmlReadMemory(xml_doc.c_str(), xml_doc.length(), "noname.xml", NULL, XML_PARSE_NOBLANKS);
   if (doc == NULL) {
     DBG("failed parsing XML document from '%s'\n", xml_doc.c_str());
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);

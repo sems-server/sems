@@ -521,11 +521,11 @@ int raw_udp4_send(int rsock, char* buf, unsigned int len,
 	cmsg->cmsg_len=CMSG_LEN(sizeof(struct in_pktinfo));
 	snd_pktinfo=(struct in_pktinfo*)CMSG_DATA(cmsg);
 	snd_pktinfo->ipi_ifindex=0;
-	snd_pktinfo->ipi_spec_dst.s_addr=SAv4(&from)->sin_addr.s_addr;
+	snd_pktinfo->ipi_spec_dst.s_addr=SAv4(from)->sin_addr.s_addr;
 #elif defined (IP_SENDSRCADDR)
 	cmsg->cmsg_type=IP_SENDSRCADDR;
 	cmsg->cmsg_len=CMSG_LEN(sizeof(struct in_addr));
-	memcpy(CMSG_DATA(cmsg), &SAv4(&from)->sin_addr.s_addr,
+	memcpy(CMSG_DATA(cmsg), &SAv4(from)->sin_addr.s_addr,
 	       sizeof(struct in_addr));
 #else
 #error "no method of setting the source ip supported"
