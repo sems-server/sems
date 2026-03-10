@@ -174,7 +174,7 @@ FCTMF_SUITE_BGN(test_amconfig) {
     LocalSIPIP2IfGuard guard;
     AmConfig::LocalSIPIP2If.clear();
     const std::string link_local_bracketed = "[fe80::1%25eth0]";
-    const std::string link_local_bare      = "fe80::1%25eth0";
+    const std::string link_local_bare = "fe80::1%25eth0";
     AmConfig::LocalSIPIP2If[link_local_bracketed] = 14;
 
     unsigned short idx = 0;
@@ -234,8 +234,7 @@ FCTMF_SUITE_BGN(test_amconfig) {
     AmConfig::LocalSIPIP2If["[2001:0db8:0000:0000:0000:0000:0000:0001]"] = 66;
 
     unsigned short idx = 0;
-    fct_chk(AmConfig::lookupLocalSIPInterface(
-        "2001:0db8:0000:0000:0000:0000:0000:0001", idx));
+    fct_chk(AmConfig::lookupLocalSIPInterface("2001:0db8:0000:0000:0000:0000:0000:0001", idx));
     fct_chk_eq_int(idx, 66);
   }
   FCT_TEST_END();

@@ -5,7 +5,6 @@ from twyt import twitter, data
 from urllib import *
 import random
 
-
 base_url = config["base_url"]
 rec_path = config["rec_path"]
 welcome_msg = config["welcome_msg"]

@@ -2,7 +2,6 @@ from log import *
 from ivr import *
 import xmlrpc
 
-
 XMLRPC_PROTOCOL = "http"  # could e.g. be https
 XMLRPC_SERVER = "localhost"
 XMLRPC_PORT = 23456
