@@ -3,13 +3,12 @@ from imaplib import IMAP4
 
 from MailboxURL import *
 
-
 READ_BUFSIZE = 4096
 
 
 def IMAPCALL(call_res):
 
-    (t, d) = call_res
+    t, d = call_res
     if t != "OK":
         raise IMAP4.error(d[0])
     return (t, d)
@@ -27,7 +26,7 @@ class IMAP4_MsgBODY:
         self.parts = []
         self.ct = ""
 
-        (t, d) = imap.uid("FETCH", uid, "(BODY)")
+        t, d = imap.uid("FETCH", uid, "(BODY)")
         if d[0] is None:
             raise IMAP4.error('No message with UID "%s" has been found' % uid)
         self._parse_body_desc(d[0])
@@ -38,7 +37,7 @@ class IMAP4_MsgBODY:
 
     def fetch2file(self, imap, part, filename=None):
 
-        (t, d) = imap.uid("fetch", self.uid, "(BODY.PEEK[%i])" % (part + 1))
+        t, d = imap.uid("fetch", self.uid, "(BODY.PEEK[%i])" % (part + 1))
         if (t != "OK") or (len(d[0]) != 2):
             raise IMAP4.error("could not retrieve part %s/%i" % (self.uid, part + 1))
 
@@ -60,7 +59,7 @@ class IMAP4_MsgBODY:
 
     def _parse_body_desc(self, desc):
 
-        (_dummy, s) = self._parenthesis2seq(desc)[1]
+        _dummy, s = self._parenthesis2seq(desc)[1]
 
         self.uid = s[1]
 
@@ -84,7 +83,7 @@ class IMAP4_MsgBODY:
         while i < len(s):
 
             if s[i] == "(":
-                (i, tmp_seq) = self._parenthesis2seq(s, i + 1)
+                i, tmp_seq = self._parenthesis2seq(s, i + 1)
                 elmt_beg = i
                 seq.append(tmp_seq)
 
@@ -157,7 +156,7 @@ class IMAP4_Mailbox:
         self._login()
         IMAPCALL(self.imap.select(self.url.path))
 
-        (t, d) = self.imap.uid("SEARCH", search_criterion)
+        t, d = self.imap.uid("SEARCH", search_criterion)
         IMAPCALL((t, d))
 
         msg_list = []
@@ -190,7 +189,7 @@ class IMAP4_Mailbox:
         self._login()
         IMAPCALL(self.imap.select(self.url.path))
 
-        (t, d) = self.imap.uid("SEARCH", search_criterion)
+        t, d = self.imap.uid("SEARCH", search_criterion)
         IMAPCALL((t, d))
 
         msg_list = []

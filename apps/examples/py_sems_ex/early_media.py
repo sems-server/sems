@@ -29,7 +29,7 @@ class PySemsScript(PySemsDialog):
             debug("dlg.local_tag: %s" % self.dlg.local_tag)
 
             debug("***** onInvite *******")
-            (res, sdp_reply) = self.acceptAudio(req.body, req.hdrs)
+            res, sdp_reply = self.acceptAudio(req.body, req.hdrs)
             if res < 0:
                 self.dlg.reply(req, 500)
 
