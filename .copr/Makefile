@@ -5,6 +5,7 @@ srpm:
 	set -x
 	echo "outdir=$(outdir) spec_path=$(spec)"
 	$(eval VERSION := $(shell cat VERSION))
+	sed -i 's/%%(cat VERSION)/$(VERSION)/' $(spec)
 	mkdir -p ~/rpmbuild/SOURCES
 	tar --transform 's,^\.,sems-$(VERSION),' --exclude=.git -czf ~/rpmbuild/SOURCES/sems-$(VERSION).tar.gz -C $$(pwd) .
 	rpmbuild -bs --define "_sourcedir $$HOME/rpmbuild/SOURCES" \
