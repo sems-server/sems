@@ -40,7 +40,8 @@ if(SEMS_RUST_OK)
     sems-list-calls
     sems-list-active-calls
     sems-list-finished-calls
-    sems-get-callproperties)
+    sems-get-callproperties
+    sems-prometheus-exporter)
 
   add_custom_target(sems-monitoring-tools ALL
     COMMAND ${CARGO} build ${CARGO_RELEASE_FLAG}

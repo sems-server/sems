@@ -56,7 +56,7 @@ jobs:
             ls ./apps/*/*.so | head -20
 
             echo "=== Verifying Rust monitoring tools ==="
-            for tool in sems-list-calls sems-list-active-calls sems-list-finished-calls sems-get-callproperties; do
+            for tool in sems-list-calls sems-list-active-calls sems-list-finished-calls sems-get-callproperties sems-prometheus-exporter; do
               echo "OK: ${tool}"
               file "../apps/monitoring/tools/target/release/${tool}"
             done
