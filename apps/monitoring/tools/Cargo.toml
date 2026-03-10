@@ -5,4 +5,5 @@ members = [
     "sems-list-active-calls",
     "sems-list-finished-calls",
     "sems-get-callproperties",
+    "sems-prometheus-exporter",
 ]

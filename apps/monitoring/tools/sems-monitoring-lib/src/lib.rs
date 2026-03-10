@@ -83,11 +83,7 @@ impl<'a> Transport for TcpTransport<'a> {
 pub fn calls(url: &str) -> Result<i64, Box<dyn std::error::Error>> {
     let req = Request::new("calls");
     let resp = req.call(TcpTransport { url })?;
-    match resp {
-        Value::Int(n) => Ok(n as i64),
-        Value::Int64(n) => Ok(n),
-        _ => Err(format!("unexpected response type for calls(): {:?}", resp).into()),
-    }
+    value_as_i64(&resp)
 }
 
 /// Call the `di(...)` XMLRPC method with the given string arguments.
@@ -97,6 +93,51 @@ pub fn di(url: &str, args: &[&str]) -> Result<Value, Box<dyn std::error::Error>>
         req = req.arg(Value::from(*arg));
     }
     Ok(req.call(TcpTransport { url })?)
+}
+
+/// Call a named XMLRPC method with no arguments and return the result as i64.
+pub fn call_i64(url: &str, method: &str) -> Result<i64, Box<dyn std::error::Error>> {
+    let req = Request::new(method);
+    let resp = req.call(TcpTransport { url })?;
+    value_as_i64(&resp)
+}
+
+/// Extract an i64 from an XMLRPC Value (Int, Int64, Bool, or String containing a number).
+pub fn value_as_i64(value: &Value) -> Result<i64, Box<dyn std::error::Error>> {
+    match value {
+        Value::Int(n) => Ok(*n as i64),
+        Value::Int64(n) => Ok(*n),
+        Value::Bool(b) => Ok(if *b { 1 } else { 0 }),
+        Value::Double(f) => Ok(*f as i64),
+        Value::String(s) => {
+            // Some methods return "hard_limit soft_limit" — take first token
+            if let Some(first) = s.split_whitespace().next() {
+                first.parse::<i64>().map_err(|e| e.into())
+            } else {
+                Err(format!("empty string response").into())
+            }
+        }
+        _ => Err(format!("unexpected response type: {:?}", value).into()),
+    }
+}
+
+/// Call `get_cpslimit` and return (hard_limit, soft_limit).
+pub fn get_cpslimit(url: &str) -> Result<(i64, i64), Box<dyn std::error::Error>> {
+    let req = Request::new("get_cpslimit");
+    let resp = req.call(TcpTransport { url })?;
+    match &resp {
+        Value::String(s) => {
+            let parts: Vec<&str> = s.split_whitespace().collect();
+            if parts.len() == 2 {
+                Ok((parts[0].parse()?, parts[1].parse()?))
+            } else if parts.len() == 1 {
+                Ok((parts[0].parse()?, 0))
+            } else {
+                Err(format!("unexpected cpslimit format: {:?}", s).into())
+            }
+        }
+        _ => Err(format!("unexpected cpslimit response: {:?}", resp).into()),
+    }
 }
 
 /// Extract string values from an XMLRPC Array value, returning them as a Vec<String>.
@@ -437,5 +478,48 @@ mod tests {
         let (url, rest) = parse_url_arg(&args);
         assert_eq!(url, "http://localhost:8090");
         assert_eq!(rest, vec!["--full"]);
+    }
+
+    // --- value_as_i64 tests ---
+
+    #[test]
+    fn value_as_i64_from_int() {
+        assert_eq!(value_as_i64(&Value::Int(42)).unwrap(), 42);
+    }
+
+    #[test]
+    fn value_as_i64_from_int64() {
+        assert_eq!(value_as_i64(&Value::Int64(123456789)).unwrap(), 123456789);
+    }
+
+    #[test]
+    fn value_as_i64_from_string_number() {
+        assert_eq!(value_as_i64(&Value::String("100".into())).unwrap(), 100);
+    }
+
+    #[test]
+    fn value_as_i64_from_string_pair() {
+        // get_cpslimit returns "hard soft" — first token is used
+        assert_eq!(value_as_i64(&Value::String("200 50".into())).unwrap(), 200);
+    }
+
+    #[test]
+    fn value_as_i64_from_bool_true() {
+        assert_eq!(value_as_i64(&Value::Bool(true)).unwrap(), 1);
+    }
+
+    #[test]
+    fn value_as_i64_from_bool_false() {
+        assert_eq!(value_as_i64(&Value::Bool(false)).unwrap(), 0);
+    }
+
+    #[test]
+    fn value_as_i64_from_double() {
+        assert_eq!(value_as_i64(&Value::Double(3.7)).unwrap(), 3);
+    }
+
+    #[test]
+    fn value_as_i64_from_nil_fails() {
+        assert!(value_as_i64(&Value::Nil).is_err());
     }
 }
