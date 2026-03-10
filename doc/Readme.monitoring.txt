@@ -1,9 +1,9 @@
 monitoring module - in-memory AVP DB
 
-The 'monitoring' module gets information regarding calls from the core 
-and applications, and makes them available via DI methods, e.g. for 
-monitoring a SEMS server via XMLRPC (using xmlrpc2di), or any other 
-method that can acces DI.
+The 'monitoring' module gets information regarding calls from the core
+and applications, and makes them available via DI methods, e.g. for
+monitoring a SEMS server via XMLRPC (using xmlrpc2di), Prometheus
+(using sems-prometheus-exporter), or any other method that can access DI.
 
 Even though its primary intention is to store call related information
 for monitoring purposes (what its name hints at), the monitoring module
@@ -72,15 +72,101 @@ functions to get values, e.g. from the outside:
 
 (of course, log()/logAdd() functions can also be accessed via e.g. XMLRPC.)
 
+Counters and Samples
+--------------------
+In addition to per-call attribute-value pairs, the monitoring module supports
+named counters and time-series samples:
+
+ inc(type, name)             - increment a named counter
+ dec(type, name)             - decrement a named counter
+ addCount(type, name, value) - add a value to a named counter
+ addSample(type, name [, count [, timestamp]])
+                             - record a timestamped sample for rate calculation
+ getCount(type, name [, seconds])
+                             - get counter/sample count within a time window
+ getAllCounts(type [, seconds])
+                             - get all counters/samples for a type
+ getSingle(ID, key)          - get a single attribute value
+
+Samples are retained for a configurable window (retain_samples_s in
+monitoring.conf, default 10 seconds) and can be used for rate calculations.
+
+These counters are accessible via DI, XMLRPC, and the Prometheus exporter.
+
+Command-line Tools
+------------------
+Rust-based CLI tools are provided for querying the monitoring module via
+XMLRPC (requires xmlrpc2di to be running). Python fallback scripts are
+installed when a Rust toolchain is not available.
+
+ sems-list-calls [--full] [--url <url>]
+   List all monitored call IDs. With --full, print detailed properties
+   for each call.
+
+ sems-list-active-calls [--full] [--url <url>]
+   List only active (unfinished) call IDs.
+
+ sems-list-finished-calls [--url <url>]
+   List finished call IDs awaiting garbage collection.
+
+ sems-get-callproperties [--url <url>] <call-id>
+   Get all attributes for a specific call by its ID (local tag).
+
+Default XMLRPC URL is http://localhost:8090. Use --url to override.
+
+Prometheus Exporter
+-------------------
+sems-prometheus-exporter is a standalone HTTP server that scrapes SEMS
+via XMLRPC and serves metrics in Prometheus exposition format.
+
+Usage:
+ sems-prometheus-exporter [--url <sems-xmlrpc-url>] [--listen <addr:port>]
+
+   --url     SEMS XMLRPC endpoint (default: http://localhost:8090)
+   --listen  Prometheus HTTP listen address (default: 0.0.0.0:9090)
+
+Requires the xmlrpc2di module to be loaded and running in SEMS, with
+export_di=yes in xmlrpc2di.conf.
+
+Metrics exposed on /metrics:
+
+  Core metrics (from built-in XMLRPC methods):
+    sems_active_calls          - current number of active calls (gauge)
+    sems_sessions_total        - total sessions since startup (counter)
+    sems_calls_avg             - average active calls, 5s window (gauge)
+    sems_calls_max             - peak active calls since last query (gauge)
+    sems_cps_avg               - average calls per second, 5s window (gauge)
+    sems_cps_max               - peak CPS since last query (gauge)
+    sems_shutdown_mode         - whether shutdown mode is active (gauge)
+    sems_cps_hard_limit        - configured hard CPS limit (gauge)
+    sems_cps_soft_limit        - configured soft CPS limit (gauge)
+
+  Monitoring plugin metrics (via DI):
+    sems_monitoring_count{name="..."} - named counter values (gauge)
+    sems_monitoring_active_sessions   - active monitored sessions (gauge)
+    sems_monitoring_finished_sessions - finished sessions awaiting GC (gauge)
+
+  Registration metrics (if present in monitoring attributes):
+    sems_reg_active            - active registrations (gauge)
+    sems_registrations         - total registrations (gauge)
+    sems_registered_uas        - registered user agents (gauge)
+
+Custom application counters set via MONITORING_INC/MONITORING_DEC macros
+or monitoring.inc/monitoring.dec DSM actions are automatically exported
+as sems_monitoring_count{name="..."} labels.
+
 Performance
 -----------
-monitoring is not very much optimized for speed. Thus, especially by 
-using DI/AmArg, a lot of string comparisions and copying is performed. 
-If you measure any performance figures in real life usage comparing use 
-of monitoring vs. monitoring not enabled, please contribute 
-(mailto:semsdev@iptel.org, http://tracker.iptel.org) to be included in 
+monitoring is not very much optimized for speed. Thus, especially by
+using DI/AmArg, a lot of string comparisions and copying is performed.
+If you measure any performance figures in real life usage comparing use
+of monitoring vs. monitoring not enabled, please contribute
+(mailto:semsdev@iptel.org, http://tracker.iptel.org) to be included in
 this documentation.
 
+The Prometheus exporter connects to SEMS via XMLRPC on each scrape,
+so scrape intervals below 5 seconds are not recommended for high-traffic
+systems.
 
 TODO
 ----
