@@ -12,15 +12,6 @@ include_directories(../..)
 add_library(sems_sbc_${sems_sbc_call_control_name} MODULE
             ${${sems_sbc_call_control_name}_SRCS})
 
-if(APPLE)
-  set(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress"
-  )
-  set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress"
-  )
-endif(APPLE)
-
 # all modules should be linked against ${CMAKE_DL_LIBS} at least and with
 # additional ${sems_sbc_module_libs} if they exists
 target_link_libraries(sems_sbc_${sems_sbc_call_control_name} ${CMAKE_DL_LIBS}

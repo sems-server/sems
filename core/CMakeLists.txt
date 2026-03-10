@@ -62,18 +62,17 @@ foreach(EXE_TARGET sems sems_tests)
   endif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 
   if(SPANDSP_FOUND)
-    target_link_libraries(${EXE_TARGET} ${CMAKE_DL_LIBS} spandsp)
+    target_link_libraries(${EXE_TARGET} spandsp)
   endif(SPANDSP_FOUND)
 
   if(LIBSAMPLERATE_FOUND)
-    target_link_libraries(${EXE_TARGET} ${CMAKE_DL_LIBS}
-                          ${LIBSAMPLERATE_LIBRARIES})
+    target_link_libraries(${EXE_TARGET} ${LIBSAMPLERATE_LIBRARIES})
   else(LIBSAMPLERATE_FOUND)
     target_sources(${EXE_TARGET} PRIVATE "resample/resample.cpp")
   endif(LIBSAMPLERATE_FOUND)
 
   if(LIBZRTP_FOUND)
-    target_link_libraries(${EXE_TARGET} ${CMAKE_DL_LIBS} ${LIBZRTP_LIBRARIES})
+    target_link_libraries(${EXE_TARGET} ${LIBZRTP_LIBRARIES})
   endif(LIBZRTP_FOUND)
 
 endforeach(EXE_TARGET)

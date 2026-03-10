@@ -3,7 +3,11 @@
 set(sems_stats_SRCS query_stats.cxx)
 
 add_executable(sems-stats ${sems_stats_SRCS})
-target_link_libraries(sems-stats ${CMAKE_DL_LIBS} stdc++)
+if(APPLE)
+  target_link_libraries(sems-stats ${CMAKE_DL_LIBS})
+else()
+  target_link_libraries(sems-stats ${CMAKE_DL_LIBS} stdc++)
+endif()
 
 install(TARGETS sems-stats RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
 

@@ -10,15 +10,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
 add_library(sems_${sems_module_name} MODULE ${${sems_module_name}_SRCS})
 
-if(APPLE)
-  set(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress"
-  )
-  set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
-      "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress"
-  )
-endif(APPLE)
-
 add_definitions(-DMOD_NAME="${sems_module_name}")
 
 # all modules should be linked against ${CMAKE_DL_LIBS} at least and with
