@@ -315,6 +315,8 @@ public:
     trans_ticket(const trans_ticket& ticket)
 	: _t(ticket._t), _bucket(ticket._bucket) {}
 
+    trans_ticket& operator=(const trans_ticket&) = default;
+
     /**
      * Locks the transaction bucket before accessing the transaction pointer.
      */

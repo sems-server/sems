@@ -124,6 +124,7 @@ class PayloadMask
     PayloadMask() { clear(); }
     PayloadMask(bool _set_all) { if (_set_all) set_all(); else clear(); }
     PayloadMask(const PayloadMask &src);
+    PayloadMask& operator=(const PayloadMask&) = default;
 };
 
 /**

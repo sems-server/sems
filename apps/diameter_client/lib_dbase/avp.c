@@ -443,7 +443,7 @@ char*  AAAConvertAVPToString(AAA_AVP *avp, char *dest, unsigned int destLen)
       WARN("WARNING:AAAConvertAVPToString: don't know how to print"
 	   " this data type [%d] -> tryng hexa\n",avp->type);
     case AAA_AVP_DATA_TYPE:
-      for (i=0;i<avp->data.len&&l<destLen-1;i++)
+      for (i=0;i<avp->data.len&&(unsigned int)l<destLen-1;i++)
 	l+=snprintf(dest+l,destLen-l-1,"%x",
 		    ((unsigned char*)avp->data.s)[i]);
     }

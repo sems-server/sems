@@ -78,9 +78,11 @@ struct AliasEntry
   void fire();
 };
 
-struct RegCacheStorageHandler 
+struct RegCacheStorageHandler
 {
-  virtual void onDelete(const string& aor, const string& uri, 
+  virtual ~RegCacheStorageHandler() = default;
+
+  virtual void onDelete(const string& aor, const string& uri,
 			const string& alias) {}
 
   virtual void onUpdate(const string& canon_aor, const string& alias, 

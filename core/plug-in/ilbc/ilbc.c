@@ -213,7 +213,7 @@ int Pcm16_2_iLBC( unsigned char* out_buf, unsigned char* in_buf, unsigned int si
 
   for (i=0;i< size / (2*codec_inst->iLBC_Enc_Inst.blockl);i++) {  
     /* convert signal to float */
-    for (k=0; k<codec_inst->iLBC_Enc_Inst.blockl; k++)
+    for (k=0; k<(unsigned int)codec_inst->iLBC_Enc_Inst.blockl; k++)
       block[k] = in_b[i*codec_inst->iLBC_Enc_Inst.blockl + k];
     /* do the actual encoding */
     iLBC_encode((unsigned char *)(out_buf+out_buf_offset), block, &codec_inst->iLBC_Enc_Inst);
@@ -267,7 +267,7 @@ static int iLBC_2_Pcm16_Ext( unsigned char* out_buf, unsigned char* in_buf, unsi
   codec_inst = (iLBC_Codec_Inst_t*)h_codec;
   
   noframes = size / codec_inst->iLBC_Dec_Inst.no_of_bytes;
-  if (noframes*codec_inst->iLBC_Dec_Inst.no_of_bytes != size) {
+  if ((unsigned int)(noframes*codec_inst->iLBC_Dec_Inst.no_of_bytes) != size) {
     WARN("Dropping extra %d bytes from iLBC packet.\n",
 	 size - noframes*codec_inst->iLBC_Dec_Inst.no_of_bytes);
   }

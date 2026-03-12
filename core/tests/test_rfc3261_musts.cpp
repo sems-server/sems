@@ -474,7 +474,7 @@ FCTMF_SUITE_BGN(test_rfc3261_musts) {
     char *err_msg = NULL;
     int rc = try_parse(raw.c_str(), raw.size(), msg, err_msg);
     fct_chk(rc == 0);
-    fct_chk_eq_int(msg.body.len, (int)strlen(sdp));
+    fct_chk_eq_int((int)msg.body.len, (int)strlen(sdp));
   }
   FCT_TEST_END();
 

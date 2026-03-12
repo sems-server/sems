@@ -365,7 +365,7 @@ int do_read(dia_tcp_conn* conn_st, rd_buf_t *p)
       //		DBG("DEBUG:do_read (sock=%d)  -> n=%d (expected=%d)\n",
       //			p->sock,n,wanted_len);
       p->buf_len += n;
-      if (n<wanted_len)
+      if ((unsigned int)n<wanted_len)
 	{
 	  //DBG("only %d bytes read from %d expected\n",n,wanted_len);
 	  wanted_len -= n;
