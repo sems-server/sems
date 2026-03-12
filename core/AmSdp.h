@@ -92,6 +92,8 @@ struct SdpOrigin
       conn(other.conn)
   {}
 
+  SdpOrigin& operator=(const SdpOrigin&) = default;
+
   bool operator == (const SdpOrigin& other) const;
 };
 /** 
@@ -136,6 +138,8 @@ struct SdpPayload
       encoding_param(other.encoding_param)
   {}
 
+  SdpPayload& operator=(const SdpPayload&) = default;
+
   bool operator == (int r);
 
   bool operator == (const SdpPayload& other) const;
@@ -158,6 +162,8 @@ struct SdpAttribute
 
   SdpAttribute(const SdpAttribute& other)
     : attribute(other.attribute), value(other.value) {}
+
+  SdpAttribute& operator=(const SdpAttribute&) = default;
 
   string print() const;
 
@@ -255,8 +261,9 @@ public:
     
   AmSdp();
   AmSdp(const AmSdp& p_sdp_msg);
+  AmSdp& operator=(const AmSdp&) = default;
 
-  /** 
+  /**
    * Parse the SDP message passed as an argument.
    * @return !=0 if error encountered.
    */

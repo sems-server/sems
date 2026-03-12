@@ -48,6 +48,7 @@ using std::string;
 #define SBC_TIMER_ID_CALL_TIMERS_END     99
 
 struct CallLegCreator {
+  virtual ~CallLegCreator() = default;
   virtual SBCCallLeg* create(const SBCCallProfile& call_profile);
   virtual SBCCallLeg* create(SBCCallLeg* caller);
 };
@@ -55,6 +56,7 @@ struct CallLegCreator {
 class SimpleRelayDialog;
 
 struct SimpleRelayCreator {
+  virtual ~SimpleRelayCreator() = default;
   typedef pair<SimpleRelayDialog*,SimpleRelayDialog*> Relay;
   virtual Relay createRegisterRelay(SBCCallProfile& call_profile,
 				    vector<AmDynInvoke*> &cc_modules);
