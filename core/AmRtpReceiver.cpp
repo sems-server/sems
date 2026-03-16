@@ -147,11 +147,23 @@ void AmRtpReceiverThread::_rtp_receiver_buf_cb(evutil_socket_t sd,
 void AmRtpReceiverThread::addStream(int sd, AmRtpStream* stream)
 {
   streams_mut.lock();
-  if(streams.find(sd) != streams.end()) {
-    ERROR("trying to insert existing stream [%p] with sd=%i\n",
-	  stream,sd);
-    streams_mut.unlock();
-    return;
+  Streams::iterator sit = streams.find(sd);
+  if(sit != streams.end()) {
+    StreamInfo& old_si = sit->second;
+    if(!old_si.stream && !old_si.ev_read) {
+      // stale entry from a removeStream() whose Phase 3 (erase)
+      // has not yet run — the event is already freed, so we can
+      // safely evict the leftover map entry and reuse the slot
+      WARN("evicting stale stream entry for sd=%i (socket reuse "
+	   "during receiver cleanup)\n", sd);
+      streams.erase(sit);
+    } else {
+      ERROR("trying to insert existing stream [%p] with sd=%i "
+	    "(active stream [%p] still registered)\n",
+	    stream, sd, old_si.stream);
+      streams_mut.unlock();
+      return;
+    }
   }
 
   StreamInfo& si = streams[sd];
@@ -184,6 +196,7 @@ void AmRtpReceiverThread::removeStream(int sd, int local_port)
     return;
   }
 
+  AmRtpStream* old_stream = si.stream;
   si.stream = NULL;
   event* ev_read = si.ev_read;
   si.ev_read = NULL;
@@ -199,8 +212,20 @@ void AmRtpReceiverThread::removeStream(int sd, int local_port)
   // so that the StreamInfo does not get
   // deleted while in recvPaket()
   // (see recv callback)
-  streams.erase(sd);
-  streams_ports.erase(local_port);
+  //
+  // Guard: if addStream() already evicted our stale entry and
+  // inserted a new stream on the same sd, do not erase it.
+  sit = streams.find(sd);
+  if(sit != streams.end() && !sit->second.stream) {
+    streams.erase(sit);
+  }
+  // Clean up port mapping only if it still references the
+  // stream we removed — a concurrent addStream() may have
+  // already replaced it with a new stream on the same port.
+  std::map<int, AmRtpStream*>::iterator pit = streams_ports.find(local_port);
+  if(pit != streams_ports.end() && pit->second == old_stream) {
+    streams_ports.erase(pit);
+  }
   streams_mut.unlock();
 }
 
