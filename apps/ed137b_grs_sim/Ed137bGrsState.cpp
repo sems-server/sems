@@ -6,6 +6,7 @@
 #include "Ed137bGrsSipHelper.h"
 #include "log.h"
 
+#include <cstring>
 #include <ctime>
 #include <sys/time.h>
 
