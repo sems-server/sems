@@ -37,10 +37,38 @@ headers and SDP attributes, and logs all signalling parameter changes
 
 ### What it does NOT simulate
 
-- RTP header extensions (PTT, squelch, BSS signalling at RTP level)
-- Multicast RTP
-- SRTP/TLS (ED-137C security extensions)
-- Actual radio RF behaviour
+**RTP-level signalling (ED-137B RTP header extensions):**
+- PTT (Push-To-Talk) indication -- the GRS does not read or write PTT bits
+  in RTP header extensions; incoming PTT from clients is not detected or logged
+- Squelch indication -- no SQU bit handling in RTP packets
+- PTT-ID -- no transmitter identification via RTP extension fields
+- Signal quality metrics (RSSI, BSS-Q) -- not reported in RTP extensions
+- Key-in information distribution -- when a radio user keys the transmitter,
+  a real GRS distributes PTT state to all connected CWPs via RTP header
+  extensions on every outgoing packet; this simulator does not do so
+
+**BSS (Best Signal Selection):**
+- BSS arbitration -- no signal quality comparison across multiple receivers
+- Climax switching -- SDP `a=climax` attribute is accepted and echoed but
+  the GRS does not actively select or switch the best signal
+- BSS RSSI/quality reporting to CWPs via RTP extensions
+
+**Radio coupling and distribution:**
+- Radio coupling/decoupling signalling between GRS instances
+- Cross-coupling of audio between frequencies
+- Simultaneous distribution of key-in state to multiple CWPs
+
+**Security (ED-137C):**
+- SRTP encryption of media streams
+- TLS for SIP signalling
+- DTLS-SRTP key exchange
+
+**Transport:**
+- Multicast RTP (some ED-137B deployments use multicast for efficiency)
+- RTCP extended reports for ED-137B monitoring
+
+**RF simulation:**
+- Actual radio RF behaviour, signal propagation, or interference modelling
 
 ## Quick Start
 
