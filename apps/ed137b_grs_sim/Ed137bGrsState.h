@@ -12,7 +12,7 @@
 #ifndef _ED137B_GRS_STATE_H_
 #define _ED137B_GRS_STATE_H_
 
-#include "AmMutex.h"
+#include "AmThread.h"
 #include <string>
 #include <map>
 #include <cstdio>
