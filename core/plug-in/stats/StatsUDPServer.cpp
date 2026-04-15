@@ -196,13 +196,13 @@ void StatsUDPServer::run()
   struct sockaddr_in addr;
   socklen_t addrlen = sizeof(struct sockaddr_in);
 
-  char msg_buf[MSG_BUF_SIZE];
-  int  msg_buf_s;
+  char msg_buf[MSG_BUF_SIZE + 1];
+  ssize_t msg_buf_s;
 
   while(true){
 
     msg_buf_s = recvfrom(sd,msg_buf,MSG_BUF_SIZE,0,(sockaddr*)&addr,&addrlen);
-    if(msg_buf_s == -1){
+    if(msg_buf_s < 0){
 
       switch(errno){
       case EINTR:
@@ -214,6 +214,8 @@ void StatsUDPServer::run()
       ERROR("recvfrom: %s\n",strerror(errno));
       break;
     }
+
+    msg_buf[msg_buf_s] = '\0';
 
     //printf("received packet from: %s:%i\n",
     //       inet_ntoa(addr.sin_addr),ntohs(addr.sin_port));
