@@ -23,12 +23,12 @@ public:
 private:
   State reliable_1xx;
 
-  //uas
+  // UAS
   unsigned rseq;          // RSeq for next request
   bool rseq_confirmed;    // latest RSeq is confirmed
   unsigned rseq_1st;      // value of first RSeq (init value)
-  //uac
-  unsigned rseq_last;     // last received RSeq
+  // UAC
+  unsigned rseq_last;     // last accepted RSeq
 
   AmSipDialog* dlg;
   AmSipDialogEventHandler* hdl;
