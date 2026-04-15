@@ -174,11 +174,11 @@ long iLBC_create(const char* format_parameters, const char** format_parameters_o
   }
 
   codec_inst = (iLBC_Codec_Inst_t*)malloc(sizeof(iLBC_Codec_Inst_t));
-  codec_inst->mode = mode;
 
-  if (!codec_inst) 
+  if (!codec_inst)
     return -1;
 
+  codec_inst->mode = mode;
   initEncode(&codec_inst->iLBC_Enc_Inst, mode);
   initDecode(&codec_inst->iLBC_Dec_Inst, mode, 0 /* 1=use_enhancer */);
   
