@@ -123,7 +123,7 @@ static string payload2str(const SdpPayload &p);
 	else {								\
 	  map<string,unsigned short>::iterator name_it =		\
 	    AmConfig::SIP_If_names.find(what);				\
-	  if (name_it != AmConfig::RTP_If_names.end()) \
+	  if (name_it != AmConfig::SIP_If_names.end()) \
 	    iface = name_it->second;					\
 	  else {							\
 	    ERROR("selected " #what " '%s' does not exist as a signaling" \
@@ -887,7 +887,7 @@ bool SBCCallProfile::evaluateOutboundInterface() {
   } else {
     map<string,unsigned short>::iterator name_it =
       AmConfig::SIP_If_names.find(outbound_interface);
-    if (name_it != AmConfig::RTP_If_names.end()) {
+    if (name_it != AmConfig::SIP_If_names.end()) {
       outbound_interface_value = name_it->second;
     } else {
       ERROR("selected outbound_interface '%s' does not exist as a signaling"
