@@ -227,7 +227,15 @@ EXEC_ACTION_START(ConfRejoinAction) {
   }
 
   if (ConferenceJoinChannel(&chan, sess, sc_sess, channel_id, mode)) {
-  sc_sess->CLR_ERRNO;
+    // save channel for later use
+    AmArg c_arg;
+    c_arg.setBorrowedPointer(chan);
+    sc_sess->avar[CONF_AKEY_CHANNEL] = c_arg;
+
+    // add to garbage collector
+    sc_sess->transferOwnership(chan);
+
+    sc_sess->CLR_ERRNO;
   } else {
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
   }
