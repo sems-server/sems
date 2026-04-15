@@ -183,7 +183,12 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     return -1;
   }
 
-  if ((fseek(fp,chunk_size-16,SEEK_CUR) < 0) 
+  if (chunk_size < 16) {
+    ERROR("fmt chunk size %u is smaller than required 16 bytes\n", chunk_size);
+    return -1;
+  }
+
+  if ((fseek(fp,chunk_size-16,SEEK_CUR) < 0)
       && errno == EBADF) {
     is_seekable = 0;
     wav_dummyread(fp,chunk_size-16);
