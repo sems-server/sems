@@ -51,7 +51,12 @@ bool DRedisConnection::connect()
 						cfg.tv_timeout);
   }
 
-  if (redis_context != NULL && redis_context->err) {
+  if(redis_context == NULL) {
+    ERROR("REDIS Connection error: failed to allocate redis context\n");
+    return false;
+  }
+
+  if(redis_context->err) {
     ERROR("REDIS Connection error: %s\n", redis_context->errstr);
     disconnect();
     return false;
