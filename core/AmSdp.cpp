@@ -1010,7 +1010,7 @@ static char* parse_sdp_attr(AmSdp* sdp_msg, char* s)
   int parsing = 1;
   line_end = skip_till_next_line(attr_line, line_len);
   
-  unsigned int payload_type, clock_rate, encoding_param = 0;
+  unsigned int payload_type = 0, clock_rate = 0, encoding_param = 0;
   string encoding_name, params;
 
   string attr;
