@@ -120,20 +120,23 @@ int AmRtpStream::getLocalSocket()
   } 
 
   if((rtcp_sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1) {
+    close(sd);
     ERROR("%s\n",strerror(errno));
     throw string ("while creating new socket.");
-  } 
+  }
 
   int true_opt = 1;
   if(ioctl(sd, FIONBIO , &true_opt) == -1){
     ERROR("%s\n",strerror(errno));
     close(sd);
+    close(rtcp_sd);
     throw string ("while setting socket non blocking.");
   }
 
   if(ioctl(rtcp_sd, FIONBIO , &true_opt) == -1){
     ERROR("%s\n",strerror(errno));
     close(sd);
+    close(rtcp_sd);
     throw string ("while setting socket non blocking.");
   }
 
