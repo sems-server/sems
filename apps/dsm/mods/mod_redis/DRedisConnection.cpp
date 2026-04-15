@@ -51,7 +51,7 @@ bool DRedisConnection::connect()
 						cfg.tv_timeout);
   }
 
-  if (redis_context->err) {
+  if (redis_context != NULL && redis_context->err) {
     ERROR("REDIS Connection error: %s\n", redis_context->errstr);
     disconnect();
     return false;
@@ -73,11 +73,15 @@ int DRedisConnection::handle_redis_reply(redisReply *reply, const char* _cmd) {
       disconnect();
       return DB_E_CONNECTION;
 
-    case REDIS_ERR_PROTOCOL: 
+    case REDIS_ERR_PROTOCOL:
       ERROR("REDIS Protocol error detected\n");
       disconnect();
       return DB_E_CONNECTION;
-    }    
+
+    default:
+      disconnect();
+      return DB_E_CONNECTION;
+    }
   }
 
   switch (reply->type) {
