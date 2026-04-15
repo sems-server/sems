@@ -29,6 +29,7 @@
 #include "log.h"
 #include "AmConfig.h"
 
+#include <memory>
 #include <typeinfo>
 AmEventQueue::AmEventQueue(AmEventHandler* handler)
   : handler(handler),
@@ -75,22 +76,23 @@ void AmEventQueue::processEvents()
   m_queue.lock();
 
   while(!ev_queue.empty()) {
-	
-    AmEvent* event = ev_queue.front();
+
+    std::unique_ptr<AmEvent> event(ev_queue.front());
     ev_queue.pop();
     m_queue.unlock();
 
-    if (AmConfig::LogEvents) 
+    if (AmConfig::LogEvents)
       DBG("before processing event (%s)\n",
-	  typeid(*event).name());
-    handler->process(event);
-    if (AmConfig::LogEvents) 
+	  typeid(*event.get()).name());
+    handler->process(event.get());
+    if (AmConfig::LogEvents)
       DBG("event processed (%s)\n",
-	  typeid(*event).name());
-    delete event;
+	  typeid(*event.get()).name());
+
+    event.reset(nullptr);
     m_queue.lock();
   }
-    
+
   ev_pending.set(false);
   m_queue.unlock();
 }
@@ -106,16 +108,17 @@ void AmEventQueue::processSingleEvent()
 
   if (!ev_queue.empty()) {
 
-    AmEvent* event = ev_queue.front();
+    std::unique_ptr<AmEvent> event(ev_queue.front());
     ev_queue.pop();
     m_queue.unlock();
 
-    if (AmConfig::LogEvents) 
+    if (AmConfig::LogEvents)
       DBG("before processing event\n");
-    handler->process(event);
-    if (AmConfig::LogEvents) 
+    handler->process(event.get());
+    if (AmConfig::LogEvents)
       DBG("event processed\n");
-    delete event;
+
+    event.reset(nullptr);
 
     m_queue.lock();
     if (ev_queue.empty())
