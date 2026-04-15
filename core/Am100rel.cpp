@@ -115,7 +115,8 @@ int  Am100rel::onReplyIn(const AmSipReply& reply)
         rseq_last = reply.rseq;
         if (hdl) ((AmSipDialogEventHandler*)hdl)->onInvite1xxRel(reply);
       } else {
-        DBG(SIP_EXT_100REL " ignore retransmit. callid: %s\n", reply.callid.c_str());
+        DBG(SIP_EXT_100REL " ignore retransmit. callid: %s, RSeq: %u, rseq_last: %u\n",
+            reply.callid.c_str(), reply.rseq, rseq_last);
       }
       break;
 
