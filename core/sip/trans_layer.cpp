@@ -2855,25 +2855,31 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 
 void trans_ticket::lock_bucket() const
 {
-    _bucket->lock();
+    if(_bucket)
+	_bucket->lock();
 }
 
 void trans_ticket::unlock_bucket() const
 {
-    _bucket->unlock();
+    if(_bucket)
+	_bucket->unlock();
 }
 
 const sip_trans* trans_ticket::get_trans() const
 {
+    if(!_t || !_bucket)
+	return NULL;
+
     if(_bucket->exist(_t))
-	return _t; 
-    else 
-	return NULL; 
+	return _t;
+    else
+	return NULL;
 }
 
 void trans_ticket::remove_trans()
 {
-    _bucket->remove(_t);
+    if(_bucket)
+	_bucket->remove(_t);
 }
 
 /** EMACS **
