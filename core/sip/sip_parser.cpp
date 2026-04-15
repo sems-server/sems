@@ -465,7 +465,10 @@ static int parse_first_line(sip_msg* msg, char** c, char* end)
 	case ST_LF:
 	case ST_CRLF:
 	    if(saved_st == FL_REASON){
-		msg->u.reply->reason.set(beg,*c-(st==ST_CRLF?2:1)-beg);
+		int reason_len = *c-(st==ST_CRLF?2:1)-beg;
+		if(reason_len > 0) {
+		    msg->u.reply->reason.set(beg, reason_len);
+		}
 	    }
 	    if(saved_st == FL_BAD_VERSION){
 		return MALFORMED_SIP_VERSION;
