@@ -1019,6 +1019,7 @@ static bool fillSysIntfList()
   
   if(getifaddrs(&ifap) < 0){
     ERROR("getifaddrs() failed: %s",strerror(errno));
+    close(fd);
     return false;
   }
 
