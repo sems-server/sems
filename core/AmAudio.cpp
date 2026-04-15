@@ -202,6 +202,7 @@ unsigned int AmLibSamplerateResamplingState::resample(unsigned char* samples, un
       signed short* samples_s = (signed short*)(unsigned char*)samples;
       resample_out_buf_samples += src_data.output_frames_gen;
       s *= ratio;
+      if (s & 1) s--; // align to pcm16 boundary
       src_float_to_short_array(resample_out, samples_s, PCM16_B2S(s));
       DBG("resample: output_frames_gen = %ld", src_data.output_frames_gen);
 
