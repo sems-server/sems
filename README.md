@@ -282,6 +282,8 @@ These CMake options control optional features and codec support. Pass them with 
 | `SEMS_USE_IPV6` | `ON` | Build with IPv6 support |
 | `SEMS_USE_PYTHON` | `ON` | Build Python-dependent modules (ivr, conf_auth, mailbox, pin_collect, mod_py) |
 | `SEMS_USE_ASAN` | `OFF` | Build with AddressSanitizer (memory error detector) |
+| `SEMS_USE_UBSAN` | `OFF` | Build with UndefinedBehaviorSanitizer (fail-fast on UB) |
+| `SEMS_HARDEN` | `OFF` | Enable compile/link hardening (stack protector, `_FORTIFY_SOURCE`, RELRO, PIE, noexecstack, CET) |
 
 Some modules are also auto-detected based on whether their library is installed (e.g. `conference` requires libevent2, `db_reg_agent` requires MySQL++, `jsonrpc` requires libev).
 
