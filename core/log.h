@@ -136,7 +136,7 @@ enum Log_Level {
 #define CAT_ERROR(error_category, fmt, args... ) \
   _LOG(L_ERR, error_category " " fmt, ##args)
 #define CAT_WARN(error_category, fmt, args... ) \
-_LOG(L_WARN, error_category " " fmt, ##args)
+  _LOG(L_WARN, error_category " " fmt, ##args)
 #define CAT_INFO(error_category, fmt, args... ) \
   _LOG(L_INFO, error_category " " fmt, ##args)
 #define CAT_DBG(error_category, fmt, args... ) \
