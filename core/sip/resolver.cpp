@@ -250,6 +250,10 @@ public:
 	    if(!e)
 		return -1;
 	}
+	else if(srv_lst_size == 0) {
+	    // no usable entries left at this priority
+	    return -1;
+	}
 	else {
 	    // single record or all weights == 0
 	    e = (srv_entry*)ip_vec[srv_lst.begin()->second];
