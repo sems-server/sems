@@ -421,10 +421,12 @@ Contributors:
 * Andrey Samusenko
 * Andriy I Pylypenko
 * Anton Zagorskiy
+* Arnd Schmitter
 * B. Oldenburg
 * Balint Kovacs
 * Bogdan Pintea
 * Carsten Bock
+* Donat Zenichev
 * Greger Viken Teigre
 * Grzegorz Stanislawski
 * Helmut Kuper
@@ -440,6 +442,7 @@ Contributors:
 * Pavel Kasparek
 * Peter Lemenkov
 * Peter Loeppky
+* Richard Fuchs
 * Richard Newman
 * Robert Szokovacs
 * Rui Jin Zheng
