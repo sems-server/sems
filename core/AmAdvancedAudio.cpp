@@ -339,7 +339,7 @@ int AmNullAudio::get(unsigned long long system_ts, unsigned char* buffer,
 
   // need to stop at some point?
   if (read_msec < 0) {
-    memset((unsigned char*) samples, 0, size);
+    memset((unsigned char*) buffer, 0, size);
     return size;
   }
 
@@ -353,7 +353,7 @@ int AmNullAudio::get(unsigned long long system_ts, unsigned char* buffer,
     return -1;
   }
 
-  memset((unsigned char*) samples, 0, size);
+  memset((unsigned char*) buffer, 0, size);
   return size;
 }
 
