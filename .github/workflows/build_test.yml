@@ -47,9 +47,32 @@ jobs:
       - name: Build image based on Debian 13
         run: docker build -t sems_deb13 -f Dockerfile-debian13 .
 
-  asan_test:
+  hardened_builds:
     runs-on: ubuntu-latest
-    name: ASAN Memory Check
+    name: Hardened build (${{ matrix.flavor }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # AddressSanitizer: heap/stack/global buffer overflows, UAF, leaks.
+          # Debug build so line info is accurate; halt_on_error=0 to surface
+          # as many issues as possible in a single run.
+          - flavor: asan
+            cmake_flags: "-DSEMS_USE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug"
+            ctest_env: "ASAN_OPTIONS=detect_leaks=1:halt_on_error=0:abort_on_error=0"
+            tests_must_pass: false
+          # UBSan: undefined behavior. halt_on_error=1 + no-sanitize-recover
+          # together make the process abort on the first violation (fail-fast).
+          - flavor: ubsan
+            cmake_flags: "-DSEMS_USE_UBSAN=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+            ctest_env: "UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1"
+            tests_must_pass: true
+          # Hardened release: what production binaries should look like.
+          # RelWithDebInfo keeps optimization >= 1 so FORTIFY_SOURCE is active.
+          - flavor: hardened
+            cmake_flags: "-DSEMS_HARDEN=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+            ctest_env: ""
+            tests_must_pass: true
 
     steps:
       - name: Checkout code
@@ -60,18 +83,46 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake g++ libspandsp-dev libspeex-dev \
             libgsm1-dev libopus-dev libssl-dev python3-dev libev-dev \
-            libevent-dev libxml2-dev libcurl4-openssl-dev libhiredis-dev
+            libevent-dev libxml2-dev libcurl4-openssl-dev libhiredis-dev \
+            binutils file
 
-      - name: Configure with ASAN
-        run: |
-          mkdir build && cd build
-          cmake .. -DSEMS_USE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Configure (${{ matrix.flavor }})
+        run: cmake -S . -B build ${{ matrix.cmake_flags }}
 
       - name: Build
         run: cmake --build build -j$(nproc)
 
-      - name: Run tests with ASAN
+      # For the hardened flavor, fail the job if the mitigations we asked for
+      # are not actually present in the produced binary. Catches silent flag
+      # drops / override bugs in the build system.
+      - name: Verify hardening artifacts
+        if: matrix.flavor == 'hardened'
         run: |
-          cd build
-          ASAN_OPTIONS=detect_leaks=1:halt_on_error=0 ctest -V
-        continue-on-error: true
+          set -eu
+          BIN=build/core/sems
+          echo "=== sems binary ==="
+          file "$BIN"
+          # PIE: ET_DYN (shown by `file` as "shared object")
+          file "$BIN" | grep -q 'shared object' \
+            || { echo "::error::sems is not PIE"; exit 1; }
+          # Full RELRO: BIND_NOW flag in dynamic section
+          readelf -d "$BIN" | grep -q 'BIND_NOW' \
+            || { echo "::error::BIND_NOW (full RELRO) missing"; exit 1; }
+          readelf -d "$BIN" | grep -q 'GNU_RELRO\|Flags:  *Bind now' || true
+          # Non-exec stack: GNU_STACK must not be RWE/RWX
+          if readelf -lW "$BIN" | awk '/GNU_STACK/ {print $7}' | grep -q 'E'; then
+            echo "::error::sems has executable stack"; exit 1;
+          fi
+          # Stack canaries present
+          nm -D "$BIN" | grep -q '__stack_chk_fail' \
+            || { echo "::error::stack protector not linked in"; exit 1; }
+          # FORTIFY wrappers referenced (at least one __*_chk symbol)
+          nm -D "$BIN" | grep -Eq '__[a-z0-9_]+_chk' \
+            || { echo "::error::FORTIFY_SOURCE not active (no *_chk symbols)"; exit 1; }
+          echo "Hardening checks OK"
+
+      - name: Run tests (${{ matrix.flavor }})
+        env:
+          CTEST_OUTPUT_ON_FAILURE: "1"
+        run: ${{ matrix.ctest_env }} ctest --test-dir build -V
+        continue-on-error: ${{ !matrix.tests_must_pass }}
