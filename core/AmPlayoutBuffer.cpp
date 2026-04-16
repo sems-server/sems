@@ -125,6 +125,11 @@ u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
     else
       rlen = w_ts - r_ts;
 
+    if(rlen > len) {
+      buffer_get(r_ts,buf,len);
+      return len;
+    }
+
     buffer_get(r_ts,buf,rlen);
     return rlen;
   }
