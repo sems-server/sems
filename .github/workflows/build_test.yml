@@ -102,9 +102,21 @@ jobs:
           BIN=build/core/sems
           echo "=== sems binary ==="
           file "$BIN"
-          # PIE: ET_DYN (shown by `file` as "shared object")
-          file "$BIN" | grep -q 'shared object' \
-            || { echo "::error::sems is not PIE"; exit 1; }
+          # PIE detection via ELF header, not `file` output:
+          # `file` wording varies across distros ("shared object" on older
+          # binutils, "pie executable" on newer). The authoritative signals
+          # are ELF Type == DYN *and* DT_FLAGS_1 advertising PIE.
+          elf_type=$(readelf -h "$BIN" | awk '/Type:/ {print $2}')
+          if [ "$elf_type" != "DYN" ]; then
+            echo "::error::sems is not PIE (ELF Type=$elf_type, expected DYN)"
+            exit 1
+          fi
+          if ! readelf -dW "$BIN" | grep -E 'FLAGS_1' | grep -q 'PIE'; then
+            # DT_FLAGS_1 PIE is only set when -pie was used at link time
+            # (as opposed to a regular shared library which is also DYN).
+            echo "::error::sems is DYN but DT_FLAGS_1 does not include PIE"
+            exit 1
+          fi
           # Full RELRO: BIND_NOW flag in dynamic section
           readelf -d "$BIN" | grep -q 'BIND_NOW' \
             || { echo "::error::BIND_NOW (full RELRO) missing"; exit 1; }
