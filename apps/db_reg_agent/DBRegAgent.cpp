@@ -775,6 +775,7 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       AmSIPRegistration* registration = r_it->second;
       if (!registration) {
 	ERROR("Internal error: registration object missing\n");
+	registrations_mut.unlock();
 	return;
       }
       unsigned int cseq_before = registration->getDlg()->cseq;
