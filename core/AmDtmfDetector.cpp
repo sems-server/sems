@@ -138,7 +138,12 @@ void AmSipDtmfEvent::parseLine(const string& line)
 AmRtpDtmfEvent::AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate, unsigned int ts)
   : AmDtmfEvent(Dtmf::SOURCE_RTP)
 {
-  m_duration_msec = ntohs(payload->duration) * 1000 / sample_rate;
+  if (sample_rate <= 0) {
+    DBG("attempt to create AmRtpDtmfEvent with sample_rate <= 0. use 8000 instead\n");
+    m_duration_msec = (ntohs(payload->duration) * 1000) / 8000;
+  } else {
+    m_duration_msec = ntohs(payload->duration) * 1000 / sample_rate;
+  }
   m_e = payload->e;
   m_volume = payload->volume;
   m_event = payload->event;
