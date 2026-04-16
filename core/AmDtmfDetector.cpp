@@ -139,7 +139,8 @@ AmRtpDtmfEvent::AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate, u
   : AmDtmfEvent(Dtmf::SOURCE_RTP)
 {
   if (sample_rate <= 0) {
-    DBG("attempt to create AmRtpDtmfEvent with sample_rate <= 0. use 8000 instead\n");
+    DBG("attempt to create AmRtpDtmfEvent with sample_rate <= 0 (sample_rate=%d). use 8000 instead\n",
+        sample_rate);
     m_duration_msec = (ntohs(payload->duration) * 1000) / 8000;
   } else {
     m_duration_msec = ntohs(payload->duration) * 1000 / sample_rate;
