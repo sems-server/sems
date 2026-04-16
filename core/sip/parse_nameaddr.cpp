@@ -161,7 +161,7 @@ int parse_nameaddr(sip_nameaddr* na, const char** c, int len)
 		break;
 
 	    case '\\':
-		if(!*(++(*c))){
+		if(++(*c) == end){
 		    DBG("Escape char in quoted str at EoT!!!\n");
 		    return MALFORMED_SIP_MSG;
 		}
