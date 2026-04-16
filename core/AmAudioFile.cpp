@@ -335,7 +335,7 @@ void AmAudioFile::on_close()
 	(*iofmt->on_close)(fp,&fmt_desc,open_mode, fmt->getHCodecNoInit(), fmt->getCodec());      
     }
 
-    if(open_mode == AmAudioFile::Write){
+    if(f_fmt && open_mode == AmAudioFile::Write){
 
       DBG("After close:\n");
       DBG("fmt::subtype = %i\n",f_fmt->getSubtypeId());
