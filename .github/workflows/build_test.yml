@@ -73,6 +73,15 @@ jobs:
             cmake_flags: "-DSEMS_HARDEN=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
             ctest_env: ""
             tests_must_pass: true
+          # ThreadSanitizer: data races and lock-order inversions.
+          # ctest only exercises parser tests today, so this job acts mostly
+          # as a startup/shutdown smoke test against the sems_tests binary.
+          # Non-blocking initially; flip tests_must_pass to true once the
+          # baseline is clean on main.
+          - flavor: tsan
+            cmake_flags: "-DSEMS_USE_TSAN=ON -DCMAKE_BUILD_TYPE=Debug"
+            ctest_env: "TSAN_OPTIONS=suppressions=${{ github.workspace }}/cmake/tsan.supp:halt_on_error=1:second_deadlock_stack=1:history_size=7:abort_on_error=0"
+            tests_must_pass: false
 
     steps:
       - name: Checkout code
