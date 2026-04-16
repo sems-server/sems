@@ -324,6 +324,12 @@ void udp_trsp::run()
 
 	//DBG("before recvmsg (%s:%i)\n",sock->get_ip(),sock->get_port());
 
+	// recvmsg() overwrites msg_namelen and msg_controllen with the
+	// actual sizes returned; reset them before every call so the
+	// kernel always sees the full capacity of the buffers.
+	msg.msg_namelen    = sizeof(sockaddr_storage);
+	msg.msg_controllen = DSTADDR_DATASIZE;
+
 	buf_len = recvmsg(sock->get_sd(),&msg,0);
 	if(buf_len <= 0){
 	    if(stop_requested) return;
