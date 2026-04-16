@@ -63,6 +63,8 @@ option(SEMS_USE_MONITORING "Build with monitoring support" ON)
 option(SEMS_USE_IPV6 "Build with IPv6 support" ON)
 option(SEMS_USE_PYTHON "Build with Python modules" ON)
 option(SEMS_USE_ASAN "Build with AddressSanitizer (memory error detector)" OFF)
+option(SEMS_USE_UBSAN "Build with UndefinedBehaviorSanitizer" OFF)
+option(SEMS_HARDEN "Enable compile/link hardening (stack protector, FORTIFY, RELRO, PIE)" OFF)
 
 # AddressSanitizer configuration
 if(SEMS_USE_ASAN)
@@ -71,6 +73,61 @@ if(SEMS_USE_ASAN)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+endif()
+
+# UndefinedBehaviorSanitizer configuration
+# Complements ASan: catches signed overflow, misalignment, invalid enum values,
+# null deref, vla-bound violations etc. Combined with -fno-sanitize-recover so
+# the process aborts on the first violation (fail-fast in CI).
+if(SEMS_USE_UBSAN)
+  message(STATUS "UndefinedBehaviorSanitizer enabled")
+  set(_ubsan_flags "-fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer")
+  set(CMAKE_C_FLAGS             "${CMAKE_C_FLAGS} ${_ubsan_flags}")
+  set(CMAKE_CXX_FLAGS           "${CMAKE_CXX_FLAGS} ${_ubsan_flags}")
+  set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=undefined")
+endif()
+
+# Hardened build (compile- and link-time mitigations).
+# - _FORTIFY_SOURCE=3 (fallback =2): glibc wrappers for str*/mem*/read etc. that
+#   abort on buffer overrun at runtime. Requires optimization >= 1.
+# - -fstack-protector-strong: stack canaries for functions with arrays/addr-taken
+#   locals. Abort on stack smash via __stack_chk_fail.
+# - -fstack-clash-protection: probe the stack so a guard page is always touched,
+#   preventing stack/heap collisions.
+# - -fcf-protection=full (x86): CET indirect-branch/shadow-stack enforcement
+#   where hardware supports it (no-op otherwise).
+# - -Wformat -Werror=format-security: reject uncontrolled format strings at
+#   compile time.
+# - -Wl,-z,relro -Wl,-z,now: full RELRO (GOT mapped read-only after load).
+# - -Wl,-z,noexecstack: mark stack non-executable in the binary's GNU_STACK.
+# - PIE: executable loaded at a randomized address (ASLR).
+if(SEMS_HARDEN)
+  message(STATUS "Hardened build flags enabled")
+  include(CheckCCompilerFlag)
+  # FORTIFY_SOURCE=3 needs glibc >= 2.34 and GCC >= 12 / Clang >= 15.
+  # Fall back to =2 on older toolchains (RHEL7/8, Debian 11).
+  check_c_compiler_flag("-Werror -D_FORTIFY_SOURCE=3" _have_fortify3)
+  if(_have_fortify3)
+    set(_fortify "-D_FORTIFY_SOURCE=3")
+  else()
+    set(_fortify "-D_FORTIFY_SOURCE=2")
+  endif()
+  message(STATUS "Hardening: using ${_fortify}")
+
+  set(_harden_common "${_fortify} -fstack-protector-strong -fstack-clash-protection -Wformat -Wformat-security -Werror=format-security")
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|i[3-6]86")
+    check_c_compiler_flag("-fcf-protection=full" _have_cf_protection)
+    if(_have_cf_protection)
+      set(_harden_common "${_harden_common} -fcf-protection=full")
+    endif()
+  endif()
+
+  set(CMAKE_C_FLAGS             "${CMAKE_C_FLAGS} ${_harden_common}")
+  set(CMAKE_CXX_FLAGS           "${CMAKE_CXX_FLAGS} ${_harden_common}")
+  set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -pie")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack")
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # add -lm and -lpthread / -lthr to all targets
