@@ -275,7 +275,7 @@ int skip_sip_msg_async(parser_state* pst, char* end)
       }
     }
     else if(err == UNEXPECTED_EOT && c < end) {
-      DBG("incomplete msg error while having tail data. stage:%d, st:%d, tail:%zd",
+      DBG("incomplete msg error while having tail data. stage:%d, st:%d, tail:%td",
           stage, pst->st, end-c);
       return MALFORMED_SIP_MSG;
     }
