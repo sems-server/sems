@@ -200,8 +200,13 @@ int parse_headers_async(parser_state* pst, char* end)
 
     if(hdr->name.len && hdr->value.len) {
       int type = parse_header_type(hdr);
-      if(type == sip_header::H_CONTENT_LENGTH)
+      if(type == sip_header::H_CONTENT_LENGTH) {
 	str2int(c2stlstr(hdr->value),pst->content_len);
+	if(pst->content_len < 0) {
+	  DBG("Negative Content-Length: %d\n",pst->content_len);
+	  return MALFORMED_SIP_MSG;
+	}
+      }
     }
 
     if(!hdr->name.len && !hdr->value.len) {
