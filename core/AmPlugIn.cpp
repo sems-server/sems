@@ -637,7 +637,8 @@ int AmPlugIn::loadDiPlugIn(AmPluginFactory* f)
     ERROR("component '%s' already loaded !\n",sf->getName().c_str());
     goto error;
   }
-      
+
+  inc_ref(sf);
   name2di.insert(std::make_pair(sf->getName(),sf));
   DBG("component '%s' loaded.\n",sf->getName().c_str());
 
@@ -660,7 +661,8 @@ int AmPlugIn::loadLogFacPlugIn(AmPluginFactory* f)
 	  sf->getName().c_str());
     goto error;
   }
-      
+
+  inc_ref(sf);
   name2logfac.insert(std::make_pair(sf->getName(),sf));
   DBG("logging facility component '%s' loaded.\n",sf->getName().c_str());
 
