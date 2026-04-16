@@ -418,7 +418,7 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
 		      (((u_int16_t)(A) & 0x00ff) << 8))
     
     unsigned int i;
-    for(i=0;i<=size/2;i++) {
+    for(i=0;i<size/2;i++) {
       ((u_int16_t *)((unsigned char*)samples))[i]=
 	bswap_16(((u_int16_t *)((unsigned char*)samples))[i]);
     }
