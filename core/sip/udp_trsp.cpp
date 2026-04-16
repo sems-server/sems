@@ -304,12 +304,14 @@ void udp_trsp::run()
     iov[0].iov_base = buf;
     iov[0].iov_len  = MAX_UDP_MSGLEN;
 
+    unsigned char ctrl_buf[DSTADDR_DATASIZE];
+
     memset(&msg,0,sizeof(msg));
     msg.msg_name       = &from_addr;
     msg.msg_namelen    = sizeof(sockaddr_storage);
     msg.msg_iov        = iov;
     msg.msg_iovlen     = 1;
-    msg.msg_control    = new unsigned char[DSTADDR_DATASIZE];
+    msg.msg_control    = ctrl_buf;
     msg.msg_controllen = DSTADDR_DATASIZE;
 
     if(sock->get_sd()<=0){
