@@ -175,7 +175,7 @@ int MuxStreamQueue::init(const string& _remote_ip, unsigned short _remote_port) 
     int true_opt = 1;
     if(ioctl(sd, FIONBIO , &true_opt) == -1){
       ERROR("%s\n",strerror(errno));
-      ::close(l_sd);
+      ::close(sd);
       return -2;
     }
 
