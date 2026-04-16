@@ -1,0 +1,26 @@
+# ThreadSanitizer suppressions for SEMS.
+#
+# Used by the CI `hardened_builds (tsan)` job via
+#   TSAN_OPTIONS=suppressions=cmake/tsan.supp:...
+# and safe to reuse for local TSan runs.
+#
+# Add entries here only for *known-benign* noise from third-party libraries
+# or system facilities. Races inside SEMS itself must be fixed, not silenced.
+# Every entry should have a comment explaining why it is benign.
+
+# Python embedded interpreter (apps/ivr-python2/Ivr.cpp calls
+# Py_Initialize + PyEval_InitThreads). The GIL synchronizes access but CPython
+# uses patterns TSan does not model cleanly (e.g. atomic-without-barrier reads
+# of shared interpreter state). Upstream: https://bugs.python.org/issue43088
+race:^Py
+race:^_Py
+called_from_lib:libpython*
+
+# libevent is initialized with evthread_use_pthreads() in core/sems.cpp before
+# any threads are spawned. Its internal locking is correct but TSan sometimes
+# misses the happens-before edge through event_base_loop.
+called_from_lib:libevent*
+
+# glibc DNS resolver keeps process-global cached state (res_state) guarded by
+# its own lock; TSan occasionally flags cache reads.
+called_from_lib:libresolv*

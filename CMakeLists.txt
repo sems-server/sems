@@ -64,7 +64,13 @@ option(SEMS_USE_IPV6 "Build with IPv6 support" ON)
 option(SEMS_USE_PYTHON "Build with Python modules" ON)
 option(SEMS_USE_ASAN "Build with AddressSanitizer (memory error detector)" OFF)
 option(SEMS_USE_UBSAN "Build with UndefinedBehaviorSanitizer" OFF)
+option(SEMS_USE_TSAN "Build with ThreadSanitizer (data race detector)" OFF)
 option(SEMS_HARDEN "Enable compile/link hardening (stack protector, FORTIFY, RELRO, PIE)" OFF)
+
+# ASan and TSan instrument memory in incompatible ways and cannot be combined.
+if(SEMS_USE_TSAN AND SEMS_USE_ASAN)
+  message(FATAL_ERROR "SEMS_USE_TSAN and SEMS_USE_ASAN are mutually exclusive; pick one")
+endif()
 
 # AddressSanitizer configuration
 if(SEMS_USE_ASAN)
@@ -73,6 +79,20 @@ if(SEMS_USE_ASAN)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+endif()
+
+# ThreadSanitizer configuration
+# Detects data races, lock-order inversions and thread leaks. SEMS builds on
+# hand-rolled pthread wrappers (core/AmThread.h: AmMutex, AmCondition, AmThread)
+# which TSan intercepts natively via its pthread shims - no source annotations
+# required. Debug info (-g) is requested explicitly so the runner's suppressions
+# match symbol names even when CMAKE_BUILD_TYPE is not Debug.
+if(SEMS_USE_TSAN)
+  message(STATUS "ThreadSanitizer enabled")
+  set(CMAKE_C_FLAGS             "${CMAKE_C_FLAGS} -fsanitize=thread -fno-omit-frame-pointer -g")
+  set(CMAKE_CXX_FLAGS           "${CMAKE_CXX_FLAGS} -fsanitize=thread -fno-omit-frame-pointer -g")
+  set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=thread")
 endif()
 
 # UndefinedBehaviorSanitizer configuration
