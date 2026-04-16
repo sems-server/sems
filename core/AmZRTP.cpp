@@ -178,6 +178,7 @@ int AmZRTP::shut_down() {
       return 0;
     } else {
       ERROR("failed to generate entropy data\n");
+      fclose(fp);
     }
   } else {
     ERROR("failed to open entropy file for writing\n");
