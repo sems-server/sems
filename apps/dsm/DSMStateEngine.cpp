@@ -276,8 +276,8 @@ bool DSMStateDiagram::checkHangupHandled(string& report) {
 }
 
 
-DSMStateEngine::DSMStateEngine() 
-  : current(NULL) {
+DSMStateEngine::DSMStateEngine()
+  : current(NULL), current_diag(NULL) {
 }
 
 DSMStateEngine::~DSMStateEngine() {

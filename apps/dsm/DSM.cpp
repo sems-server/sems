@@ -423,7 +423,8 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
     return false;
 
   DSMScriptConfig script_config;
-  script_config.RunInviteEvent = 
+  script_config.diags = NULL;
+  script_config.RunInviteEvent =
     cfg.getParameter("run_invite_event")=="yes";
 
   script_config.SetParamVariables = 
