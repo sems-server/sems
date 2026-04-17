@@ -347,7 +347,11 @@ static int parse_by(sip_via_parm* v, const char** c, int len)
 		DBG("bad character in port number (0x%x)\n",**c);
 		return MALFORMED_SIP_MSG;
 	    }
-	    v->port_i = v->port_i*10 + (**c - '0'); 
+	    v->port_i = v->port_i*10 + (**c - '0');
+	    if(v->port_i > 65535){
+		DBG("Via port out of range\n");
+		return MALFORMED_SIP_MSG;
+	    }
 	    break;
 
 	case_ST_CR(**c);
