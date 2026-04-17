@@ -40,6 +40,8 @@
 #ifdef USE_MYSQL
 #include <mysql++/mysql++.h>
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #define DEFAULT_AUDIO_TABLE "default_audio"
 #define DOMAIN_AUDIO_TABLE "domain_audio"
 #define LONELY_USER_MSG "first_participant_msg"
@@ -119,6 +121,12 @@ int get_audio_file(const string &message, const string &domain, const string &la
       if ((res.num_rows() > 0) && (row = res.at(0))) {
         FILE *file;
         file = fopen(audio_file.c_str(), "wb");
+        if (!file) {
+          ERROR("could not open audio file '%s' for writing: %s\n",
+                audio_file.c_str(), strerror(errno));
+          audio_file = "";
+          return 0;
+        }
 #ifdef VERSION2
         unsigned long length = row.raw_string(0).size();
         fwrite(row.at(0).data(), 1, length, file);
