@@ -115,7 +115,7 @@ int parse_next_hop(const cstring& next_hop,
       case HTAB:
 	break;
       default:
-	if(*c < '0' && *c > '9'){
+	if(*c < '0' || *c > '9'){
 	  DBG("error: unexpected character '%c' in IPL_PORT state.\n",*c);
 	  return -1;
 	}
