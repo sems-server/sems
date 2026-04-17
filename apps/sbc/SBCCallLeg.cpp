@@ -182,6 +182,10 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
     dlg->setCallid(caller->dlg->getCallid());
     dlg->setExtLocalTag(caller->dlg->getRemoteTag());
     dlg->cseq = caller->dlg->r_cseq;
+    // keep SBCCallRegistry in sync: the A->B entry was stored with the
+    // auto-generated Call-ID by the CallLeg base constructor, but the B leg
+    // will actually use the A-leg Call-ID on the wire
+    SBCCallRegistry::updateCallId(caller->getLocalTag(), dlg->getCallid());
   }
 
   // copy RTP rate limit from caller leg
@@ -413,8 +417,13 @@ void SBCCallLeg::applyBProfile()
   }
 
   // was read from caller but reading directly from profile now
-  if (!call_profile.callid.empty()) 
+  if (!call_profile.callid.empty()) {
     dlg->setCallid(call_profile.callid);
+    // keep SBCCallRegistry in sync: the A->B entry was stored with the
+    // auto-generated Call-ID, but the profile (e.g. Call-ID=$ci_mo-b2b)
+    // rewrote it so lookupCall() must return the Call-ID actually on the wire
+    SBCCallRegistry::updateCallId(getOtherId(), dlg->getCallid());
+  }
 
   dlg->setContact(call_profile.bleg_contact);
 }
