@@ -48,7 +48,9 @@
 #include "AmRtpMuxStream.h"
 
 AmRtpPacket::AmRtpPacket()
-  : data_offset(0)
+  : b_size(0),
+    data_offset(0),
+    d_size(0)
 {
   // buffer will be overwritten by received packet 
   // of hdr+data - does not need to be set to 0s
