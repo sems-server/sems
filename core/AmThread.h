@@ -80,7 +80,7 @@ class AmSharedVar
 
 public:
   AmSharedVar(const T& _t) : t(_t) {}
-  AmSharedVar() {}
+  AmSharedVar() : t() {}
 
   T get() {
     lock();
