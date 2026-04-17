@@ -139,7 +139,11 @@ int opus_load(const char* ModConfigPath) {
   default_format_parameters[0]='\0';
   char conf_file[256];
   if (NULL != ModConfigPath) {
-    sprintf(conf_file, "%sopus.conf",ModConfigPath); 
+    int n = snprintf(conf_file, sizeof(conf_file), "%sopus.conf", ModConfigPath);
+    if (n < 0 || (size_t)n >= sizeof(conf_file)) {
+      ERROR("opus: ModConfigPath too long, opus.conf path truncated\n");
+      return 0;
+    }
     FILE* fp = fopen(conf_file, "rt");
     if (fp) {
       char line[80];
