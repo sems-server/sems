@@ -132,6 +132,14 @@ build_one_el() {
     find "$staging/SRPMS" -name '*.src.rpm' -exec cp {} "$dest/SRPMS/"  \;
     rm -rf "$staging"
 
+    # Snapshot the build host's installed-package inventory from the image we
+    # just built, so the release folder records exactly which toolchain and
+    # dependency versions produced these RPMs.
+    local build_host_rpms
+    build_host_rpms=$("$ENGINE" run --rm --entrypoint rpm "$image" -qa --queryformat '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort)
+
+    write_readme "$el" "$dest" "$build_host_rpms"
+
     if command -v createrepo_c >/dev/null 2>&1; then
         createrepo_c --quiet "$dest/x86_64"
         createrepo_c --quiet "$dest/SRPMS"
@@ -141,6 +149,40 @@ build_one_el() {
 
     echo "el${el} artifacts:"
     ( cd "$dest" && find . -name '*.rpm' | sort | sed 's|^\./|  |' )
+}
+
+write_readme() {
+    local el="$1"
+    local dest="$2"
+    local build_host_rpms="$3"
+    local readme="$dest/README.txt"
+    local release_date
+    release_date="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+    {
+        echo "SEMS RHEL ${el} release"
+        echo "======================="
+        echo
+        echo "Release date : ${release_date}"
+        echo "Git ref      : ${REF} (${RESOLVED_SHORT})"
+        echo "Commit SHA   : ${RESOLVED_SHA}"
+        echo "SEMS version : ${VERSION}"
+        echo "EL target    : ${el}"
+        echo "Built with   : ${ENGINE} via Dockerfile-rhel${el}"
+        echo "Built on     : $(uname -n) ($(uname -sr))"
+        echo
+        echo "RPMs in this directory"
+        echo "----------------------"
+        ( cd "$dest" && find x86_64 SRPMS -name '*.rpm' 2>/dev/null | sort )
+        echo
+        echo "Build host RPM inventory"
+        echo "------------------------"
+        echo "Full list of packages installed in the build container at the"
+        echo "time these RPMs were produced (output of 'rpm -qa' inside the"
+        echo "Dockerfile-rhel${el} image):"
+        echo
+        echo "$build_host_rpms"
+    } > "$readme"
 }
 
 for el in $EL_VERSIONS; do
