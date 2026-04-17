@@ -192,7 +192,8 @@ public:
 	}
 
 	if((index < 0) ||
-	   (index >= (int)ip_vec.size()))
+	   (index >= (int)ip_vec.size()) ||
+	   (index >= (int)MAX_SRV_RR))
 	    return -1;
 	
 	// reset IP record
