@@ -325,10 +325,20 @@ static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
     }
 
     if(uri->port_str.len){
-	uri->port = 0;
+	unsigned int p = 0;
 	for(unsigned int i=0; i<uri->port_str.len; i++){
-	    uri->port = uri->port*10 + (uri->port_str.s[i] - '0');
+	    char d = uri->port_str.s[i];
+	    if(d < '0' || d > '9'){
+		DBG("Invalid character in URI port\n");
+		return MALFORMED_URI;
+	    }
+	    p = p*10 + (d - '0');
+	    if(p > 65535){
+		DBG("URI port out of range\n");
+		return MALFORMED_URI;
+	    }
 	}
+	uri->port = (unsigned short)p;
     }
     else {
 	uri->port = 5060;
