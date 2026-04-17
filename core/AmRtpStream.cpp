@@ -1084,6 +1084,25 @@ void AmRtpStream::recvPacket(int fd, unsigned char* pkt, size_t len)
   AmRtpPacket* p = mem.newPacket();
   if (!p) p = reuseBufferedPacket();
   if (!p) {
+    // Last-resort recovery for issue #92. The relay-mode prevention in
+    // bufferPacket() covers the common case, but packets can still get
+    // stranded in rtp_ev_qu (which reuseBufferedPacket() never recycles
+    // from) or via race conditions around SDP renegotiation. Clearing the
+    // mem pool, receive_buf and rtp_ev_qu restores the stream instead of
+    // dropping every further packet until the call ends. This mirrors the
+    // semantics of AmRtpStream::resume() which already performs the same
+    // clear under receive_mut.
+    WARN("out of buffers for RTP packets, clearing buffers (stream [%p])\n",
+	this);
+    receive_mut.lock();
+    mem.clear();
+    receive_buf.clear();
+    while (!rtp_ev_qu.empty())
+      rtp_ev_qu.pop();
+    receive_mut.unlock();
+    p = mem.newPacket();
+  }
+  if (!p) {
     DBG("out of buffers for RTP packets, dropping (stream [%p])\n",
 	this);
     // drop received data
