@@ -103,9 +103,12 @@ void AmThread::start()
   res = pthread_create(&_td,&attr,_start,this);
   pthread_attr_destroy(&attr);
   if (res != 0) {
+    // thread was never created; restore the "stopped" flag so a later
+    // join()/is_stopped() cannot call pthread_join() on uninitialized _td
+    _stopped.set(true);
     ERROR("pthread create failed with code %i\n", res);
     throw string("thread could not be started");
-  }	
+  }
   //DBG("Thread %lu is just created.\n", (unsigned long int) _pid);
 }
 
