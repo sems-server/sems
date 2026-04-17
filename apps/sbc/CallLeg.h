@@ -148,6 +148,11 @@ class CallLeg: public AmB2BSession
     std::list<SessionUpdate *> pending_updates;
     class SessionUpdateTimer pending_updates_timer;
 
+    // Filtered extension headers (only RFC 3326 "Reason:") captured from an
+    // inbound CANCEL and forwarded on the outbound CANCEL/BYE of peer legs.
+    // Non-empty only for the duration of a single termination call chain.
+    string cancel_hdrs;
+
     // generate re-INVITE with given parameters (establishing means that the
     // INVITE is establishing a connection between two legs)
     // returns the request CSeq or -1 upon error
