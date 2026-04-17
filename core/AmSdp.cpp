@@ -231,7 +231,10 @@ bool RtcpAddress::parse(const string &src)
     switch (s) {
 
       case (PORT):
-        if (src[i] >= '0' && src[i] <= '9') port = port * 10 + (src[i] - '0');
+        if (src[i] >= '0' && src[i] <= '9') {
+          port = port * 10 + (src[i] - '0');
+          if (port > 65535) return false; // out-of-range port
+        }
         else if (src[i] == ' ') s = NET_TYPE;
         else return false; // error
         break;
