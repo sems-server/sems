@@ -7,9 +7,12 @@
 #include "sip/sip_parser.h"
 #include "sip/msg_logger.h"
 
-AmSipRequest::AmSipRequest() 
-  : _AmSipMsgInDlg(), 
-    max_forwards(-1) 
+AmSipRequest::AmSipRequest()
+  : _AmSipMsgInDlg(),
+    rack_cseq(0),
+    first_hop(false),
+    max_forwards(-1),
+    local_if(0)
 {
 }
 
