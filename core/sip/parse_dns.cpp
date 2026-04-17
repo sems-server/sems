@@ -106,24 +106,25 @@ int dns_skip_name(unsigned char** p, unsigned char* end)
   return -1;
 }
 
-int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* end, 
+int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* end,
 		    unsigned char* start_buf, unsigned int len)
 {
   unsigned char* buf = start_buf;
   unsigned char* p = *ptr;
   bool    is_ptr=false;
+  unsigned int ptr_jumps = 0;
 
   while(p < end) {
-    
+
     if(!*p) { // reached the end of a label
-      if(len){ 
+      if(len){
 	*buf = '\0'; // zero-term
 	if(!is_ptr){ *ptr = p+1; }
-	return (buf-start_buf); 
+	return (buf-start_buf);
       }
       return -1;
     }
-    
+
     if( (*p & 0xC0) == 0xC0 ){ // ptr
 
       unsigned short l_off = (((unsigned short)*p & 0x3F) << 8);
@@ -137,6 +138,11 @@ int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* en
 	*ptr = p;
 	is_ptr = true;
       }
+      // RFC 1035 caps domain names at 255 octets; bound the number of
+      // compression-pointer jumps to prevent malicious DNS replies
+      // (cycles or chains of pointers carrying no labels) from spinning
+      // this loop forever.
+      if(++ptr_jumps > 256) return -1;
       p = begin + l_off;
       continue;
     }
