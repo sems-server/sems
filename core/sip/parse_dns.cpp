@@ -89,17 +89,24 @@ unsigned short dns_msg_count(unsigned char* begin, dns_section_type sect)
 int dns_skip_name(unsigned char** p, unsigned char* end)
 {
   while(*p < end) {
-    
+
     if(!**p) { // zero label
       if(++(*p) < end)	return 0;
       return -1;
     }
     else if(**p & 0xC0){ // ptr
-      if((*p += 2) < end) return 0;
+      // bounds-check before advancing to avoid forming a pointer more
+      // than one past 'end' (undefined behaviour)
+      if(end - *p < 2) return -1;
+      *p += 2;
+      if(*p < end) return 0;
       return -1;
     }
     else { // label
-      *p += **p+1;
+      // need <len>+1 bytes (length byte + label); check before advance
+      unsigned int label_len = **p;
+      if((size_t)(end - *p) < label_len + 1) return -1;
+      *p += label_len + 1;
     }
   }
 
