@@ -69,9 +69,13 @@ int AmFileCache::load(const std::string& filename) {
     return -2;
   }
 	
-  if ((data = mmap((caddr_t)0, sbuf.st_size, PROT_READ, MAP_PRIVATE, 
-		   fd, 0)) == (caddr_t)(-1)) {
-    ERROR("cannot mmap file '%s'.\n", 
+  if ((data = mmap((caddr_t)0, sbuf.st_size, PROT_READ, MAP_PRIVATE,
+		   fd, 0)) == MAP_FAILED) {
+    // mmap returns MAP_FAILED on failure, not NULL; reset data so the
+    // destructor's 'if (data != NULL) munmap(...)' does not attempt to
+    // unmap MAP_FAILED (with the stale, possibly-zero data_size).
+    data = NULL;
+    ERROR("cannot mmap file '%s'.\n",
 	  name.c_str());
     close(fd);
     return -3;
