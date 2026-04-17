@@ -406,12 +406,15 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   return res;
 }
 
-AmRtpStream::AmRtpStream(AmSession* _s, int _if) 
+AmRtpStream::AmRtpStream(AmSession* _s, int _if)
   : sdp_media_index(-1),
     r_port(0),
+    r_rtcp_port(0),
     l_if(_if),
     l_port(0),
-    l_sd(0), 
+    l_sd(0),
+    l_rtcp_port(0),
+    l_rtcp_sd(0),
     r_ssrc_i(false),
     passive(false),
     passive_rtcp(false),
