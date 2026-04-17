@@ -170,6 +170,12 @@ int get_audio_file(const string& message, const string& domain, const string& us
        FILE *file;
        unsigned long length = row.raw_string(0).size();
        file = fopen(audio_file.c_str(), "wb");
+       if (!file) {
+         ERROR("could not open audio file '%s' for writing: %s\n",
+               audio_file.c_str(), strerror(errno));
+         audio_file = "";
+         return 0;
+       }
        fwrite(row.at(0).data(), 1, length, file);
        fclose(file);
        return 1;
@@ -230,6 +236,11 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
          string(row["language"]);
       }
       file = fopen(tmp_file.c_str(), "wb");
+      if (!file) {
+       ERROR("Voicemail: could not open '%s' for writing: %s\n",
+             tmp_file.c_str(), strerror(errno));
+       return -1;
+      }
       fwrite(row["template"], 1, length, file);
       fclose(file);
       DBG("loading %s as %s ...\n", tmp_file.c_str(), tmpl_name.c_str());
@@ -276,6 +287,11 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
          string(row["language"]);
       }
       file = fopen(tmp_file.c_str(), "wb");
+      if (!file) {
+       ERROR("Voicemail: could not open '%s' for writing: %s\n",
+             tmp_file.c_str(), strerror(errno));
+       return -1;
+      }
       fwrite(row["template"], 1, length, file);
       fclose(file);
       DBG("loading %s as %s ...\n",tmp_file.c_str(), tmpl_name.c_str());
