@@ -64,13 +64,17 @@ struct ArgBlob {
     data = malloc(len);
     if (data)
       memcpy(data, a.data, len);
+    else
+      len = 0;
   }
-  
+
   ArgBlob(const void* _data, int _len) {
     len = _len;
     data = malloc(len);
     if (data)
       memcpy(data, _data, len);
+    else
+      len = 0;
   }
   
   ~ArgBlob() { if (data) free(data); }
