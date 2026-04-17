@@ -35,6 +35,7 @@ using std::string;
 #include "jsonxx.h"
 using namespace jsonxx;
 
+#include <cmath>
 #include <sstream>
 
 const char *hex_chars = "0123456789abcdef";
@@ -119,7 +120,9 @@ string arg2json(const AmArg &a) {
   case AmArg::Bool:
     return a.asBool()?"true":"false";
 
-  case AmArg::Double: 
+  case AmArg::Double:
+    if (std::isnan(a.asDouble()) || std::isinf(a.asDouble()))
+      return "null";
     return double2str(a.asDouble());
 
   case AmArg::CStr:
