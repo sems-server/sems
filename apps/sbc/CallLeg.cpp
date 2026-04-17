@@ -33,9 +33,48 @@
 #include "AmRtpReceiver.h"
 #include "SBCCallRegistry.h"
 
+#include <strings.h>
+
 #define TRACE DBG
 
 // helper functions
+
+// Extract only RFC 3326 "Reason:" header lines from a raw SIP header block.
+// Other CANCEL headers are intentionally NOT forwarded because they either
+// are meaningless on a different leg's CANCEL/BYE (Via, CSeq, Route) or
+// would leak trust-boundary metadata (Authorization, Privacy, P-A-I).
+static string filterReasonHdr(const string& hdrs)
+{
+  string out;
+  size_t pos = 0;
+  while (pos < hdrs.size()) {
+    size_t eol = hdrs.find('\n', pos);
+    size_t line_end = (eol == string::npos) ? hdrs.size() : eol;
+    size_t content_end = line_end;
+    if (content_end > pos && hdrs[content_end - 1] == '\r') --content_end;
+    size_t colon = hdrs.find(':', pos);
+    if (colon != string::npos && colon < content_end
+        && (colon - pos) == 6
+        && strncasecmp(hdrs.c_str() + pos, "Reason", 6) == 0) {
+      out.append(hdrs, pos, content_end - pos);
+      out.append("\r\n");
+    }
+    if (eol == string::npos) break;
+    pos = eol + 1;
+  }
+  return out;
+}
+
+// SBC-local B2B event carrying the filtered CANCEL Reason header between
+// CallLegs. Reuses the existing B2BTerminateLeg event_id so any non-CallLeg
+// receiver still terminates correctly (without the extra header).
+namespace {
+  struct CallLegTerminateEvent : public B2BEvent {
+    string hdrs;
+    CallLegTerminateEvent(const string& h)
+      : B2BEvent(B2BTerminateLeg), hdrs(h) {}
+  };
+}
 
 static const char *callStatus2str(const CallLeg::CallStatus state)
 {
@@ -288,8 +327,11 @@ void CallLeg::terminateOtherLeg()
     // all other legs in such case?
     terminateNotConnectedLegs(); // terminates all except the one identified by other_id
   }
-  
-  AmB2BSession::terminateOtherLeg();
+
+  if (!cancel_hdrs.empty() && !getOtherId().empty())
+    relayEvent(new CallLegTerminateEvent(cancel_hdrs));
+  else
+    AmB2BSession::terminateOtherLeg();
 
   // remove this one from the list of other legs
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
@@ -312,7 +354,10 @@ void CallLeg::terminateNotConnectedLegs()
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
     if (i->id != getOtherId()) {
       i->releaseMediaSession();
-      AmSessionContainer::instance()->postEvent(i->id, new B2BEvent(B2BTerminateLeg));
+      B2BEvent *ev = cancel_hdrs.empty()
+          ? new B2BEvent(B2BTerminateLeg)
+          : static_cast<B2BEvent*>(new CallLegTerminateEvent(cancel_hdrs));
+      AmSessionContainer::instance()->postEvent(i->id, ev);
     }
     else {
       found = true; // other_id is there
@@ -403,6 +448,24 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
         if (req_ev) req_ev->forward = false;
       }
       // continue handling in AmB2bSession
+      AmB2BSession::onB2BEvent(ev);
+      break;
+
+    case B2BTerminateLeg:
+      {
+        // When the peer leg propagated a CANCEL Reason, forward it on our
+        // BYE; otherwise defer to the base (plain BYE).
+        const CallLegTerminateEvent *te = dynamic_cast<const CallLegTerminateEvent*>(ev);
+        if (te) {
+          const string saved = cancel_hdrs;
+          cancel_hdrs = te->hdrs;
+          terminateLeg();
+          cancel_hdrs = saved;
+        } else {
+          AmB2BSession::onB2BEvent(ev);
+        }
+      }
+      break;
 
     default:
       AmB2BSession::onB2BEvent(ev);
@@ -1068,7 +1131,10 @@ void CallLeg::onCancel(const AmSipRequest& req)
       // terminate whole B2B call if the caller receives CANCEL
       onCallFailed(CallCanceled, NULL);
       updateCallStatus(Disconnected, StatusChangeCause::Canceled);
+      const string saved = cancel_hdrs;
+      cancel_hdrs = filterReasonHdr(req.hdrs);
       stopCall(StatusChangeCause::Canceled);
+      cancel_hdrs = saved;
     }
     // else { } ... ignore for B leg
   }
@@ -1076,7 +1142,13 @@ void CallLeg::onCancel(const AmSipRequest& req)
 
 void CallLeg::terminateLeg()
 {
-  AmB2BSession::terminateLeg();
+  if (!cancel_hdrs.empty()) {
+    setStopped();
+    clearRtpReceiverRelay();
+    dlg->bye(cancel_hdrs, SIP_FLAGS_VERBATIM);
+  } else {
+    AmB2BSession::terminateLeg();
+  }
 }
 
 // was for caller only
