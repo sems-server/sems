@@ -59,10 +59,11 @@ bool findHeader(const string& hdrs,const string& hdr_name, const size_t skip,
   unsigned int p;
   if(skip >= hdrs.length()) return false;
   char* hdr = strdup(hdr_name.c_str());
+  if(!hdr) return false;
   const char* hdrs_c = hdrs.c_str() + skip;
   char* hdr_c = hdr;
   const char* hdrs_end = hdrs.c_str() + hdrs.length();
-  const char* hdr_end = hdr_c + hdr_name.length(); 
+  const char* hdr_end = hdr_c + hdr_name.length();
 
   while(hdr_c != hdr_end){
     if('A' <= *hdr_c && *hdr_c <= 'Z')
