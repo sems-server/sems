@@ -345,6 +345,7 @@ void AnnRecorderDialog::saveAndConfirm() {
   FILE* fp = fopen(msg_filename.c_str(), "r");
   if (fp) {
     saveMessage(fp);
+    fclose(fp);
     prompts.addToPlaylist(GREETING_SET,  (long)this, playlist);
   }
   prompts.addToPlaylist(BYE,  (long)this, playlist);
