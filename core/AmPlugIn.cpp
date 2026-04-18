@@ -206,10 +206,11 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       DBG("loading %s ...\n",plugin_file.c_str());
       if( (err = loadPlugIn(plugin_file, plugin_name, loaded_plugins)) < 0 ) {
         ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
+        closedir(dir);
         return -1;
       }
     }
-    
+
     closedir(dir);
   } 
   else {
