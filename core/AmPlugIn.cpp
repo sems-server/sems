@@ -271,28 +271,30 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
   int dlopen_flags = RTLD_NOW;
 
   char* pname = strdup(plugin_name.c_str());
-  char* bname = basename(pname);
+  if (pname) {
+    char* bname = basename(pname);
 
-  // dsm, ivr and py_sems need RTLD_GLOBAL
-  if (!strcmp(bname, "dsm.so") || !strcmp(bname, "ivr.so") ||
-      !strcmp(bname, "py_sems.so") || !strcmp(bname, "sbc.so") ||
-      !strcmp(bname, "diameter_client.so") || !strcmp(bname, "registrar_client.so") ||
-      !strcmp(bname, "uac_auth.so") || !strcmp(bname, "msg_storage.so")
-      ) {
-      dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
-      DBG("using RTLD_NOW | RTLD_GLOBAL to dlopen '%s'\n", file.c_str());
-  }
-
-  // possibly others
-  for (std::set<string>::iterator it=rtld_global_plugins.begin();
-       it!=rtld_global_plugins.end();it++) {
-    if (!strcmp(bname, it->c_str())) {
-      dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
-      DBG("using RTLD_NOW | RTLD_GLOBAL to dlopen '%s'\n", file.c_str());
-      break;
+    // dsm, ivr and py_sems need RTLD_GLOBAL
+    if (!strcmp(bname, "dsm.so") || !strcmp(bname, "ivr.so") ||
+        !strcmp(bname, "py_sems.so") || !strcmp(bname, "sbc.so") ||
+        !strcmp(bname, "diameter_client.so") || !strcmp(bname, "registrar_client.so") ||
+        !strcmp(bname, "uac_auth.so") || !strcmp(bname, "msg_storage.so")
+        ) {
+        dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
+        DBG("using RTLD_NOW | RTLD_GLOBAL to dlopen '%s'\n", file.c_str());
     }
+
+    // possibly others
+    for (std::set<string>::iterator it=rtld_global_plugins.begin();
+         it!=rtld_global_plugins.end();it++) {
+      if (!strcmp(bname, it->c_str())) {
+        dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
+        DBG("using RTLD_NOW | RTLD_GLOBAL to dlopen '%s'\n", file.c_str());
+        break;
+      }
+    }
+    free(pname);
   }
-  free(pname);
 
   void* h_dl = dlopen(file.c_str(),dlopen_flags);
 
