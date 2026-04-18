@@ -137,7 +137,10 @@ int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* en
       unsigned short l_off = (((unsigned short)*p & 0x3F) << 8);
       if(++p >= end) return -1;
       l_off |= *p;
-      if(++p >= end) return -1;
+      /* A compression pointer is self-terminating (no following label),
+       * so the second pointer byte is allowed to be the last byte of
+       * the DNS response. Reject only when we have walked past the end. */
+      if(++p > end) return -1;
 
       if(begin + l_off + 1 >= end) return -1;
 
