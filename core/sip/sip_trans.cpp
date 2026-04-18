@@ -56,7 +56,10 @@ inline trans_timer** fetch_timer(unsigned int timer_type, trans_timer** base)
 {
     timer_type &= 0xFFFF;
 
-    assert(timer_type < sizeof(_timer_type_lookup));
+    // sizeof(array) returns bytes, not element count; divide by element size
+    // so values in [n_elems, sizeof(array)) don't index past the table.
+    if(timer_type >= sizeof(_timer_type_lookup)/sizeof(_timer_type_lookup[0]))
+	return NULL;
 
     int tl = _timer_type_lookup[timer_type];
     if(tl != -1){
