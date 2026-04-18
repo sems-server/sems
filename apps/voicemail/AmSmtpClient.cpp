@@ -157,7 +157,7 @@ bool AmSmtpClient::close()
 bool AmSmtpClient::read_line()
 {
   received=0;
-  int s = read(sd,lbuf,SMTP_LINE_BUFFER);
+  int s = read(sd,lbuf,SMTP_LINE_BUFFER-1);
   if(s == -1)
     ERROR("AmSmtpClient::read_line(): %s\n",strerror(errno));
   else if(s > 0){
