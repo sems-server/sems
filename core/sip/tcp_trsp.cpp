@@ -574,7 +574,7 @@ int tcp_server_worker::send(const sockaddr_storage* sa, const char* msg,
 void tcp_server_worker::run()
 {
   // fake event to prevent the event loop from exiting
-  // initialise to -1 so the unconditional close() below is a no-op
+  // initialise to -1 so the guarded cleanup close() calls below are skipped
   // when pipe() fails; otherwise fake_fds holds stack garbage that
   // could match a live fd owned by another subsystem.
   int fake_fds[2] = { -1, -1 };
