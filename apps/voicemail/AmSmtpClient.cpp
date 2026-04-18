@@ -359,11 +359,20 @@ static int base64_encode_file(FILE* in, int out_fd)
   unsigned char ibuf[B64_INPUT_BUFFER_SIZE];
   unsigned char obuf[B64_OUTPUT_BUFFER_SIZE]={' '};
   int s;
-    
-  FILE* out = fdopen(out_fd,"w");
+
+  // dup() so fclose(out) below releases the FILE* without closing the
+  // caller-owned out_fd (the SMTP socket stays open for subsequent lines).
+  int dup_fd = dup(out_fd);
+  if (dup_fd < 0) {
+    ERROR("base64_encode_file: dup() failed: %s\n", strerror(errno));
+    return -1;
+  }
+
+  FILE* out = fdopen(dup_fd,"w");
 
   if(!out){
     ERROR("base64_encode_file: out file == NULL\n");
+    close(dup_fd);
     return -1;
   }
 
@@ -406,6 +415,7 @@ static int base64_encode_file(FILE* in, int out_fd)
   };
     
   fflush(out);
+  fclose(out); // also closes dup_fd; caller's out_fd remains open
   //fclose(in);
   DBG("%i bytes written\n",bytes_written);
   return 0;
