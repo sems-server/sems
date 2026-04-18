@@ -153,6 +153,10 @@ int AmPrecodedFile::open(const std::string& filename) {
   }
 
   char *dir = strdup(filename.c_str());
+  if (!dir) {
+    ERROR("strdup() failed for '%s'\n", filename.c_str());
+    return -1;
+  }
   string str_dir(dirname(dir));
   str_dir += "/";
 
