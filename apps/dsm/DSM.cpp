@@ -253,8 +253,10 @@ int DSMFactory::onLoad()
 	string conf_file_name = conf_d_dir + conf_name;
 	
 	DBG("loading %s ...\n",conf_file_name.c_str());
-	if (!loadConfig(conf_file_name, conf_name, false, NULL)) 
+	if (!loadConfig(conf_file_name, conf_name, false, NULL)) {
+	  closedir(dir);
 	  return -1;
+	}
 
       }
       closedir(dir);
