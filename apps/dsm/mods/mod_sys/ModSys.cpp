@@ -215,8 +215,9 @@ EXEC_ACTION_START(SCRenameAction) {
 
     FILE* f2 = fopen(dst.c_str(), "w");
     if (NULL == f2) {
-      WARN("opening destination file '%s' for copying failed: '%s'\n", 
+      WARN("opening destination file '%s' for copying failed: '%s'\n",
 	   dst.c_str(), strerror(errno));
+      fclose(f1);
       sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
       return false;
     }
