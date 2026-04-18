@@ -160,9 +160,9 @@ int _trans_layer::set_trsp_socket(sip_msg* msg, const cstring& next_trsp,
 	}
     }
 
+    inc_ref(prot_sock_it->second);
     if(msg->local_socket) dec_ref(msg->local_socket);
     msg->local_socket = prot_sock_it->second;
-    inc_ref(msg->local_socket);
 
     return 0;
 }
