@@ -766,8 +766,10 @@ string replaceParameters(const string& s,
 			      rebuild_ruri, rebuild_from, rebuild_to);
 
 	  char* val_escaped = url_encode(expr_replaced.c_str());
-	  res += string(val_escaped);
-	  free(val_escaped);
+	  if (val_escaped) {
+	    res += string(val_escaped);
+	    free(val_escaped);
+	  }
 
 	  skip_chars = skip_p-p;
 	} break;
@@ -817,6 +819,8 @@ char *url_encode(const char *str) {
 
   const char* pstr = str;
   char* buf = (char*)malloc(strlen(str) * 3 + 1);
+  if (!buf)
+    return NULL;
   char* pbuf = buf;
 
   while (*pstr) {
@@ -836,7 +840,10 @@ char *url_encode(const char *str) {
 /* Returns a url-decoded version of str */
 /* IMPORTANT: be sure to free() the returned string after use */
 char *url_decode(char *str) {
-  char *pstr = str, *buf = (char*)malloc(strlen(str) + 1), *pbuf = buf;
+  char *buf = (char*)malloc(strlen(str) + 1);
+  if (!buf)
+    return NULL;
+  char *pstr = str, *pbuf = buf;
   while (*pstr) {
     if (*pstr == '%') {
       if (pstr[1] && pstr[2]) {
