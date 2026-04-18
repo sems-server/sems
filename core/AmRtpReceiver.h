@@ -80,6 +80,12 @@ class AmRtpReceiverThread
 	len(0)
     {}
     ~RtpPacket() {
+      // event_new() in recvdPacket() heap-allocates the event;
+      // event_active() makes it fire once but does not free it.
+      // event_free() handles active/pending state internally.
+      if (ev_read) {
+	event_free(ev_read);
+      }
       if (pkt) {
 	delete[] pkt;
       }
