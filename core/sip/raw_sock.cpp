@@ -579,7 +579,7 @@ int raw_iphdr_udp4_send(int rsock, const char* buf, unsigned int len,
 	int ret;
 
 	totlen = len + sizeof(hdr);
-	if (unlikely(totlen) > 65535)
+	if (unlikely(totlen > 65535))
 		return -2;
 	memset(&snd_msg, 0, sizeof(snd_msg));
 	snd_msg.msg_name=SAv4(to);
