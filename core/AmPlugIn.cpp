@@ -272,6 +272,10 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
   int dlopen_flags = RTLD_NOW;
 
   char* pname = strdup(plugin_name.c_str());
+  if(!pname) {
+    ERROR("strdup() failed for plug-in '%s'\n", plugin_name.c_str());
+    return -1;
+  }
   char* bname = basename(pname);
 
   // dsm, ivr and py_sems need RTLD_GLOBAL
