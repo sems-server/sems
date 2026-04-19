@@ -131,7 +131,9 @@ int tcp_init_tcp() {
   SSL_library_init();
   SSL_load_error_strings();
   bio_err = BIO_new(BIO_s_null());
-  BIO_set_callback(bio_err, tcp_ssl_dbg_cb);
+  if (bio_err) {
+    BIO_set_callback(bio_err, tcp_ssl_dbg_cb);
+  }
 #endif
   return 0;
 }
@@ -250,7 +252,22 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
 #endif
 
   conn_st->ssl=SSL_new(conn_st->ctx);
+  if (!conn_st->ssl) {
+    ERROR("SSL_new failed\n");
+    SSL_CTX_free(conn_st->ctx);
+    tcp_close_connection(conn_st);
+    pkg_free(conn_st);
+    return 0;
+  }
   conn_st->sbio=BIO_new_socket(sockfd,BIO_NOCLOSE);
+  if (!conn_st->sbio) {
+    ERROR("BIO_new_socket failed\n");
+    SSL_free(conn_st->ssl);
+    SSL_CTX_free(conn_st->ctx);
+    tcp_close_connection(conn_st);
+    pkg_free(conn_st);
+    return 0;
+  }
   SSL_set_bio(conn_st->ssl,conn_st->sbio,conn_st->sbio);
   if(SSL_connect(conn_st->ssl)<=0) {
     ERROR("in SSL connect\n");
