@@ -383,14 +383,23 @@ RTMP_SetupStream(RTMP *r,
       const char *socksport = strchr(sockshost->av_val, ':');
       char *hostname = strdup(sockshost->av_val);
 
-      if (socksport)
-	hostname[socksport - sockshost->av_val] = '\0';
-      r->Link.sockshost.av_val = hostname;
-      r->Link.sockshost.av_len = strlen(hostname);
+      if (!hostname)
+	{
+	  r->Link.sockshost.av_val = NULL;
+	  r->Link.sockshost.av_len = 0;
+	  r->Link.socksport = 0;
+	}
+      else
+	{
+	  if (socksport)
+	    hostname[socksport - sockshost->av_val] = '\0';
+	  r->Link.sockshost.av_val = hostname;
+	  r->Link.sockshost.av_len = strlen(hostname);
 
-      r->Link.socksport = socksport ? atoi(socksport + 1) : 1080;
-      RTMP_Log(RTMP_LOGDEBUG, "Connecting via SOCKS proxy: %s:%d", r->Link.sockshost.av_val,
-	  r->Link.socksport);
+	  r->Link.socksport = socksport ? atoi(socksport + 1) : 1080;
+	  RTMP_Log(RTMP_LOGDEBUG, "Connecting via SOCKS proxy: %s:%d", r->Link.sockshost.av_val,
+	      r->Link.socksport);
+	}
     }
   else
     {
