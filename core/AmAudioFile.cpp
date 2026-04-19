@@ -183,7 +183,14 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
     }
   }
 
-  return fpopen_int(f_name, mode, n_fp, subtype);
+  int ret = fpopen_int(f_name, mode, n_fp, subtype);
+  if (ret != 0 && fp == NULL) {
+    // fpopen_int bailed before taking ownership of n_fp (e.g. fileName2Fmt
+    // returned NULL because the extension is unknown). close() is a no-op
+    // on a NULL fp, so explicitly release the handle we opened here.
+    fclose(n_fp);
+  }
+  return ret;
 }
 
 int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
