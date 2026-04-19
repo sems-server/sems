@@ -46,9 +46,16 @@ int EmailTemplate::load(const string& filename)
 
   unsigned int file_size = 0;
   fseek(fp,0L,SEEK_END);
-  file_size = ftell(fp);
+  long end_pos = ftell(fp);
   fseek(fp,0L,SEEK_SET);
-  file_size -= ftell(fp);
+  long start_pos = ftell(fp);
+  if (end_pos < 0 || start_pos < 0 || end_pos < start_pos) {
+    ERROR("EmailTemplate: could not determine size of mail template '%s': %s\n",
+	  tmpl_file.c_str(),strerror(errno));
+    fclose(fp);
+    return -1;
+  }
+  file_size = (unsigned int)(end_pos - start_pos);
 
   char* buffer = new char[file_size+1];
   if(!buffer){
