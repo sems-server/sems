@@ -364,6 +364,7 @@ static int base64_encode_file(FILE* in, int out_fd)
 
   if(!out){
     ERROR("base64_encode_file: out file == NULL\n");
+    close(out_fd);
     return -1;
   }
 
