@@ -42,7 +42,7 @@ u_int16 get_rtp_hdr_len(const rtp_hdr_t* hdr) {
   if(hdr->x != 0) {
     //  skip extension header
     hdr_len +=
-      ntohs(((rtp_xhdr_t*) (hdr + hdr_len))->len)*4;
+      ntohs(((const rtp_xhdr_t*) ((const unsigned char*)hdr + hdr_len))->len)*4;
   }
   // if ((unsigned char*)(hdr + hdr_len) > (p.getBuffer()+s)) {
   //   ERROR("RTP packet with CC and xtension header too long!\n");
