@@ -500,7 +500,8 @@ void decompress(const rtp_mux_hdr_compressed_t* rtp_mux_hdr_compressed, unsigned
 	 old_rtp_hdr_seq, old_rtp_hdr->ts, ts_increment, rtp_mux_hdr_compressed->sn_lsb, rtp_mux_hdr_compressed->ts_crc4);
     // using most likely one - or drop?
     u_int16 sn_diff = rtp_hdr_seq - old_rtp_hdr_seq;
-    rtp_hdr->ts += htonl(sn_diff * ts_increment);    
+    rtp_hdr->ts = htonl(ntohl(rtp_hdr->ts) + sn_diff * ts_increment);
+
   } else {
     // DBG("found\n");
   }
