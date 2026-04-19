@@ -122,10 +122,10 @@ XmlRpcSocket::bind(int fd, int port, const std::string& bind_ip)
   if (bind_ip.empty()) {
     saddr.sin_addr.s_addr = htonl(INADDR_ANY);
   } else {
-    if(inet_aton(bind_ip.c_str(),&((struct sockaddr_in*)(&saddr))->sin_addr)<0){
-      XmlRpcUtil::log(2, "XmlRpcSocket::bind: inet_aton: %s.",
-		      strerror(errno));
-	return -1;
+    if(inet_aton(bind_ip.c_str(),&((struct sockaddr_in*)(&saddr))->sin_addr)==0){
+      XmlRpcUtil::log(2, "XmlRpcSocket::bind: inet_aton: invalid address '%s'.",
+		      bind_ip.c_str());
+	return false;
     }
   }
 
