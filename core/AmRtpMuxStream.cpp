@@ -41,8 +41,9 @@ u_int16 get_rtp_hdr_len(const rtp_hdr_t* hdr) {
   unsigned int hdr_len = sizeof(rtp_hdr_t) + (hdr->cc*4);
   if(hdr->x != 0) {
     //  skip extension header
-    hdr_len +=
-      ntohs(((rtp_xhdr_t*) (hdr + hdr_len))->len)*4;
+    const rtp_xhdr_t* xh =
+      (const rtp_xhdr_t*)((const unsigned char*)hdr + hdr_len);
+    hdr_len += sizeof(rtp_xhdr_t) + ntohs(xh->len)*4;
   }
   // if ((unsigned char*)(hdr + hdr_len) > (p.getBuffer()+s)) {
   //   ERROR("RTP packet with CC and xtension header too long!\n");
@@ -88,6 +89,8 @@ void AmRtpMuxStream::recvPacket(int fd, unsigned char* pkt, size_t len) {
       rtp_hdr_t* hdr = (rtp_hdr_t*)(frame_ptr + sizeof(rtp_mux_hdr_setup_t));
 
       state.rtp_hdr_len = get_rtp_hdr_len(hdr);
+      if (state.rtp_hdr_len > MAX_RTP_HDR_LEN)
+        state.rtp_hdr_len = MAX_RTP_HDR_LEN;
       memcpy(state.rtp_hdr, hdr, state.rtp_hdr_len);
 
       // DBG("setup packet for port %u ts_inc %u len %u hdr_len %u\n",
@@ -102,8 +105,10 @@ void AmRtpMuxStream::recvPacket(int fd, unsigned char* pkt, size_t len) {
       unsigned char rtp_pkt[MAX_RTP_PACKET_LEN];
       decompress((rtp_mux_hdr_compressed_t*)frame_ptr, state.ts_increment, (const rtp_hdr_t*)state.rtp_hdr, rtp_pkt);
       state.rtp_hdr_len = get_rtp_hdr_len((rtp_hdr_t*)rtp_pkt);
+      if (state.rtp_hdr_len > MAX_RTP_HDR_LEN)
+        state.rtp_hdr_len = MAX_RTP_HDR_LEN;
       // save header
-      memcpy(state.rtp_hdr, rtp_pkt, state.rtp_hdr_len); 
+      memcpy(state.rtp_hdr, rtp_pkt, state.rtp_hdr_len);
       // copy payload
       memcpy(rtp_pkt + state.rtp_hdr_len, frame_ptr+sizeof(rtp_mux_hdr_compressed_t), mux_hdr->len);
 
