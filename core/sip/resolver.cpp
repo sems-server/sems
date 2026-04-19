@@ -714,12 +714,16 @@ dns_base_entry* dns_naptr_entry::get_rr(dns_record* rr, unsigned char* begin, un
 
     for(int i=0; i < NAPTR_Fields; i++) {
 
-	if(rdata > end) {
+	if(rdata >= end) {
 	    ERROR("corrupted NAPTR record!!\n");
 	    return NULL;
 	}
 
 	fields[i].len = *(rdata++);
+	if((size_t)(end - rdata) < fields[i].len) {
+	    ERROR("corrupted NAPTR record!!\n");
+	    return NULL;
+	}
 	fields[i].s = (const char*)rdata;
 
 	rdata += fields[i].len;
