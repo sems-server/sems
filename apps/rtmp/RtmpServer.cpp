@@ -79,9 +79,10 @@ int _RtmpServer::listen(const char* addr, unsigned short port)
 #endif
   SAv4(&listen_addr)->sin_port = htons(port);
 
-  if(inet_aton(addr,&SAv4(&listen_addr)->sin_addr)<0){
-	
-    ERROR("inet_aton: %s\n",strerror(errno));
+  if(inet_aton(addr,&SAv4(&listen_addr)->sin_addr)==0){
+
+    ERROR("inet_aton: invalid address '%s'\n",addr);
+    close(listen_fd);
     return -1;
   }
 
