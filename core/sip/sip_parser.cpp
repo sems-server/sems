@@ -73,6 +73,7 @@ sip_msg::sip_msg(const char* msg_buf, int msg_len)
 
 sip_msg::sip_msg()
     : buf(NULL),
+      len(0),
       type(SIP_UNKNOWN),
       hdrs(),
       to(NULL),
