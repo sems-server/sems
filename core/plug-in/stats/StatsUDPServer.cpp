@@ -170,6 +170,7 @@ int StatsUDPServer::init()
   if(!inet_aton(udp_addr.c_str(),(in_addr*)&sa.sin_addr.s_addr)){
     // non valid address
     ERROR("invalid IP in the monit_udp_ip parameter\n");
+    close(sd);
     return -1;
   }
 
@@ -180,6 +181,7 @@ int StatsUDPServer::init()
     //udp_port += 1;
     //sa.sin_port = htons(udp_port);
 
+    close(sd);
     return -1;
   } else {
     INFO("stats server listening on %s:%i\n",udp_addr.c_str(), udp_port);
