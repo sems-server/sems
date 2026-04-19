@@ -80,7 +80,7 @@ bool AmEventDispatcher::addEventQueue(const string& local_tag,
 				      const string& remote_tag,
 				      const string& via_branch)
 {
-    if(local_tag.empty () ||callid.empty() || remote_tag.empty() | via_branch.empty()) {
+    if(local_tag.empty () ||callid.empty() || remote_tag.empty() || via_branch.empty()) {
       ERROR("local_tag, callid, remote_tag or via_branch is empty");
       return false;
     }
