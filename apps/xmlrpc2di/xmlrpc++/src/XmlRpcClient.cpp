@@ -291,7 +291,19 @@ XmlRpcClient::doConnect()
     _ssl_meth = SSLv23_client_method();
     SSL_load_error_strings();
     _ssl_ctx = SSL_CTX_new (_ssl_meth);
+    if (!_ssl_ctx) {
+      XmlRpcUtil::error("Error in XmlRpcClient::doConnect: SSL_CTX_new failed.");
+      XmlRpcSource::close();
+      return false;
+    }
     _ssl_ssl = SSL_new (_ssl_ctx);
+    if (!_ssl_ssl) {
+      XmlRpcUtil::error("Error in XmlRpcClient::doConnect: SSL_new failed.");
+      SSL_CTX_free(_ssl_ctx);
+      _ssl_ctx = NULL;
+      XmlRpcSource::close();
+      return false;
+    }
     SSL_set_fd (_ssl_ssl, fd);
     /* int err = */ SSL_connect (_ssl_ssl);
   }
