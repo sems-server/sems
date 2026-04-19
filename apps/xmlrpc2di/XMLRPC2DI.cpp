@@ -669,7 +669,7 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
         ab.len = 0;
         throw XmlRpcException("out of memory decoding Base64 parameter", 500);
       }
-      int i = 0;
+      XmlRpcValue::BinaryData::size_type i = 0;
       for (XmlRpcValue::BinaryData::const_iterator it=
        bd.begin(); it != bd.end(); ++it) {
         ((char*)ab.data)[i] = *it;
