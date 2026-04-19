@@ -663,7 +663,12 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
       ArgBlob ab;
       const XmlRpcValue::BinaryData& bd = v;
       ab.len = bd.size();
-      ab.data = malloc(ab.len);
+      ab.data = ab.len ? malloc(ab.len) : NULL;
+      if (!ab.data && ab.len) {
+        // preserve ArgBlob's len/data invariant on OOM and reject the RPC
+        ab.len = 0;
+        throw XmlRpcException("out of memory decoding Base64 parameter", 500);
+      }
       int i = 0;
       for (XmlRpcValue::BinaryData::const_iterator it=
        bd.begin(); it != bd.end(); ++it) {
