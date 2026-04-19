@@ -408,6 +408,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 
 AmRtpStream::AmRtpStream(AmSession* _s, int _if)
   : sdp_media_index(-1),
+    last_payload(-1),
     r_port(0),
     r_rtcp_port(0),
     l_if(_if),
