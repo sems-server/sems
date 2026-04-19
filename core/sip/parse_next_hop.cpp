@@ -119,7 +119,14 @@ int parse_next_hop(const cstring& next_hop,
 	  DBG("error: unexpected character '%c' in IPL_PORT state.\n",*c);
 	  return -1;
 	}
-	dest.port = dest.port*10 + (*c - '0');
+	{
+	  unsigned int p = (unsigned int)dest.port * 10 + (*c - '0');
+	  if(p > 65535){
+	    DBG("error: port value out of range in IPL_PORT state.\n");
+	    return -1;
+	  }
+	  dest.port = (unsigned short)p;
+	}
 	break;
       }
       break;
