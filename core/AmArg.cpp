@@ -328,8 +328,8 @@ bool operator==(const AmArg& lhs, const AmArg& rhs) {
   case AmArg::CStr:   { return !strcmp(lhs.v_cstr,rhs.v_cstr); } break;
   case AmArg::AObject:{ return lhs.v_obj == rhs.v_obj; } break;
   case AmArg::ADynInv:{ return lhs.v_inv == rhs.v_inv; } break;
-  case AmArg::Array:  { return lhs.v_array == rhs.v_array;  } break;
-  case AmArg::Struct: { return lhs.v_struct == rhs.v_struct;  } break;
+  case AmArg::Array:  { return *lhs.v_array == *rhs.v_array;  } break;
+  case AmArg::Struct: { return *lhs.v_struct == *rhs.v_struct;  } break;
   case AmArg::Blob:   {  return (lhs.v_blob->len == rhs.v_blob->len) &&  
 	!memcmp(lhs.v_blob->data, rhs.v_blob->data, lhs.v_blob->len); } break;
   case AmArg::Undef:  return true;
