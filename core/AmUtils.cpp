@@ -40,6 +40,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -242,7 +243,9 @@ bool str2i(char*& str, unsigned int& result, char sep)
 
   for(; *str != '\0';str++){
     if ( (*str <= '9' ) && (*str >= '0') ){
-      ret=ret*10+*str-'0';
+      unsigned int digit = (unsigned int)(*str - '0');
+      if (ret > (UINT_MAX - digit) / 10) goto error_digits;
+      ret = ret*10 + digit;
       i++;
       if (i>10) goto error_digits;
     } else {
@@ -296,7 +299,9 @@ bool str2int(char*& str, int& result, char sep)
 
   for(; *str != '\0';str++){
     if ( (*str <= '9' ) && (*str >= '0') ){
-      ret=ret*10+*str-'0';
+      int digit = *str - '0';
+      if (ret > (INT_MAX - digit) / 10) goto error_digits;
+      ret = ret*10 + digit;
       i++;
       if (i>10) goto error_digits;
     } else {
@@ -351,7 +356,9 @@ bool str2long(char*& str, long& result, char sep)
 
   for(; *str != '\0';str++){
     if ( (*str <= '9' ) && (*str >= '0') ){
-      ret=ret*10+*str-'0';
+      long digit = *str - '0';
+      if (ret > (LONG_MAX - digit) / 10) goto error_digits;
+      ret = ret*10 + digit;
       i++;
       if (i>20) goto error_digits;
     } else {
@@ -399,7 +406,9 @@ bool str2ulonglong(char*& str, unsigned long long int& result, char sep)
 
   for (; *str != '\0';str++) {
     if ( (*str <= '9' ) && (*str >= '0') ) {
-      ret = ret*10 + *str-'0';
+      unsigned long long int digit = (unsigned long long int)(*str - '0');
+      if (ret > (ULLONG_MAX - digit) / 10) { goto error_digits; }
+      ret = ret*10 + digit;
       i++;
       if ( i>20 ) { goto error_digits; }
     } else {
