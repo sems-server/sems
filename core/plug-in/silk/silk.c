@@ -180,6 +180,9 @@ static long SILK_create(unsigned int rtp_Hz,
     ERROR("could not allocate SILK state\n");
     return 0;
   }
+  /* zero psEnc/psDec so the error path's free() is safe even when
+     create_SILK_{encoder,decoder} bails before assigning them */
+  memset(st, 0, sizeof(SILK_state));
 
   if(create_SILK_encoder(st,rtp_Hz,avg_bit_rate))
     goto error;
