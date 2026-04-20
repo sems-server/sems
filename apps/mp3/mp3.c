@@ -171,15 +171,18 @@ long MP3_create(const char* format_parameters, amci_codec_fmt_info_t* format_des
   
   if (ret_code < 0) {
     ERROR("lame encoder init failed: return code is %d\n", ret_code);
+    lame_close(coder_state->gfp);
     free(coder_state);
     return -1;
   }
-  
+
 
 #ifdef WITH_MPG123DECODER
   coder_state->mpg123_h = mpg123_new(NULL, NULL);
   if (!coder_state->mpg123_h) {
     ERROR("initializing mpg123 decoder instance\n");
+    lame_close(coder_state->gfp);
+    free(coder_state);
     return -1;
   }
 
