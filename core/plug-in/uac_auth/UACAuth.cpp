@@ -469,7 +469,7 @@ bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
       "cnonce=\"" + cnonce + "\", "
       "nc=" + int2hex(nonce_count,true) + ", ";
 
-  result += "response=\"" + string((char*)response) + "\", algorithm=MD5\n";
+  result += "response=\"" + string((char*)response) + "\", algorithm=MD5" CRLF;
 
   DBG("Auth req hdr: '%s'\n", result.c_str());
   
