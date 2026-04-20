@@ -90,8 +90,10 @@ tcp_trsp_socket* tcp_trsp_socket::new_connection(tcp_server_socket* server_sock,
 tcp_trsp_socket::~tcp_trsp_socket()
 {
   DBG("********* connection destructor ***********");
-  event_free(read_ev);
-  event_free(write_ev);
+  if(read_ev)
+    event_free(read_ev);
+  if(write_ev)
+    event_free(write_ev);
 }
 
 void tcp_trsp_socket::create_events()
@@ -99,10 +101,16 @@ void tcp_trsp_socket::create_events()
   read_ev = event_new(evbase, sd, EV_READ|EV_PERSIST,
 		      tcp_trsp_socket::on_sock_read,
 		      (void *)this);
+  if(!read_ev) {
+    ERROR("event_new(read) failed on sd=%i",sd);
+  }
 
   write_ev = event_new(evbase, sd, EV_WRITE,
 		       tcp_trsp_socket::on_sock_write,
 		       (void *)this);
+  if(!write_ev) {
+    ERROR("event_new(write) failed on sd=%i",sd);
+  }
 }
 
 void tcp_trsp_socket::add_read_event_ul()
@@ -114,6 +122,7 @@ void tcp_trsp_socket::add_read_event_ul()
 
 void tcp_trsp_socket::add_read_event()
 {
+  if(!read_ev) return;
   event_add(read_ev, server_sock->get_idle_timeout());
 }
 
@@ -126,6 +135,7 @@ void tcp_trsp_socket::add_write_event_ul(struct timeval* timeout)
 
 void tcp_trsp_socket::add_write_event(struct timeval* timeout)
 {
+  if(!write_ev) return;
   event_add(write_ev, timeout);
 }
 
@@ -272,8 +282,10 @@ void tcp_trsp_socket::close()
   closed = true;
   DBG("********* closing connection ***********");
 
-  event_del(read_ev);
-  event_del(write_ev);
+  if(read_ev)
+    event_del(read_ev);
+  if(write_ev)
+    event_del(write_ev);
 
   if(sd > 0) {
     ::close(sd);
