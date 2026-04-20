@@ -6,6 +6,9 @@
 
 #include <event2/event_struct.h>
 
+#include <string>
+using std::string;
+
 /*
 
 Possible issue:
@@ -31,6 +34,12 @@ async_file::async_file(unsigned int buf_len)
 
   evbase = async_file_writer::instance()->get_evbase();
   ev_write = event_new(evbase,-1,0,write_cb,this);
+  /* event_new() returns NULL on allocation failure. Without the check below
+     every subsequent event_active(ev_write,...) in write()/writev()/close()/
+     write_cycle() would dereference a NULL event and trip libevent's
+     EVUTIL_ASSERT — a hard abort, mid-call, on any I/O using this file. */
+  if (!ev_write)
+    throw string("event_new() failed in async_file ctor");
 }
 
 async_file::~async_file()
