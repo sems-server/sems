@@ -802,7 +802,11 @@ string replaceParameters(const string& s,
 
 /* Converts a hex character to its integer value */
 char from_hex(char ch) {
-  return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
+  /* ctype.h functions require an argument representable as unsigned char
+     (or EOF); a plain signed char with the high bit set is UB, see
+     C11 7.4 / POSIX ctype(3). Cast through unsigned char. */
+  unsigned char uch = (unsigned char)ch;
+  return isdigit(uch) ? uch - '0' : tolower(uch) - 'a' + 10;
 }
 
 /* Converts an integer value to its hex character*/
@@ -820,13 +824,16 @@ char *url_encode(const char *str) {
   char* pbuf = buf;
 
   while (*pstr) {
-    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || 
-	*pstr == '.' || *pstr == '~') 
-      *pbuf++ = *pstr;
-    else if (*pstr == ' ') 
+    /* isalnum() requires unsigned-char-or-EOF; plain signed char with the
+       high bit set (UTF-8, Latin-1) is UB. Cast locally. */
+    unsigned char c = (unsigned char)*pstr;
+    if (isalnum(c) || c == '-' || c == '_' ||
+	c == '.' || c == '~')
+      *pbuf++ = c;
+    else if (c == ' ')
       *pbuf++ = '+';
-    else 
-      *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
+    else
+      *pbuf++ = '%', *pbuf++ = to_hex(c >> 4), *pbuf++ = to_hex(c & 15);
     pstr++;
   }
   *pbuf = '\0';
