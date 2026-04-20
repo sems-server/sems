@@ -326,10 +326,16 @@ static int ilbc_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   fmt_desc->rate = 8000;
   fmt_desc->channels = 1;
 
-  fseek(fp, 0, SEEK_END);
-  fmt_desc->data_size = ftell(fp) - 9; // file size - header size
-  fseek(fp, 9, SEEK_SET);   // get at start of samples
-    
+  if (fseek(fp, 0, SEEK_END) < 0)
+    return -1;
+
+  // file size - header size
+  fmt_desc->data_size = ftell(fp) - 9;
+
+  // get at start of samples
+  if (fmt_desc->data_size < 0 || fseek(fp, 9, SEEK_SET))
+    return -1;
+
   return 0;
 }
 
