@@ -214,6 +214,12 @@ void log_stacktrace(int ll)
    void* callstack[128];
    int i, frames = backtrace(callstack, 128);
    char** strs = backtrace_symbols(callstack, frames);
+   if (!strs) {
+     for (i = 0; i < frames; ++i) {
+       _LOG(ll,"stack-trace(%i/[%p]): <symbols unavailable>", i, callstack[i]);
+     }
+     return;
+   }
    for (i = 0; i < frames; ++i) {
      _LOG(ll,"stack-trace(%i/[%p]): %s", i, callstack[i], strs[i]);
    }
@@ -239,6 +245,13 @@ void __lds(int ll, unsigned int max_frames)
   // resolve addresses into strings containing "filename(function+address)",
   // this array must be free()-ed
   char** symbollist = backtrace_symbols(addrlist, addrlen);
+  if (!symbollist) {
+    // backtrace_symbols() returns NULL on allocation failure; without it
+    // the loop below would dereference symbollist[i] and crash inside a
+    // diagnostic path.
+    _LOG(ll,"<backtrace symbols unavailable>");
+    return;
+  }
 
   // allocate string which will be filled with the demangled function name
   size_t funcnamesize = 256;
