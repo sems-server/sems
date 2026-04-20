@@ -470,6 +470,9 @@ unsigned int AmAudio::resampleOutput(unsigned char* buffer, unsigned int s, int 
 
 unsigned int AmAudio::resample(AmResamplingState& rstate, unsigned char* buffer, unsigned int s, int input_sample_rate, int output_sample_rate)
 {
+  if (!input_sample_rate)
+    return 0;
+
   return rstate.resample((unsigned char*) buffer, s, ((double) output_sample_rate) / ((double) input_sample_rate));
 }
 
