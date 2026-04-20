@@ -274,9 +274,8 @@ public:
 
     void dump() const {
 	for(unsigned long l=0; l<size; l++){
-	    _table[l]->lock();
+	    AmLock _l(*_table[l]);
 	    _table[l]->dump();
-	    _table[l]->unlock();
 	}
     }
 
