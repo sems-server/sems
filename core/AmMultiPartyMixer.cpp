@@ -121,21 +121,27 @@ void AmMultiPartyMixer::PutChannelPacket(unsigned int   channel_id,
     return;
   assert(size <= AUDIO_BUFFER_SIZE);
 
-  std::deque<MixerBufferState>::iterator bstate = findOrCreateBufferState(GetCurrentSampleRate());
+  int srate = GetCurrentSampleRate();
+  if (srate < 100) {
+    ERROR("Invalid/unknown sample rate (%d)", srate);
+    return;
+  }
+
+  std::deque<MixerBufferState>::iterator bstate = findOrCreateBufferState(srate);
 
   SampleArrayShort* channel = 0;
   if((channel = bstate->get_channel(channel_id)) != 0) {
 
     unsigned samples = PCM16_B2S(size);
     unsigned long long put_ts = system_ts + (MIXER_DELAY_MS * WALLCLOCK_RATE / 1000);
-    unsigned long long user_put_ts = put_ts * (GetCurrentSampleRate()/100) / (WALLCLOCK_RATE/100);
+    unsigned long long user_put_ts = put_ts * (srate/100) / (WALLCLOCK_RATE/100);
 
     channel->put(user_put_ts,(short*)buffer,samples);
     bstate->mixed_channel->get(user_put_ts,tmp_buffer,samples);
 
     mix_add(tmp_buffer,tmp_buffer,(short*)buffer,samples);
     bstate->mixed_channel->put(user_put_ts,tmp_buffer,samples);
-    bstate->last_ts = put_ts + (samples * (WALLCLOCK_RATE/100) / (GetCurrentSampleRate()/100));
+    bstate->last_ts = put_ts + (samples * (WALLCLOCK_RATE/100) / (srate/100));
   } else {
     /*
     ERROR("XXDebugMixerXX: MultiPartyMixer::PutChannelPacket: "
@@ -157,13 +163,20 @@ void AmMultiPartyMixer::GetChannelPacket(unsigned int   channel_id,
     return;
   assert(size <= AUDIO_BUFFER_SIZE);
 
-  unsigned int last_ts = system_ts + (PCM16_B2S(size) * (WALLCLOCK_RATE/100) / (GetCurrentSampleRate()/100));
-  std::deque<MixerBufferState>::iterator bstate = findBufferStateForReading(GetCurrentSampleRate(), last_ts);
+  int srate = GetCurrentSampleRate();
+  if (srate < 100) {
+    ERROR("Invalid/unknown sample rate (%d)", srate);
+    size = 0;
+    return;
+  }
+
+  unsigned int last_ts = system_ts + (PCM16_B2S(size) * (WALLCLOCK_RATE/100) / (srate/100));
+  std::deque<MixerBufferState>::iterator bstate = findBufferStateForReading(srate, last_ts);
 
   SampleArrayShort* channel = 0;
   if(bstate != buffer_state.end() && (channel = bstate->get_channel(channel_id)) != 0) {
 
-    unsigned int samples = PCM16_B2S(size) * (bstate->sample_rate/100) / (GetCurrentSampleRate()/100);
+    unsigned int samples = PCM16_B2S(size) * (bstate->sample_rate/100) / (srate/100);
     assert(samples <= PCM16_B2S(AUDIO_BUFFER_SIZE));
 
     unsigned long long cur_ts = system_ts * (bstate->sample_rate/100) / (WALLCLOCK_RATE/100);
@@ -176,7 +189,7 @@ void AmMultiPartyMixer::GetChannelPacket(unsigned int   channel_id,
     output_sample_rate = bstate->sample_rate;
   } else if (bstate != buffer_state.end()) {
     memset(buffer,0,size);
-    output_sample_rate = GetCurrentSampleRate();
+    output_sample_rate = srate;
     //DBG("XXDebugMixerXX: GetChannelPacket returned zeroes, ts=%u, last_ts=%u, output_sample_rate=%u", ts, last_ts, output_sample_rate);
   } else {
     /*
