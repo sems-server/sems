@@ -99,10 +99,15 @@ const char* am_inet_ntop_sip(const sockaddr_storage* addr, char* str, size_t siz
       ERROR("Could not convert IPv6 address to string: %s",strerror(errno));
       return NULL;
     }
-    size_t str_len = strlen(str);
+    /* inet_ntop() wrote the IPv6 literal starting at str+1 and left str[0]
+       untouched. Measure the length of the IPv6 text (not of the whole
+       buffer), otherwise strlen(str) reads str[0] which, for callers that
+       pre-zero the buffer (e.g. `char host[NI_MAXHOST] = "";`), is already
+       '\0' and returns 0 — which then collapses the output to just "]". */
+    size_t str_len = strlen(str + 1);
     str[0] = '[';
-    str[str_len] = ']';
-    str[str_len+1] = '\0';
+    str[str_len + 1] = ']';
+    str[str_len + 2] = '\0';
   }
 
   return str;
