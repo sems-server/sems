@@ -63,7 +63,14 @@ AmArg& AmArg::operator=(const AmArg& v) {
     case LongLong: { v_long = v.v_long; } break;
     case Bool:   { v_bool = v.v_bool; } break;
     case Double: { v_double = v.v_double; } break;
-    case CStr:   { v_cstr = strdup(v.v_cstr); } break;
+    case CStr:   {
+      v_cstr = strdup(v.v_cstr);
+      /* If strdup() fails under OOM, keep the invariant "type==CStr implies
+         v_cstr non-NULL" by downgrading to Undef. Otherwise asCStr()/print
+         paths would dereference a NULL pointer while invalidate() would still
+         try to free() it. */
+      if (!v_cstr) type = Undef;
+    } break;
     case AObject:{ v_obj = v.v_obj; } break;
     case ADynInv:{ v_inv = v.v_inv; } break;
     case Array:  { v_array = new ValueArray(*v.v_array); } break;

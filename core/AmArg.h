@@ -172,12 +172,18 @@ class AmArg
    : type(CStr)
   {
     v_cstr = strdup(v);
+    /* Preserve the invariant "type==CStr implies v_cstr != NULL".
+       Under OOM strdup() returns NULL; without the downgrade below,
+       asCStr() / print()/ invalidate()->free() paths would dereference
+       or free an uninitialised-but-labelled-as-CStr pointer. */
+    if (!v_cstr) type = Undef;
   }
-  
+
  AmArg(const string &v)
    : type(CStr)
   {
     v_cstr = strdup(v.c_str());
+    if (!v_cstr) type = Undef;
   }
   
  AmArg(const ArgBlob v)
