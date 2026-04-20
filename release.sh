@@ -14,11 +14,11 @@
 #   OUT_DIR           Output directory. Default "$(dirname $PWD)/rhel".
 #   CONTAINER_ENGINE  "docker" or "podman". Auto-detected.
 #
-# Layout produced under $OUT_DIR:
-#   <el>/x86_64/*.rpm
-#   <el>/SRPMS/*.src.rpm
-#   <el>/README.txt                 (release metadata + build-host rpm -qa)
-#   <el>/{x86_64,SRPMS}/repodata/   (only if createrepo_c is installed locally)
+# Layout produced under $OUT_DIR (multiple SEMS versions can coexist):
+#   <el>/<version>/x86_64/*.rpm
+#   <el>/<version>/SRPMS/*.src.rpm
+#   <el>/<version>/README.txt                 (release metadata + build-host rpm -qa)
+#   <el>/<version>/{x86_64,SRPMS}/repodata/   (only if createrepo_c is installed locally)
 #
 # The existing pkg/rpm/sems.spec + Dockerfile-rhel<N> are the single source of
 # truth for the build; this script just orchestrates them and extracts the
@@ -78,7 +78,7 @@ build_one_el() {
     local dockerfile="$SRC_DIR/Dockerfile-rhel${el}"
     local image_tag="${GIT_SHORT:-$VERSION}"
     local image="sems-release-el${el}:${image_tag}"
-    local dest="$OUT_DIR/${el}"
+    local dest="$OUT_DIR/${el}/${VERSION}"
     local staging cid
 
     if [[ ! -f "$dockerfile" ]]; then
@@ -88,11 +88,12 @@ build_one_el() {
 
     echo
     echo "=============================================="
-    echo " Building RPMs for el${el}"
+    echo " Building RPMs for el${el} (sems ${VERSION})"
     echo "=============================================="
     "$ENGINE" build -t "$image" -f "$dockerfile" "$SRC_DIR"
 
-    # Replace any previous artifacts for this EL but leave siblings alone.
+    # Replace any previous artifacts for this exact (el, version) pair but
+    # leave other versions and other EL trees alone.
     rm -rf "$dest"
     mkdir -p "$dest/x86_64" "$dest/SRPMS"
 
@@ -126,7 +127,7 @@ build_one_el() {
         echo "note: createrepo_c not installed; skipping repodata for el${el}"
     fi
 
-    echo "el${el} artifacts:"
+    echo "el${el} ${VERSION} artifacts:"
     ( cd "$dest" && find . -name '*.rpm' | sort | sed 's|^\./|  |' )
 }
 
