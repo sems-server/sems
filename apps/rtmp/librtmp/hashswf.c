@@ -247,8 +247,11 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
 	if (!strncasecmp
 	    (sb.sb_start, "Last-Modified: ", sizeof("Last-Modified: ") - 1))
 	{
+	  /* http->date is the 64-byte date[] buffer in RTMP_HashSWF; bound
+	   * the copy so a malformed server cannot smash the caller frame. */
 	  *p2 = '\0';
-	  strcpy(http->date, sb.sb_start + sizeof("Last-Modified: ") - 1);
+	  strncpy(http->date, sb.sb_start + sizeof("Last-Modified: ") - 1, 63);
+	  http->date[63] = '\0';
 	}
       p2 += 2;
       sb.sb_size -= p2 - sb.sb_start;
