@@ -35,6 +35,7 @@ sems
 sems_tests
 sems-logfile-callextract
 sems-stats
+!apps/monitoring/tools/sems-stats/
 apps/monitoring/tools/target/
 apps/monitoring/tools/vendor/
 apps/monitoring/tools/.cargo/

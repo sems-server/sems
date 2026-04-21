@@ -25,6 +25,11 @@ if(CARGO)
   endif()
 endif()
 
+# Expose to other subdirectories (e.g. core/plug-in/stats, which has its own
+# C++ sems-stats binary and needs to know whether the Rust port is taking
+# over the installed path).
+set(SEMS_HAS_RUST ${SEMS_RUST_OK} CACHE INTERNAL "Rust toolchain detected and usable")
+
 if(SEMS_RUST_OK)
   set(SEMS_MONITORING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tools)
 
@@ -41,7 +46,8 @@ if(SEMS_RUST_OK)
     sems-list-active-calls
     sems-list-finished-calls
     sems-get-callproperties
-    sems-prometheus-exporter)
+    sems-prometheus-exporter
+    sems-stats)
 
   add_custom_target(sems-monitoring-tools ALL
     COMMAND ${CARGO} build ${CARGO_RELEASE_FLAG}
@@ -52,6 +58,15 @@ if(SEMS_RUST_OK)
     install(PROGRAMS ${SEMS_MONITORING_DIR}/target/${CARGO_PROFILE}/${bin}
             DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
   endforeach()
+
+  # Run `cargo test` as part of `ctest`. Scoped to the sems-stats crate to
+  # keep the test surface aligned with what this commit adds; extend the
+  # `-p` list if other crates grow their own tests.
+  add_test(
+    NAME sems-stats-cargo-tests
+    COMMAND ${CARGO} test ${CARGO_RELEASE_FLAG}
+            --manifest-path ${SEMS_MONITORING_DIR}/Cargo.toml
+            -p sems-stats)
 else()
   message(WARNING "cargo/rustc not found or too old; installing Python wrapper scripts for monitoring tools")
 
