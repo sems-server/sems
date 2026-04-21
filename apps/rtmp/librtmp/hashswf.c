@@ -116,7 +116,11 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
 
   host = p1 + 3;
   path = strchr(host, '/');
+  if (!path)
+    return HTTPRES_BAD_REQUEST;
   hlen = path - host;
+  if (hlen >= (int)sizeof(hbuf))
+    return HTTPRES_BAD_REQUEST;
   strncpy(hbuf, host, hlen);
   hbuf[hlen] = '\0';
   host = hbuf;
