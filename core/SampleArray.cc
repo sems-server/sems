@@ -37,10 +37,10 @@
 //     return (t1 - t2 > (unsigned int)(1<<31));
 // }
 
-inline bool ts_less::operator()(const unsigned int& l, 
+inline bool ts_less::operator()(const unsigned int& l,
 				const unsigned int& r) const
 {
-  return (l - r > (unsigned int)(1<<31));
+  return (l - r > (1U<<31));
 }
 
 inline bool sys_ts_less::operator()(const unsigned long long& l, 

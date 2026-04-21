@@ -204,7 +204,7 @@ void _wheeltimer::process_current_timers()
 inline bool less_ts(unsigned int t1, unsigned int t2)
 {
     // t1 < t2
-    return (t1 - t2 > (unsigned int)(1<<31));
+    return (t1 - t2 > (1U<<31));
 }
 
 void _wheeltimer::place_timer(timer* t)
