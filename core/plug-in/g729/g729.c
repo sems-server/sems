@@ -95,6 +95,10 @@ long g729_create(const char* format_parameters, const char** format_parameters_o
     struct G729_codec *codec;
 
     codec = calloc(sizeof(struct G729_codec), 1);
+    if (!codec) {
+      ERROR("g729_create: out of memory allocating G729_codec\n");
+      return 0;
+    }
     codec->enc = initBcg729EncoderChannel(0 /* no VAT/DTX detection */);
     codec->dec = initBcg729DecoderChannel();
 
