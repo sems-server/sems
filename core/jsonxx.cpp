@@ -42,7 +42,7 @@ namespace jsonxx {
 void eat_whitespaces(std::istream& input) {
     char ch;
     do {
-        input.get(ch);
+        if(!input.get(ch)) break;
     } while(isspace(ch));
     input.putback(ch);
 }
