@@ -353,6 +353,10 @@ string UACAuth::find_attribute(const string& name, const string& header) {
 
 bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& challenge) {
   size_t p = auth_hdr.find_first_not_of(' ');
+  if (p == string::npos) {
+    ERROR("auth header contains only whitespace\n");
+    return false;
+  }
   string method = auth_hdr.substr(p, 6);
   std::transform(method.begin(), method.end(), method.begin(), 
 		 (int(*)(int)) toupper);
