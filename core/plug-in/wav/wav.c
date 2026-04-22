@@ -169,7 +169,7 @@ int Pcm16_2_ULaw( unsigned char* out_buf, unsigned char* in_buf, unsigned int si
   short* in_b          = (short*)(in_buf);
   short* end           = (short*)((unsigned char*)in_buf + size);
 
-  while(in_b != end){
+  while(in_b + 1 <= end){
     short s = *(in_b++) >> 2;
     *(out_b++) = st_14linear2ulaw(s);
   }
@@ -183,7 +183,7 @@ int Pcm16_2_ALaw( unsigned char* out_buf, unsigned char* in_buf, unsigned int si
   short* in_b          = (short*)(in_buf);
   short* end           = (short*)((unsigned char*)in_buf + size);
 
-  while(in_b != end){
+  while(in_b + 1 <= end){
     short s = (*(in_b++)) >> 3;
     *(out_b++) = st_13linear2alaw(s);
   }
