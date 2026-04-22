@@ -1078,7 +1078,7 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 
     // send 408 to 'ua'
     sip_msg reply;
-    gen_error_reply_from_req(reply,t->msg,408,"Timeout");
+    gen_error_reply_from_req(reply,t->msg,408,"Request Timeout");
 
     string dialog_id(t->dialog_id.s,t->dialog_id.len);
 
