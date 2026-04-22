@@ -93,7 +93,17 @@ void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 }
 
 void AmSessionFactory::replyOptions(const AmSipRequest& req) {
-    string hdrs;
+    // RFC 3261 Section 11.2:
+    //   "Allow, Accept, Accept-Encoding, Accept-Language, and Supported
+    //    header fields SHOULD be present in a 200 (OK) response to an
+    //    OPTIONS request."
+    // Advertise the core method set that AmSession::onSipRequest already
+    // handles (INVITE/ACK/BYE/CANCEL/OPTIONS/INFO/PRACK/UPDATE) so
+    // well-behaved peers can discover our capabilities.
+    string hdrs = SIP_HDR_COLSP(SIP_HDR_ALLOW)
+        SIP_METH_INVITE "," SIP_METH_ACK "," SIP_METH_BYE ","
+        SIP_METH_CANCEL "," SIP_METH_OPTIONS "," SIP_METH_INFO ","
+        SIP_METH_PRACK "," SIP_METH_UPDATE CRLF;
     if (!AmConfig::OptionsTranscoderInStatsHdr.empty()) {
       string usage;
       B2BMediaStatistics::instance()->reportCodecReadUsage(usage);
