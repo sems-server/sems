@@ -90,8 +90,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 
     delete ev;
     if(req.method != SIP_METH_ACK) {
-      AmSipDialog::reply_error(req,481,
-			       "Call leg/Transaction does not exist");
+      AmSipDialog::reply_error(req,481,SIP_REPLY_NOT_EXIST);
     }
     else {
       DBG("received ACK for non-existing dialog "
