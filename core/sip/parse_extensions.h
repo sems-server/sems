@@ -32,4 +32,12 @@ bool is_extension_supported(const std::string& option_tag);
  */
 std::string get_unsupported_extensions(const char* require_value, unsigned int len);
 
+/**
+ * Return a comma-separated list of every option-tag registered via
+ * register_supported_extension(). Suitable for use as the value of a
+ * Supported header field (RFC 3261 Section 20.37). Empty if the
+ * registry is empty.
+ */
+std::string get_supported_extensions();
+
 #endif /* __PARSE_EXTENSIONS_H__ */

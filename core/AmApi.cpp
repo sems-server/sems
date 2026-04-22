@@ -30,6 +30,7 @@
 #include "log.h"
 #include "AmSession.h"
 #include "AmB2BMedia.h" // just because of statistics in reply to OPTIONS
+#include "sip/parse_extensions.h"
 
 AmDynInvoke::AmDynInvoke() {}
 AmDynInvoke::~AmDynInvoke() {}
@@ -93,7 +94,16 @@ void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 }
 
 void AmSessionFactory::replyOptions(const AmSipRequest& req) {
+    // RFC 3261 Section 11.2: "Supported" SHOULD be included in a 200
+    // (OK) response to OPTIONS so the peer can learn which extensions
+    // this UA understands. The extension set is the registry that
+    // SipCtrlInterface/plug-ins populate via
+    // register_supported_extension() (e.g. 100rel, replaces, timer).
     string hdrs;
+    string supported = get_supported_extensions();
+    if (!supported.empty()) {
+        hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED) + supported + CRLF;
+    }
     if (!AmConfig::OptionsTranscoderInStatsHdr.empty()) {
       string usage;
       B2BMediaStatistics::instance()->reportCodecReadUsage(usage);

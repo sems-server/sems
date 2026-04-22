@@ -105,6 +105,19 @@ bool is_extension_supported(const string& option_tag)
     bool found = supported_extensions.find(option_tag) != supported_extensions.end();
     return found;
 }
+
+string get_supported_extensions()
+{
+    AmLock l(supported_ext_mutex);
+    string res;
+    for(set<string>::const_iterator it = supported_extensions.begin();
+        it != supported_extensions.end(); ++it) {
+        if(!res.empty())
+            res += ", ";
+        res += *it;
+    }
+    return res;
+}
 string get_unsupported_extensions(const char* require_value, unsigned int len)
 {
     string unsupported;
