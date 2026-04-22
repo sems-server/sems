@@ -184,6 +184,11 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
     }	
 
   dia_tcp_conn* conn_st = pkg_malloc(sizeof(dia_tcp_conn));
+  if (!conn_st) {
+    ERROR(M_NAME":init_diatcp(): pkg_malloc failed for dia_tcp_conn\n");
+    close(sockfd);
+    return 0;
+  }
   memset(conn_st, 0, sizeof(dia_tcp_conn));
 
   conn_st->sockfd = sockfd;
