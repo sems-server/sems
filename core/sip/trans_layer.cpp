@@ -2732,8 +2732,13 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 
 	int out_interface = tmp_msg.local_socket->get_if();
 	tmp_msg.local_socket = NULL;
-	if(set_trsp_socket(&tmp_msg,next_trsp,out_interface) < 0)
+	if(set_trsp_socket(&tmp_msg,next_trsp,out_interface) < 0) {
+	    // tmp_msg is a shallow copy of tr->msg. Returning without
+	    // release() would let ~sip_msg() free buf/hdrs/u.request that
+	    // are still owned by tr->msg (double-free on next access).
+	    tmp_msg.release();
 	    return -1;
+	}
 
 	if(n_tr->flags & TR_FLAG_NEXT_HOP_RURI) {
 	    // patch R-URI, generate& parse new message
