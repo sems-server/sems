@@ -147,7 +147,10 @@ bool RestParams::get(const string &url, string &data)
   curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&data);
   curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "REST-in-peace/0.1");
   CURLcode res = curl_easy_perform(curl_handle);
-  
+
+  long code = 0;
+  curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
+
   curl_easy_cleanup(curl_handle);
 
   if (res != 0) {
@@ -156,8 +159,6 @@ bool RestParams::get(const string &url, string &data)
     return false;
   }
 
-  long code = 0;
-  curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
   if ((code < 200) || (code > 299)) {
     DBG("non-ok response code when downloading data: %ld\n", code);
     return false;
