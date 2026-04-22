@@ -209,6 +209,7 @@ int parse_method(int* method, const char* beg, int len)
 	    }
 	    break;
 	}
+	break;
 
     case OPTIONS_len:
 	if(!memcmp(c+1,OPTIONSm+1,OPTIONS_len-1)){
