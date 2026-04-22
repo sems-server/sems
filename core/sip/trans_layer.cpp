@@ -127,12 +127,23 @@ void _trans_layer::clear_transports()
 int _trans_layer::set_trsp_socket(sip_msg* msg, const cstring& next_trsp,
 				  int out_interface)
 {
+    if(transports.empty()) {
+	ERROR("transports list is empty");
+	return -1;
+    }
+
     if((out_interface < 0)
        || ((unsigned int)out_interface >= transports.size())) {
 
 	out_interface = find_outbound_if(&msg->remote_ip);
 	if(out_interface < 0) {
 	    DBG("could not find any suitable outbound interface");
+	    return -1;
+	}
+
+	if((unsigned int)out_interface >= transports.size()) {
+	    DBG("resolved out_interface %d is out of transports bounds (size=%zu)",
+		out_interface, transports.size());
 	    return -1;
 	}
     }
