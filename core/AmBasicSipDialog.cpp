@@ -749,11 +749,16 @@ int AmBasicSipDialog::sendRequest(const string& method,
     send_flags |= TR_FLAG_DISABLE_BL;
   }
 
-  if (req.max_forwards > (int)AmConfig::MaxForwards) {
+  // RFC 3261 Section 8.1.1.6: Max-Forwards SHOULD be 70 when a UAC
+  // originates a request. Cap caller-supplied values to the configured
+  // maximum so we never inject a higher hop budget than the operator
+  // allows; a sentinel of -1 means "let SipCtrlInterface fill in the
+  // configured default".
+  if (max_forwards > (int)AmConfig::MaxForwards) {
     req.max_forwards = AmConfig::MaxForwards;
   } else {
     req.max_forwards = max_forwards;
-  };
+  }
 
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ?
