@@ -63,8 +63,7 @@ class RegThread : public AmThread {
 
 class RegistrationAgentFactory: public AmSessionFactory
 {
-  RegThread dialer;    
-  AmSessionEventHandlerFactory* uac_auth_f;
+  RegThread dialer;
 
  public:
   RegistrationAgentFactory(const string& _app_name);
