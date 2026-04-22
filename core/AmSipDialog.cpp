@@ -578,7 +578,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	      if (it->second.method == SIP_METH_INVITE){
 		// let quit this call by sending final reply
 		return reply(it->second,
-			     487,"Request terminated");
+			     487,"Request Terminated");
 	      }
 	    }
 
@@ -596,7 +596,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	   it != uas_trans.end(); it++) {
 	if (it->second.method == SIP_METH_INVITE){
 	  // let's quit this call by sending final reply
-	  return reply(it->second, 487,"Request terminated");
+	  return reply(it->second, 487,"Request Terminated");
 	}
       }
 
