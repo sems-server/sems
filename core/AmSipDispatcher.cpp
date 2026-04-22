@@ -133,7 +133,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       return;
     }
       
-    AmSipDialog::reply_error(req,404,"Not found");
+    AmSipDialog::reply_error(req,404,"Not Found");
   }
 
 }
