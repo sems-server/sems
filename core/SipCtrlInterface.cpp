@@ -889,7 +889,7 @@ void _SipCtrlInterface::handle_sip_reply(const string& dialog_id, sip_msg* msg)
       reply.cseq = get_cseq(msg)->num;
       reply.cseq_method = c2stlstr(get_cseq(msg)->method_str);
       reply.code = 500;
-      reply.reason = "Internal Server Error";
+      reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
       reply.callid = c2stlstr(msg->callid->value);
       reply.to_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
       reply.from_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
