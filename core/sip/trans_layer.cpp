@@ -1097,9 +1097,16 @@ static int patch_ruri_with_remote_ip(string& n_uri, sip_msg* msg)
  	
     // copy from the beginning until URI-host
     n_uri = string(old_ruri.s, parsed_uri.host.s - old_ruri.s);
- 
-    // append new host and port
-    n_uri += get_addr_str(&msg->remote_ip);
+
+    // append new host and port. Use the "sip" variant of the
+    // address-to-string helper so IPv6 literals are wrapped in square
+    // brackets as required by the host production in the SIP-URI
+    // grammar (RFC 3261 Section 25.1:
+    //   host          = hostname / IPv4address / IPv6reference
+    //   IPv6reference = "[" IPv6address "]"
+    // ), otherwise a subsequent ":port" would be grammatically
+    // ambiguous with the address.
+    n_uri += get_addr_str_sip(&msg->remote_ip);
     unsigned short new_port = am_get_port(&msg->remote_ip);
     if(new_port != 5060) {
  	n_uri += ":" + int2str(new_port);
