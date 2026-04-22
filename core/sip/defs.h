@@ -78,7 +78,7 @@
 #define SIP_REPLY_BAD_EXTENSION         "Bad Extension"
 #define SIP_REPLY_EXTENSION_REQUIRED    "Extension Required"
 #define SIP_REPLY_LOOP_DETECTED         "Loop Detected"
-#define SIP_REPLY_NOT_EXIST             "Call Leg/Transaction Does Not Exist"
+#define SIP_REPLY_NOT_EXIST             "Call/Transaction Does Not Exist"
 #define SIP_REPLY_PENDING               "Request Pending"
 #define SIP_REPLY_NOT_ACCEPTABLE_HERE   "Not Acceptable Here"
 #define SIP_REPLY_TRYING                "Trying"
