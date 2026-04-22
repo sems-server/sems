@@ -627,6 +627,7 @@ int tcp_server_socket::bind(const string& bind_ip, unsigned short bind_port)
   if(sd){
     WARN("re-binding socket\n");
     close(sd);
+    sd = 0;
   }
 
   if(am_inet_pton(bind_ip.c_str(),&addr) == 0){
@@ -648,8 +649,9 @@ int tcp_server_socket::bind(const string& bind_ip, unsigned short bind_port)
 
   if((sd = socket(addr.ss_family,SOCK_STREAM,0)) == -1){
     ERROR("socket: %s\n",strerror(errno));
+    sd = 0;
     return -1;
-  } 
+  }
 
   if (AmConfig::DSCPforSip) {
     setsockopt(sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforSip, sizeof(AmConfig::DSCPforSip));
@@ -658,15 +660,17 @@ int tcp_server_socket::bind(const string& bind_ip, unsigned short bind_port)
   int true_opt = 1;
   if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,
 		(void*)&true_opt, sizeof (true_opt)) == -1) {
-    
+
     ERROR("%s\n",strerror(errno));
     close(sd);
+    sd = 0;
     return -1;
   }
 
   if(ioctl(sd, FIONBIO , &true_opt) == -1) {
     ERROR("setting non-blocking: %s\n",strerror(errno));
     close(sd);
+    sd = 0;
     return -1;
   }
 
@@ -674,12 +678,14 @@ int tcp_server_socket::bind(const string& bind_ip, unsigned short bind_port)
 
     ERROR("bind: %s\n",strerror(errno));
     close(sd);
+    sd = 0;
     return -1;
   }
 
   if(::listen(sd, 16) < 0) {
     ERROR("listen: %s\n",strerror(errno));
     close(sd);
+    sd = 0;
     return -1;
   }
 

@@ -77,6 +77,7 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
     if(sd){
 	WARN("re-binding socket\n");
 	close(sd);
+	sd = 0;
     }
     
     if(am_inet_pton(bind_ip.c_str(),&addr) == 0){
@@ -98,8 +99,9 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 
     if((sd = socket(addr.ss_family,SOCK_DGRAM,0)) == -1){
 	ERROR("socket: %s\n",strerror(errno));
+	sd = 0;
 	return -1;
-    } 
+    }
     
     if (AmConfig::DSCPforSip) {
       setsockopt(sd, IPPROTO_IP, IP_TOS, &AmConfig::DSCPforSip, sizeof(AmConfig::DSCPforSip));
@@ -109,6 +111,7 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 
 	ERROR("bind: %s\n",strerror(errno));
 	close(sd);
+	sd = 0;
 	return -1;
     }
     
@@ -117,17 +120,19 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
     if(addr.ss_family == AF_INET) {
 	if(setsockopt(sd, IPPROTO_IP, DSTADDR_SOCKOPT,
 		      (void*)&true_opt, sizeof (true_opt)) == -1) {
-	    
+
 	    ERROR("%s\n",strerror(errno));
 	    close(sd);
+	    sd = 0;
 	    return -1;
 	}
     } else {
 	if(setsockopt(sd, IPPROTO_IPV6, DSTADDR6_SOCKOPT,
 		      (void*)&true_opt, sizeof (true_opt)) == -1) {
-	    
+
 	    ERROR("%s\n",strerror(errno));
 	    close(sd);
+	    sd = 0;
 	    return -1;
 	}
     }
