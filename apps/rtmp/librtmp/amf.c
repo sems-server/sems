@@ -1178,7 +1178,13 @@ void
 AMF3CD_AddProp(AMF3ClassDef *cd, AVal *prop)
 {
   if (!(cd->cd_num & 0x0f))
-    cd->cd_props = realloc(cd->cd_props, (cd->cd_num + 16) * sizeof(AVal));
+    {
+      AVal *newprops = realloc(cd->cd_props,
+			       (cd->cd_num + 16) * sizeof(AVal));
+      if (!newprops)
+	return;
+      cd->cd_props = newprops;
+    }
   cd->cd_props[cd->cd_num++] = *prop;
 }
 
