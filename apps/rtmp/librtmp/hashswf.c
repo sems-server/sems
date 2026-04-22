@@ -561,7 +561,8 @@ RTMP_HashSWF(const char *url, unsigned int *size, unsigned char *hash,
 	      else if (!strncmp(buf, "date: ", 6))
 		{
 		  buf[strlen(buf) - 1] = '\0';
-		  strncpy(date, buf + 6, sizeof(date));
+		  strncpy(date, buf + 6, sizeof(date) - 1);
+		  date[sizeof(date) - 1] = '\0';
 		  got++;
 		}
 	      else if (!strncmp(buf, "ctim: ", 6))
