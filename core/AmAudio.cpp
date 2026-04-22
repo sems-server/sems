@@ -350,8 +350,11 @@ void AmAudio::stereo2mono(unsigned char* out_buf,unsigned char* in_buf,unsigned 
   short* in  = (short*)in_buf;
   short* end = (short*)(in_buf + size);
   short* out = (short*)out_buf;
-    
-  while(in != end){
+
+  // Require both samples of a stereo frame to be in-range so an input whose
+  // byte count is not a multiple of 4 (e.g. odd short counts) can't read past
+  // end or run forever when `in += 2` overshoots `end` without ever equalling it.
+  while(in + 1 < end){
     *(out++) = (*in + *(in+1)) / 2;
     in += 2;
   }
