@@ -2224,8 +2224,16 @@ AV_queue(RTMP_METHOD **vals, int *num, AVal *av, int txn)
 {
   char *tmp;
   if (!(*num & 0x0f))
-    *vals = realloc(*vals, (*num + 16) * sizeof(RTMP_METHOD));
+    {
+      RTMP_METHOD *newvals = realloc(*vals,
+				     (*num + 16) * sizeof(RTMP_METHOD));
+      if (!newvals)
+	return;
+      *vals = newvals;
+    }
   tmp = malloc(av->av_len + 1);
+  if (!tmp)
+    return;
   memcpy(tmp, av->av_val, av->av_len);
   tmp[av->av_len] = '\0';
   (*vals)[*num].num = txn;
