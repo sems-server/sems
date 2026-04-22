@@ -203,6 +203,9 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode,
   if(!f_fmt){
     ERROR("while trying to determine the format of '%s'\n",
 	  filename.c_str());
+    // fp hasn't been assigned yet so the destructor's close() can't
+    // reach n_fp - free it here to match the other error paths below.
+    if (n_fp) fclose(n_fp);
     return -1;
   }
   fmt.reset(f_fmt);
