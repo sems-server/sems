@@ -131,6 +131,16 @@ void AmSessionFactory::replyOptions(const AmSipRequest& req) {
       return;
     }
 
+    // RFC 3261 Section 11.2: Allow, Accept, Accept-Encoding,
+    // Accept-Language, and Supported header fields SHOULD be present
+    // in a 200 (OK) response to an OPTIONS request.
+    hdrs += SIP_HDR_COLSP(SIP_HDR_ALLOW)
+      "INVITE, ACK, BYE, CANCEL, OPTIONS, PRACK, INFO, UPDATE, REFER,"
+      " NOTIFY, SUBSCRIBE, MESSAGE, PUBLISH, REGISTER" CRLF;
+    hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED)
+      SIP_EXT_100REL ", " SIP_EXT_TIMER ", " SIP_EXT_REPLACES CRLF;
+    hdrs += SIP_HDR_COLSP(SIP_HDR_ACCEPT) SIP_APPLICATION_SDP CRLF;
+
     AmSipDialog::reply_error(req, 200, "OK", hdrs);
 
 }
