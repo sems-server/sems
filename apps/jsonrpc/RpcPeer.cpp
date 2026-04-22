@@ -214,6 +214,13 @@ int JsonrpcNetstringsConnection::netstringsRead() {
 	  close();
 	  return REMOVE;
 	}
+	// subtraction avoids unsigned wrap when msg_size is near UINT_MAX
+	if (msg_size > MAX_RPC_MSG_SIZE - 2) {
+	  INFO("closing connection [%p/%d]: declared netstring size %u exceeds buffer %u\n",
+	       this, fd, msg_size, (unsigned int)MAX_RPC_MSG_SIZE);
+	  close();
+	  return REMOVE;
+	}
 	// received len - switch to receive msg mode
 	in_msg = true;
 	rcvd_size = read(fd,msgbuf,msg_size+1);
