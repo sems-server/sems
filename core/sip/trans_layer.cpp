@@ -1017,8 +1017,10 @@ void _trans_layer::transport_error(sip_msg* msg)
 	return;
 
     // generate error reply
+    // RFC 3261 21.5.4: canonical reason phrase for 503 is
+    // "Service Unavailable".
     sip_msg* err = new sip_msg();
-    set_err_reply_from_req(err,msg,503,"Transport Error");
+    set_err_reply_from_req(err,msg,503,"Service Unavailable");
 
     // err will be deleted there, as any received message
     process_rcvd_msg(err);
