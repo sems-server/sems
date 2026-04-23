@@ -746,7 +746,12 @@ void AmSession::onSipRequest(const AmSipRequest& req)
       postDtmfEvent(new AmSipDtmfEvent(dtmf_body_str));
       dlg->reply(req, 200, "OK");
     } else {
-      dlg->reply(req, 415, "Unsupported Media Type");
+      // RFC 3261 Section 21.4.13: a 415 response MUST advertise the
+      // acceptable body formats via Accept/Accept-Encoding/Accept-Language.
+      // For INFO the only media type this UAS understands here is
+      // application/dtmf-relay, so surface that to the peer.
+      dlg->reply(req, 415, "Unsupported Media Type", NULL,
+		 SIP_HDR_COLSP(SIP_HDR_ACCEPT) "application/dtmf-relay" CRLF);
     }
   } else if (req.method == SIP_METH_PRACK) {
     // TODO: SDP
