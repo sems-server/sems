@@ -125,6 +125,11 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 	AmSipDialog::reply_error(req,e.code,e.reason, e.hdrs);
 	ERROR("%i %s %s\n",e.code,e.reason.c_str(), e.hdrs.c_str());
 	return;
+      } catch (...) {
+	ERROR("unhandled exception while handling out-of-dialog '%s'\n",
+	      req.method.c_str());
+	AmSipDialog::reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
+	return;
       }
     }
 	
