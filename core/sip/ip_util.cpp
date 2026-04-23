@@ -99,10 +99,17 @@ const char* am_inet_ntop_sip(const sockaddr_storage* addr, char* str, size_t siz
       ERROR("Could not convert IPv6 address to string: %s",strerror(errno));
       return NULL;
     }
-    size_t str_len = strlen(str);
+    // inet_ntop() wrote the textual address starting at str+1 and did not
+    // touch str[0]; measure from str+1 so str_len reflects only the bytes
+    // it produced. Using strlen(str) here instead reads str[0] (which
+    // callers typically left as '\0'), collapses to 0, and then the two
+    // store lines overwrite the opening '[' with ']' at position 0 and
+    // truncate the address with '\0' at position 1 - yielding "]" for
+    // every IPv6 input.
+    size_t str_len = strlen(str+1);
     str[0] = '[';
-    str[str_len] = ']';
-    str[str_len+1] = '\0';
+    str[str_len+1] = ']';
+    str[str_len+2] = '\0';
   }
 
   return str;
