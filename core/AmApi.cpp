@@ -93,7 +93,13 @@ void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 }
 
 void AmSessionFactory::replyOptions(const AmSipRequest& req) {
-    string hdrs;
+    // RFC 3261 Section 11.2: the response to OPTIONS SHOULD include an
+    // Accept-Encoding header indicating the content-codings the UAS is
+    // willing to accept. SEMS does not decode any SIP content-codings
+    // (no gzip/deflate support anywhere in the core), so we advertise
+    // "identity" (no encoding) per RFC 3261 Section 20.2, which defers
+    // to RFC 2616 Section 14.3 for the "identity" token semantics.
+    string hdrs = SIP_HDR_COLSP("Accept-Encoding") "identity" CRLF;
     if (!AmConfig::OptionsTranscoderInStatsHdr.empty()) {
       string usage;
       B2BMediaStatistics::instance()->reportCodecReadUsage(usage);
