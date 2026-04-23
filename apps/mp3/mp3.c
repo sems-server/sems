@@ -293,10 +293,21 @@ static int MP3_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned 
       WARN("intermediate mp3 file format change!\n");
     }
     if (res == MPG123_ERR) {
-      ERROR("decoding mp3: '%s'\n", 
+      ERROR("decoding mp3: '%s'\n",
 	    mpg123_strerror(coder_state->mpg123_h));
       return -1;
     }
+
+    /* mpg123_decode() occasionally returns an odd number of bytes even though
+     * the output format is PCM16 (2 bytes per sample).  Downstream code in
+     * AmAudio treats the buffer as signed shorts, so handing it an odd byte
+     * count leaves the last byte dangling and causes stereo2mono / resample
+     * paths to read one byte past the decoded data.  Drop the trailing byte
+     * so what we return is always sample-aligned. */
+    if (decoded_size & 1) {
+      decoded_size--;
+    }
+
 /*     DBG("mp3: decoded %d\n", decoded_size); */
     return decoded_size;
 #endif
