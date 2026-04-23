@@ -114,14 +114,14 @@ StatsUDPServer* StatsUDPServer::instance()
 }
 
 StatsUDPServer::StatsUDPServer()
-  : sd(0)
+  : sd(-1)
 {
   sc = AmSessionContainer::instance();
 }
 
 StatsUDPServer::~StatsUDPServer()
 {
-  if(sd)
+  if(sd != -1)
     close(sd);
 }
 
@@ -171,6 +171,7 @@ int StatsUDPServer::init()
     // non valid address
     ERROR("invalid IP in the monit_udp_ip parameter\n");
     close(sd);
+    sd = -1;
     return -1;
   }
 
@@ -182,6 +183,7 @@ int StatsUDPServer::init()
     //sa.sin_port = htons(udp_port);
 
     close(sd);
+    sd = -1;
     return -1;
   } else {
     INFO("stats server listening on %s:%i\n",udp_addr.c_str(), udp_port);
