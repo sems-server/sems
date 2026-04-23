@@ -147,6 +147,15 @@ bool AmSmtpClient::disconnect()
 
 bool AmSmtpClient::close()
 {
+  // sd==0 is this class's "not connected" sentinel (see ctor and every
+  // failure path in connect()). Calling ::close(0) on that sentinel would
+  // close stdin on the whole SEMS process - and since the next socket()
+  // would then hand out fd 0, the "not connected" sentinel would start
+  // aliasing a real socket. Skip the syscall in that case.
+  if (sd <= 0) {
+    sd = 0;
+    return false;
+  }
   ::close(sd);
   sd = 0;
   INFO("We are now deconnected from server\n");
