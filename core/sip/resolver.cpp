@@ -746,7 +746,11 @@ dns_base_entry* dns_naptr_entry::get_rr(dns_record* rr, unsigned char* begin, un
     return naptr_r;
 }
 
-sip_target::sip_target() {}
+sip_target::sip_target()
+{
+    memset(&ss, 0, sizeof(sockaddr_storage));
+    memset(trsp, '\0', SIP_TRSP_SIZE_MAX + 1);
+}
 
 sip_target::sip_target(const sip_target& target)
 {
