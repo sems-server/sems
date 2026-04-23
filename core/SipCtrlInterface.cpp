@@ -566,8 +566,10 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    WARN("\tcontact = '%.*s'\n",contact.len,contact.s);
 	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 
-	    trans_layer::instance()->send_sf_error_reply(&tt, msg, 400, 
-							 "Bad Contact");
+	    // RFC 3261 21.4.1: canonical reason phrase is "Bad Request";
+	    // specific diagnosis is already recorded via WARN above.
+	    trans_layer::instance()->send_sf_error_reply(&tt, msg, 400,
+							 "Bad Request");
 	    return false;
 	}
 
@@ -580,7 +582,7 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 		DBG("\trequest = '%.*s'\n",msg->len,msg->buf);
 
 		trans_layer::instance()->
-		    send_sf_error_reply(&tt, msg, 400, "Malformed Contact URI");
+		    send_sf_error_reply(&tt, msg, 400, "Bad Request");
 		return false;
 	    }
 
@@ -600,7 +602,7 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    DBG("Request has no contact header\n");
 	    DBG("\trequest = '%.*s'\n",msg->len,msg->buf);
 	    trans_layer::instance()->
-		send_sf_error_reply(&tt, msg, 400, "Missing Contact-HF");
+		send_sf_error_reply(&tt, msg, 400, "Bad Request");
 	    return false;
 	}
     }
@@ -662,7 +664,7 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	       (req.max_forwards < 0) ||
 	       (req.max_forwards > 255)) {
 		trans_layer::instance()->
-		    send_sf_error_reply(&tt, msg, 400, "Incorrect Max-Forwards");
+		    send_sf_error_reply(&tt, msg, 400, "Bad Request");
 		return false;
 	    }
 	    break;
