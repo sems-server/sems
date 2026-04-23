@@ -345,7 +345,9 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
   }
   catch(...){
     ERROR("unexpected exception\n");
-    AmSipDialog::reply_error(req,500,"unexpected exception");
+    // RFC 3261 21.5.1: canonical reason phrase for 500 is
+    // "Server Internal Error" - use the existing macro.
+    AmSipDialog::reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 }
 
