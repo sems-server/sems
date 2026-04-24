@@ -948,8 +948,14 @@ int _resolver::resolve_name(const char* name,
     }
     
     // name is NOT an IP address -> try a cache look up
-    dns_bucket* b = cache.get_bucket(hashlittle(name,strlen(name),0));
-    dns_entry* e = b->find(name);
+    // omit a final dot so "example.com" and "example.com." hit the same cache entry
+    size_t name_len = strlen(name);
+    if(name_len > 0 && name[name_len-1] == '.')
+	name_len--;
+    string name_key(name, name_len);
+
+    dns_bucket* b = cache.get_bucket(hashlittle(name_key.data(), name_len, 0));
+    dns_entry* e = b->find(name_key);
 
     // first attempt to get a valid IP
     // (from the cache)
