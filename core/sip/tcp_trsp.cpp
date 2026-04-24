@@ -482,14 +482,17 @@ void tcp_trsp_socket::on_write(short ev)
 }
 
 tcp_server_worker::tcp_server_worker(tcp_server_socket* server_sock)
-  : server_sock(server_sock)
+  : evbase(NULL), server_sock(server_sock)
 {
   evbase = event_base_new();
+  if (!evbase) {
+    ERROR("event_base_new() failed: tcp server worker disabled\n");
+  }
 }
 
 tcp_server_worker::~tcp_server_worker()
 {
-  event_base_free(evbase);
+  if (evbase) event_base_free(evbase);
 }
 
 void tcp_server_worker::add_connection(tcp_trsp_socket* client_sock)
@@ -573,6 +576,8 @@ int tcp_server_worker::send(const sockaddr_storage* sa, const char* msg,
 
 void tcp_server_worker::run()
 {
+  if (!evbase) return;
+
   // fake event to prevent the event loop from exiting
   int fake_fds[2];
   struct event* ev_default = NULL;
@@ -598,6 +603,7 @@ void tcp_server_worker::run()
 
 void tcp_server_worker::on_stop()
 {
+  if (!evbase) return;
   event_base_loopbreak(evbase);
 }
 
