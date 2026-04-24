@@ -234,7 +234,7 @@ int skip_sip_msg_async(parser_state* pst, char* end)
   char*& c = pst->c;
   int& stage = pst->stage;
 
-  while(c < end) {
+  while(c <= end) {
 
     switch(stage) {
     case ST_FL:
