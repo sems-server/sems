@@ -206,9 +206,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     if(!strncmp(tag,"data",4))
       break;
 
-    if (is_seekable)
-      fseek(fp,chunk_size,SEEK_CUR);
-    else 
+    if (!is_seekable || fseek(fp,chunk_size,SEEK_CUR) < 0)
       wav_dummyread(fp,chunk_size);
   }
   fmt_desc->data_size = chunk_size;
@@ -225,8 +223,9 @@ int wav_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_co
     /*  Reserve some space for the header */
     /*  We need this, as information for headers  */
     /*  like 'size' is not known yet */
-    fseek(fp,44L,SEEK_CUR); 
-    return (ferror(fp) ? -1 : 0);
+    if (fseek(fp,44L,SEEK_CUR) < 0 || ferror(fp))
+      return -1;
+    return 0;
   }
 }
 
