@@ -55,22 +55,25 @@ _AmRtpReceiver::~_AmRtpReceiver()
 }
 
 AmRtpReceiverThread::AmRtpReceiverThread()
-  : stop_requested(false)
+  : ev_base(NULL), stop_requested(false)
 {
   // libevent event base
   ev_base = event_base_new();
+  if (!ev_base) {
+    ERROR("event_base_new() failed: RTP receiver thread disabled\n");
+  }
 }
 
 AmRtpReceiverThread::~AmRtpReceiverThread()
 {
-  event_base_free(ev_base);
+  if (ev_base) event_base_free(ev_base);
   INFO("RTP receiver has been recycled.\n");
 }
 
 void AmRtpReceiverThread::on_stop()
 {
   INFO("requesting RTP receiver to stop.\n");
-  event_base_loopbreak(ev_base);
+  if (ev_base) event_base_loopbreak(ev_base);
 }
 
 void AmRtpReceiverThread::stop_and_wait()
@@ -92,6 +95,8 @@ void _AmRtpReceiver::dispose()
 
 void AmRtpReceiverThread::run()
 {
+  if (!ev_base) return;
+
   // fake event to prevent the event loop from exiting
   int fake_fds[2];
   if (pipe(fake_fds)<0) {
