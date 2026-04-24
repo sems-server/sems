@@ -792,9 +792,13 @@ struct timeval* tcp_server_socket::get_idle_timeout()
 }
 
 tcp_trsp::tcp_trsp(tcp_server_socket* sock)
-    : transport(sock)
+    : transport(sock), evbase(NULL)
 {
   evbase = event_base_new();
+  if (!evbase) {
+    ERROR("event_base_new() failed: tcp transport disabled\n");
+    return;
+  }
   sock->add_event(evbase);
 }
 
@@ -808,6 +812,8 @@ tcp_trsp::~tcp_trsp()
 /** @see AmThread */
 void tcp_trsp::run()
 {
+  if (!evbase) return;
+
   int server_sd = sock->get_sd();
   if(server_sd <= 0){
     ERROR("Transport instance not bound\n");
@@ -830,7 +836,7 @@ void tcp_trsp::run()
 /** @see AmThread */
 void tcp_trsp::on_stop()
 {
-  event_base_loopbreak(evbase);
+  if (evbase) event_base_loopbreak(evbase);
   tcp_server_socket* tcp_sock = static_cast<tcp_server_socket*>(sock);
   tcp_sock->stop_threads();
 }
