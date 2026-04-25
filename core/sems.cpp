@@ -709,7 +709,6 @@ int main(int argc, char* argv[])
   AmPlugIn::dispose();
 
   async_file_writer::instance()->stop();
-  async_file_writer::instance()->join();
 
 #ifndef DISABLE_DAEMON_MODE
   if (pid_file_written) {
