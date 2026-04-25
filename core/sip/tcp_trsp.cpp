@@ -603,7 +603,11 @@ void tcp_server_worker::run()
     ev_default = event_new(evbase,fake_fds[0],
 			   EV_READ|EV_PERSIST,
 			   NULL,NULL);
-    event_add(ev_default,NULL);
+    if (NULL != ev_default) {
+      event_add(ev_default,NULL);
+    } else {
+      ERROR("event_new() failed: tcp worker has no fake event\n");
+    }
   }
 
   /* Start the event loop. */
