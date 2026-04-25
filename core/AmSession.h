@@ -64,12 +64,12 @@ class AmDtmfEvent;
  * 
  * The session is identified by Call-ID, From-Tag and To-Tag.
  */
-class AmSession : 
+class AmSession :
   public virtual AmObject,
+  public AmEventQueue,
 #ifndef SESSION_THREADPOOL
   public AmThread,
 #endif
-  public AmEventQueue, 
   public AmEventHandler,
   public AmSipDialogEventHandler,
   public AmMediaSession,

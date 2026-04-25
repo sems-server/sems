@@ -41,8 +41,8 @@
 
 #include <map>
 
-class JsonRPCServerLoop 
-: public AmThread, public AmEventQueue, public AmEventHandler
+class JsonRPCServerLoop
+: public AmEventQueue, public AmThread, public AmEventHandler
 {
   static  RpcServerThreadpool threadpool;
   static ev_async async_w;

@@ -107,8 +107,8 @@ class AmCallWatcherGarbageCollector;
  * reporting the status change.
  */
 class AmCallWatcher
-: public AmThread, 
-  public AmEventQueue,
+: public AmEventQueue,
+  public AmThread,
   public AmEventHandler
 {
  public:

@@ -33,8 +33,8 @@
 #include "AmThread.h"
 #include "RpcPeer.h"
 
-class RpcServerThread 
-: public AmThread, public AmEventQueue, public AmEventHandler 
+class RpcServerThread
+: public AmEventQueue, public AmThread, public AmEventHandler
 {
 
   char rcvbuf[MAX_RPC_MSG_SIZE];
