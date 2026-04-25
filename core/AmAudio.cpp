@@ -212,10 +212,19 @@ unsigned int AmLibSamplerateResamplingState::resample(unsigned char* samples, un
       }
       resample_buf_samples = resample_buf_samples - src_data.input_frames_used;
 
-      if (resample_out_buf_samples != s) {
+      // libsamplerate's output_frames_gen can be smaller than the
+      // PCM16_B2S(s) we're about to consume (e.g. on first invocations
+      // that don't yet have enough input frames buffered). The original
+      // code did "if (resample_out_buf_samples != s)" - mixing samples
+      // and bytes - and then unconditionally subtracted PCM16_B2S(s)
+      // from resample_out_buf_samples, which underflows the unsigned
+      // counter and turns the next memmove read length into ~4G.
+      if (resample_out_buf_samples > PCM16_B2S(s)) {
 	memmove(resample_out, &resample_out[PCM16_B2S(s)], (resample_out_buf_samples - PCM16_B2S(s)) * sizeof(float));
+	resample_out_buf_samples -= PCM16_B2S(s);
+      } else {
+	resample_out_buf_samples = 0;
       }
-      resample_out_buf_samples -= PCM16_B2S(s);
     }
   }
 
