@@ -78,6 +78,13 @@ struct sip_header
     sip_header(const sip_header& hdr);
     sip_header(int type, const cstring& name, const cstring& value);
     ~sip_header();
+
+    /**
+     * Reset all fields to their default-constructed state without
+     * invoking the destructor. Caller owns 'p' if it was set; this
+     * just drops the pointer.
+     */
+    void clear();
 };
 
 int parse_header_type(sip_header* h);
