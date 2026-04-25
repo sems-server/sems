@@ -41,6 +41,9 @@ namespace XmlRpc {
     //! Close the owned fd. If deleteOnClose was specified at construction, the object is deleted.
     virtual void close();
 
+    //! Return whether close() will delete this object.
+    bool getsDeletedOnClose() const { return _deleteOnClose; }
+
     //! Return true to continue monitoring this source
     virtual unsigned handleEvent(unsigned eventType) = 0;
 
