@@ -383,7 +383,16 @@ int Speex_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf,
      but the minimum frame size is 43 */
   while (speex_bits_remaining(&ss->decoder.bits)>40) {
     int ret;
-	
+
+    /* Refuse to decode the next subframe if it would write past the
+       caller's AUDIO_BUFFER_SIZE-byte buffer.  Without this guard a
+       crafted Speex payload with many subframes can overflow out_buf. */
+    if (((frames_out + 1) * ss->frame_size * sizeof(short)) > AUDIO_BUFFER_SIZE) {
+      ERROR("Speex_2_Pcm16: output buffer would overflow at frame %d; "
+            "stopping decode and returning what we have", frames_out);
+      break;
+    }
+
     ret = speex_decode_int(ss->decoder.state, &ss->decoder.bits, pcm);
     pcm+= ss->frame_size;
 	
