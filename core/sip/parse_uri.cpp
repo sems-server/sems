@@ -34,6 +34,7 @@
 
 sip_uri::sip_uri()
     : scheme(UNKNOWN),
+      port(0),
       trsp(NULL)
 {   
 }
