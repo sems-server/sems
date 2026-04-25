@@ -45,8 +45,8 @@
  */
 
 class AmEventProcessingThread
-: public AmThread,
-  public AmEventQueue,
+: public AmEventQueue,
+  public AmThread,
   public AmEventHandler
 {
   

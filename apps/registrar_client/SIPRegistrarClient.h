@@ -41,8 +41,8 @@ using std::string;
 struct SIPNewRegistrationEvent;
 class SIPRemoveRegistrationEvent;
 
-class SIPRegistrarClient  : public AmThread,
-			    public AmEventQueue,
+class SIPRegistrarClient  : public AmEventQueue,
+			    public AmThread,
 			    public AmEventHandler,
 			    public AmDynInvoke,
 			    public AmDynInvokeFactory
