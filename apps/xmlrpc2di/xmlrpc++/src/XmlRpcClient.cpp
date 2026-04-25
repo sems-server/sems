@@ -138,8 +138,14 @@ XmlRpcClient::close()
     SSL_shutdown(_ssl_ssl);
     XmlRpcUtil::log(4, "XmlRpcClient::close: after SSL_shutdown");
   }
+
+  // XmlRpcSource::close() may "delete this" when _deleteOnClose was set;
+  // capture that decision before the call so we don't touch members after.
+  const bool source_deleted = XmlRpcSource::getsDeletedOnClose();
+
   XmlRpcSource::close();
-  if (_ssl) {
+
+  if (!source_deleted && _ssl) {
     // Post-socket shutdown
     XmlRpcUtil::log(4, "XmlRpcClient::close: before SSL_free(_ssl_ssl)");
     SSL_free(_ssl_ssl);
