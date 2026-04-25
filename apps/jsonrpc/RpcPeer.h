@@ -66,14 +66,15 @@ struct JsonrpcPeerConnection {
     FL_CLOSE_NO_NOTIF_RECV   = 16   // close connection if notification queue missing
   }; 
 
-  JsonrpcPeerConnection() { 
+  JsonrpcPeerConnection()
+  : flags(0) {
     req_id = rand()%1024;
   }
 
   int req_id;
 
   JsonrpcPeerConnection(const std::string& id)
-  : id(id) { 
+  : id(id), flags(0) {
     DBG("created connection '%s'\n", id.c_str());
   }
 
