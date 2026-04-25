@@ -333,6 +333,19 @@ int AmContentType::Param::parseType()
 	DBG("Content-Type boundary parameter is missing a value\n");
 	return -1;
       }
+      // RFC 2045 §5.1: the boundary parameter value may be enclosed in
+      // double quotes in the Content-Type header, but the actual delimiter
+      // appearing in the body is the unquoted form. Strip surrounding
+      // quotes here so findNextBoundary() compares against the right
+      // octets and the body parts are not silently dropped.
+      if(value.size() >= 2 &&
+	 value.front() == '"' && value.back() == '"') {
+	value = value.substr(1, value.size() - 2);
+	if(value.empty()) {
+	  DBG("Content-Type boundary parameter is empty after unquoting\n");
+	  return -1;
+	}
+      }
       type = Param::BOUNDARY;
     }
     else type = Param::OTHER;
