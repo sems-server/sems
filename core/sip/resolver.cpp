@@ -624,6 +624,7 @@ dns_handle::dns_handle()
 {}
 
 dns_handle::dns_handle(const dns_handle& h)
+  : srv_e(0), srv_n(0), ip_e(0), ip_n(0)
 {
     *this = h;
 }
@@ -662,14 +663,26 @@ int dns_handle::next_ip(sockaddr_storage* sa)
 
 const dns_handle& dns_handle::operator = (const dns_handle& rh)
 {
+    if (this == &rh)
+	return *this;
+
+    // release the entries we currently hold before overwriting the
+    // pointers via memcpy(), otherwise they leak (and on self-assign
+    // would later be inc_ref'd to an inflated count).
+    if(ip_e)
+	dec_ref(ip_e);
+
+    if(srv_e)
+	dec_ref(srv_e);
+
     memcpy(this,(const void*)&rh,sizeof(dns_handle));
-    
+
     if(srv_e)
 	inc_ref(srv_e);
-    
+
     if(ip_e)
 	inc_ref(ip_e);
-    
+
     return *this;
 }
 
