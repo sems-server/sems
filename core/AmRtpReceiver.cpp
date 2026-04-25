@@ -107,6 +107,12 @@ void AmRtpReceiverThread::run()
     event_new(ev_base,fake_fds[0],
 	      EV_READ|EV_PERSIST,
 	      NULL,NULL);
+  if (!ev_default) {
+    ERROR("event_new() failed: RTP receiver thread will not run\n");
+    close(fake_fds[0]);
+    close(fake_fds[1]);
+    return;
+  }
   event_add(ev_default,NULL);
 
   // run the event loop
