@@ -78,6 +78,7 @@ void XmlRpcUtil::log(int level, const char* fmt, ...)
     vsnprintf(buf,sizeof(buf)-1,fmt,va);
     buf[sizeof(buf)-1] = 0;
     XmlRpcLogHandler::getLogHandler()->log(level, buf);
+    va_end(va);
   }
 }
 
@@ -90,6 +91,7 @@ void XmlRpcUtil::error(const char* fmt, ...)
   vsnprintf(buf,sizeof(buf)-1,fmt,va);
   buf[sizeof(buf)-1] = 0;
   XmlRpcErrorHandler::getErrorHandler()->error(buf);
+  va_end(va);
 }
 
 
