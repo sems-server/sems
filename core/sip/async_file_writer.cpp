@@ -12,6 +12,12 @@ _async_file_writer::_async_file_writer()
 
   // fake event to prevent the event loop from exiting
   ev_default = event_new(evbase,-1,EV_READ|EV_PERSIST,NULL,NULL);
+  if (!ev_default) {
+    ERROR("event_new() failed: async file writer disabled\n");
+    event_base_free(evbase);
+    evbase = NULL;
+    return;
+  }
   event_add(ev_default,NULL);
 }
 
