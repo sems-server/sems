@@ -127,6 +127,10 @@ int main(int argc, char** argv)
   msg_buf += "\n";
 
   sd = socket(PF_INET,SOCK_DGRAM,0);
+  if(sd == -1){
+    fprintf(stderr,"socket: %s\n",strerror(errno));
+    return -1;
+  }
   err = sendto(sd,msg_buf.c_str(),msg_buf.length(),0,
 	       (const struct sockaddr*)&addr,
 	       sizeof(struct sockaddr_in));
