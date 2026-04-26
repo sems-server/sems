@@ -70,7 +70,10 @@ inline trans_timer** fetch_timer(unsigned int timer_type, trans_timer** base)
 }
 
 sip_trans::sip_trans()
-    : msg(NULL),
+    : type(0),
+      msg(NULL),
+      reply_status(0),
+      state(0),
       last_rseq(0),
       targets(NULL),
       retr_buf(NULL),
@@ -80,6 +83,7 @@ sip_trans::sip_trans()
       canceled(false)
 {
     memset(timers,0,SIP_TRANS_TIMERS*sizeof(void*));
+    memset(&retr_addr,0,sizeof(retr_addr));
 }
 
 sip_trans::~sip_trans() 
