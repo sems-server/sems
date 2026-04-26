@@ -161,6 +161,8 @@ void AmSessionProcessorThread::run() {
 void AmSessionProcessorThread::on_stop() {
   INFO("requesting session to stop.\n");
   stop_requested.set(true);
+  // wake the run() loop, which is otherwise blocked in runcond.wait_for()
+  runcond.set(true);
 }
 
 // AmEventHandler interface
