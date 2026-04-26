@@ -33,7 +33,8 @@
 
 AmAudioRtpFormat::AmAudioRtpFormat()
   : AmAudioFormat(-1),
-    advertized_rate(-1)
+    advertized_rate(-1),
+    frame_size(0)
 {
 }
 
