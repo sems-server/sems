@@ -49,7 +49,8 @@ static const char* getOAStateStr(AmOfferAnswer::OAState st) {
 
 
 AmOfferAnswer::AmOfferAnswer(AmSipDialog* dlg)
-  : state(OA_None), 
+  : state(OA_None),
+    saved_state(OA_None),
     cseq(0),
     sdp_remote(),
     sdp_local(),
