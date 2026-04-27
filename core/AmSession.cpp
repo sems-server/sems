@@ -716,12 +716,14 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     }
     catch(const string& s) {
       ERROR("%s\n",s.c_str());
-      setStopped();
+      if (dlg->getStatus() < AmSipDialog::Connected)
+        setStopped();
       dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
     catch(const AmSession::Exception& e) {
       ERROR("%i %s\n",e.code,e.reason.c_str());
-      setStopped();
+      if (dlg->getStatus() < AmSipDialog::Connected)
+        setStopped();
       dlg->reply(req, e.code, e.reason, NULL, e.hdrs);
     }
   }
