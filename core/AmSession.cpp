@@ -1157,29 +1157,8 @@ void AmSession::setRemoteHold(bool remote_hold)
 
 void AmSession::onFailure()
 {
-  // switch (cause) {
-  //   case FAIL_REL100_421:
-  //   case FAIL_REL100_420:
-  //     if (rpl) {
-  //       dlg.cancel();
-  //       if (dlg.getStatus() < AmSipDialog::Connected)
-  //         setStopped();
-  //     } else if (req) {
-  //       if (cause == FAIL_REL100_421) {
-  //         dlg.reply(*req, 421, SIP_REPLY_EXTENSION_REQUIRED, NULL,
-  //             SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF);
-  //       } else {
-  //         dlg.reply(*req, 420, SIP_REPLY_BAD_EXTENSION, NULL,
-  //             SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
-  //       }
-  //       /* finally, stop session if running */
-  //       if (dlg.getStatus() < AmSipDialog::Connected)
-  //         setStopped();
-  //     }
-  //     break;
-  //   default:
-  //     break;
-  // }
+  if (dlg && dlg->getStatus() < AmSipDialog::Connected)
+    setStopped();
 }
 
 
