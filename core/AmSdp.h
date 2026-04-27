@@ -85,7 +85,7 @@ struct SdpOrigin
   unsigned long long int sessV;
   SdpConnection conn;
 
-  SdpOrigin() : user(), conn() {}
+  SdpOrigin() : user(), sessId(0), sessV(0), conn() {}
 
   SdpOrigin(const SdpOrigin& other)
     : user(other.user), sessId(other.sessId), sessV(other.sessV),
