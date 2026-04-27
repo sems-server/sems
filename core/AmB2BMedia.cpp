@@ -179,7 +179,7 @@ void AudioStreamData::initialize(AmB2BSession *session)
 }
 
 AudioStreamData::AudioStreamData(AmB2BSession *session):
-  in(NULL), initialized(false),
+  stream(NULL), in(NULL), initialized(false),
   force_symmetric_rtp(false), enable_dtmf_transcoding(false),
   dtmf_detector(NULL), dtmf_queue(NULL),
   relay_enabled(false),
@@ -188,8 +188,17 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   muted(false), receiving(true),
   outgoing_payload(UNDEFINED_PAYLOAD), incoming_payload(UNDEFINED_PAYLOAD)
 {
-  if (session) initialize(session);
-  else stream = NULL; // not initialized yet
+  if (!session) return; // not initialized yet
+  try {
+    initialize(session);
+  } catch(...) {
+    // initialize() may throw after stream = new AmRtpAudio(...) has
+    // already succeeded; release everything before rethrowing so the
+    // half-initialised AmRtpAudio doesn't leak (the AudioStreamData
+    // destructor is not run when this constructor throws).
+    clear();
+    throw;
+  }
 }
 
 void AudioStreamData::changeSession(AmB2BSession *session)
