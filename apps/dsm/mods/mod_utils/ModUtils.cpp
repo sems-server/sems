@@ -617,7 +617,11 @@ EXEC_ACTION_START(SCUPlayRingToneAction) {
   vector<string> r_params = explode(par2, ",");
   for (vector<string>::iterator it=
 	 r_params.begin(); it !=r_params.end(); it++) {
-    string p = resolveVars(*it, sess, sc_sess, event_params);
+    // strip surrounding whitespace and quotes left over from the
+    // DSM action argument tokenizer (CONST_ACTION_2P) before we try
+    // to resolve $-vars or convert the result to an int
+    string trimmed = trim(*it, " \t\"");
+    string p = resolveVars(trimmed, sess, sc_sess, event_params);
     if (p.empty())
       continue;
     if (!str2int(p, rtparams[it-r_params.begin()])) {
