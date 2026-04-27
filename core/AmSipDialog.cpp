@@ -98,7 +98,8 @@ bool AmSipDialog::onRxReqSanity(const AmSipRequest& req)
     return false;
 
   if (req.method == SIP_METH_INVITE) {
-    bool pending = pending_invites;
+    // RFC 3261 14.2: 491 Pending when our own UAC INVITE is still in flight
+    bool pending = pending_invites || getUACInvTransPending();
     if (offeranswer_enabled) {
       // not sure this is needed here: could be in AmOfferAnswer as well
       pending |= ((oa.getState() != AmOfferAnswer::OA_None) &&
