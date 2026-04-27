@@ -63,7 +63,7 @@ void AmMutex::unlock()
 }
 
 AmThread::AmThread()
-  : _stopped(true)
+  : _stopped(true), _pid(0)
 {
 }
 
