@@ -591,7 +591,7 @@ string filename_from_fullpath(const string& path)
   string::size_type pos = path.rfind('/');
   if(pos != string::npos)
     return path.substr(pos+1);
-  return "";
+  return path;
 }
 
 string get_addr_str(const sockaddr_storage* addr)
