@@ -70,7 +70,7 @@ XmlRpcServerConnection::readHeader()
     return false;
   }
 
-  XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: read %d bytes.", _header.length());
+  XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: read %zu bytes.", _header.length());
   char *hp = (char*)_header.c_str();  // Start of header
   char *ep = hp + _header.length();   // End of string
   char *bp = 0;                       // Start of body
@@ -159,7 +159,7 @@ XmlRpcServerConnection::readRequest()
   }
 
   // Otherwise, parse and dispatch the request
-  XmlRpcUtil::log(3, "XmlRpcServerConnection::readRequest read %d bytes.", _request.length());
+  XmlRpcUtil::log(3, "XmlRpcServerConnection::readRequest read %zu bytes.", _request.length());
   //XmlRpcUtil::log(5, "XmlRpcServerConnection::readRequest:\n%s\n", _request.c_str());
 
   _connectionState = WRITE_RESPONSE;
@@ -186,7 +186,7 @@ XmlRpcServerConnection::writeResponse()
     XmlRpcUtil::error("XmlRpcServerConnection::writeResponse: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
     return false;
   }
-  XmlRpcUtil::log(3, "XmlRpcServerConnection::writeResponse: wrote %d of %d bytes.", _bytesWritten, _response.length());
+  XmlRpcUtil::log(3, "XmlRpcServerConnection::writeResponse: wrote %d of %zu bytes.", _bytesWritten, _response.length());
 
   // Prepare to read the next request
   if (_bytesWritten == int(_response.length())) {
