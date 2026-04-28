@@ -433,13 +433,21 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply)
       break;
 
     case Cancelling:
-      if(reply.code >= 300){
+      if(reply.code < 200){
+	// provisional reply for the original INVITE (or for the CANCEL)
+	// is still in flight - keep waiting for the final result of
+	// the INVITE/CANCEL race rather than tearing the dialog down.
+	DBG("ignoring provisional reply in Cancelling state\n");
+	if(!reply.to_tag.empty())
+	  setRemoteTag(reply.to_tag);
+      }
+      else if(reply.code >= 300){
 	// CANCEL accepted
 	DBG("CANCEL accepted, status -> Disconnected\n");
 	setStatus(Disconnected);
       }
-      else if(reply.code < 300){
-	// CANCEL rejected
+      else {
+	// 2xx final to INVITE - CANCEL was too late
 	DBG("CANCEL rejected/too late - bye()\n");
 	setRemoteTag(reply.to_tag);
 	setStatus(Connected);
