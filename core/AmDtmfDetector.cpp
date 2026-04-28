@@ -185,8 +185,11 @@ void AmSipDtmfDetector::process(AmSipDtmfEvent *evt)
 AmDtmfDetector::AmDtmfDetector(AmDtmfSink *dtmf_sink)
   : m_dtmfSink(dtmf_sink), m_rtpDetector(this),
     m_sipDetector(this),
-    m_inband_type(Dtmf::SEMSInternal), m_currentEvent(-1),
-    m_eventPending(false), m_current_eventid_i(false),
+    m_inband_type(Dtmf::SEMSInternal),
+    m_startTime{0,0},
+    m_lastReportTime{0,0},
+    m_currentEvent(-1), m_eventPending(false),
+    m_current_eventid_i(false), m_current_eventid(0),
     m_sipEventReceived(false),
     m_inbandEventReceived(false),
     m_rtpEventReceived(false)
@@ -560,8 +563,12 @@ static char dtmf_matrix[4][4] =
 AmSemsInbandDtmfDetector::AmSemsInbandDtmfDetector(AmKeyPressSink *keysink, int sample_rate)
   : AmInbandDtmfDetector(keysink),
     SAMPLERATE(sample_rate),
+    m_buf(),
     m_last(' '),
     m_idx(0),
+    m_result(),
+    m_lastCode(0),
+    m_last_ts(0),
     m_count(0)
 {
   /* precalculate 2 * cos (2 PI k / N) */
