@@ -430,6 +430,11 @@ void AmB2BSession::updateLocalBody(AmMimeBody& body)
   AmMimeBody *sdp = body.hasContentType(SIP_APPLICATION_SDP);
   if (!sdp) return;
 
+  if (!sdp->getLen()) {
+    sdp->clear();
+    return;
+  }
+
   AmSdp parser_sdp;
   if (parser_sdp.parse((const char*)sdp->getPayload())) {
     DBG("SDP parsing failed!\n");
