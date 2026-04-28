@@ -1859,7 +1859,12 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
   // version number in every SDP passing through?)
 
   AmMimeBody *s = established_body.hasContentType(SIP_APPLICATION_SDP);
-  if (s) sdp.parse((const char*)s->getPayload());
+  if (s) {
+    if (sdp.parse((const char*)s->getPayload()) != 0) {
+      WARN("createHoldRequest: failed to parse established SDP, falling back to fake SDP\n");
+      sdp = AmSdp();
+    }
+  }
   if (sdp.media.empty()) {
     // established SDP is not valid! generate complete fake
     // detect address family from advertised IP
