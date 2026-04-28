@@ -46,8 +46,9 @@
 
 AmPlayoutBuffer::AmPlayoutBuffer(AmPLCBuffer *plcbuffer, unsigned int sample_rate)
   : r_ts(0),w_ts(0), m_plcbuffer(plcbuffer),
-    last_ts_i(false), sample_rate(sample_rate),
-    recv_offset_i(false)
+    last_ts(0), last_ts_i(false),
+    sample_rate(sample_rate),
+    recv_offset(0), recv_offset_i(false)
 {
   buffer.clear_all();
 }
@@ -518,7 +519,8 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
  *****************************************************************/
 
 AmJbPlayout::AmJbPlayout(AmPLCBuffer *plcbuffer, unsigned int sample_rate)
-  : AmPlayoutBuffer(plcbuffer, sample_rate)
+  : AmPlayoutBuffer(plcbuffer, sample_rate),
+    m_last_rtp_endts(0)
 {
 }
 
