@@ -1424,7 +1424,7 @@ void AmRtpStream::debug()
         getRHost().c_str(), getLocalPort());
   }
 
-  if (relay_stream) {
+  if (relay_enabled && relay_stream) {
     DBG("\tinternal relay to stream %p (local port %i)",
       relay_stream, relay_stream->getLocalPort());
   }
