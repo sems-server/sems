@@ -188,7 +188,8 @@ struct RegCacheLogHandler
 _RegisterCache::_RegisterCache()
   : reg_cache_ht(REG_CACHE_TABLE_ENTRIES),
     id_idx(REG_CACHE_TABLE_ENTRIES),
-    contact_idx(REG_CACHE_TABLE_ENTRIES)
+    contact_idx(REG_CACHE_TABLE_ENTRIES),
+    gbc_bucket_id(0)
 {
   // debug register cache WRITE operations
   setStorageHandler(new RegCacheLogHandler());
