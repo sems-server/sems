@@ -329,8 +329,8 @@ EXEC_ACTION_START(MODSBCActionProfileSet) {
     vector<string> elems = explode(value, ",");
     for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
       mf.filter_list.insert(*it);
-    profile->messagefilter.push_back(mf);
     mf.filter_type = Undefined;
+    profile->messagefilter.push_back(mf);
     DBG("message_list set to '%s'\n", value.c_str());
     EXEC_ACTION_STOP;
   }
