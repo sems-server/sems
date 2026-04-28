@@ -609,13 +609,17 @@ int rr_to_dns_entry(dns_record* rr, dns_section_type t,
 	    // unsupported record type
 	    return 0;
 	}
-	h->entry_map.insert(name,dns_e);
+	if(!h->entry_map.insert(name,dns_e)) {
+	    delete dns_e;
+	    dns_e = NULL;
+	}
     }
     else {
 	dns_e = it->second;
     }
 
-    dns_e->add_rr(rr,begin,end,h->now);
+    if(dns_e)
+	dns_e->add_rr(rr,begin,end,h->now);
     return 0;
 }
 
