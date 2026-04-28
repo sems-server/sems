@@ -43,6 +43,11 @@ XmlRpcClient::XmlRpcClient(const char* host, int port, const char* uri/*=0*/)
   _eof = false;
   _ssl = false; _ssl_ssl = (SSL *) NULL;
 
+  _sendAttempts = 0;
+  _bytesWritten = 0;
+  _isFault = false;
+  _contentLength = 0;
+
   // Default to keeping the connection open until an explicit close is done
   setKeepOpen();
 }
@@ -62,12 +67,17 @@ XmlRpcClient::XmlRpcClient(const char* host, int port, const char* uri, bool ssl
   _ssl = ssl;
   if (!_ssl) { _ssl_ssl = (SSL *) NULL; }
 
+  _sendAttempts = 0;
+  _bytesWritten = 0;
+  _isFault = false;
+  _contentLength = 0;
+
   // Default to keeping the connection open until an explicit close is done
   setKeepOpen();
 }
 
 
-XmlRpcClient::XmlRpcClient(const char* host, int port, 
+XmlRpcClient::XmlRpcClient(const char* host, int port,
                            const char* login, const char* password, const char* uri/*=0*/)
 {
   XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d, login %s.", host, port, login);
@@ -86,11 +96,16 @@ XmlRpcClient::XmlRpcClient(const char* host, int port,
   _executing = false;
   _eof = false;
 
+  _sendAttempts = 0;
+  _bytesWritten = 0;
+  _isFault = false;
+  _contentLength = 0;
+
   // Default to keeping the connection open until an explicit close is done
   setKeepOpen();
 }
 
-XmlRpcClient::XmlRpcClient(const char* host, int port, 
+XmlRpcClient::XmlRpcClient(const char* host, int port,
                            const char* login, const char* password,
                            const char* uri/*=0*/, bool ssl)
 {
@@ -111,6 +126,11 @@ XmlRpcClient::XmlRpcClient(const char* host, int port,
   _eof = false;
   _ssl = ssl;
   if (!_ssl) { _ssl_ssl = (SSL *) NULL; }
+
+  _sendAttempts = 0;
+  _bytesWritten = 0;
+  _isFault = false;
+  _contentLength = 0;
 
   // Default to keeping the connection open until an explicit close is done
   setKeepOpen();
