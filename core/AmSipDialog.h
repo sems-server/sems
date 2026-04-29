@@ -95,6 +95,10 @@ protected:
   AmOfferAnswer::OAState getOAState();
   void setOAState(AmOfferAnswer::OAState n_st);
   void setOAEnabled(bool oa_enabled);
+
+  void setOAForceSDP(bool force) { oa.setForceSDP(force); }
+  bool getOAForceSDP() const { return oa.getForceSDP(); }
+
   const AmSdp& getLocalSdp() { return oa.getLocalSdp(); }
   const AmSdp& getRemoteSdp() { return oa.getRemoteSdp(); }
 

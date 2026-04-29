@@ -49,13 +49,14 @@ static const char* getOAStateStr(AmOfferAnswer::OAState st) {
 
 
 AmOfferAnswer::AmOfferAnswer(AmSipDialog* dlg)
-  : state(OA_None), 
+  : state(OA_None),
     cseq(0),
     sdp_remote(),
     sdp_local(),
-    dlg(dlg)
+    dlg(dlg),
+    force_sdp(true)
 {
-  
+
 }
 
 AmOfferAnswer::OAState AmOfferAnswer::getState()
@@ -329,7 +330,7 @@ int AmOfferAnswer::onRequestOut(AmSipRequest& req)
 			   sdp_buf.length());
       has_sdp = true;
     }
-    else {
+    else if (force_sdp) {
       return -1;
     }
   } else if (sdp_body && has_sdp) {
@@ -404,7 +405,7 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
           (reply.code == 200 && reply.cseq_method == SIP_METH_INVITE && state == OA_Completed)) {
         // just ignore if no SDP is generated (required for B2B)
       }
-      else return -1;
+      else if (force_sdp) return -1;
     }
     else {
       if(!sdp_body){

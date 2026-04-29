@@ -53,6 +53,9 @@ private:
 
   AmSipDialog* dlg;
 
+  /** Should SDP generation be forced when not required by standards? */
+  bool force_sdp;
+
   /** State maintenance */
   void saveState();
   int  checkStateChange();
@@ -74,6 +77,9 @@ public:
 
   void clear();
   void clearTransitionalState();
+
+  void setForceSDP(bool force) { force_sdp = force; }
+  bool getForceSDP() const { return force_sdp; }
 
   /** Event handlers */
   int onRequestIn(const AmSipRequest& req);
