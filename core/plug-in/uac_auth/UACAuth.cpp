@@ -290,13 +290,7 @@ bool UACAuth::onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags
 }
 
 void w_MD5Update(MD5_CTX *ctx, const string& s) {
-  unsigned char a[255];
-  if (s.length()>255) {
-    ERROR("string too long\n");
-    return;
-  }
-  memcpy(a, s.c_str(), s.length());
-  MD5Update(ctx, a, s.length());
+  MD5Update(ctx, (const unsigned char *)s.data(), s.length());
 }
 
 /** time-constant string compare function, but leaks timing of length mismatch */
