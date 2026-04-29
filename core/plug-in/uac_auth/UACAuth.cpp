@@ -187,8 +187,8 @@ bool UACAuth::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 	    getHeader(reply.hdrs, SIP_HDR_WWW_AUTHENTICATE, true);
 	  string result; 
 
-	  string auth_uri; 
-	  auth_uri = dlg->getRemoteUri();
+	  string auth_uri = !ri->second.r_uri.empty() ?
+	    ri->second.r_uri : dlg->getRemoteUri();
 
 	  if (do_auth(reply.code, auth_hdr,  
 		      ri->second.method,
@@ -275,9 +275,11 @@ bool UACAuth::onSendRequest(AmSipRequest& req, int& flags)
   }
 
   DBG("adding %d to list of sent requests.\n", req.cseq);
-  sent_requests[req.cseq] = SIPRequestInfo(req.method, 
+  sent_requests[req.cseq] = SIPRequestInfo(req.method,
 					   &req.body,
-					   req.hdrs//,
+					   req.hdrs,
+					   req.r_uri
+					   //,
 					   // TODO: fix this!!!
 					   /*dlg->getOAState()*/);
   return false;
