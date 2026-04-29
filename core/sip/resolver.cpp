@@ -641,9 +641,9 @@ dns_handle::~dns_handle()
 	dec_ref(srv_e); 
 }
 
-bool dns_handle::valid() 
-{ 
-    return (ip_e);
+bool dns_handle::valid()
+{
+    return (ip_e) || (srv_e);
 }
 
 bool dns_handle::eoip()  
