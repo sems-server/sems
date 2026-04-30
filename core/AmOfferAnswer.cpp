@@ -168,11 +168,24 @@ int AmOfferAnswer::onRequestIn(const AmSipRequest& req)
 
 int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
 {
+  // Final error reply (>=300) to the transaction that drove the current O/A:
+  // reset the O/A state up front and stop. We must not run onRxSdp() on a body
+  // attached to an error reply: if that body fails to parse, err_code is set
+  // and the trailing block in this function calls dlg->bye(), tearing down the
+  // session and breaking UACAuth's 401/407 retry path. Most error replies have
+  // no body, but some peers do attach one, so handle this defensively.
+  if( (reply.code >= 300) && (reply.cseq == cseq) ) {
+    DBG("after %u reply to %s: resetting OA state\n",
+	reply.code, reply.cseq_method.c_str());
+    clearTransitionalState();
+    return 0;
+  }
+
   const char* err_txt  = NULL;
   int         err_code = 0;
 
-  if((reply.cseq_method == SIP_METH_INVITE || 
-      reply.cseq_method == SIP_METH_UPDATE || 
+  if((reply.cseq_method == SIP_METH_INVITE ||
+      reply.cseq_method == SIP_METH_UPDATE ||
       reply.cseq_method == SIP_METH_PRACK) &&
      !reply.body.empty() ) {
 
@@ -197,15 +210,6 @@ int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
       }
     }
   }
-
-  if( (reply.code >= 300) &&
-      (reply.cseq == cseq) ) {
-    // final error reply -> cleanup OA state
-    DBG("after %u reply to %s: resetting OA state\n",
-	reply.code, reply.cseq_method.c_str());
-    clearTransitionalState();
-  }
-
 
   if(err_code){
     // TODO: only if initial INVITE (if re-INV, app should decide)
