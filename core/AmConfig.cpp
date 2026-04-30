@@ -102,6 +102,7 @@ unsigned int AmConfig::DSCPforSip              = 0;
 unsigned int AmConfig::DSCPforRtp              = 0;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 string       AmConfig::Signature               = "";
+bool         AmConfig::HideUserAgent           = false;
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
@@ -471,11 +472,14 @@ int AmConfig::readConfiguration()
   if (cfg.hasParameter("exclude_payloads"))
     ExcludePayloads = cfg.getParameter("exclude_payloads");
 
-  // user_agent
+  // user_agent / server identity
   if (cfg.getParameter("use_default_signature")=="yes")
     Signature = DEFAULT_SIGNATURE;
-  else 
+  else
     Signature = cfg.getParameter("signature");
+
+  if (cfg.getParameter("hide_user_agent") == "yes")
+    HideUserAgent = true;
 
   if (cfg.hasParameter("max_forwards")) {
       unsigned int mf=0;

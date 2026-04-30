@@ -213,6 +213,9 @@ struct AmConfig
   static bool IgnoreNotifyLowerCSeq;
   /** Server/User-Agent header (optional) */
   static string Signature;
+  /** Strip User-Agent/Server headers from all outgoing requests and replies.
+   *  Reduces fingerprinting attack surface (RFC 3261 §20.41, §20.35). */
+  static bool HideUserAgent;
   /** Value of Max-Forward header field for new requests */
   static unsigned int MaxForwards;
   /** If 200 OK reply should be limited to preferred codec only */
