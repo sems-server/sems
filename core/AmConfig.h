@@ -211,11 +211,12 @@ struct AmConfig
   static unsigned int DSCPforRtp;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
-  /** Server/User-Agent header (optional) */
+  /** Server/User-Agent header string (empty = not configured) */
   static string Signature;
-  /** Strip User-Agent/Server headers from all outgoing requests and replies.
-   *  Reduces fingerprinting attack surface (RFC 3261 §20.41, §20.35). */
-  static bool HideUserAgent;
+  /** Inject User-Agent (requests) and Server (replies) headers on outgoing
+   *  messages.  Default false: headers are suppressed to prevent fingerprinting
+   *  (RFC 3261 §20.41, §20.35).  Set via send_user_agent=yes in sems.conf. */
+  static bool SendUserAgent;
   /** Value of Max-Forward header field for new requests */
   static unsigned int MaxForwards;
   /** If 200 OK reply should be limited to preferred codec only */

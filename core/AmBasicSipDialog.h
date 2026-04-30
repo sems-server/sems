@@ -415,6 +415,23 @@ public:
 			 const string& hdrs = "",
 			 msg_logger* logger = NULL);
 
+  /**
+   * Enforce the User-Agent / Server identity policy on outgoing messages.
+   *
+   * Controlled by AmConfig::SendUserAgent and AmConfig::Signature:
+   *   - SendUserAgent=false (default): strip hdr_name unconditionally so the
+   *     server software version is not disclosed (RFC 3261 §20.41/§20.35).
+   *   - SendUserAgent=true, Signature non-empty, header absent: inject
+   *     Signature.  A header already present (e.g. from the upstream UAC) is
+   *     left intact to preserve B2BUA transparency.
+   *   - SendUserAgent=true, Signature empty: no-op — no header is added or
+   *     removed.
+   *
+   * Centralising the policy here makes it straightforward to unit-test without
+   * instantiating a full SIP dialog.
+   */
+  static void applyIdentityHeader(string& hdrs, const char* hdr_name);
+
   /* dump transaction information (DBG) */
   void dump();
 

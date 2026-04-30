@@ -875,12 +875,7 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   if(onTxRequest(req,flags) < 0)
     return -1;
 
-  if (AmConfig::HideUserAgent) {
-    removeHeader(req.hdrs, SIP_HDR_USER_AGENT);
-  } else if (AmConfig::Signature.length() &&
-             getHeader(req.hdrs, SIP_HDR_USER_AGENT).empty()) {
-    req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
-  }
+  applyIdentityHeader(req.hdrs, SIP_HDR_USER_AGENT);
 
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ? 

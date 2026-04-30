@@ -102,7 +102,7 @@ unsigned int AmConfig::DSCPforSip              = 0;
 unsigned int AmConfig::DSCPforRtp              = 0;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 string       AmConfig::Signature               = "";
-bool         AmConfig::HideUserAgent           = false;
+bool         AmConfig::SendUserAgent           = false;
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
@@ -478,8 +478,18 @@ int AmConfig::readConfiguration()
   else
     Signature = cfg.getParameter("signature");
 
-  if (cfg.getParameter("hide_user_agent") == "yes")
-    HideUserAgent = true;
+  if (cfg.getParameter("send_user_agent") == "yes")
+    SendUserAgent = true;
+
+  // RFC 3261 §20.41 / §20.35: revealing software identity in User-Agent /
+  // Server headers lets attackers target known vulnerabilities in this version.
+  // Warn when an operator has opted in to sending the identity string.
+  if (SendUserAgent && !Signature.empty())
+    WARN("User-Agent/Server identity '%s' will be sent in all SIP messages. "
+         "This discloses the server software version and may increase exposure "
+         "to targeted attacks (RFC 3261 SS20.41/20.35). "
+         "Remove send_user_agent=yes from sems.conf to suppress these headers.\n",
+         Signature.c_str());
 
   if (cfg.hasParameter("max_forwards")) {
       unsigned int mf=0;

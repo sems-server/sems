@@ -463,20 +463,47 @@ loglevel=2
 #    # RTP timeout after 10 seconds
 #    dead_rtp_time=10  
 
-# optional parameter: use_default_signature={yes|no}
+# optional parameter: send_user_agent={yes|no}
 #
-# - use a Server/User-Agent header with the SEMS server 
-#   signature and version.
+# - Allow SEMS to inject a User-Agent header into outgoing SIP requests and a
+#   Server header into outgoing SIP replies.
+#
+#   By default (send_user_agent=no) both headers are suppressed on all
+#   outgoing messages, including those relayed through the SBC module.
+#   Suppression prevents passive fingerprinting of the server software version,
+#   which RFC 3261 SS20.41 and SS20.35 explicitly flag as a security risk.
+#
+#   Set send_user_agent=yes together with use_default_signature=yes or a
+#   custom signature= string when interoperating with upstream servers or
+#   registrars that require a User-Agent header, or when the identity
+#   information is acceptable to disclose.  SEMS will log a startup WARNING
+#   whenever send_user_agent=yes is active as a reminder of the exposure.
+#
+#   B2BUA transparency note: if the upstream UA already included its own
+#   User-Agent, SEMS will NOT overwrite it — the configured signature is only
+#   injected when the header is absent.
 #
 #   default=no
 #
-use_default_signature=yes
+# send_user_agent=yes
+
+# optional parameter: use_default_signature={yes|no}
+#
+# - Use the built-in SEMS name-and-version string as the User-Agent / Server
+#   header value.  Has no effect unless send_user_agent=yes is also set.
+#
+#   default=no
+#
+# use_default_signature=yes
 
 # optional parameter: signature=<signature string>
 #
-# - use a Server/User-Agent header with a custom user agent
-#   signature. Overridden by default signature if
-#   use_default_signature is set.
+# - Use a custom string as the User-Agent / Server header value.  Overridden
+#   by use_default_signature=yes.  Has no effect unless send_user_agent=yes
+#   is also set.
+#
+#   A vague value such as "SIP Gateway" limits the information disclosed while
+#   still satisfying upstream servers that require the header.
 #
 # signature="SEMS media server 1.0"
 
