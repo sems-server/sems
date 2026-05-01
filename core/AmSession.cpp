@@ -1315,20 +1315,27 @@ int AmSession::readStreams(unsigned long long ts, unsigned char *buffer)
   return res;
 }
 
-int AmSession::writeStreams(unsigned long long ts, unsigned char *buffer) 
-{ 
+int AmSession::writeStreams(unsigned long long ts, unsigned char *buffer)
+{
   int res = 0;
   lockAudio();
 
   AmRtpAudio *stream = RTPStream();
   if (stream->sendIntReached()) { // FIXME: shouldn't depend on checkInterval call before!
     unsigned int f_size = stream->getFrameSize();
+    // getSampleRate() returns 0 when fmt is not set yet; reaches divides
+    // by sample_rate in the AmAudio chain and raises SIGFPE.
+    int sample_rate = stream->getSampleRate();
+    if (sample_rate == 0) {
+      unlockAudio();
+      return 0;
+    }
     int got = 0;
-    if (output) got = output->get(ts, buffer, stream->getSampleRate(), f_size);
+    if (output) got = output->get(ts, buffer, sample_rate, f_size);
     if (got < 0) res = -1;
-    if (got > 0) res = stream->put(ts, buffer, stream->getSampleRate(), got);
+    if (got > 0) res = stream->put(ts, buffer, sample_rate, got);
   }
-  
+
   unlockAudio();
   return res;
 
