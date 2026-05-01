@@ -35,6 +35,7 @@
 #include "parse_cseq.h"
 #include "parse_from_to.h"
 #include "parse_100rel.h"
+#include "defs.h"
 
 #include "transport.h"
 
@@ -497,8 +498,16 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 	    sip_header* hdr = *it;
 	    switch(hdr->type) {
 
-	    case sip_header::H_CALL_ID:  
-		msg->callid = hdr; 
+	    // RFC 3261 §20: Call-ID, To, From, CSeq, Content-Length must
+	    // appear at most once. Reject duplicates so callers don't
+	    // silently get a single (last-seen) pointer with the rest of
+	    // the headers attached as ordinary parsed entries.
+	    case sip_header::H_CALL_ID:
+		if(msg->callid) {
+		    DBG("duplicated " SIP_HDR_CALL_ID " header\n");
+		    err = MALFORMED_SIP_MSG;
+		}
+		msg->callid = hdr;
 		break;
 
 	    case sip_header::H_CONTACT:
@@ -506,6 +515,10 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 		break;
 
 	    case sip_header::H_CONTENT_LENGTH:
+		if(msg->content_length) {
+		    DBG("duplicated " SIP_HDR_CONTENT_LENGTH " header\n");
+		    err = MALFORMED_SIP_MSG;
+		}
 		msg->content_length = hdr;
 		break;
 
@@ -514,10 +527,18 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 		break;
 
 	    case sip_header::H_FROM:
+		if(msg->from) {
+		    DBG("duplicated " SIP_HDR_FROM " header\n");
+		    err = MALFORMED_SIP_MSG;
+		}
 		msg->from = hdr;
 		break;
 
 	    case sip_header::H_TO:
+		if(msg->to) {
+		    DBG("duplicated " SIP_HDR_TO " header\n");
+		    err = MALFORMED_SIP_MSG;
+		}
 		msg->to = hdr;
 		break;
 
@@ -532,14 +553,18 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 	    // 	break;
 
 	    case sip_header::H_RACK:
-		if(msg->type == SIP_REQUEST && 
+		if(msg->type == SIP_REQUEST &&
 		   msg->u.request->method == sip_request::PRACK) {
-		    
+
 		    msg->rack = hdr;
 		}
 		break;
 
 	    case sip_header::H_CSEQ:
+		if(msg->cseq) {
+		    DBG("duplicated " SIP_HDR_CSEQ " header\n");
+		    err = MALFORMED_SIP_MSG;
+		}
 		msg->cseq = hdr;
 		break;
 
@@ -577,55 +602,57 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
     }
 
     err = parse_headers(msg,&c,end);
+    if(err) {
+	err_msg = (char*)"Malformed headers";
+	return err;
+    }
 
-    if(!err){
-	int available_body_len = msg->len - (c - msg->buf);
+    int available_body_len = msg->len - (c - msg->buf);
 
-	if(msg->content_length) {
-	    // RFC 3261 Section 18.3: If Content-Length is present,
-	    // the body is taken to be exactly that many bytes.
-	    const char* cl_s = msg->content_length->value.s;
-	    unsigned int cl_len = msg->content_length->value.len;
-	    int cl_value = 0;
+    if(msg->content_length) {
+	// RFC 3261 Section 18.3: If Content-Length is present,
+	// the body is taken to be exactly that many bytes.
+	const char* cl_s = msg->content_length->value.s;
+	unsigned int cl_len = msg->content_length->value.len;
+	int cl_value = 0;
 
-	    // Skip leading whitespace
-	    while(cl_len > 0 && (*cl_s == ' ' || *cl_s == '\t')) {
-		cl_s++; cl_len--;
-	    }
+	// Skip leading whitespace
+	while(cl_len > 0 && (*cl_s == ' ' || *cl_s == '\t')) {
+	    cl_s++; cl_len--;
+	}
 
-	    if(cl_len == 0) {
+	if(cl_len == 0) {
+	    err_msg = (char*)"Invalid Content-Length value";
+	    return MALFORMED_SIP_MSG;
+	}
+
+	for(unsigned int i = 0; i < cl_len; i++) {
+	    if(cl_s[i] >= '0' && cl_s[i] <= '9') {
+		int digit = cl_s[i] - '0';
+		// Check for overflow before performing the multiplication and addition.
+		if(cl_value > (INT_MAX - digit) / 10) {
+		    err_msg = (char*)"Content-Length value too large";
+		    return MALFORMED_SIP_MSG;
+		}
+		cl_value = cl_value * 10 + digit;
+	    } else if(cl_s[i] == ' ' || cl_s[i] == '\t') {
+		// trailing whitespace - stop parsing
+		break;
+	    } else {
 		err_msg = (char*)"Invalid Content-Length value";
 		return MALFORMED_SIP_MSG;
 	    }
-
-	    for(unsigned int i = 0; i < cl_len; i++) {
-		if(cl_s[i] >= '0' && cl_s[i] <= '9') {
-		    int digit = cl_s[i] - '0';
-		    // Check for overflow before performing the multiplication and addition.
-		    if(cl_value > (INT_MAX - digit) / 10) {
-			err_msg = (char*)"Content-Length value too large";
-			return MALFORMED_SIP_MSG;
-		    }
-		    cl_value = cl_value * 10 + digit;
-		} else if(cl_s[i] == ' ' || cl_s[i] == '\t') {
-		    // trailing whitespace - stop parsing
-		    break;
-		} else {
-		    err_msg = (char*)"Invalid Content-Length value";
-		    return MALFORMED_SIP_MSG;
-		}
-	    }
-
-	    if(cl_value > available_body_len) {
-		err_msg = (char*)"Content-Length exceeds available body data";
-		return MALFORMED_SIP_MSG;
-	    }
-
-	    msg->body.set(c, cl_value);
-	} else {
-	    // No Content-Length: use all remaining bytes
-	    msg->body.set(c, available_body_len);
 	}
+
+	if(cl_value > available_body_len) {
+	    err_msg = (char*)"Content-Length exceeds available body data";
+	    return MALFORMED_SIP_MSG;
+	}
+
+	msg->body.set(c, cl_value);
+    } else {
+	// No Content-Length: use all remaining bytes
+	msg->body.set(c, available_body_len);
     }
 
     if(!msg->via1 ||
