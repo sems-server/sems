@@ -310,14 +310,27 @@ int AmSdp::parse(const char* _sdp_msg)
     for(vector<SdpMedia>::iterator it = media.begin();
 	!ret && (it != media.end()); ++it)
       ret = it->conn.address.empty();
-    
+
     if(ret){
       ERROR("A connection field must be field must be present in every\n");
       ERROR("media description or at the session level.\n");
     }
   }
-  
-    
+
+  if(!ret){
+    // reject SDP with zero clock_rate payloads up-front so downstream
+    // RTP code never has to defend against rate==0
+    for(const auto& m : media) {
+      for(const auto& p : m.payloads) {
+        if(p.clock_rate == 0) {
+          ERROR("zero clock_rate for payload %d/%s\n",
+                p.payload_type, p.encoding_name.c_str());
+          return true;
+        }
+      }
+    }
+  }
+
   return ret;
 }
 
