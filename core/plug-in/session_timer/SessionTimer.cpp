@@ -179,8 +179,16 @@ bool SessionTimer::onSendRequest(AmSipRequest& req, int& flags)
 
   removeHeader(req.hdrs, SIP_HDR_SESSION_EXPIRES);
   removeHeader(req.hdrs, SIP_HDR_MIN_SE);
-  req.hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) + int2str(session_interval) + CRLF
-    + SIP_HDR_COLSP(SIP_HDR_MIN_SE) + int2str(min_se) + CRLF;
+  if (req.to_tag.empty()) {
+    // initial INVITE/UPDATE: refresher is not yet known, omit the parameter
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) + int2str(session_interval) + CRLF
+      + SIP_HDR_COLSP(SIP_HDR_MIN_SE) + int2str(min_se) + CRLF;
+  } else {
+    // in-dialog refresh INVITE/UPDATE: ;refresher= is mandatory per RFC 4028 §7.4
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) + int2str(session_interval)
+      + ";refresher=" + (session_refresher == refresh_local ? "uac" : "uas") + CRLF
+      + SIP_HDR_COLSP(SIP_HDR_MIN_SE) + int2str(min_se) + CRLF;
+  }
 
   return false;
 }

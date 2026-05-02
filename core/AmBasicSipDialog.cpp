@@ -707,14 +707,19 @@ int AmBasicSipDialog::sendRequest(const string& method,
   req.r_uri = remote_uri;
 
   req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
-  if(!ext_local_tag.empty())
+  if(!ext_local_tag.empty()) {
     req.from += ";tag=" + ext_local_tag;
-  else if(!local_tag.empty())
+    req.from_tag = ext_local_tag;
+  } else if(!local_tag.empty()) {
     req.from += ";tag=" + local_tag;
-    
+    req.from_tag = local_tag;
+  }
+
   req.to = SIP_HDR_COLSP(SIP_HDR_TO) + remote_party;
-  if(!remote_tag.empty()) 
+  if(!remote_tag.empty()) {
     req.to += ";tag=" + remote_tag;
+    req.to_tag = remote_tag;
+  }
     
   req.cseq = cseq;
   req.callid = callid;
