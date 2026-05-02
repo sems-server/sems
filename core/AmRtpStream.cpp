@@ -630,7 +630,19 @@ int AmRtpStream::init(const AmSdp& local,
 
     int int_pt;
 
-    if (local_media.transport == TP_RTPAVP && sdp_it->payload_type < 20) int_pt = sdp_it->payload_type;
+    // RFC 3551 §6 reserves PT < 20 for RTP-profile static payloads.
+    // They are valid not just for RTP/AVP but for every RTP-based profile
+    // we accept (AVPF, SAVP, SAVPF, UDP/TLS/RTP/SAVP[F]). Limiting the
+    // check to TP_RTPAVP made SRTP/AVPF sessions fall through to
+    // getDynPayload(), which fails for static PT sent without a=rtpmap.
+    bool rtp_based_transport =
+      (local_media.transport == TP_RTPAVP   ||
+       local_media.transport == TP_RTPAVPF  ||
+       local_media.transport == TP_RTPSAVP  ||
+       local_media.transport == TP_RTPSAVPF ||
+       local_media.transport == TP_UDPTLSRTPSAVP ||
+       local_media.transport == TP_UDPTLSRTPSAVPF);
+    if (rtp_based_transport && sdp_it->payload_type < 20) int_pt = sdp_it->payload_type;
     else int_pt = payload_provider->getDynPayload(sdp_it->encoding_name,
         sdp_it->clock_rate,
         sdp_it->encoding_param);
@@ -682,7 +694,14 @@ int AmRtpStream::init(const AmSdp& local,
     //       Some codecs define multiple payloads
     //       with different encoding parameters
     PayloadMappingTable::iterator pmt_it = pl_map.end();
-    if(sdp_it->encoding_name.empty() || (local_media.transport == TP_RTPAVP && sdp_it->payload_type < 20)){
+    bool rtp_based_transport =
+      (local_media.transport == TP_RTPAVP   ||
+       local_media.transport == TP_RTPAVPF  ||
+       local_media.transport == TP_RTPSAVP  ||
+       local_media.transport == TP_RTPSAVPF ||
+       local_media.transport == TP_UDPTLSRTPSAVP ||
+       local_media.transport == TP_UDPTLSRTPSAVPF);
+    if(sdp_it->encoding_name.empty() || (rtp_based_transport && sdp_it->payload_type < 20)){
       // must be a static payload
       pmt_it = pl_map.find(sdp_it->payload_type);
     }
