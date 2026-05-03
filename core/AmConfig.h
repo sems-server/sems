@@ -213,10 +213,6 @@ struct AmConfig
   static bool IgnoreNotifyLowerCSeq;
   /** Server/User-Agent header string (empty = not configured) */
   static string Signature;
-  /** Inject User-Agent (requests) and Server (replies) headers on outgoing
-   *  messages.  Default false: headers are suppressed to prevent fingerprinting
-   *  (RFC 3261 §20.41, §20.35).  Set via send_user_agent=yes in sems.conf. */
-  static bool SendUserAgent;
   /** Value of Max-Forward header field for new requests */
   static unsigned int MaxForwards;
   /** If 200 OK reply should be limited to preferred codec only */

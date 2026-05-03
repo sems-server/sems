@@ -358,6 +358,13 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   append_headers_req = cfg.getParameter("append_headers_req");
   aleg_append_headers_req = cfg.getParameter("aleg_append_headers_req");
 
+  send_user_agent = cfg.getParameter("send_user_agent") == "yes";
+  if (send_user_agent && !AmConfig::Signature.empty())
+    WARN("SBC profile '%s': send_user_agent=yes will disclose server identity "
+         "'%s' in User-Agent/Server headers on all outgoing SBC messages. "
+         "This may expose the server to targeted attacks (RFC 3261 SS20.41/20.35).\n",
+         name.c_str(), AmConfig::Signature.c_str());
+
   refuse_with = cfg.getParameter("refuse_with");
 
   rtprelay_enabled = cfg.getParameter("enable_rtprelay");

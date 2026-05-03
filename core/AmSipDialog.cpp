@@ -875,7 +875,7 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   if(onTxRequest(req,flags) < 0)
     return -1;
 
-  applyIdentityHeader(req.hdrs, SIP_HDR_USER_AGENT);
+  if (hdl) hdl->onApplyIdentityHeader(req.hdrs, SIP_HDR_USER_AGENT, flags);
 
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ? 

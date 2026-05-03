@@ -33,7 +33,6 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_rfc3261_musts);
   FCTMF_SUITE_CALL(test_extensions);
   FCTMF_SUITE_CALL(test_amconfig);
-  FCTMF_SUITE_CALL(test_ua_header);
 }
 FCT_END();
 

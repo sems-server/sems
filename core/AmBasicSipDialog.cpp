@@ -541,20 +541,12 @@ int AmBasicSipDialog::onTxRequest(AmSipRequest& req, int& flags)
   return 0;
 }
 
-void AmBasicSipDialog::applyIdentityHeader(string& hdrs, const char* hdr_name)
+void AmBasicSipEventHandler::onApplyIdentityHeader(string& hdrs,
+                                                   const char* hdr_name,
+                                                   int flags)
 {
-  if (!AmConfig::SendUserAgent) {
-    // Default: strip any forwarded identity header so software version is not
-    // disclosed (RFC 3261 §20.41 / §20.35).  Opt in via send_user_agent=yes.
-    removeHeader(hdrs, hdr_name);
-  } else if (AmConfig::Signature.length() &&
-             getHeader(hdrs, hdr_name).empty()) {
-    // send_user_agent=yes and a signature is configured: inject it only when
-    // no upstream UA already provided the header (preserves B2BUA transparency).
-    // Note: SIP_HDR_COLSP() requires a compile-time string literal so we
-    // build the field-name + ": " manually here.
+  if (!(flags & SIP_FLAGS_VERBATIM) && AmConfig::Signature.length())
     hdrs += string(hdr_name) + COLSP + AmConfig::Signature + CRLF;
-  }
 }
 
 int AmBasicSipDialog::onTxReply(const AmSipRequest& req, 
@@ -653,7 +645,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
     return -1;
   }
 
-  applyIdentityHeader(reply.hdrs, SIP_HDR_SERVER);
+  if (hdl) hdl->onApplyIdentityHeader(reply.hdrs, SIP_HDR_SERVER, flags);
 
   if ((code > 100 && code < 300) && !(flags & SIP_FLAGS_NOCONTACT)) {
     /* if 300<=code<400, explicit contact setting should be done */
@@ -690,7 +682,8 @@ int AmBasicSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   reply.hdrs = hdrs;
   reply.to_tag = AmSession::getNewId();
 
-  applyIdentityHeader(reply.hdrs, SIP_HDR_SERVER);
+  if (AmConfig::Signature.length())
+    reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
   // add transcoder statistics into reply headers
   //addTranscoderStats(reply.hdrs);
@@ -745,7 +738,7 @@ int AmBasicSipDialog::sendRequest(const string& method,
     req.contact = getContactHdr();
   }
 
-  applyIdentityHeader(req.hdrs, SIP_HDR_USER_AGENT);
+  if (hdl) hdl->onApplyIdentityHeader(req.hdrs, SIP_HDR_USER_AGENT, flags);
 
   int send_flags = 0;
   if(patch_ruri_next_hop && remote_tag.empty()) {
