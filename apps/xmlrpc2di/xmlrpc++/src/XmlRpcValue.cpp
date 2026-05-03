@@ -391,6 +391,7 @@ namespace XmlRpc {
       return false;
 
     t.tm_year -= 1900;
+    t.tm_mon--; // sscanf reads 1-12, struct tm expects 0-11
     t.tm_isdst = -1;
     _type = TypeDateTime;
     _value.asTime = new struct tm(t);
@@ -402,8 +403,8 @@ namespace XmlRpc {
   {
     struct tm* t = _value.asTime;
     char buf[70];
-    snprintf(buf, sizeof(buf)-1, "%04d%02d%02dT%02d:%02d:%02d", 
-      1900+t->tm_year,t->tm_mon,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
+    snprintf(buf, sizeof(buf)-1, "%04d%02d%02dT%02d:%02d:%02d",
+      1900+t->tm_year,1+t->tm_mon,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
     buf[sizeof(buf)-1] = 0;
 
     std::string xml = VALUE_TAG;
@@ -554,8 +555,8 @@ namespace XmlRpc {
         {
           struct tm* t = _value.asTime;
           char buf[20];
-          snprintf(buf, sizeof(buf)-1, "%4d%02d%02dT%02d:%02d:%02d", 
-            t->tm_year,t->tm_mon,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
+          snprintf(buf, sizeof(buf)-1, "%4d%02d%02dT%02d:%02d:%02d",
+            1900+t->tm_year,1+t->tm_mon,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
           buf[sizeof(buf)-1] = 0;
           os << buf;
           break;
