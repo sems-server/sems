@@ -1,0 +1,5 @@
+# Keep the docker build context lean: skip transient build output and the
+# git history, both of which can be hundreds of MB and are never needed by
+# any of the Dockerfile-rhel<N> / Dockerfile-debian<N> images.
+build/
+.git/
