@@ -34,8 +34,8 @@ semantic.cache
 sems
 sems_tests
 sems-logfile-callextract
-sems-stats
-apps/monitoring/tools/target/
-apps/monitoring/tools/vendor/
-apps/monitoring/tools/.cargo/
-apps/monitoring/tools/Cargo.lock
+/core/plug-in/stats/sems-stats
+/target/
+/vendor/
+/.cargo/
+/Cargo.lock
