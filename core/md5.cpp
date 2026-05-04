@@ -122,7 +122,7 @@ void MD5Init (MD5_CTX *context)
   context.
  */
 void MD5Update (MD5_CTX *context,                                        /* context */
-		unsigned char *input,                                /* input block */
+		const unsigned char *input,                          /* input block */
 		unsigned int inputLen                     /* length of input block */
 		)
 {
@@ -148,7 +148,7 @@ void MD5Update (MD5_CTX *context,                                        /* cont
  MD5Transform (context->state, context->buffer);
 
  for (i = partLen; i + 63 < inputLen; i += 64)
-   MD5Transform (context->state, &input[i]);
+   MD5Transform (context->state, (unsigned char *)&input[i]);
 
  index = 0;
   }
