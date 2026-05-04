@@ -446,10 +446,26 @@ class AmBasicSipEventHandler
 
   /** Hook called before a request is sent */
   virtual void onSendRequest(AmSipRequest& req, int& flags) {}
-    
+
   /** Hook called before a reply is sent */
-  virtual void onSendReply(const AmSipRequest& req, 
+  virtual void onSendReply(const AmSipRequest& req,
 			   AmSipReply& reply, int& flags) {}
+
+  /**
+   * Hook called by AmBasicSipDialog to apply User-Agent (requests) and Server
+   * (replies) identity header policy before a message is sent to the transport.
+   *
+   * The default implementation reproduces the original SEMS behaviour: inject
+   * AmConfig::Signature when the header is absent and SIP_FLAGS_VERBATIM is not
+   * set.  Subclasses (e.g. the SBC) may override to enforce a different policy
+   * such as stripping forwarded identity headers or controlling injection via a
+   * per-call-profile option.
+   *
+   * @param hdrs      The outgoing message's extra header block (modifiable).
+   * @param hdr_name  SIP_HDR_USER_AGENT for requests, SIP_HDR_SERVER for replies.
+   * @param flags     Send flags (SIP_FLAGS_*) for the current message.
+   */
+  virtual void onApplyIdentityHeader(string& hdrs, const char* hdr_name, int flags);
 
   /** Hook called after a request has been sent */
   virtual void onRequestSent(const AmSipRequest& req) {}

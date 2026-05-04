@@ -194,6 +194,8 @@ struct SBCCallProfile
   string append_headers_req;
   string aleg_append_headers_req;
 
+  bool send_user_agent;     /**< inject User-Agent/Server identity headers (default: false) */
+
   string refuse_with;
 
   string rtprelay_enabled;
@@ -386,7 +388,8 @@ struct SBCCallProfile
     reg_caching(false),
     max_491_retry_time(2000),
     log_rtp(false),
-    log_sip(false)
+    log_sip(false),
+    send_user_agent(false)
   { }
 
   ~SBCCallProfile()
