@@ -66,6 +66,9 @@ struct AmContentType
 
   /** set a random boundary string */
   void resetBoundary();
+
+  /** Reset type, subtype and params to empty */
+  void clear();
 };
 
 class AmMimeBody
@@ -182,6 +185,9 @@ public:
   const AmContentType &getContentType() { return ct; }
   void setContentType(const AmContentType &_ct) { ct = _ct; }
   void addPart(const AmMimeBody &part) { parts.push_back(new AmMimeBody(part)); }
+
+  /** Reset payload, sub-parts and content-type to an empty state */
+  void clear();
 };
 
 #endif

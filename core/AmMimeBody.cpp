@@ -114,6 +114,13 @@ void AmContentType::clearParams()
   }
 }
 
+void AmContentType::clear()
+{
+  type.clear();
+  subtype.clear();
+  clearParams();
+}
+
 void AmContentType::resetBoundary()
 {
   Params::iterator it = params.begin();
@@ -147,7 +154,15 @@ void AmMimeBody::clearPart(Parts::iterator position)
 void AmMimeBody::clearPayload()
 {
   delete [] payload;
-  payload = NULL;  
+  payload = NULL;
+}
+
+void AmMimeBody::clear()
+{
+  clearPayload();
+  clearParts();
+  content_len = 0;
+  ct.clear();
 }
 
 int AmContentType::parse(const string& ct)
