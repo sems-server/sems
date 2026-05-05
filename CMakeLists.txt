@@ -511,6 +511,42 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 enable_testing()
 
+# Rust toolchain detection (used by tools/sems-stats and
+# apps/monitoring/tools/*). A single workspace at the repo root means a
+# single detection; SEMS_RUST_OK is plain (non-cache) so it propagates to
+# every add_subdirectory() below.
+set(SEMS_RUST_OK FALSE)
+find_program(CARGO cargo)
+if(CARGO)
+  execute_process(
+    COMMAND rustc --version
+    OUTPUT_VARIABLE RUSTC_VERSION_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE RUSTC_RESULT)
+  if(RUSTC_RESULT EQUAL 0)
+    string(REGEX MATCH "[0-9]+\\.[0-9]+" RUSTC_VERSION "${RUSTC_VERSION_OUTPUT}")
+    if(RUSTC_VERSION VERSION_GREATER_EQUAL "1.38")
+      set(SEMS_RUST_OK TRUE)
+      message(STATUS "Found cargo: ${CARGO}, rustc ${RUSTC_VERSION}")
+    else()
+      message(WARNING "rustc ${RUSTC_VERSION} found but >= 1.38 required; skipping Rust tools")
+    endif()
+  endif()
+endif()
+
+# Shared cargo build settings for any subdir that wants to invoke the
+# root workspace. CARGO_PROFILE matches the subdir that `target/` lands
+# in; CARGO_RELEASE_FLAG is the `--release` flag when in a non-Debug build.
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CARGO_PROFILE "debug")
+  set(CARGO_RELEASE_FLAG "")
+else()
+  set(CARGO_PROFILE "release")
+  set(CARGO_RELEASE_FLAG "--release")
+endif()
+set(SEMS_CARGO_WORKSPACE "${CMAKE_SOURCE_DIR}")
+set(SEMS_CARGO_TARGET_DIR "${SEMS_CARGO_WORKSPACE}/target")
+
 add_subdirectory(apps)
 add_subdirectory(core)
 add_subdirectory(tools)

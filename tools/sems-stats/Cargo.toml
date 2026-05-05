@@ -1,0 +1,14 @@
+[package]
+name = "sems-stats"
+version = "0.1.0"
+edition = "2018"
+description = "UDP client for the SEMS stats plug-in (port of query_stats.cxx)"
+license = "GPL-2.0-or-later"
+
+[[bin]]
+name = "sems-stats"
+path = "src/main.rs"
+
+[lib]
+name = "sems_stats"
+path = "src/lib.rs"
