@@ -192,6 +192,13 @@ message(STATUS "SEMS doc prefix was set to: ${SEMS_DOC_PREFIX}")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 find_package(Libevent2 REQUIRED)
+find_package(OpenDIS QUIET)
+
+if(OPENDIS_FOUND)
+  message(STATUS "Using OpenDIS: YES")
+else(OPENDIS_FOUND)
+  message(STATUS "Using OpenDIS: NO (dis_test module will be skipped)")
+endif(OPENDIS_FOUND)
 
 # compile with spandsp DTMF detection? see soft-switch.org this needs a fairly
 # new version of spandsp - tested with 0.0.4pre11 will not work with spandsp

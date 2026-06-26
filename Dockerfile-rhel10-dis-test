@@ -1,0 +1,100 @@
+FROM almalinux:10
+
+# Base build dependencies (same as Dockerfile-rhel10)
+RUN dnf install -y epel-release \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y \
+        git \
+        cmake \
+        make \
+        gcc-c++ \
+        libevent-devel \
+        libev-devel \
+        gsm-devel \
+        opus-devel \
+        speex-devel \
+        openssl-devel \
+        python3-devel \
+        hiredis-devel \
+        zlib-devel \
+        libcurl-devel \
+        libxml2-devel \
+        spandsp-devel \
+        man \
+        libsamplerate-devel \
+        libmpg123-devel \
+        lame-devel \
+        flite-devel \
+        codec2-devel \
+        rpm-build \
+        which \
+        cargo rust \
+        mariadb-connector-c-devel --nogpgcheck
+
+# -----------------------------------------------------------------------
+# Build and install OpenDIS6 from source
+# The EPEL/CRB repos do not ship OpenDIS, so we build it ourselves.
+# Only dis6 is needed; disable examples and tests to keep the layer lean.
+# -----------------------------------------------------------------------
+RUN git clone --depth 1 --branch v1.1.0 https://github.com/open-dis/open-dis-cpp.git /tmp/open-dis-cpp \
+    && cmake \
+        -S /tmp/open-dis-cpp \
+        -B /tmp/open-dis-cpp/build \
+        -DBUILD_OPENDIS6=ON \
+        -DBUILD_OPENDIS7=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+    && cmake --build /tmp/open-dis-cpp/build -j$(nproc) \
+    && cmake --install /tmp/open-dis-cpp/build \
+    && ldconfig \
+    && rm -rf /tmp/open-dis-cpp
+
+# -----------------------------------------------------------------------
+# Build SEMS with the dis_test module
+# cmake auto-detects OpenDIS; the dis_test module is included only when
+# OpenDIS is found.  The build explicitly verifies the module was compiled.
+# -----------------------------------------------------------------------
+WORKDIR /usr/src/sems
+COPY . .
+
+RUN mkdir -p build \
+    && cd build \
+    && cmake .. \
+    && make sems_tests -j$(nproc) \
+    && ./core/sems_tests \
+    && make sems_dis_test -j$(nproc)
+
+# Verify the dis_test plugin was produced and links against OpenDIS
+RUN ls -al /usr/src/sems/build/apps/dis_test/dis_test.so \
+    && ldd /usr/src/sems/build/apps/dis_test/dis_test.so | grep -i OpenDIS \
+    && echo "=== dis_test.so build verified against OpenDIS ==="
+
+# Install everything (SEMS + dis_test plugin)
+RUN cd build && make install -j$(nproc)
+RUN /usr/local/sbin/sems -v
+
+# Runtime verification: start SEMS with dis_test explicitly loaded and
+# require log evidence that the module was loaded.
+# Note: SEMS_CFG_PREFIX defaults to empty, so the config is installed to
+# /etc/sems/sems.conf (not under /usr/local). Locate it robustly.
+RUN SEMS_CONF="$(find /etc/sems /usr/local/etc/sems -name sems.conf 2>/dev/null | head -n1)" \
+        && test -n "$SEMS_CONF" \
+        && echo "Using SEMS config: $SEMS_CONF" \
+        && cp "$SEMS_CONF" /tmp/sems-dis-test.conf \
+        && if grep -q '^load_plugins=' /tmp/sems-dis-test.conf; then \
+                 sed -i '/^load_plugins=/ s/$/;dis_test/' /tmp/sems-dis-test.conf; \
+             else \
+                 echo 'load_plugins=dis_test' >> /tmp/sems-dis-test.conf; \
+             fi \
+        && timeout 8 /usr/local/sbin/sems -E -D3 -f /tmp/sems-dis-test.conf > /tmp/sems-dis-test.log 2>&1 || true \
+        && grep -Ei 'dis_test(\.so)?|plug-?in.*dis_test|loading.*dis_test' /tmp/sems-dis-test.log \
+             || (echo '=== SEMS runtime log ===' && cat /tmp/sems-dis-test.log && false) \
+        && echo "=== dis_test module load verified at runtime ==="
+
+# Smoke-test: verify dis_test.so is installed in the plug-in directory
+RUN ls -al /usr/local/lib/sems/plug-in/dis_test.so \
+    && echo "=== dis_test plugin installed successfully ==="
+
+CMD ["/usr/local/sbin/sems", "-E", "-f", "/etc/sems/sems.conf"]

@@ -2,7 +2,6 @@ FROM almalinux:10
 
 RUN dnf install -y epel-release \
     && dnf config-manager --set-enabled crb \
-    && dnf install -y https://repo.mysql.com/mysql84-community-release-el10.rpm \
     && dnf install -y \
         git \
         cmake \
@@ -21,17 +20,15 @@ RUN dnf install -y epel-release \
         libxml2-devel \
         spandsp-devel \
         man \
-        mysql-connector-c++-devel \
         libsamplerate-devel \
         libmpg123-devel \
         lame-devel \
         flite-devel \
         codec2-devel \
         rpm-build \
-        mysql-connector-c++ \
         which \
         cargo rust \
-        python3-mysqlclient --nogpgcheck
+        mariadb-connector-c-devel --nogpgcheck
 
 WORKDIR /
 
