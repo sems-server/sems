@@ -1,0 +1,53 @@
+name: DIS integration test build (RHEL10)
+
+# Run whenever code in the DIS test module or its build machinery changes,
+# and also on any push/PR so regressions are caught early.
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'apps/dis_test/**'
+      - 'cmake/FindOpenDIS.cmake'
+      - 'Dockerfile-rhel10-dis-test'
+      - '.github/workflows/dis_test_build.yml'
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - 'apps/dis_test/**'
+      - 'cmake/FindOpenDIS.cmake'
+      - 'Dockerfile-rhel10-dis-test'
+      - '.github/workflows/dis_test_build.yml'
+  # Allow manual trigger from the Actions UI for ad-hoc verification
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dis_test_rhel10:
+    name: dis_test module – RHEL10 + OpenDIS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Build DIS integration test image (RHEL10 + OpenDIS)
+        run: |
+          docker build \
+            --progress=plain \
+            -t sems_dis_test_el10 \
+            -f Dockerfile-rhel10-dis-test \
+            .
+
+      - name: Confirm dis_test plugin is present inside image
+        run: |
+          docker run --rm sems_dis_test_el10 \
+            ls -al /usr/local/lib/sems/plug-in/dis_test.so
+
+      - name: Confirm dis_test plugin links against OpenDIS
+        run: |
+          docker run --rm sems_dis_test_el10 \
+            ldd /usr/local/lib/sems/plug-in/dis_test.so
