@@ -223,38 +223,43 @@ int JsonrpcNetstringsConnection::netstringsRead() {
 	}
 	// received len - switch to receive msg mode
 	in_msg = true;
-	rcvd_size = read(fd,msgbuf,msg_size+1);
-	// DBG("received '%.*s'\n", rcvd_size, msgbuf);
+	r = read(fd,msgbuf,msg_size+1);
+	// DBG("received '%.*s'\n", (int)r, msgbuf);
 
-	if (rcvd_size == msg_size+1) { 
-	  if (msgbuf[msg_size] == ',') {
-	    msgbuf[msg_size+1] = '\0';
-	    return DISPATCH;
+	if (r > 0) {
+	  rcvd_size = r;
+	  if (rcvd_size == msg_size+1) {
+	    if (msgbuf[msg_size] == ',') {
+	      msgbuf[msg_size+1] = '\0';
+	      return DISPATCH;
+	    }
+	    INFO("Protocol error on connection [%p/%d]: netstring not terminated with ','\n",
+	         this, fd);
+	    close();
+	    return REMOVE;
 	  }
-	  INFO("Protocol error on connection [%p/%d]: netstring not terminated with ','\n",
-	       this, fd);
-	  close();
-	  return REMOVE;
+	  return CONTINUE;
 	}
 
-	if (!rcvd_size) {
+	// r <= 0: no message bytes yet. Reset rcvd_size to 0 so the in_msg read
+	// starts at msgbuf offset 0 on the next call. Storing a negative read()
+	// result into the unsigned rcvd_size would wrap to UINT_MAX and make the
+	// next read() use an out-of-bounds msgbuf+rcvd_size pointer.
+	rcvd_size = 0;
+
+	if (!r) {
 	  DBG("closing connection [%p/%d] on peer hangup\n", this, fd);
 	  close();
 	  return REMOVE;
 	}
 
-	if (((ssize_t)rcvd_size<0 && errno == EAGAIN) || 
-	    ((ssize_t)rcvd_size<0 && errno == EWOULDBLOCK))
+	if (r<0 && (errno == EAGAIN || errno == EWOULDBLOCK))
 	  return CONTINUE; // necessary?
 
-	if ((ssize_t)rcvd_size<0) {
-	  INFO("socket error on connection [%p/%d]: %s\n",
-	       this, fd, strerror(errno));
-	  close();
-	  return REMOVE;
-	}
-	       
-	return CONTINUE; 	
+	INFO("socket error on connection [%p/%d]: %s\n",
+	     this, fd, strerror(errno));
+	close();
+	return REMOVE;
       } 
 
       if (msgbuf[rcvd_size] < '0' || msgbuf[rcvd_size] > '9') {
