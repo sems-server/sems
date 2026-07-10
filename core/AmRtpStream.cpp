@@ -855,6 +855,11 @@ bool AmRtpStream::getRemoteHold() {
 
 void AmRtpStream::recvDtmfPacket(AmRtpPacket* p) {
   if (p->payload == getLocalTelephoneEventPT()) {
+    // a telephone-event payload is exactly sizeof(dtmf_payload_t) bytes; a
+    // truncated packet would make the cast below read past the received data
+    // and yield bogus event/volume/duration values.
+    if (p->getDataSize() != sizeof(dtmf_payload_t))
+      return;
     dtmf_payload_t* dpl = (dtmf_payload_t*)p->getData();
 
     DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u session = [%p]\n",
