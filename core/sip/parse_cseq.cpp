@@ -32,6 +32,8 @@
 
 #include "log.h"
 
+#include <limits.h>
+
 int parse_cseq(sip_cseq* cseq, const char* beg, int len)
 {
     enum {
@@ -63,6 +65,14 @@ int parse_cseq(sip_cseq* cseq, const char* beg, int len)
 		
 	    default:
 		if(!IS_DIGIT(*c)){
+		    return MALFORMED_SIP_MSG;
+		}
+		// reject overlarge CSeq numbers: the RFC 3261 CSeq value is a
+		// 32-bit quantity and 'num' is unsigned int; without this guard
+		// the accumulation silently wraps, so distinct on-wire CSeq
+		// strings can collapse to the same value and corrupt
+		// transaction matching.
+		if(cseq->num > (UINT_MAX - (unsigned int)(*c - '0')) / 10){
 		    return MALFORMED_SIP_MSG;
 		}
 		cseq->num = cseq->num*10 + *c - '0';
