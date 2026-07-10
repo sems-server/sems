@@ -457,6 +457,11 @@ int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, A
   if (stream->sendIntReached(ts)) {
     // A leg is ready to send data
     int sample_rate = stream->getSampleRate();
+    // getSampleRate() returns 0 when the stream format is not set yet (or a
+    // zero-clock-rate codec was negotiated); sample_rate is used as a divisor
+    // deeper in the AmAudio chain (e.g. AmBufferedAudio::get) and would raise
+    // SIGFPE. Mirror the guard already applied in AmSession::writeStreams.
+    if (sample_rate == 0) return 0;
     int got = 0;
     if (in) got = in->get(ts, buffer, sample_rate, f_size);
     else {
