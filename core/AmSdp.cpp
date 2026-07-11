@@ -304,8 +304,24 @@ int AmSdp::parse(const char* _sdp_msg)
   char* s = (char*)_sdp_msg;
   clear();
 
-  bool ret = parse_sdp_line_ex(this,s);
-  
+  // parse_sdp_line_ex() and its helpers build std::string objects from raw
+  // pointer arithmetic (e.g. string(line, len-7)) with no lower-bound guard.
+  // A truncated/malformed SDP body can make that length underflow to a huge
+  // size_t and throw std::length_error (or out_of_range). parse() is called
+  // directly on attacker-supplied offer/answer bodies and callers do not
+  // catch, so an unhandled throw aborts the process -- a remote DoS. Contain
+  // any such exception here and report a parse failure instead.
+  bool ret = true;
+  try {
+    ret = parse_sdp_line_ex(this,s);
+  } catch(const std::exception& e) {
+    ERROR("exception while parsing SDP: %s\n", e.what());
+    return true;
+  } catch(...) {
+    ERROR("unknown exception while parsing SDP\n");
+    return true;
+  }
+
   if(!ret && conn.address.empty()){
     for(vector<SdpMedia>::iterator it = media.begin();
 	!ret && (it != media.end()); ++it)
