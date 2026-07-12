@@ -133,7 +133,7 @@ class UACAuth : public AmSessionEventHandler
   static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 				 const UACAuthDigestChallenge& challenge,
 				 const std::string& cnonce, const string& qop_value,
-				 unsigned int nonce_count, 
+				 const std::string& nonce_count,
 				 HASHHEX response);
 	
   /**
