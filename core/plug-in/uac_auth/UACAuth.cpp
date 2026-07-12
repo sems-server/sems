@@ -449,7 +449,7 @@ bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
   /* do authentication */
   uac_calc_HA1( challenge, credential, cnonce, ha1);
   uac_calc_HA2( method, uri, challenge, qop_auth_int ? hentity : NULL, ha2);
-  uac_calc_response( ha1, ha2, challenge, cnonce, qop_value, nonce_count, response);
+  uac_calc_response( ha1, ha2, challenge, cnonce, qop_value, int2hex(nonce_count,true), response);
   DBG("calculated response = %s\n", response);
 
   // compile auth response
@@ -561,7 +561,7 @@ void UACAuth::uac_calc_hentity( const string& body, HASHHEX hentity )
  */
 void UACAuth::uac_calc_response(HASHHEX ha1, HASHHEX ha2,
 				const UACAuthDigestChallenge& challenge, const string& cnonce,
-				const string& qop_value, unsigned int nonce_count, HASHHEX response)
+				const string& qop_value, const string& nonce_count, HASHHEX response)
 {
   unsigned char hc[1]; hc[0]=':';
   MD5_CTX Md5Ctx;
@@ -576,7 +576,7 @@ void UACAuth::uac_calc_response(HASHHEX ha1, HASHHEX ha2,
 
   if (!qop_value.empty()) {
       
-    w_MD5Update(&Md5Ctx, int2hex(nonce_count,true));
+    w_MD5Update(&Md5Ctx, nonce_count);
     MD5Update(&Md5Ctx, hc, 1);
     w_MD5Update(&Md5Ctx, cnonce);
     MD5Update(&Md5Ctx, hc, 1);
@@ -693,7 +693,7 @@ void UACAuth::checkAuthentication(const AmSipRequest* req, const string& realm, 
     credential.user = user;
     credential.pwd = pwd;
 
-    unsigned int client_nonce_count = 1;
+    string client_nonce_count_str = "00000001";
 
     HASHHEX ha1;
     HASHHEX ha2;
@@ -712,14 +712,15 @@ void UACAuth::checkAuthentication(const AmSipRequest* req, const string& realm, 
 
       if(qop_auth || qop_auth_int) {
 
-	// get nonce count from request
-	string nonce_count_str = find_attribute("nc", auth_hdr);
-	if (str2i(nonce_count_str, client_nonce_count)) {
-	  DBG("Error parsing nonce_count '%s'\n", nonce_count_str.c_str());
+	// get nonce count from request; the "nc" value is hex (RFC 2617/7616)
+	// and must be fed into the digest exactly as sent by the client
+	client_nonce_count_str = find_attribute("nc", auth_hdr);
+	if (client_nonce_count_str.empty()) {
+	  DBG("missing nonce_count in request\n");
 	  goto auth_end;
 	}
 
-	DBG("got client_nonce_count %u\n", client_nonce_count);
+	DBG("got client nonce_count '%s'\n", client_nonce_count_str.c_str());
 
 	// auth-int? calculate hentity
 	if(qop_auth_int){
@@ -736,7 +737,7 @@ void UACAuth::checkAuthentication(const AmSipRequest* req, const string& realm, 
 
     uac_calc_HA1(r_challenge, &credential, r_cnonce, ha1);
     uac_calc_HA2(req->method, r_uri, r_challenge, qop_auth_int ? hentity : NULL, ha2);
-    uac_calc_response( ha1, ha2, r_challenge, r_cnonce, qop_value, client_nonce_count, response);
+    uac_calc_response( ha1, ha2, r_challenge, r_cnonce, qop_value, client_nonce_count_str, response);
     DBG("calculated our response vs request: '%s' vs '%s'", response, r_response.c_str());
 
     if (tc_isequal((const char*)response, r_response.c_str(), HASHHEXLEN)) {
