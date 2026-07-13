@@ -65,6 +65,28 @@ public:
 };
 
 /**
+ * \brief  Simple lock class with the ability to release mutex ownership
+ *
+ * Behaves like AmLock, but release_ownership() lets a callee (e.g. a
+ * function that unlocks the mutex itself) prevent the destructor from
+ * unlocking a second time.
+ */
+class AmControlledLock
+{
+  AmMutex& m;
+  bool ownership;
+public:
+  AmControlledLock(AmMutex& _m) : m(_m), ownership(true) {
+    m.lock();
+  }
+  ~AmControlledLock(){
+    if(ownership)
+      m.unlock();
+  }
+  void release_ownership() { ownership = false; }
+};
+
+/**
  * \brief Shared variable.
  *
  * Include a variable and its mutex.

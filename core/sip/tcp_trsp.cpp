@@ -296,6 +296,14 @@ void tcp_trsp_socket::close()
 
 void tcp_trsp_socket::generate_transport_errors()
 {
+  /* Avoid a lock-order inversion deadlock between the session processor
+     and the tcp worker: transport_error() below re-enters the transaction
+     layer and takes a transaction-bucket lock, while send() takes the
+     bucket lock first and then sock_mut. It is safe to release sock_mut
+     here because 'closed' is already set, so send() will not touch send_q
+     anymore. Callers of close() must therefore not unlock sock_mut again. */
+  sock_mut.unlock();
+
   while(!send_q.empty()) {
 
     msg_buf* msg = send_q.front();
@@ -318,13 +326,18 @@ void tcp_trsp_socket::on_read(short ev)
 
   {// locked section
 
+    // close() unlocks sock_mut internally (see generate_transport_errors),
+    // so every path that reaches close() must release ownership of the lock
+    // to avoid unlocking it a second time.
+    AmControlledLock _l(sock_mut);
+
     if(ev & EV_TIMEOUT) {
       DBG("************ idle timeout: closing connection **********");
       close();
+      _l.release_ownership();
       return;
     }
 
-    AmLock _l(sock_mut);
     DBG("on_read (connected = %i)",connected);
 
     bytes = ::read(sd,get_input(),get_input_free_space());
@@ -337,16 +350,19 @@ void tcp_trsp_socket::on_read(short ev)
       case ENOTCONN:
 	DBG("connection has been closed (sd=%i)",sd);
 	close();
+	_l.release_ownership();
 	return;
 
       case ETIMEDOUT:
 	DBG("transmission timeout (sd=%i)",sd);
 	close();
+	_l.release_ownership();
 	return;
 
       default:
 	DBG("unknown error (%i): %s",errno,strerror(errno));
 	close();
+	_l.release_ownership();
 	return;
       }
     }
@@ -354,6 +370,7 @@ void tcp_trsp_socket::on_read(short ev)
       // connection closed
       DBG("connection has been closed (sd=%i)",sd);
       close();
+      _l.release_ownership();
       return;
     }
   }// end of - locked section
@@ -367,7 +384,7 @@ void tcp_trsp_socket::on_read(short ev)
     DBG("Error while parsing input: closing connection!");
     sock_mut.lock();
     close();
-    sock_mut.unlock();
+    // close() releases sock_mut via generate_transport_errors()
   }
 }
 
@@ -441,11 +458,13 @@ int tcp_trsp_socket::parse_input()
 
 void tcp_trsp_socket::on_write(short ev)
 {
-  AmLock _l(sock_mut);
+  AmControlledLock _l(sock_mut);
 
   DBG("on_write (connected = %i)",connected);
   if(!connected) {
     if(on_connect(ev) != 0) {
+      // on_connect() may have called close(), which already released sock_mut
+      _l.release_ownership();
       return;
     }
   }
@@ -473,6 +492,7 @@ void tcp_trsp_socket::on_write(short ev)
 	ERROR("unforseen error: close connection (%i/%s)",
 	      errno,strerror(errno));
 	close();
+	_l.release_ownership();
 	break;
       }
       return;
