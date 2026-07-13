@@ -238,18 +238,16 @@ int tcp_trsp_socket::check_connection()
     create_events();
 
     if(ret < 0) {
-      add_write_event_ul(server_sock->get_connect_timeout());
+      add_write_event(server_sock->get_connect_timeout());
       DBG("connect event added...");
 
-      // because of unlock in ad_write_event_ul,
-      // on_connect() might already have been scheduled
       if(closed)
 	return -1;
     }
     else {
       // connect succeeded immediatly
       connected = true;
-      add_read_event_ul();
+      add_read_event();
     }
   }
 
@@ -267,7 +265,7 @@ int tcp_trsp_socket::send(const sockaddr_storage* sa, const char* msg,
   send_q.push_back(new msg_buf(sa,msg,msg_len));
 
   if(connected) {
-    add_write_event_ul();
+    add_write_event();
     DBG("write event added...");
   }
 
