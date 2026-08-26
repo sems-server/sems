@@ -1,4 +1,4 @@
-FROM debian:12
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -9,8 +9,7 @@ RUN apt-get update && apt-get install -y \
         git \
         debhelper devscripts \
         g++ make cmake \
-        dh-cmake dh-cmake-compat dh-sequence-cmake \
-        python3-dev python3.11-dev python3-sip-dev \
+        python3-dev python3-sip-dev \
         openssl libssl-dev \
         libspandsp-dev flite1-dev libspeex-dev libgsm1-dev libopus-dev \
         libsamplerate-dev libmp3lame-dev libcodec2-dev libbcg729-dev \
@@ -24,7 +23,8 @@ WORKDIR /sems
 
 RUN mkdir -p build && cd build && cmake .. && make sems_tests && ./core/sems_tests
 
-RUN ln -s pkg/deb/bookworm ./debian
+# jammy matches Debian 11, so it reuses the bullseye packaging.
+RUN ln -s pkg/deb/bullseye ./debian
 
 # CI stamps a unique version so apt sees an upgrade; VERSION is the fallback.
 ARG PKG_VERSION=

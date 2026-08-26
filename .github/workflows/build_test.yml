@@ -7,9 +7,16 @@ on:
   pull_request:
     branches:
       - '**'
+  release:
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+env:
+  # How many builds of each package stay in the published index.
+  KEEP_VERSIONS: 3
 
 jobs:
   rpm_test_build:
@@ -46,6 +53,382 @@ jobs:
 
       - name: Build image based on Debian 13
         run: docker build -t sems_deb13 -f Dockerfile-debian13 .
+
+      - name: Build image based on Ubuntu 22.04
+        run: docker build -t sems_ubuntu2204 -f Dockerfile-ubuntu22.04 .
+
+      - name: Build image based on Ubuntu 24.04
+        run: docker build -t sems_ubuntu2404 -f Dockerfile-ubuntu24.04 .
+
+  list_deb_dockerfiles:
+    name: Discover Debian/Ubuntu Dockerfiles
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: set
+        run: |
+          python3 <<'PY'
+          import glob, json, os, re
+          files = sorted(
+              glob.glob("Dockerfile-debian[0-9]*")
+              + glob.glob("Dockerfile-ubuntu*")
+          )
+          include = []
+          for f in files:
+              distro = f.replace("Dockerfile-", "")
+              # debian12 -> debian:12, ubuntu22.04 -> ubuntu:22.04, so the
+              # verify job installs into the matching base image.
+              match = re.match(r"(debian|ubuntu)(.+)", distro)
+              if not match:
+                  raise SystemExit(f"cannot derive a base image from {distro}")
+              include.append({"dockerfile": f, "distro": distro,
+                              "image": f"{match.group(1)}:{match.group(2)}"})
+          if not include:
+              raise SystemExit("no Dockerfile-debian* / Dockerfile-ubuntu* found")
+          print("distros:", ", ".join(row["distro"] for row in include))
+          matrix = json.dumps({"include": include}, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"matrix={matrix}\n")
+          PY
+
+      # Computed once here so all five suites and the verify job agree.
+      # A release publishes its tag as the package version. Anything else is a
+      # snapshot and gets +ci<run_number>, which sorts above the release it was
+      # built from and below the next one - apt compares version strings only,
+      # so two builds sharing a version would be indistinguishable to clients.
+      - id: ver
+        run: |
+          set -eu
+          tag="${{ github.event.release.tag_name }}"
+          if [ -n "$tag" ]; then
+            # Releases are often tagged v2.1.0; a Debian version has to start
+            # with a digit, and the packaging is 3.0 (native), so it cannot
+            # carry a revision either.
+            version="${tag#v}"
+            case "$version" in
+              [0-9]*) ;;
+              *) echo "::error::release tag '$tag' does not start with a digit"; exit 1 ;;
+            esac
+            case "$version" in
+              *-*) echo "::error::release tag '$tag' has a revision, but the packaging is 3.0 (native)"; exit 1 ;;
+            esac
+          else
+            version="$(cat VERSION)+ci${{ github.run_number }}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "package version: ${version}"
+
+  apt_build:
+    name: apt ${{ matrix.distro }}
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    needs: list_deb_dockerfiles
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.list_deb_dockerfiles.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build ${{ matrix.dockerfile }}
+        run: |
+          docker build -t "sems-${{ matrix.distro }}" \
+            --build-arg "PKG_VERSION=${{ needs.list_deb_dockerfiles.outputs.version }}" \
+            -f "${{ matrix.dockerfile }}" .
+
+      - name: Extract .deb packages
+        run: |
+          mkdir -p debs
+          docker run --rm --entrypoint bash \
+            -v "$PWD/debs:/out" "sems-${{ matrix.distro }}" \
+            -lc 'cp -a /debs/*.deb /out/'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sems-${{ matrix.distro }}-debs
+          path: debs/*.deb
+          if-no-files-found: error
+
+  apt_assemble:
+    name: Assemble apt repo
+    if: always() && !cancelled() && (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
+    needs: apt_build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sems-*-debs
+          path: collected
+
+      - name: Build per-distro apt indexes
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev apt-utils
+          mkdir -p apt-repo
+          # Where the current tree is published, so this run can carry it forward.
+          repo="${{ github.repository }}"
+          published="https://${{ github.repository_owner }}.github.io/${repo#*/}"
+          # Debug symbols are ~90% of the payload; they stay in the artifacts
+          # but never reach the published index.
+          is_debug() { case "${1##*/}" in *-dbg_*|*-dbgsym_*) return 0 ;; esac; return 1; }
+          found=0
+          for dir in collected/sems-*-debs; do
+            [ -d "$dir" ] || continue
+            distro="${dir#collected/sems-}"
+            distro="${distro%-debs}"
+            dest="apt-repo/${distro}"
+            mkdir -p "$dest"
+            for deb in "$dir"/*.deb; do
+              if is_debug "$deb"; then continue; fi
+              cp -a "$deb" "$dest"/
+            done
+            # Carry the already published packages forward so a client can pin
+            # or roll back; the Pages deploy replaces the tree wholesale, so
+            # anything not re-uploaded here disappears from the index.
+            if curl -fsSL "${published}/${distro}/Packages" -o prev-Packages; then
+              awk '/^Filename: /{print $2}' prev-Packages | while read -r rel; do
+                if is_debug "$rel"; then continue; fi
+                [ -e "$dest/${rel##*/}" ] && continue
+                curl -fsSL "${published}/${distro}/${rel#./}" \
+                  -o "$dest/${rel##*/}" || rm -f "$dest/${rel##*/}"
+              done
+              rm -f prev-Packages
+            else
+              echo "no published tree at ${published}/${distro} yet"
+            fi
+
+            # Keep the newest few versions of each package, dropping the rest.
+            python3 - "$dest" "$KEEP_VERSIONS" <<'PRUNE'
+          import functools, os, subprocess, sys
+          dest, keep = sys.argv[1], int(sys.argv[2])
+          groups = {}
+          for f in os.listdir(dest):
+              if not f.endswith(".deb"):
+                  continue
+              name, version, _ = f[:-4].split("_", 2)
+              groups.setdefault(name, []).append((version, f))
+          def newest_first(a, b):
+              for rel, result in (("gt", -1), ("lt", 1)):
+                  if subprocess.run(["dpkg", "--compare-versions", a[0], rel, b[0]]).returncode == 0:
+                      return result
+              return 0
+          for name, items in sorted(groups.items()):
+              items.sort(key=functools.cmp_to_key(newest_first))
+              print(name, "->", ", ".join(v for v, _ in items[:keep]))
+              for _, f in items[keep:]:
+                  os.remove(os.path.join(dest, f))
+                  print("  pruned", f)
+          PRUNE
+
+            (
+              cd "$dest"
+              dpkg-scanpackages --multiversion . > Packages
+              gzip -9kf Packages
+              # Write Release outside the directory first: a redirect would
+              # create the file before apt-ftparchive walks the tree, and it
+              # would then hash its own half-written self.
+              apt-ftparchive \
+                -o APT::FTPArchive::Release::Origin=sems \
+                -o APT::FTPArchive::Release::Label=sems \
+                -o APT::FTPArchive::Release::Suite="$distro" \
+                -o APT::FTPArchive::Release::Codename="$distro" \
+                -o APT::FTPArchive::Release::Architectures=amd64 \
+                -o APT::FTPArchive::Release::Components=main \
+                release . > ../Release.tmp
+              mv ../Release.tmp Release
+            )
+
+            # Pages serves no directory listing, so give each suite its own.
+            # Generated after Release so it is not part of the indexed files.
+            python3 - "$dest" "$distro" <<'SUITEINDEX'
+          import os, sys
+          dest, distro = sys.argv[1], sys.argv[2]
+          rows, stanza = [], {}
+          with open(os.path.join(dest, "Packages"), encoding="utf-8") as fh:
+              for line in fh:
+                  line = line.rstrip("\n")
+                  if not line:
+                      if stanza:
+                          rows.append(stanza); stanza = {}
+                      continue
+                  if not line.startswith(" ") and ": " in line:
+                      key, value = line.split(": ", 1)
+                      stanza[key] = value
+          if stanza:
+              rows.append(stanza)
+          rows.sort(key=lambda r: (r.get("Package", ""), r.get("Version", "")))
+          out = ['<!DOCTYPE html><html><head><meta charset="utf-8">',
+                 f'<title>sems apt - {distro}</title></head><body>',
+                 f'<h1>sems apt repo - {distro}</h1>',
+                 '<p><a href="../">suite list and install instructions</a>.',
+                 'These packages are not signed.</p>',
+                 '<table border="1" cellpadding="4" cellspacing="0">',
+                 '<tr><th>package</th><th>version</th><th>size</th><th>file</th></tr>']
+          for r in rows:
+              name = r.get("Filename", "./").rsplit("/", 1)[-1]
+              size = int(r.get("Size", 0)) / 1048576
+              out.append(f'<tr><td>{r.get("Package","")}</td><td>{r.get("Version","")}</td>'
+                         f'<td align="right">{size:.1f} MB</td>'
+                         f'<td><a href="{name}">{name}</a></td></tr>')
+          out += ['</table>',
+                  '<p><a href="Packages">Packages</a> | <a href="Release">Release</a></p>',
+                  '</body></html>']
+          with open(os.path.join(dest, "index.html"), "w", encoding="utf-8") as fh:
+              fh.write("\n".join(out) + "\n")
+          print(f"index.html for {distro}: {len(rows)} packages")
+          SUITEINDEX
+
+            found=1
+            echo "indexed ${distro}:"
+            ls -al "$dest"
+          done
+          [ "$found" = 1 ] || { echo "no .deb artifacts to index"; exit 1; }
+          {
+            echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>sems apt</title></head><body>'
+            echo '<h1>sems apt repo</h1>'
+            echo '<p><strong>These packages are not signed.</strong><br>'
+            echo 'There is no GPG key and no InRelease file, so apt cannot verify'
+            echo 'who produced them - hence [trusted=yes] on the source line'
+            echo 'below.<br>'
+            echo 'Only the HTTPS transport is authenticated; prefer a signed'
+            echo 'archive where package authenticity matters.</p>'
+            echo '<p>The newest few builds of each package are kept; older ones'
+            echo 'are removed when a new build is published.</p>'
+            echo '<p>Browse the repository:'
+            for dest in apt-repo/*/; do
+              distro="$(basename "$dest")"
+              echo "<a href=\"${distro}/\">${distro}</a>"
+            done
+            echo '</p>'
+            echo '<p>Pick the distro matching the host:</p><pre>'
+            for dest in apt-repo/*/; do
+              distro="$(basename "$dest")"
+              echo "echo \"deb [trusted=yes] https://HOST/${distro} ./\" | sudo tee /etc/apt/sources.list.d/sems.list"
+              echo "sudo apt update && sudo apt install sems   # ${distro}"
+              echo
+            done
+            echo '</pre></body></html>'
+          } > apt-repo/index.html
+          find apt-repo -type f | sort
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apt-repo
+          path: apt-repo
+          if-no-files-found: error
+
+  # Publish the apt tree assembled above on GitHub Pages. Reuses the artifact
+  # from this same run, so no image is built twice. Deliberately not a separate
+  # workflow: a workflow_run trigger is only read from the default branch, so
+  # it would never fire while this lives on local_deb_repo.
+  #
+  # One-time setup: repo Settings -> Pages -> Source: GitHub Actions.
+  #
+  # needs lists apt_build too, so a distro failing skips the deploy instead of
+  # publishing a repo that silently lost one of its suites (apt_assemble runs
+  # on always() and would happily index a partial set).
+  deploy_pages:
+    name: Deploy apt repo to Pages
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    needs: [apt_build, apt_assemble]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apt-repo
+          path: apt-repo
+
+      - name: Prepare Pages tree
+        run: |
+          # Keep Pages from treating _-prefixed paths as Jekyll internals.
+          touch apt-repo/.nojekyll
+          # apt_assemble writes a HOST placeholder because it does not know
+          # where the tree gets published; fill in the project page URL.
+          # github.repository is "owner/repo" on every event type, unlike
+          # github.event.repository which depends on the payload shape.
+          repo="${{ github.repository }}"
+          base="https://${{ github.repository_owner }}.github.io/${repo#*/}"
+          sed -i "s|https://HOST|${base}|g" apt-repo/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apt-repo
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Install from the tree that was just published, in the base image each suite
+  # targets. This is the only check that exercises the repository the way a user
+  # does - a broken Release, a package pruned while still indexed, or a wrong
+  # Filename surface here and nowhere else.
+  apt_verify:
+    name: verify ${{ matrix.distro }}
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    needs: [list_deb_dockerfiles, deploy_pages]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.list_deb_dockerfiles.outputs.matrix) }}
+    steps:
+      - name: Install sems from the published repository
+        env:
+          EXPECTED: ${{ needs.list_deb_dockerfiles.outputs.version }}
+        run: |
+          set -eu
+          repo="${{ github.repository }}"
+          base="https://${{ github.repository_owner }}.github.io/${repo#*/}/${{ matrix.distro }}"
+          echo "checking ${base} for ${EXPECTED}"
+
+          # Pages needs a moment to start serving a fresh deployment.
+          for attempt in $(seq 1 12); do
+            if curl -fsSL "${base}/Packages" | grep -qx "Version: ${EXPECTED}"; then
+              break
+            fi
+            echo "attempt ${attempt}: not served yet"
+            sleep 15
+          done
+          curl -fsSL "${base}/Packages" | grep -qx "Version: ${EXPECTED}"
+
+          # Origin, Label, Suite and Codename are stored by every client that
+          # has ever run apt update against this repository, and apt refuses to
+          # update when one of them changes until the user passes
+          # --allow-releaseinfo-change. Changing them is therefore a breaking
+          # change for existing hosts - assert them here so an accidental edit
+          # fails the run instead of every subscriber's apt.
+          curl -fsSL "${base}/Release" -o Release
+          grep -qx "Origin: sems" Release
+          grep -qx "Label: sems" Release
+          grep -qx "Suite: ${{ matrix.distro }}" Release
+          grep -qx "Codename: ${{ matrix.distro }}" Release
+
+          docker run --rm "${{ matrix.image }}" bash -lc "
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq ca-certificates >/dev/null
+            echo 'deb [trusted=yes] ${base} ./' > /etc/apt/sources.list.d/sems.list
+            apt-get update
+            apt-get install -y sems
+            /usr/sbin/sems -v
+            installed=\"\$(dpkg-query -W -f='\${Version}' sems)\"
+            if [ \"\$installed\" != '${EXPECTED}' ]; then
+              echo \"installed \$installed, expected ${EXPECTED}\" >&2
+              exit 1
+            fi
+          "
 
   hardened_builds:
     runs-on: ubuntu-latest
