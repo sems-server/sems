@@ -1,4 +1,4 @@
-FROM debian:12
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
         debhelper devscripts \
         g++ make cmake \
         dh-cmake dh-cmake-compat dh-sequence-cmake \
-        python3-dev python3.11-dev python3-sip-dev \
+        python3-dev python3-sip-dev \
         openssl libssl-dev \
         libspandsp-dev flite1-dev libspeex-dev libgsm1-dev libopus-dev \
         libsamplerate-dev libmp3lame-dev libcodec2-dev libbcg729-dev \
@@ -24,6 +24,7 @@ WORKDIR /sems
 
 RUN mkdir -p build && cd build && cmake .. && make sems_tests && ./core/sems_tests
 
+# noble matches Debian 12, so it reuses the bookworm packaging.
 RUN ln -s pkg/deb/bookworm ./debian
 
 # CI stamps a unique version so apt sees an upgrade; VERSION is the fallback.

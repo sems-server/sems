@@ -2,29 +2,48 @@ FROM debian:13
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update
-RUN apt install -y \
-         git debhelper g++ make cmake libspandsp-dev flite1-dev \
-         libspeex-dev libgsm1-dev libopus-dev libssl-dev python3-dev \
-         python3-pip libev-dev \
-         openssl libev-dev libmysqlcppconn-dev libevent-dev \
-         libxml2-dev libcurl4-openssl-dev libhiredis-dev
+# One dropped connection would otherwise fail a 300+ MB install.
+RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries
 
-RUN apt install -y devscripts libbcg729-dev \
-         libsamplerate-dev libmp3lame-dev libcodec2-dev \
-         cargo rustc
+RUN apt-get update && apt-get install -y \
+        git \
+        debhelper devscripts \
+        g++ make cmake \
+        python3-dev python3-pip \
+        openssl libssl-dev \
+        libspandsp-dev flite1-dev libspeex-dev libgsm1-dev libopus-dev \
+        libsamplerate-dev libmp3lame-dev libcodec2-dev libbcg729-dev \
+        libev-dev libevent-dev libxml2-dev libcurl4-openssl-dev \
+        libhiredis-dev libmysqlcppconn-dev \
+        cargo rustc \
+    && rm -rf /var/lib/apt/lists/*
+
+# trixie has no python3-sip-dev; take sip from pip instead.
 RUN pip install sip --break-system-packages
+
 COPY . /sems
 WORKDIR /sems
 
 RUN mkdir -p build && cd build && cmake .. && make sems_tests && ./core/sems_tests
-RUN mv pkg/deb/trixie ./debian
-RUN dch -b -v $(cat VERSION) "sems"
+
+RUN ln -s pkg/deb/trixie ./debian
+
+# CI stamps a unique version so apt sees an upgrade; VERSION is the fallback.
+ARG PKG_VERSION=
+RUN set -eu; \
+    v="${PKG_VERSION:-$(cat VERSION)}"; \
+    changelog="$(dpkg-parsechangelog -S Version)"; \
+    if ! dpkg --compare-versions "$v" ge "$changelog"; then \
+        echo "refusing to build $v: older than debian/changelog $changelog" >&2; \
+        exit 1; \
+    fi; \
+    DEBEMAIL="ci@localhost" DEBFULLNAME="CI" dch -b -v "$v" "sems"
+
 RUN dpkg-buildpackage -rfakeroot -us -uc
 RUN ls -al ..
 
 RUN dpkg -i ../sems_*.deb
 RUN /usr/sbin/sems -v
+RUN mkdir -p /debs && cp -a ../*.deb /debs/
 
-# Run SEMS with the specified configuration
 CMD ["/usr/sbin/sems", "-E", "-f", "/etc/sems/sems.conf"]
