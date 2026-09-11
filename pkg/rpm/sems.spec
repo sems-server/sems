@@ -30,7 +30,9 @@ BuildRequires:	libev-devel
 BuildRequires:	libmpg123-devel
 BuildRequires:	libxml2-devel
 BuildRequires:	libsamplerate-devel
+%if 0%{?rhel} != 10
 BuildRequires:  mysql-connector-c++-devel
+%endif
 BuildRequires:	openssl-devel
 BuildRequires:	opus-devel
 BuildRequires:	spandsp-devel
@@ -607,7 +609,9 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/dsm/mod_dlg.so
 %{_libdir}/%{name}/dsm/mod_groups.so
 %{_libdir}/%{name}/dsm/mod_monitoring.so
+%if 0%{?rhel} != 10
 %{_libdir}/%{name}/dsm/mod_mysql.so
+%endif
 %{_libdir}/%{name}/dsm/mod_py.so
 %{_libdir}/%{name}/dsm/mod_redis.so
 %{_libdir}/%{name}/dsm/mod_regex.so
