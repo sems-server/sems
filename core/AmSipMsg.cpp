@@ -196,13 +196,17 @@ void removeOptionTag(string& hdrs, const string& hdr_name, const string& tag) {
   bool found = false;
   for (std::vector<string>::iterator it=options_v.begin();
        it != options_v.end(); it++) {
-    if (trim(*it, " ")==tag) {
+    string option = trim(*it, " ");
+    if (option == tag) {
       found = true;
       continue;
     }
-    if (it != options_v.begin())
-      o_hdr = ", ";
-    o_hdr+=*it;
+    if (option.empty())
+      continue;
+    // separator only in between the tags which are kept
+    if (!o_hdr.empty())
+      o_hdr += ", ";
+    o_hdr += option;
   }
   if (!found)
     return;

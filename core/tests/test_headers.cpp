@@ -168,6 +168,24 @@ FCTMF_SUITE_BGN(test_headers) {
     removeOptionTag(hdrs1, "Supported", "timer");
     // DBG("hdrs1 = '%s'\n", hdrs1.c_str());
     fct_chk(hdrs1.empty() == true); // last one
+
+    // removing one out of several tags must keep all the others
+    hdrs1 = "Supported: timer, path, replaces" CRLF;
+    removeOptionTag(hdrs1, "Supported", "timer");
+    fct_chk(hdrs1 == "Supported: path, replaces" CRLF);
+
+    hdrs1 = "Supported: timer, path, replaces" CRLF;
+    removeOptionTag(hdrs1, "Supported", "path");
+    fct_chk(hdrs1 == "Supported: timer, replaces" CRLF);
+
+    hdrs1 = "Supported: timer, path, replaces" CRLF;
+    removeOptionTag(hdrs1, "Supported", "replaces");
+    fct_chk(hdrs1 == "Supported: timer, path" CRLF);
+
+    // not existing tag: header must stay untouched
+    hdrs1 = "Supported: timer, path" CRLF;
+    removeOptionTag(hdrs1, "Supported", "notexisting");
+    fct_chk(hdrs1 == "Supported: timer, path" CRLF);
   }
   FCT_TEST_END();
 }
