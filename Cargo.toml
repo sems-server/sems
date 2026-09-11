@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = [
+    "apps/monitoring/tools/sems-monitoring-lib",
+    "apps/monitoring/tools/sems-list-calls",
+    "apps/monitoring/tools/sems-list-active-calls",
+    "apps/monitoring/tools/sems-list-finished-calls",
+    "apps/monitoring/tools/sems-get-callproperties",
+    "apps/monitoring/tools/sems-prometheus-exporter",
+    "tools/sems-stats",
+]
