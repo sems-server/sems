@@ -219,6 +219,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int &flags);
+  void onApplyIdentityHeader(string& hdrs, const char* hdr_name, int flags);
 
   virtual void onInitialReply(B2BSipReplyEvent *e);
 

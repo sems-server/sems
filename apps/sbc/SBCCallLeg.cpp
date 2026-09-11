@@ -36,6 +36,8 @@
 #include "AmConfigReader.h"
 #include "AmSessionContainer.h"
 #include "AmSipHeaders.h"
+#include "AmConfig.h"
+#include "sip/defs.h"
 #include "SBCSimpleRelay.h"
 #include "RegisterDialog.h"
 #include "SubscriptionDialog.h"
@@ -697,6 +699,15 @@ void SBCCallLeg::onSendRequest(AmSipRequest& req, int &flags) {
   }
 
   CallLeg::onSendRequest(req, flags);
+}
+
+void SBCCallLeg::onApplyIdentityHeader(string& hdrs, const char* hdr_name, int flags)
+{
+  if (!call_profile.send_user_agent) {
+    removeHeader(hdrs, hdr_name);
+  } else if (AmConfig::Signature.length() && getHeader(hdrs, hdr_name).empty()) {
+    hdrs += string(hdr_name) + COLSP + AmConfig::Signature + CRLF;
+  }
 }
 
 void SBCCallLeg::onRemoteDisappeared(const AmSipReply& reply)

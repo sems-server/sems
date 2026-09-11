@@ -431,7 +431,7 @@ void AmB2BSession::updateLocalBody(AmMimeBody& body)
   if (!sdp) return;
 
   if (!sdp->getLen()) {
-    sdp->clear();
+    body.deletePart(SIP_APPLICATION_SDP);
     return;
   }
 

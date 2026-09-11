@@ -211,7 +211,7 @@ struct AmConfig
   static unsigned int DSCPforRtp;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
-  /** Server/User-Agent header (optional) */
+  /** Server/User-Agent header string (empty = not configured) */
   static string Signature;
   /** Value of Max-Forward header field for new requests */
   static unsigned int MaxForwards;
