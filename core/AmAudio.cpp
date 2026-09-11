@@ -389,12 +389,25 @@ int AmAudio::decode(unsigned int size)
   }
 
   if(codec->decode){
+    // Bound the decoder's PCM output against the back buffer before the
+    // codec writes into it. The decoder writes into samples.back_buffer(),
+    // which only has AUDIO_BUFFER_SIZE bytes; an expanding codec (e.g. GSM,
+    // G.722) fed a large RTP payload can produce far more PCM than that and
+    // overflow the DblBuffer. bytes2samples() predicts the decoded sample
+    // count for the given encoded size.
+    unsigned int out_size = PCM16_S2B(bytes2samples(size));
+    if(out_size > AUDIO_BUFFER_SIZE){
+      ERROR("decoded buffer size for pcm16 (%u) exceeds allowed (%u)\n",
+	    out_size, AUDIO_BUFFER_SIZE);
+      return -1;
+    }
+
     s = (*codec->decode)(samples.back_buffer(),samples,s,
 			 fmt->channels,getSampleRate(),h_codec);
     if(s<0) return s;
     samples.swap();
   }
-    
+
   return s;
 }
 
