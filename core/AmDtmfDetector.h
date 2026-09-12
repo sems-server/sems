@@ -387,7 +387,12 @@ class AmRtpDtmfDetector
 class AmDtmfSink
 {
 public:
-  virtual void postDtmfEvent(AmDtmfEvent *) = 0;
+  /**
+   * Hand over a heap allocated DTMF event to the sink.
+   * @return true if the sink took ownership of the event,
+   *         false if it did not - the caller then has to release it.
+   */
+  virtual bool postDtmfEvent(AmDtmfEvent *) = 0;
   virtual ~AmDtmfSink() { }
 };
 

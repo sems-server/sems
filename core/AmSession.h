@@ -418,8 +418,11 @@ public:
   /* ----         DTMF                          ---- */
   /**
    * Entry point for DTMF events
+   * @return true if ownership of the event has been taken over,
+   *         false if the event has been refused and must be released
+   *         by the caller.
    */
-  void postDtmfEvent(AmDtmfEvent *);
+  bool postDtmfEvent(AmDtmfEvent *);
 
   void setInbandDetector(Dtmf::InbandDetectorType t);
   bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
