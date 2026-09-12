@@ -382,7 +382,11 @@ void AmDtmfDetector::reportEvent()
   if (m_eventPending) {
     long duration = (m_lastReportTime.tv_sec - m_startTime.tv_sec) * 1000 +
       (m_lastReportTime.tv_usec - m_startTime.tv_usec) / 1000;
-    m_dtmfSink->postDtmfEvent(new AmDtmfEvent(m_currentEvent, duration));
+    AmDtmfEvent* dtmf_evt = new AmDtmfEvent(m_currentEvent, duration);
+    if (!m_dtmfSink->postDtmfEvent(dtmf_evt)) {
+      DBG("DTMF sink refused the event, releasing it\n");
+      delete dtmf_evt;
+    }
     m_eventPending = false;
     m_sipEventReceived = false;
     m_rtpEventReceived = false;
