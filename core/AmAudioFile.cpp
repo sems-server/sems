@@ -376,6 +376,27 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
     return -1;
   }
 
+  // the data is fread() into one half of the 'samples' DblBuffer and decode()
+  // then expands it into the other half; both are AUDIO_BUFFER_SIZE bytes, so
+  // bound the request by the encoded size *and* by what it decodes to - for
+  // PCMU/PCMA the decoded frame is twice the encoded one, so the encoded
+  // bound on its own is not enough.
+  if(size > AUDIO_BUFFER_SIZE){
+    ERROR("AmAudioFile::read: refusing read of %u bytes (max %i)\n",
+	  size, AUDIO_BUFFER_SIZE);
+    return -1;
+  }
+
+  if(fmt.get() && fmt->channels > 0){
+    unsigned int decoded_size =
+      PCM16_S2B(fmt->bytes2samples(size) * (unsigned int)fmt->channels);
+    if(decoded_size > AUDIO_BUFFER_SIZE){
+      ERROR("AmAudioFile::read: refusing read of %u bytes: decodes to %u bytes"
+	    " (max %i)\n", size, decoded_size, AUDIO_BUFFER_SIZE);
+      return -1;
+    }
+  }
+
   int ret;
   int s = size;
 

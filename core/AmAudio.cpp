@@ -299,8 +299,44 @@ void AmAudio::close()
 int AmAudio::get(unsigned long long system_ts, unsigned char* buffer, 
 		 int output_sample_rate, unsigned int nb_samples)
 {
-  int size = calcBytesToRead((int)((float)nb_samples * (float)getSampleRate()
-				   / (float)output_sample_rate));
+  // Everything below works in the 'samples' DblBuffer: read() fills one half
+  // with encoded data, decode() expands that into the other half as PCM16,
+  // and the resampled result is memcpy()'d into 'buffer'. All three are
+  // AUDIO_BUFFER_SIZE bytes (callers size 'buffer' that way too, see
+  // AmMediaProcessorThread), and nothing bounded the request against them.
+  //
+  // Both rates are driven by what the remote end offers in SDP, so the scaled
+  // sample count has to be validated *before* it is narrowed to int and handed
+  // to the codec: an out-of-range float-to-int conversion is undefined, and
+  // the huge unsigned sample count it yields can wrap inside samples2bytes()
+  // into a byte count that looks perfectly valid.
+  if(output_sample_rate <= 0 || getSampleRate() <= 0){
+    ERROR("AmAudio::get: invalid sample rates (input=%i, output=%i)\n",
+	  getSampleRate(), output_sample_rate);
+    return -1;
+  }
+
+  double nb_samples_in = ((double)nb_samples * (double)getSampleRate())
+    / (double)output_sample_rate;
+
+  // decode() writes PCM16 into the other half of the DblBuffer, so it is the
+  // decoded frame that has to fit AUDIO_BUFFER_SIZE
+  if(nb_samples_in > (double)PCM16_B2S(AUDIO_BUFFER_SIZE)){
+    ERROR("AmAudio::get: refusing read of %.0f samples (max %i): nb_samples=%u,"
+	  " input_rate=%i, output_rate=%i\n",
+	  nb_samples_in, PCM16_B2S(AUDIO_BUFFER_SIZE), nb_samples,
+	  getSampleRate(), output_sample_rate);
+    return -1;
+  }
+
+  int size = calcBytesToRead((unsigned int)nb_samples_in);
+
+  // ... and the encoded frame has to fit the half it is read into
+  if(size < 0 || (unsigned int)size > AUDIO_BUFFER_SIZE){
+    ERROR("AmAudio::get: refusing read of %i bytes (max %i)\n",
+	  size, AUDIO_BUFFER_SIZE);
+    return -1;
+  }
 
   unsigned int rd_ts = scaleSystemTS(system_ts);
   //DBG("\tread(rd_ts = %10.u; size = %u)\n",rd_ts,size);
