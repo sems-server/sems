@@ -585,23 +585,28 @@ void AmSession::setInbandDetector(Dtmf::InbandDetectorType t)
   m_dtmfDetector.setInbandDetector(t, RTPStream()->getSampleRate()); 
 }
 
-void AmSession::postDtmfEvent(AmDtmfEvent *evt)
+bool AmSession::postDtmfEvent(AmDtmfEvent *evt)
 {
   if (m_dtmfDetectionEnabled)
     {
       if (dynamic_cast<AmSipDtmfEvent *>(evt) ||
 	  dynamic_cast<AmRtpDtmfEvent *>(evt))
-        {   
+        {
 	  // this is a raw event from sip info or rtp
 	  m_dtmfEventQueue.postEvent(evt);
         }
-      else 
+      else
         {
-	  // this is an aggregated event, 
+	  // this is an aggregated event,
 	  // post it into our event queue
 	  postEvent(evt);
         }
+      return true; // ownership has been passed on
     }
+
+  // DTMF detection is disabled for this session: the event is dropped and
+  // ownership stays with the caller, which has to release it.
+  return false;
 }
 
 void AmSession::processDtmfEvents()
@@ -745,7 +750,11 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     if (dtmf_body) {
       string dtmf_body_str((const char*)dtmf_body->getPayload(),
 			   dtmf_body->getLen());
-      postDtmfEvent(new AmSipDtmfEvent(dtmf_body_str));
+      AmDtmfEvent* dtmf_evt = new AmSipDtmfEvent(dtmf_body_str);
+      if (!postDtmfEvent(dtmf_evt)) {
+	DBG("DTMF detection disabled, dropping SIP INFO DTMF event\n");
+	delete dtmf_evt;
+      }
       dlg->reply(req, 200, "OK");
     } else {
       // RFC 3261 Section 21.4.13: a 415 response MUST advertise the

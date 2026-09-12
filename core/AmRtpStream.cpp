@@ -859,8 +859,14 @@ void AmRtpStream::recvDtmfPacket(AmRtpPacket* p) {
 
     DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u session = [%p]\n",
 	dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),p->timestamp, session);
-    if (session) 
-      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), p->timestamp));
+    if (session) {
+      AmDtmfEvent* dtmf_evt =
+	new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), p->timestamp);
+      if (!session->postDtmfEvent(dtmf_evt)) {
+	DBG("DTMF detection disabled, dropping RTP DTMF event\n");
+	delete dtmf_evt;
+      }
+    }
   }
 }
 
