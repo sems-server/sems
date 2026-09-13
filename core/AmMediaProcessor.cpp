@@ -145,8 +145,25 @@ void AmMediaProcessor::removeFromProcessor(AmMediaSession* s,
   DBG("AmMediaProcessor::removeSession\n");
   group_mut.lock();
   // get scheduler
-  string callgroup = session2callgroup[s];
-  unsigned int sched_thread = callgroup2thread[callgroup];
+  std::map<AmMediaSession*, string>::iterator s_it = session2callgroup.find(s);
+  if (s_it == session2callgroup.end()) {
+    // never added, or taken out already: the request for that is on its way
+    // to the thread, or has been processed. Looking the session up with
+    // operator[] instead would insert an empty callgroup and post the
+    // request to thread 0.
+    group_mut.unlock();
+    DBG("session [%p] is not in the processor, nothing to remove\n", (void*)s);
+    return;
+  }
+  string callgroup = s_it->second;
+  unsigned int sched_thread = 0;
+  std::map<string, unsigned int>::iterator t_it = callgroup2thread.find(callgroup);
+  if (t_it != callgroup2thread.end()) {
+    sched_thread = t_it->second;
+  } else {
+    ERROR("callgroup '%s' of session [%p] is not assigned to any thread\n",
+	  callgroup.c_str(), (void*)s);
+  }
   DBG("  callgroup is '%s', thread %u\n", callgroup.c_str(), sched_thread);
   // erase callgroup membership entry
   std::multimap<std::string, AmMediaSession*>::iterator it = 
@@ -165,8 +182,8 @@ void AmMediaProcessor::removeFromProcessor(AmMediaSession* s,
     DBG("callgroup empty, erasing it.\n");
   }
   // erase session entry
-  session2callgroup.erase(s);
-  group_mut.unlock();    
+  session2callgroup.erase(s_it);
+  group_mut.unlock();
 
   threads[sched_thread]->postRequest(new SchedRequest(r_type,s));
 }
