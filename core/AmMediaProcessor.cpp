@@ -140,6 +140,11 @@ void AmMediaProcessor::changeCallgroup(AmMediaSession* s,
   addSession(s, new_callgroup);
 }
 
+bool AmMediaProcessor::hasSession(AmMediaSession* s) {
+  AmLock lock(group_mut);
+  return session2callgroup.find(s) != session2callgroup.end();
+}
+
 void AmMediaProcessor::removeFromProcessor(AmMediaSession* s, 
 					   unsigned int r_type) {
   DBG("AmMediaProcessor::removeSession\n");

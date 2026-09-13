@@ -33,6 +33,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_replaces);
   FCTMF_SUITE_CALL(test_b2bsession);
   FCTMF_SUITE_CALL(test_parser);
+  FCTMF_SUITE_CALL(test_mediaprocessor);
   FCTMF_SUITE_CALL(test_rfc3261_parser);
   FCTMF_SUITE_CALL(test_rfc3261_musts);
   FCTMF_SUITE_CALL(test_reg_agent);
