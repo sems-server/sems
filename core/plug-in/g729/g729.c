@@ -174,6 +174,14 @@ static int g729_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned 
        return -1;
     }
 
+    /* out_buf is AUDIO_BUFFER_SIZE bytes. g729_bytes2samples() reports one
+       sample per byte where a frame decodes to eight, so AmAudio::decode()
+       cannot check this codec: check it here like gsm_2_pcm16() does. */
+    if (size / G729_BYTES_PER_FRAME > (unsigned int)(AUDIO_BUFFER_SIZE / PCM_BYTES_PER_FRAME)) {
+       ERROR("g729_2_pcm16: %u bytes would decode to more than %d bytes\n", size, AUDIO_BUFFER_SIZE);
+       return -1;
+    }
+
     while(size >= G729_BYTES_PER_FRAME){
         /* Decode a frame  */
         bcg729Decoder(codec->dec, in_buf, G729_BYTES_PER_FRAME,
