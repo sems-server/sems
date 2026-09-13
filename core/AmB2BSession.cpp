@@ -87,6 +87,21 @@ AmB2BSession::~AmB2BSession()
 {
   clearRtpReceiverRelay();
 
+  // clearRtpReceiverRelay() only releases the media session for the
+  // RTP_Relay/RTP_Transcoding modes. A leg can however still hold a media
+  // session while rtp_relay_mode is RTP_Direct (e.g. onB2BReconnect() sets the
+  // new mode before installing the new media session), in which case nothing
+  // detaches us from AmB2BMedia. AmB2BMedia::a/b are raw, non-owned pointers,
+  // so the media processor would keep dereferencing this session after it is
+  // gone. Release unconditionally.
+  if (media_session) {
+    ERROR("BUG: media session was not released before AmB2BSession destruction,"
+	  " releasing it now\n");
+    media_session->stop(a_leg);
+    media_session->releaseReference();
+    media_session = NULL;
+  }
+
   DBG("relayed_req.size() = %zu\n",relayed_req.size());
 
   map<int,AmSipRequest>::iterator it = recvd_req.begin();
