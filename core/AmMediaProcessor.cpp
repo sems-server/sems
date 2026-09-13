@@ -281,12 +281,14 @@ void AmMediaProcessorThread::processDtmfEvents()
 
 void AmMediaProcessorThread::processAudio(unsigned long long ts)
 {
+  set<AmMediaSession*> failed_sessions;
+
   // receiving
   for(set<AmMediaSession*>::iterator it = sessions.begin();
       it != sessions.end(); it++)
   {
     if ((*it)->readStreams(ts, buffer) < 0)
-      postRequest(new SchedRequest(AmMediaProcessor::ClearSession, *it));
+      failed_sessions.insert(*it);
   }
 
   // sending
@@ -294,7 +296,17 @@ void AmMediaProcessorThread::processAudio(unsigned long long ts)
       it != sessions.end(); it++)
   {
     if ((*it)->writeStreams(ts, buffer) < 0)
-      postRequest(new SchedRequest(AmMediaProcessor::ClearSession, *it));
+      failed_sessions.insert(*it);
+  }
+
+  // Clearing has to go through AmMediaProcessor: posting the request straight
+  // to our own queue drops the session from this thread's set without ever
+  // updating session2callgroup/callgroupmembers/callgroup2thread. Each session
+  // is cleared once even if both directions failed in this very cycle.
+  for(set<AmMediaSession*>::iterator it = failed_sessions.begin();
+      it != failed_sessions.end(); it++)
+  {
+    AmMediaProcessor::instance()->clearSession(*it);
   }
 }
 
