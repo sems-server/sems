@@ -86,6 +86,9 @@ class JsonRPCServerLoop
 			  AmArg& ret);
   void run();
   void on_stop();
+  /** make run() leave the event loop; unlike stop() it does not detach the
+      thread, so the caller can still join() it */
+  void request_stop();
   void process(AmEvent* ev);
 
   static string newConnectionId();

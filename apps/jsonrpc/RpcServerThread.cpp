@@ -39,21 +39,30 @@
 #include "log.h"
 
 RpcServerThread::RpcServerThread()
-  : AmEventQueue(this) {
+  : AmEventQueue(this), stop_requested(false) {
 }
 
 RpcServerThread::~RpcServerThread() {
 }
 
 void RpcServerThread::run() {
-  while (true) {
+  while (!stop_requested.get()) {
     waitForEvent();
+    if (stop_requested.get())
+      break;
     processEvents();
   }
+  DBG("RPC server thread stopped\n");
+}
+
+void RpcServerThread::request_stop() {
+  stop_requested.set(true);
+  // wake up a thread blocked in waitForEvent()
+  ev_pending.set(true);
 }
 
 void RpcServerThread::on_stop() {
-  INFO("TODO: stop server thread\n");
+  request_stop();
 }
 
 void RpcServerThread::process(AmEvent* event) {
@@ -187,6 +196,21 @@ void RpcServerThreadpool::dispatch(AmEvent* ev) {
   if (t_it == threads.end())
     t_it = threads.begin();
 
+  threads_mut.unlock();
+}
+
+void RpcServerThreadpool::cleanup() {
+  threads_mut.lock();
+  DBG("stopping %zu RPC server threads\n", threads.size());
+  for (vector<RpcServerThread*>::iterator it = threads.begin();
+       it != threads.end(); it++) {
+    // not stop(): that detaches the thread, which turns join() into a no-op
+    (*it)->request_stop();
+    (*it)->join();
+    delete *it;
+  }
+  threads.clear();
+  t_it = threads.begin();
   threads_mut.unlock();
 }
 

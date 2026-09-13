@@ -183,6 +183,16 @@ static void async_cb (EV_P_ ev_async *w, int revents)
   JsonRPCServerLoop::_processEvents();
 }
 
+static ev_async async_stop;
+
+static void async_stop_cb (EV_P_ ev_async *w, int revents)
+{
+  // runs inside the event loop, so leaving it is safe from here
+  ev_async_stop(EV_A_ w);
+  ev_io_stop(EV_A_ &ev_accept);
+  ev_break(EV_A_ EVBREAK_ALL);
+}
+
 void JsonRPCServerLoop::_processEvents() {
   instance()->processEvents();
 }
@@ -313,17 +323,23 @@ void JsonRPCServerLoop::run() {
   if (bind(listen_fd, (struct sockaddr *)&listen_addr,
 	   sizeof(listen_addr)) < 0) {
     ERROR("bind failed\n");
+    ::close(listen_fd);
+    threadpool.cleanup();
     return;
   }
   if (listen(listen_fd,5) < 0) {
     ERROR("listen failed\n");
+    ::close(listen_fd);
+    threadpool.cleanup();
     return;
   }
   if (setnonblock(listen_fd) < 0) {
     ERROR("failed to set server socket to non-blocking\n");
+    ::close(listen_fd);
+    threadpool.cleanup();
     return;
   }
-	 
+
   ev_io_init(&ev_accept,accept_cb,listen_fd,EV_READ);
   ev_io_start(loop,&ev_accept);
 
@@ -331,13 +347,30 @@ void JsonRPCServerLoop::run() {
   ev_async_init (&async_w, async_cb);
   ev_async_start (EV_A_ &async_w);
 
+  // async watcher used by request_stop() to break out of the event loop.
+  // Registered here because only ev_async_send() may be called from another
+  // thread while the loop is running.
+  ev_async_init (&async_stop, async_stop_cb);
+  ev_async_start (EV_A_ &async_stop);
+
   INFO("running event loop\n");
   ev_loop (loop, 0);
   INFO("event loop finished\n");
+
+  // stopped: no new connection is accepted and no event is dispatched to the
+  // server threads any more, so they can be shut down and joined now
+  threadpool.cleanup();
+  ::close(listen_fd);
+}
+
+void JsonRPCServerLoop::request_stop() {
+  // ev_break() must not be called from another thread while the loop is
+  // running; ev_async_send() may, so let the loop leave ev_loop() itself
+  ev_async_send (loop, &async_stop);
 }
 
 void JsonRPCServerLoop::on_stop() {
-  INFO("todo\n");
+  request_stop();
 }
 
 void JsonRPCServerLoop::returnConnection(JsonrpcNetstringsConnection* conn) {
