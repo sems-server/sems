@@ -178,6 +178,10 @@ RpcServerThreadpool::RpcServerThreadpool() {
 }
 
 RpcServerThreadpool::~RpcServerThreadpool() {
+  // The pool is a static of the module. Stop the threads it still has when
+  // the module is unloaded: the startup thread, if the server loop never ran
+  // and cleaned up, e.g. because loading another module failed.
+  cleanup();
 }
 
 /** round-robin dispatch to one thread */  
@@ -200,18 +204,27 @@ void RpcServerThreadpool::dispatch(AmEvent* ev) {
 }
 
 void RpcServerThreadpool::cleanup() {
+  // Take the threads out of the pool before waiting for them. A thread that
+  // is still finishing an event may hand its connection back and dispatch() a
+  // pending event to this pool, and must not wait for threads_mut while we
+  // wait for it; dispatch() finds the pool empty and drops the event instead.
+  vector<RpcServerThread*> stopping;
   threads_mut.lock();
-  DBG("stopping %zu RPC server threads\n", threads.size());
-  for (vector<RpcServerThread*>::iterator it = threads.begin();
-       it != threads.end(); it++) {
+  stopping.swap(threads);
+  t_it = threads.begin();
+  threads_mut.unlock();
+
+  DBG("stopping %zu RPC server threads\n", stopping.size());
+  for (vector<RpcServerThread*>::iterator it = stopping.begin();
+       it != stopping.end(); it++) {
     // not stop(): that detaches the thread, which turns join() into a no-op
     (*it)->request_stop();
+  }
+  for (vector<RpcServerThread*>::iterator it = stopping.begin();
+       it != stopping.end(); it++) {
     (*it)->join();
     delete *it;
   }
-  threads.clear();
-  t_it = threads.begin();
-  threads_mut.unlock();
 }
 
 void RpcServerThreadpool::addThreads(unsigned int cnt) {
