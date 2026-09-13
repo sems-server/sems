@@ -56,6 +56,10 @@ class JsonRPCServerLoop
   static vector<JsonServerEvent*> pending_events; // todo: use map<set<> > if many pending events
   static AmMutex pending_events_mut;
 
+  /** set by request_stop(); run() checks it once the event loop can be
+      left through the async watcher */
+  AmSharedVar<bool> stop_requested;
+
  public:
   JsonRPCServerLoop();
   ~JsonRPCServerLoop();
@@ -89,6 +93,8 @@ class JsonRPCServerLoop
   /** make run() leave the event loop; unlike stop() it does not detach the
       thread, so the caller can still join() it */
   void request_stop();
+  /** stop the accept and async watchers; event loop thread only */
+  static void stopWatchers();
   void process(AmEvent* ev);
 
   static string newConnectionId();

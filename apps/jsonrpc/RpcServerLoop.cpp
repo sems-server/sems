@@ -188,9 +188,14 @@ static ev_async async_stop;
 static void async_stop_cb (EV_P_ ev_async *w, int revents)
 {
   // runs inside the event loop, so leaving it is safe from here
-  ev_async_stop(EV_A_ w);
-  ev_io_stop(EV_A_ &ev_accept);
+  JsonRPCServerLoop::stopWatchers();
   ev_break(EV_A_ EVBREAK_ALL);
+}
+
+void JsonRPCServerLoop::stopWatchers() {
+  ev_async_stop(loop, &async_stop);
+  ev_async_stop(loop, &async_w);
+  ev_io_stop(loop, &ev_accept);
 }
 
 void JsonRPCServerLoop::_processEvents() {
@@ -291,7 +296,7 @@ void JsonRPCServerLoop::process(AmEvent* ev) {
 }
 
 JsonRPCServerLoop::JsonRPCServerLoop()
-  : AmEventQueue(this)
+  : AmEventQueue(this), stop_requested(false)
 {
   loop = ev_default_loop (0);
 }
@@ -353,9 +358,17 @@ void JsonRPCServerLoop::run() {
   ev_async_init (&async_stop, async_stop_cb);
   ev_async_start (EV_A_ &async_stop);
 
-  INFO("running event loop\n");
-  ev_loop (loop, 0);
-  INFO("event loop finished\n");
+  // A request_stop() from before this point was not delivered: ev_async_init()
+  // resets the watcher it wrote to. From here on the watcher is live, and such
+  // an early request has left stop_requested set.
+  if (stop_requested.get()) {
+    INFO("stop requested before the event loop was started\n");
+    stopWatchers();
+  } else {
+    INFO("running event loop\n");
+    ev_loop (loop, 0);
+    INFO("event loop finished\n");
+  }
 
   // stopped: no new connection is accepted and no event is dispatched to the
   // server threads any more, so they can be shut down and joined now
@@ -364,8 +377,11 @@ void JsonRPCServerLoop::run() {
 }
 
 void JsonRPCServerLoop::request_stop() {
-  // ev_break() must not be called from another thread while the loop is
-  // running; ev_async_send() may, so let the loop leave ev_loop() itself
+  // The flag first: run() checks it once the async watcher is live, which
+  // covers a request from before that. ev_break() must not be called from
+  // another thread while the loop is running; ev_async_send() may, so let
+  // the loop leave ev_loop() itself.
+  stop_requested.set(true);
   ev_async_send (loop, &async_stop);
 }
 
