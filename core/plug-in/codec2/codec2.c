@@ -283,6 +283,14 @@ int codec2_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int s
   // We multiply it by two (16 bits), because the size of one sample is 2 bytes.
   const int out_buffer_offset_next = c2enc->samples_per_frame * 2;
 
+  // out_buf is AUDIO_BUFFER_SIZE bytes. AmAudio::decode() cannot check that
+  // for this codec, which has no bytes2samples(), so check it here like
+  // gsm_2_pcm16() does.
+  if (out_buffer_offset_next > 0 && blocks.quot > AUDIO_BUFFER_SIZE / out_buffer_offset_next) {
+    ERROR("codec2_2_pcm16: %d blocks would decode to more than %d bytes\n", blocks.quot, AUDIO_BUFFER_SIZE);
+    return -1;
+  }
+
   while (blocks.quot--) {
     codec2_decode(codec2, (short int*)(out_buf + out_buffer_offset), in_buf + in_buffer_offset);
     out_buffer_offset += out_buffer_offset_next;
