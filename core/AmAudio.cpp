@@ -400,8 +400,9 @@ int AmAudio::decode(unsigned int size)
     // count and logs a warning for codecs that have none (G.711, Opus, Speex,
     // codec2), which would then fire for every packet. Those are taken to
     // yield one sample per byte, which is exact for G.711; codecs that expand
-    // further without providing bytes2samples() have to bound their output
-    // themselves, as the Opus and Speex decoders do.
+    // further without providing bytes2samples(), or whose bytes2samples()
+    // undercounts, have to bound their output themselves, as the Opus, Speex,
+    // codec2 and G.729 decoders do.
     unsigned int nb_samples = codec->bytes2samples ?
       codec->bytes2samples(h_codec, size) : size;
     if(nb_samples > (unsigned int)PCM16_B2S(AUDIO_BUFFER_SIZE)){
