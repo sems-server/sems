@@ -28,6 +28,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_headers);
   FCTMF_SUITE_CALL(test_audio_decode);
   FCTMF_SUITE_CALL(test_uriparser);
+  FCTMF_SUITE_CALL(test_session_end);
   FCTMF_SUITE_CALL(test_jsonarg);
   FCTMF_SUITE_CALL(test_replaces);
   FCTMF_SUITE_CALL(test_b2bsession);
