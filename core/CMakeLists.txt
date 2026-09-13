@@ -14,7 +14,7 @@ file(
   md5.cpp)
 file(GLOB sems_sip_SRCS "sip/*.cpp")
 file(GLOB sems_tests_SRCS "tests/*.cpp" "plug-in/uac_auth/UACAuth.cpp"
-     "../apps/sbc/*.cpp")
+     "../apps/sbc/*.cpp" "../apps/reg_agent/RegistrationAgent.cpp")
 
 set(audio_files beep.wav default_en.wav)
 

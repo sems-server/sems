@@ -31,6 +31,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_parser);
   FCTMF_SUITE_CALL(test_rfc3261_parser);
   FCTMF_SUITE_CALL(test_rfc3261_musts);
+  FCTMF_SUITE_CALL(test_reg_agent);
   FCTMF_SUITE_CALL(test_extensions);
   FCTMF_SUITE_CALL(test_amconfig);
 }
