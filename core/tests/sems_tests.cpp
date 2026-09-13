@@ -26,6 +26,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_rtpstream);
   FCTMF_SUITE_CALL(test_auth);
   FCTMF_SUITE_CALL(test_headers);
+  FCTMF_SUITE_CALL(test_audio_decode);
   FCTMF_SUITE_CALL(test_uriparser);
   FCTMF_SUITE_CALL(test_jsonarg);
   FCTMF_SUITE_CALL(test_replaces);
