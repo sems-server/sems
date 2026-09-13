@@ -229,8 +229,11 @@ public:
   /** Remove session s from processor but don't signal that to the session */
   void softRemoveSession(AmMediaSession* s);
   /** Change the callgroup of a session (use with caution) */
-  void changeCallgroup(AmMediaSession* s, 
+  void changeCallgroup(AmMediaSession* s,
 		       const string& new_callgroup);
+  /** @return whether session s is in the processor's records, i.e. has
+   *  been added and not been removed yet */
+  bool hasSession(AmMediaSession* s);
 
   void stop();
   static void dispose();
