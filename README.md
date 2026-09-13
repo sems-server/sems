@@ -241,11 +241,14 @@ SEMS server hes been build-tested with the following:
 * RHEL 8 with Python 3
 * RHEL 9 with Python 3
 * RHEL 10 with Python 3
-* Debian 11 with Python 3
 * Debian 12 with Python 3
 * Debian 13 with Python 3
 
 Please see appropriate Dockerfiles for reference.
+
+Debian 11 (bullseye) is no longer supported: its Long Term Support ended on
+31 August 2026 ([announcement](https://www.debian.org/News/2026/20260831)),
+so it has been dropped from CI. Please upgrade to Debian 12 or newer.
 
 ## Building from source
 

@@ -38,9 +38,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Build image based on Debian 11
-        run: docker build -t sems_deb11 -f Dockerfile-debian11 .
-
       - name: Build image based on Debian 12
         run: docker build -t sems_deb12 -f Dockerfile-debian12 .
 
