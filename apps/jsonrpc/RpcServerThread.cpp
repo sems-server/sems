@@ -39,21 +39,30 @@
 #include "log.h"
 
 RpcServerThread::RpcServerThread()
-  : AmEventQueue(this) {
+  : AmEventQueue(this), stop_requested(false) {
 }
 
 RpcServerThread::~RpcServerThread() {
 }
 
 void RpcServerThread::run() {
-  while (true) {
+  while (!stop_requested.get()) {
     waitForEvent();
+    if (stop_requested.get())
+      break;
     processEvents();
   }
+  DBG("RPC server thread stopped\n");
+}
+
+void RpcServerThread::request_stop() {
+  stop_requested.set(true);
+  // wake up a thread blocked in waitForEvent()
+  ev_pending.set(true);
 }
 
 void RpcServerThread::on_stop() {
-  INFO("TODO: stop server thread\n");
+  request_stop();
 }
 
 void RpcServerThread::process(AmEvent* event) {
@@ -169,6 +178,10 @@ RpcServerThreadpool::RpcServerThreadpool() {
 }
 
 RpcServerThreadpool::~RpcServerThreadpool() {
+  // The pool is a static of the module. Stop the threads it still has when
+  // the module is unloaded: the startup thread, if the server loop never ran
+  // and cleaned up, e.g. because loading another module failed.
+  cleanup();
 }
 
 /** round-robin dispatch to one thread */  
@@ -188,6 +201,30 @@ void RpcServerThreadpool::dispatch(AmEvent* ev) {
     t_it = threads.begin();
 
   threads_mut.unlock();
+}
+
+void RpcServerThreadpool::cleanup() {
+  // Take the threads out of the pool before waiting for them. A thread that
+  // is still finishing an event may hand its connection back and dispatch() a
+  // pending event to this pool, and must not wait for threads_mut while we
+  // wait for it; dispatch() finds the pool empty and drops the event instead.
+  vector<RpcServerThread*> stopping;
+  threads_mut.lock();
+  stopping.swap(threads);
+  t_it = threads.begin();
+  threads_mut.unlock();
+
+  DBG("stopping %zu RPC server threads\n", stopping.size());
+  for (vector<RpcServerThread*>::iterator it = stopping.begin();
+       it != stopping.end(); it++) {
+    // not stop(): that detaches the thread, which turns join() into a no-op
+    (*it)->request_stop();
+  }
+  for (vector<RpcServerThread*>::iterator it = stopping.begin();
+       it != stopping.end(); it++) {
+    (*it)->join();
+    delete *it;
+  }
 }
 
 void RpcServerThreadpool::addThreads(unsigned int cnt) {
