@@ -427,14 +427,23 @@ int AmAudio::decode(unsigned int size)
   if(codec->decode){
     // Bound the decoder's PCM output against the back buffer before the
     // codec writes into it. The decoder writes into samples.back_buffer(),
-    // which only has AUDIO_BUFFER_SIZE bytes; an expanding codec (e.g. GSM,
-    // G.722) fed a large RTP payload can produce far more PCM than that and
-    // overflow the DblBuffer. bytes2samples() predicts the decoded sample
-    // count for the given encoded size.
-    unsigned int out_size = PCM16_S2B(bytes2samples(size));
-    if(out_size > AUDIO_BUFFER_SIZE){
-      ERROR("decoded buffer size for pcm16 (%u) exceeds allowed (%u)\n",
-	    out_size, AUDIO_BUFFER_SIZE);
+    // which only has AUDIO_BUFFER_SIZE bytes, without being told that size;
+    // an expanding codec (e.g. G.722, G.726, G.729, iLBC) fed a large RTP
+    // payload can produce far more PCM than that and overflow the DblBuffer.
+    //
+    // Ask the codec itself: its bytes2samples() counts the samples of all
+    // channels, whereas AmAudioFormat::bytes2samples() divides by the channel
+    // count and logs a warning for codecs that have none (G.711, Opus, Speex,
+    // codec2), which would then fire for every packet. Those are taken to
+    // yield one sample per byte, which is exact for G.711; codecs that expand
+    // further without providing bytes2samples() have to bound their output
+    // themselves, as the Opus and Speex decoders do.
+    unsigned int nb_samples = codec->bytes2samples ?
+      codec->bytes2samples(h_codec, size) : size;
+    if(nb_samples > (unsigned int)PCM16_B2S(AUDIO_BUFFER_SIZE)){
+      ERROR("AmAudio::decode: refusing to decode %u bytes of codec %i into"
+	    " %u samples (max %i)\n",
+	    size, codec->id, nb_samples, PCM16_B2S(AUDIO_BUFFER_SIZE));
       return -1;
     }
 
