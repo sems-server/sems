@@ -95,6 +95,10 @@ class JsonRPCServerLoop
   void request_stop();
   /** stop the accept and async watchers; event loop thread only */
   static void stopWatchers();
+  /** close and free the connections still registered and drop the events
+      pending for them; event loop thread only, once the server threads are
+      joined */
+  static void closeConnections();
   void process(AmEvent* ev);
 
   static string newConnectionId();

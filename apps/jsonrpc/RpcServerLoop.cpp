@@ -56,13 +56,16 @@ ev_io ev_accept;
 ev_async JsonRPCServerLoop::async_w;
 struct ev_loop* JsonRPCServerLoop::loop = 0;
 JsonRPCServerLoop* JsonRPCServerLoop::_instance = NULL;
-RpcServerThreadpool JsonRPCServerLoop::threadpool;
 
 std::map<string, JsonrpcPeerConnection*> JsonRPCServerLoop::connections;
 AmMutex JsonRPCServerLoop::connections_mut;
 
 vector<JsonServerEvent*> JsonRPCServerLoop::pending_events;
 AmMutex JsonRPCServerLoop::pending_events_mut;
+
+// defined after the statics above so that it is destroyed before them: its
+// destructor stops and joins server threads, which use them
+RpcServerThreadpool JsonRPCServerLoop::threadpool;
 
 JsonRPCServerLoop* JsonRPCServerLoop::instance() {
   if (_instance == NULL) {
@@ -371,9 +374,41 @@ void JsonRPCServerLoop::run() {
   }
 
   // stopped: no new connection is accepted and no event is dispatched to the
-  // server threads any more, so they can be shut down and joined now
+  // server threads any more, so they can be shut down and joined now, and
+  // what they leave behind can be closed
   threadpool.cleanup();
+  closeConnections();
   ::close(listen_fd);
+}
+
+void JsonRPCServerLoop::closeConnections() {
+  // the event loop has returned and the server threads are joined: nothing
+  // uses the connections any more
+  std::map<string, JsonrpcPeerConnection*> conns;
+  connections_mut.lock();
+  conns.swap(connections);
+  connections_mut.unlock();
+
+  DBG("closing %zu connections\n", conns.size());
+  for (std::map<string, JsonrpcPeerConnection*>::iterator it = conns.begin();
+       it != conns.end(); it++) {
+    JsonrpcNetstringsConnection* conn =
+      dynamic_cast<JsonrpcNetstringsConnection*>(it->second);
+    if (conn != NULL) {
+      if (ev_is_active(&conn->ev_read))
+        ev_io_stop(loop, &conn->ev_read);
+      conn->close();
+    }
+    delete it->second;
+  }
+
+  pending_events_mut.lock();
+  for (vector<JsonServerEvent*>::iterator it = pending_events.begin();
+       it != pending_events.end(); it++) {
+    delete *it;
+  }
+  pending_events.clear();
+  pending_events_mut.unlock();
 }
 
 void JsonRPCServerLoop::request_stop() {
