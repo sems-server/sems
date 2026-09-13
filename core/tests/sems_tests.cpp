@@ -32,6 +32,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_rfc3261_parser);
   FCTMF_SUITE_CALL(test_rfc3261_musts);
   FCTMF_SUITE_CALL(test_extensions);
+  FCTMF_SUITE_CALL(test_dtmf);
   FCTMF_SUITE_CALL(test_amconfig);
   FCTMF_SUITE_CALL(test_amaudio);
 }
