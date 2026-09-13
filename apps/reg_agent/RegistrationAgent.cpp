@@ -54,6 +54,18 @@ RegistrationAgentFactory::RegistrationAgentFactory(const string& _app_name)
 {
 }
 
+RegistrationAgentFactory::~RegistrationAgentFactory()
+{
+  // AmPlugIn's destructor deletes all plug-in factories and then dlclose()s
+  // the modules. The dialer thread keeps looking up the registrar_client DI
+  // factory and invoking it, and runs code that lives in this very module, so
+  // it has to be gone before we return.
+  DBG("requesting the reg_agent thread to stop...\n");
+  dialer.request_stop();
+  dialer.join();
+  DBG("reg_agent thread stopped.\n");
+}
+
 int RegistrationAgentFactory::onLoad()
 {
   AmConfigReader cfg;
@@ -177,13 +189,21 @@ bool RegThread::check_registration(const RegInfo& ri) {
 }
 
 
+bool RegThread::wait_or_stop(unsigned long msec) {
+  // returns true as soon as stop_requested is set, false on timeout
+  return stop_requested.wait_for_to(msec);
+}
+
 void RegThread::run() {
   DBG("registrar client started.\n");
-  sleep(2); // wait for sems to completely start up
 
-  while (true) {
-    for (vector<RegInfo>::iterator it = registrations.begin(); 
-	 it != registrations.end(); it++) {
+  // wait for sems to completely start up, but return at once on shutdown
+  if (wait_or_stop(2000))
+    return;
+
+  while (!stop_requested.get()) {
+    for (vector<RegInfo>::iterator it = registrations.begin();
+	 it != registrations.end() && !stop_requested.get(); it++) {
       if (!check_registration(*it)) {
 	// todo: this is very crude... should adjust retry time
 	DBG("Registration %d does not exist or timeout. Creating registration.\n",
@@ -191,13 +211,16 @@ void RegThread::run() {
 	create_registration(*it);
       }
     }
-    sleep(10); // 10 seconds
+    if (wait_or_stop(10000)) // 10 seconds
+      break;
   }
-		
+
+  DBG("registrar client stopped.\n");
 }
 
 void RegThread::on_stop() {
-  DBG("not stopping...\n");
+  DBG("stopping reg_agent thread.\n");
+  stop_requested.set(true);
 }
 
 void RegThread::postEvent(AmEvent* ev) {
