@@ -28,6 +28,7 @@
 
 #include "AmSession.h"
 #include "AmConfigReader.h"
+#include "AmThread.h"
 
 #include <string>
 using std::string;
@@ -49,14 +50,27 @@ struct RegInfo {
 class RegThread : public AmThread {
 
   vector<RegInfo> registrations;
- 
+
+  /** set once the thread is asked to leave run(); doubles as the
+      interruptible sleep between two registration check rounds */
+  AmCondition<bool> stop_requested;
+
   void create_registration(RegInfo& ri);
   bool check_registration(const RegInfo& ri);
+
+  /** wait up to msec milliseconds,
+      @return true if a stop has been requested meanwhile */
+  bool wait_or_stop(unsigned long msec);
 
  protected:
   void run();
   void on_stop();
  public:
+  RegThread() : stop_requested(false) {}
+
+  /** ask run() to leave its loop; does not wait for the thread */
+  void request_stop() { stop_requested.set(true); }
+
   void add_reg(const RegInfo& ri);
   void postEvent(AmEvent* ev);
 };
@@ -67,7 +81,8 @@ class RegistrationAgentFactory: public AmSessionFactory
 
  public:
   RegistrationAgentFactory(const string& _app_name);
-	
+  ~RegistrationAgentFactory();
+
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);
