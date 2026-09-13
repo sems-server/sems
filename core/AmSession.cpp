@@ -392,6 +392,17 @@ bool AmSession::processingCycle() {
 	  // BYE sending failed - don't wait for dlg status to go disconnected
 	  return false;
 	}
+
+	// bye() may have terminated the dialog on its own instead of leaving a
+	// transaction pending: it replies 487 to a pending UAS INVITE, and it
+	// just sets Disconnected when there is neither a UAC INVITE to CANCEL
+	// nor a UAS INVITE to reply to. No further SIP event is going to arrive
+	// for this session then, so waiting for the status to change would park
+	// it in SESSION_WAITING_DISCONNECTED forever.
+	if (dlg->getStatus() == AmSipDialog::Disconnected) {
+	  processing_status = SESSION_ENDED_DISCONNECTED;
+	  return false;
+	}
       }
       
       return true;
