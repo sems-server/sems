@@ -21,7 +21,7 @@
     for (fin = false; !fin && (_c_) < (_end_); ) { \
       switch (*(_c_)) { \
         case '0' ... '9': \
-          if (UINT_MAX - (_no) < (unsigned)*(_c_)) { \
+          if ((_no) > (UINT_MAX - (unsigned)(*(_c_) - '0')) / 10) { \
             INFO("not an uint32_t.\n"); \
             goto error; \
           } \
