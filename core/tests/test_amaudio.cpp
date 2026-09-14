@@ -6,12 +6,16 @@
 #include "AmAudioFile.h"
 #include "AmConfig.h"
 #include "AmPlugIn.h"
+#include "AmUtils.h"
 #include "amci/amci.h"
 
 #include <climits>
 #include <cstdio>
 #include <cstring>
 #include <string>
+
+#include <dirent.h>
+#include <unistd.h>
 
 // AmAudio::get() and AmAudioFile::read() must refuse requests that do not fit
 // the AUDIO_BUFFER_SIZE halves of the 'samples' DblBuffer before read() or
@@ -142,6 +146,20 @@ public:
   int rawRead(unsigned int size) { return read(0, size); }
   FILE *stream() { return fp; }
 };
+
+// number of descriptors this process holds, or -1 when /proc is unavailable
+int count_open_fds() {
+  DIR *d = opendir("/proc/self/fd");
+  if (!d) {
+    return -1;
+  }
+  int n = 0;
+  while (readdir(d) != NULL) {
+    n++;
+  }
+  closedir(d);
+  return n;
+}
 
 // opens a header-less test file holding 'len' bytes of payload
 TestFile *open_test_file(const char *subtype, int rate, int channels, unsigned int len) {
@@ -358,6 +376,49 @@ FCTMF_SUITE_BGN(test_amaudio) {
         }
       }
     }
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(open_unknown_extension_keeps_no_descriptor) {
+    register_test_formats();
+
+    // open() opens the file itself, so nobody but AmAudioFile can close it
+    // again when the format cannot be determined
+    std::string path = "/tmp/sems_test_amaudio_" + int2str((unsigned int)getpid()) + ".semstestnofmt";
+    FILE *seed = fopen(path.c_str(), "w");
+    fct_req(seed != NULL);
+    fputc('x', seed);
+    fclose(seed);
+
+    int before = count_open_fds();
+    for (int i = 0; i < 16; i++) {
+      AmAudioFile f;
+      int ret = f.open(path, AmAudioFile::Read);
+      fct_chk_eq_int(ret, -1);
+    }
+    int after = count_open_fds();
+    unlink(path.c_str());
+
+    if (before >= 0 && after >= 0) {
+      fct_chk_eq_int(after, before);
+    }
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(fpopen_unknown_extension_leaves_the_stream_to_the_caller) {
+    register_test_formats();
+
+    // fpopen() is handed a stream the caller keeps a handle to: it must not
+    // be closed behind the caller's back
+    FILE *fp = tmpfile();
+    fct_req(fp != NULL);
+
+    AmAudioFile f;
+    int ret = f.fpopen("test.semstestnofmt", AmAudioFile::Read, fp);
+    fct_chk_eq_int(ret, -1);
+    // still usable, i.e. not closed by the failed fpopen()
+    fct_chk_eq_int(fseek(fp, 0L, SEEK_SET), 0);
+    fclose(fp);
   }
   FCT_TEST_END();
 

@@ -183,7 +183,9 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
     }
   }
 
-  return fpopen_int(f_name, mode, n_fp, subtype);
+  // we opened n_fp ourselves: no caller holds it, so fpopen_int() has to
+  // dispose of it if it cannot use it
+  return fpopen_int(f_name, mode, n_fp, subtype, true);
 }
 
 int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
@@ -192,17 +194,24 @@ int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
   on_close_done = false;
   string f_name = filename;
   string subtype = getSubtype(f_name);
-  return fpopen_int(f_name, mode, n_fp, subtype);
+  // the stream belongs to the caller until we know we can use it
+  return fpopen_int(f_name, mode, n_fp, subtype, false);
 }
 
-int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, 
-			    FILE* n_fp, const string& subtype)
+int AmAudioFile::fpopen_int(const string& filename, OpenMode mode,
+			    FILE* n_fp, const string& subtype, bool own_fp)
 {
 
   AmAudioFileFormat* f_fmt = fileName2Fmt(filename, subtype);
   if(!f_fmt){
     ERROR("while trying to determine the format of '%s'\n",
 	  filename.c_str());
+    // 'fp' is still unset here, so close() cannot reach n_fp. When open()
+    // handed us a stream it opened itself, nothing else will ever close it:
+    // release it here or the descriptor is leaked for every open of a file
+    // whose extension no loaded plug-in claims.
+    if(own_fp && n_fp)
+      fclose(n_fp);
     return -1;
   }
   fmt.reset(f_fmt);

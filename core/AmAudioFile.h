@@ -110,7 +110,11 @@ protected:
   string getSubtype(string& filename);
 
   /** internal function for opening the file */
-  int fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, const string& subtype);
+  /** @param own_fp  true when n_fp was opened by this object and nobody else
+   *                  can close it, so it must be closed if the open fails
+   *                  before the stream has been taken over. */
+  int fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, const string& subtype,
+		 bool own_fp);
 
 public:
   AmSharedVar<bool> loop;
