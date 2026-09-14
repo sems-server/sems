@@ -283,6 +283,18 @@ public:
     int resolve_targets(const list<sip_destination>& dest_list,
 			sip_target_set* targets);
 
+    /** Ask the cache maintenance thread to leave run(). */
+    void request_stop() { stop_requested.set(true); }
+
+    /** @return true once the cache maintenance thread has left run() */
+    bool cache_maintenance_stopped() { return is_stopped(); }
+
+    /**
+     * Ask the cache maintenance thread to leave run() and wait for it.
+     * Must be called before the process tears down anything run() uses.
+     */
+    void stop_and_join();
+
 protected:
     _resolver();
     ~_resolver();
@@ -294,10 +306,14 @@ protected:
 			   dns_handle* h_dns);
 
     void run();
-    void on_stop() {}
+    void on_stop() { stop_requested.set(true); }
 
 private:
     dns_cache cache;
+
+    /** set once the cache maintenance thread is asked to leave run();
+	doubles as the interruptible sleep between two cache cycles */
+    AmCondition<bool> stop_requested;
 };
 
 typedef singleton<_resolver> resolver;

@@ -1145,15 +1145,24 @@ int _resolver::resolve_targets(const list<sip_destination>& dest_list,
     return 0;
 }
 
+void _resolver::stop_and_join()
+{
+    // AmThread::stop() detaches the thread, which would turn the following
+    // join() into a no-op, so request the stop directly.
+    request_stop();
+    join();
+}
+
 void _resolver::run()
 {
-    struct timespec tick,rem;
-    tick.tv_sec  = (DNS_CACHE_SINGLE_CYCLE/1000000L);
-    tick.tv_nsec = (DNS_CACHE_SINGLE_CYCLE - (tick.tv_sec)*1000000L) * 1000L;
+    // one cache cycle; never 0, or the loop below would spin
+    unsigned long tick_ms = DNS_CACHE_SINGLE_CYCLE/1000L;
+    if(!tick_ms) tick_ms = 1;
 
     unsigned long i = 0;
-    for(;;) {
-	nanosleep(&tick,&rem);
+    // wait_for_to() returns true as soon as a stop was requested, false on
+    // timeout, so this both paces the sweep and ends it at once on shutdown
+    while(!stop_requested.wait_for_to(tick_ms)) {
 
 	u_int64_t now = wheeltimer::instance()->unix_clock.get();
 	dns_bucket* bucket = cache.get_bucket(i);
@@ -1185,6 +1194,8 @@ void _resolver::run()
 
 	if(++i >= cache.get_size()) i = 0;
     }
+
+    DBG("DNS cache maintenance stopped");
 }
 
 
