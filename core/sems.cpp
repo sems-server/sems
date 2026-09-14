@@ -43,6 +43,7 @@
 #include "SipCtrlInterface.h"
 #include "sip/trans_table.h"
 #include "sip/async_file_writer.h"
+#include "sip/resolver.h"
 
 #include "log.h"
 
@@ -724,6 +725,14 @@ int main(int argc, char* argv[])
 #endif
 
   sip_ctrl.cleanup();
+
+  // The DNS cache maintenance thread walks the cache and reads the wheel
+  // timer's clock; nothing else stops it, so end it here, after the last
+  // resolver user is gone.
+  if (resolver::haveInstance()) {
+    INFO("Stopping DNS cache maintenance\n");
+    resolver::instance()->stop_and_join();
+  }
 
   INFO("Exiting (%s)\n", success ? "success" : "failure");
   return (success ? EXIT_SUCCESS : EXIT_FAILURE);
