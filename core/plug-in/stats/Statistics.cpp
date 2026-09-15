@@ -36,6 +36,15 @@ StatsFactory::StatsFactory(const std::string& _app_name)
 {
 }
 
+StatsFactory::~StatsFactory()
+{
+  // AmPlugIn's destructor releases the plug-in factories and then dlclose()s
+  // the modules. The server thread runs code that lives in this very module
+  // and keeps calling into the session container, so it has to be gone
+  // before we return.
+  StatsUDPServer::dispose();
+}
+
 int StatsFactory::onLoad()
 {
   StatsUDPServer* stat_srv = StatsUDPServer::instance();

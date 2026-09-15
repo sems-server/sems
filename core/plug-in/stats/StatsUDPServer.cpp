@@ -113,8 +113,28 @@ StatsUDPServer* StatsUDPServer::instance()
   return _instance;
 }
 
+void StatsUDPServer::dispose()
+{
+  if(!_instance)
+    return;
+
+  DBG("stopping the stats UDP server...\n");
+
+  // AmThread::stop() detaches the thread, so a join() afterwards would
+  // return immediately. Poll the thread's own "stopped" flag instead,
+  // which _start() only raises once run() has returned.
+  _instance->stop();
+  while(!_instance->is_stopped())
+    usleep(10000);
+
+  delete _instance;
+  _instance = 0;
+
+  DBG("stats UDP server stopped.\n");
+}
+
 StatsUDPServer::StatsUDPServer()
-  : sd(-1)
+  : sd(-1), running(true)
 {
   sc = AmSessionContainer::instance();
 }
@@ -191,7 +211,25 @@ int StatsUDPServer::init()
   }
   //}
 
+  // Give the receive a deadline, so that run() comes back to look at the
+  // stop flag regularly instead of sitting in recvfrom() until the next
+  // query arrives - which may well be never.
+  struct timeval rcv_timeout;
+  rcv_timeout.tv_sec  = 0;
+  rcv_timeout.tv_usec = 500000;
+  if(setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO,
+		(void*)&rcv_timeout, sizeof(rcv_timeout)) == -1) {
+    ERROR("WARNING: setsockopt(SO_RCVTIMEO): %s\n", strerror(errno));
+    /* continue: the server still works, it just cannot be stopped
+       until the next datagram comes in */
+  }
+
   return 0;
+}
+
+void StatsUDPServer::on_stop()
+{
+  running.set(false);
 }
 
 void StatsUDPServer::run()
@@ -203,14 +241,14 @@ void StatsUDPServer::run()
   char msg_buf[MSG_BUF_SIZE + 1];
   ssize_t msg_buf_s;
 
-  while(true){
+  while(running.get()){
 
     msg_buf_s = recvfrom(sd,msg_buf,MSG_BUF_SIZE,0,(sockaddr*)&addr,&addrlen);
     if(msg_buf_s < 0){
 
       switch(errno){
       case EINTR:
-      case EAGAIN:
+      case EAGAIN: // == EWOULDBLOCK: receive timeout, re-check the stop flag
 	continue;
       default: break;
       };
