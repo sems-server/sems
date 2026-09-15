@@ -35,7 +35,8 @@ class StatsFactory: public AmPluginFactory
 {
 public:
   StatsFactory(const std::string& _app_name);
-    
+  ~StatsFactory();
+
   // AmPluginFactory interface
   int onLoad();
 };
