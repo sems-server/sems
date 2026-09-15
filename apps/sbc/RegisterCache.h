@@ -210,11 +210,14 @@ class _RegisterCache
   void gbc(unsigned int bucket_id);
   void removeAlias(const string& alias, bool generate_event);
 
+  /** request the garbage collector thread to stop and wait until it is gone */
+  void waitForStop();
+
 protected:
   _RegisterCache();
   ~_RegisterCache();
 
-  void dispose() { stop(); }
+  void dispose() { waitForStop(); }
 
   /* AmThread interface */
   void run();
