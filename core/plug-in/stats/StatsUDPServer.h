@@ -43,7 +43,10 @@ class StatsUDPServer: public AmThread
   static StatsUDPServer* _instance;
   AmSessionContainer*    sc;
   int sd;
-    
+
+  /** cleared by on_stop() to let run() leave its loop */
+  AmSharedVar<bool> running;
+
   StatsUDPServer();
   ~StatsUDPServer();
 
@@ -56,10 +59,16 @@ class StatsUDPServer: public AmThread
 		 const struct sockaddr_in& reply_addr);
 	
   void run();
-  void on_stop(){}
+  void on_stop();
 
 public:
   static StatsUDPServer* instance();
+
+  /**
+   * Stop the server thread, wait until it has really left run()
+   * and destroy the instance.
+   */
+  static void dispose();
 };
 
 #endif
