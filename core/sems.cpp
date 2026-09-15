@@ -706,6 +706,16 @@ int main(int argc, char* argv[])
   AmEventDispatcher::dispose();
 
  error:
+  // The application timer thread dispatches into code that lives in the
+  // plug-ins (DirectAppTimer::onTimer() implementations, and event queues
+  // owned by module sessions), so it has to be gone before the modules are
+  // unloaded below. AmThread::stop() detaches the thread, which makes a
+  // following join() a no-op, so wait for run() to actually return.
+  INFO("Stopping application timer scheduler\n");
+  AmAppTimer::instance()->stop();
+  while(!AmAppTimer::instance()->is_stopped())
+    usleep(10000);
+
   INFO("Disposing plug-ins\n");
   AmPlugIn::dispose();
 
