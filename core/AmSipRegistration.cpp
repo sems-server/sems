@@ -143,6 +143,13 @@ bool AmSIPRegistration::doUnregister()
 {
   bool res = true;
 
+  // A REGISTER of our own may still be in flight here. Its reply would be
+  // processed with unregistering already set, i.e. taken for the result of
+  // the de-registration we are about to send. Drop the pending transaction
+  // so only the reply to the de-REGISTER can update our state.
+  if (!unregistering && waiting_result)
+    dlg.finalize();
+
   waiting_result = true;
   unregistering = true;
 
