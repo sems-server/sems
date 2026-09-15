@@ -97,9 +97,17 @@ bool AmSipDialog::onRxReqSanity(const AmSipRequest& req)
   if(!AmBasicSipDialog::onRxReqSanity(req))
     return false;
 
-  if (req.method == SIP_METH_INVITE) {
+  bool invite = (req.method == SIP_METH_INVITE);
+
+  // RFC 3311 5.1: an UPDATE carrying an offer has to be refused just like a
+  // re-INVITE while an offer/answer of ours is still in progress, otherwise
+  // it is fed to the offer/answer machine as a second concurrent offer.
+  bool update_offer = (req.method == SIP_METH_UPDATE) &&
+    (req.body.hasContentType(SIP_APPLICATION_SDP) != NULL);
+
+  if (invite || update_offer) {
     // RFC 3261 14.2: 491 Pending when our own UAC INVITE is still in flight
-    bool pending = pending_invites || getUACInvTransPending();
+    bool pending = invite && (pending_invites || getUACInvTransPending());
     if (offeranswer_enabled) {
       // not sure this is needed here: could be in AmOfferAnswer as well
       pending |= ((oa.getState() != AmOfferAnswer::OA_None) &&
@@ -108,12 +116,13 @@ bool AmSipDialog::onRxReqSanity(const AmSipRequest& req)
 
     if (pending) {
       reply_error(req, 491, SIP_REPLY_PENDING,
-		  SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER) 
+		  SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER)
 		  + int2str(get_random() % 10) + CRLF);
       return false;
     }
 
-    pending_invites++;
+    if (invite)
+      pending_invites++;
   }
 
   return rel100.onRequestIn(req);
