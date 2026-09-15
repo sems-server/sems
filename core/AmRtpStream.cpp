@@ -1056,7 +1056,12 @@ int AmRtpStream::getDefaultPT()
 
 int AmRtpStream::nextPacket(AmRtpPacket*& p)
 {
-  if (!receiving && !passive)
+  // A stream that is not receiving has nothing to hand out and must not run
+  // into the RTP timeout below: no packets are expected for it, so the peer
+  // sending none is not a dead media stream. Whether the stream is passive
+  // says nothing about that - symmetric RTP learning happens in
+  // bufferPacket(), which is not reached from here.
+  if (!receiving)
     return RTP_EMPTY;
 
   struct timeval now;
