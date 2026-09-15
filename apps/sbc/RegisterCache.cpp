@@ -10,6 +10,7 @@
 #include "AmUtils.h"
 #include "SBCEventLog.h"
 
+#include <unistd.h>
 #include <utility>
 using std::pair;
 using std::make_pair;
@@ -189,7 +190,8 @@ _RegisterCache::_RegisterCache()
   : reg_cache_ht(REG_CACHE_TABLE_ENTRIES),
     id_idx(REG_CACHE_TABLE_ENTRIES),
     contact_idx(REG_CACHE_TABLE_ENTRIES),
-    gbc_bucket_id(0)
+    gbc_bucket_id(0),
+    running(true)
 {
   // debug register cache WRITE operations
   setStorageHandler(new RegCacheLogHandler());
@@ -197,6 +199,10 @@ _RegisterCache::_RegisterCache()
 
 _RegisterCache::~_RegisterCache()
 {
+  // dispose() has already asked the thread to stop and waited for it, but the
+  // cache may also be destroyed without going through dispose().
+  waitForStop();
+
   DBG("##### REG CACHE DUMP #####");
   reg_cache_ht.dump();
   DBG("##### ID IDX DUMP #####");
@@ -231,13 +237,21 @@ void _RegisterCache::on_stop()
   running.set(false);
 }
 
+void _RegisterCache::waitForStop()
+{
+  // AmThread::stop() detaches the thread, so join() would return at once
+  // without waiting for run(). Ask for the stop and poll the thread's own
+  // "stopped" flag instead, which _start() only sets once run() has returned.
+  stop();
+  while(!is_stopped())
+    usleep(10000);
+}
+
 void _RegisterCache::run()
 {
   struct timespec tick,rem;
   tick.tv_sec  = (REG_CACHE_SINGLE_CYCLE/1000000L);
   tick.tv_nsec = (REG_CACHE_SINGLE_CYCLE - (tick.tv_sec)*1000000L) * 1000L;
-
-  running.set(true);
 
   gbc_bucket_id = 0;
   while(running.get()) {
