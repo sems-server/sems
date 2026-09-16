@@ -25,7 +25,20 @@ add_library(sems_core STATIC ${sems_core_SRCS})
 add_library(sems_sip STATIC ${sems_sip_SRCS})
 
 add_executable(sems sems.cpp)
+if(LIBEV_FOUND)
+  # the JSON-RPC server loop and its threads, for test_jsonrpc. JsonRPC.cpp
+  # stays out: it exports the same factory symbol as UACAuth.cpp.
+  list(APPEND sems_tests_SRCS
+       "../apps/jsonrpc/JsonRPCServer.cpp" "../apps/jsonrpc/RpcPeer.cpp"
+       "../apps/jsonrpc/RpcServerLoop.cpp" "../apps/jsonrpc/RpcServerThread.cpp")
+endif(LIBEV_FOUND)
+
 add_executable(sems_tests ${sems_tests_SRCS})
+if(LIBEV_FOUND)
+  target_include_directories(sems_tests PRIVATE ${LIBEV_INCLUDE_DIR})
+  target_compile_definitions(sems_tests PRIVATE SEMS_TESTS_JSONRPC)
+  target_link_libraries(sems_tests ${LIBEV_LIBRARIES})
+endif(LIBEV_FOUND)
 
 foreach(EXE_TARGET sems sems_tests)
 
