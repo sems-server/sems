@@ -355,6 +355,7 @@ class AmB2BMedia: public AmMediaSession
 
     void setMuteFlag(bool a_leg, bool set);
     void changeSessionUnsafe(bool a_leg, AmB2BSession *new_session);
+    void clearAudioUnsafe(bool a_leg);
 
     msg_logger* logger; // log RTP traffic
 
@@ -418,11 +419,12 @@ class AmB2BMedia: public AmMediaSession
     /** Update media session with local & remote SDP. */
     void updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp, RelayController *ctrl);
 
-    /** Clear audio for given leg and stop processing if both legs stopped. 
+    /** Detach the given session from every leg it occupies and stop processing
+     * if both legs are gone.
      *
      * Releases all RTP streams and removes itself from media processor if still
      * there. */
-    void stop(bool a_leg);
+    void stop(AmB2BSession *s);
 
     // ---- AmMediaSession interface for processing audio in a standard way ----
 
@@ -449,10 +451,13 @@ class AmB2BMedia: public AmMediaSession
      * Though readStreams(), writeStreams() or processDtmfEvents() can be called
      * after call to clearAudio, they will do nothing because all relevant
      * information will be rlready eleased. */
-    virtual void clearAudio() { clearAudio(true); clearAudio(false); }
+    virtual void clearAudio();
 
-    /** release RTP streams for one leg */
-    void clearAudio(bool a_leg);
+    /** Release the RTP streams of every leg the given session occupies.
+     *
+     * The leg is resolved by session identity rather than by the session's
+     * a_leg flag, which may no longer match the slot it was registered in. */
+    void clearAudio(AmB2BSession *s);
 
     /** Clear RTP timeout of all streams in both call legs. */
     virtual void clearRTPTimeout();
