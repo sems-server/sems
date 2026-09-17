@@ -541,6 +541,14 @@ int AmBasicSipDialog::onTxRequest(AmSipRequest& req, int& flags)
   return 0;
 }
 
+void AmBasicSipEventHandler::onApplyIdentityHeader(string& hdrs,
+                                                   const char* hdr_name,
+                                                   int flags)
+{
+  if (!(flags & SIP_FLAGS_VERBATIM) && AmConfig::Signature.length())
+    hdrs += string(hdr_name) + COLSP + AmConfig::Signature + CRLF;
+}
+
 int AmBasicSipDialog::onTxReply(const AmSipRequest& req, 
 				AmSipReply& reply, int& flags)
 {
@@ -637,11 +645,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
     return -1;
   }
 
-  if (!(flags & SIP_FLAGS_VERBATIM)) {
-    // add Signature
-    if (AmConfig::Signature.length())
-      reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
-  }
+  if (hdl) hdl->onApplyIdentityHeader(reply.hdrs, SIP_HDR_SERVER, flags);
 
   if ((code > 100 && code < 300) && !(flags & SIP_FLAGS_NOCONTACT)) {
     /* if 300<=code<400, explicit contact setting should be done */
@@ -739,11 +743,7 @@ int AmBasicSipDialog::sendRequest(const string& method,
     req.contact = getContactHdr();
   }
 
-  if (!(flags & SIP_FLAGS_VERBATIM)) {
-    // add Signature
-    if (AmConfig::Signature.length())
-      req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
-  }
+  if (hdl) hdl->onApplyIdentityHeader(req.hdrs, SIP_HDR_USER_AGENT, flags);
 
   int send_flags = 0;
   if(patch_ruri_next_hop && remote_tag.empty()) {
