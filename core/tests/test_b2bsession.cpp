@@ -26,6 +26,10 @@ public:
   explicit TestLeg(bool is_a_leg) : dtmf_rounds(0) { a_leg = is_a_leg; }
 
   void processDtmfEvents() override { dtmf_rounds++; }
+
+  // CallLeg::onB2BReconnect() does this: the role changes while the leg stays
+  // registered in the AmB2BMedia slot it was created in
+  void flipRole() { a_leg = !a_leg; }
 };
 
 const AmB2BSession::RTPRelayMode modes[] = {AmB2BSession::RTP_Direct, AmB2BSession::RTP_Relay,
@@ -87,6 +91,42 @@ FCTMF_SUITE_BGN(test_b2bsession) {
         delete peer;
         bool released = media->releaseReference();
         fct_xchk(released, "relay mode %d, %s leg destroyed: media session reference not released",
+                 (int)modes[m], leg_is_a ? "A" : "B");
+      }
+    }
+  }
+  FCT_TEST_END();
+
+  // A leg that changed its role after registration must still detach from the
+  // slot it actually occupies. Resolving the leg from the stale a_leg flag
+  // instead would release the peer's streams and leave a pointer to the freed
+  // leg behind for the media processor to call.
+  FCT_TEST_BGN(destroyed_leg_is_detached_by_identity_after_a_role_change) {
+    fct_req(destroyed_legs_release_media);
+    for (int m = 0; m < nb_modes; m++) {
+      for (int side = 0; side < 2; side++) {
+        bool leg_is_a = side == 0;
+        TestLeg *leg = new TestLeg(leg_is_a);
+        TestLeg *peer = new TestLeg(!leg_is_a);
+        leg->setRtpRelayMode(modes[m]);
+        peer->setRtpRelayMode(modes[m]);
+        AmB2BMedia *media = new AmB2BMedia(leg_is_a ? leg : peer, leg_is_a ? peer : leg);
+        media->addReference();
+        leg->setMediaSession(media);
+        peer->setMediaSession(media);
+
+        leg->flipRole();
+
+        delete leg;
+        media->processDtmfEvents();
+        fct_xchk(peer->dtmf_rounds == 1,
+                 "relay mode %d, %s leg destroyed after role change: peer called %d times",
+                 (int)modes[m], leg_is_a ? "A" : "B", peer->dtmf_rounds);
+
+        delete peer;
+        bool released = media->releaseReference();
+        fct_xchk(released,
+                 "relay mode %d, %s leg destroyed after role change: media session reference not released",
                  (int)modes[m], leg_is_a ? "A" : "B");
       }
     }

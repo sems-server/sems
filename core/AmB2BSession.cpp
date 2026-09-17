@@ -97,7 +97,7 @@ AmB2BSession::~AmB2BSession()
   if (media_session) {
     ERROR("BUG: media session was not released before AmB2BSession destruction,"
 	  " releasing it now\n");
-    media_session->stop(a_leg);
+    media_session->stop(this);
     media_session->releaseReference();
     media_session = NULL;
   }
@@ -976,8 +976,8 @@ void AmB2BSession::clearRtpReceiverRelay() {
 
     case RTP_Relay:
     case RTP_Transcoding:
-      if (media_session) { 
-        media_session->stop(a_leg);
+      if (media_session) {
+        media_session->stop(this);
         media_session->releaseReference();
         media_session = NULL;
       }
