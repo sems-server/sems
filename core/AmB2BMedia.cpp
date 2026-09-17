@@ -662,10 +662,31 @@ void AmB2BMedia::sendDtmf(bool a_leg, int event, unsigned int duration_ms)
   }
 }
 
-void AmB2BMedia::clearAudio(bool a_leg)
+void AmB2BMedia::clearAudio()
+{
+  AmLock lock(mutex);
+
+  clearAudioUnsafe(true);
+  clearAudioUnsafe(false);
+}
+
+void AmB2BMedia::clearAudio(AmB2BSession *s)
+{
+  AmLock lock(mutex);
+
+  // Look the leg up by session identity instead of trusting s->a_leg: a call
+  // leg can change its role while it stays registered here (CallLeg::
+  // onB2BReconnect() flips a_leg), and then a_leg no longer names the slot
+  // this session occupies. Clearing the slot a stale flag points at releases
+  // the *other* leg's streams and leaves our own raw a/b pointer dangling for
+  // the media processor to dereference.
+  if (a == s) clearAudioUnsafe(true);
+  if (b == s) clearAudioUnsafe(false);
+}
+
+void AmB2BMedia::clearAudioUnsafe(bool a_leg)
 {
   TRACE("clear %s leg audio\n", a_leg ? "A" : "B");
-  AmLock lock(mutex);
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     // remove streams from AmRtpReceiver first! (always both?)
@@ -1054,10 +1075,10 @@ void AmB2BMedia::updateStreams(bool a_leg, const AmSdp &local_sdp, const AmSdp &
   TRACE("streams updated with SDP\n");
 }
 
-void AmB2BMedia::stop(bool a_leg)
+void AmB2BMedia::stop(AmB2BSession *s)
 {
-  TRACE("stop %s leg\n", a_leg ? "A" : "B");
-  clearAudio(a_leg);
+  TRACE("stop session [%p]\n", (void*)s);
+  clearAudio(s);
   // remove from processor only if both A and B leg stopped
   if (isProcessingMedia() && (!a) && (!b)) {
     AmMediaProcessor::instance()->removeSession(this);
