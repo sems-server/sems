@@ -557,6 +557,17 @@ void tcp_server_worker::remove_connection(tcp_trsp_socket* client_sock)
   connections_mut.lock();
   map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
   if(sock_it != connections.end()) {
+    if(sock_it->second != client_sock) {
+      // add_connection() has already rebound this alias to a newer socket from
+      // the same peer address (peers that reconnect from a fixed source port
+      // reuse the very same conn_id). Releasing it here would drop the map's
+      // reference to that live socket - possibly its last one, while its read
+      // event is still armed - and would leave the peer with no alias at all.
+      DBG("TCP connection alias %s now belongs to another socket, keeping it",
+	  conn_id.c_str());
+      connections_mut.unlock();
+      return;
+    }
     dec_ref(sock_it->second);
     connections.erase(sock_it);
     DBG("TCP connection from %s removed",conn_id.c_str());
