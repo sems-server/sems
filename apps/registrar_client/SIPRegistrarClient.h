@@ -67,11 +67,17 @@ class SIPRegistrarClient  : public AmEventQueue,
 
   AmDynInvoke* uac_auth_i;
 
-  AmSharedVar<bool> stop_requested;
+  /** set once run() is asked to leave its loop; a condition rather than a
+      plain shared variable so waitForEvent() can be woken from it */
+  AmCondition<bool> stop_requested;
   void checkTimeouts();
   void onServerShutdown();
  public:
   SIPRegistrarClient(const string& name);
+  ~SIPRegistrarClient();
+
+  /** ask run() to leave its loop and wake it up; does not wait for the thread */
+  void request_stop();
   // DI factory
   AmDynInvoke* getInstance() { return instance(); }
   // DI API

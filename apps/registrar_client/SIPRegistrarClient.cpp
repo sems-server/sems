@@ -67,6 +67,27 @@ SIPRegistrarClient::SIPRegistrarClient(const string& name)
 { 
 }
 
+SIPRegistrarClient::~SIPRegistrarClient()
+{
+  // AmPlugIn's destructor deletes every plug-in factory - this object - and
+  // then dlclose()s the modules. run() executes code that lives in this very
+  // module and keeps using this object and the event dispatcher, so it has to
+  // be gone before we return. AmThread::stop() detaches the thread, which
+  // would make the following join() a no-op, so set the flag directly.
+  DBG("requesting the registrar client thread to stop...\n");
+  request_stop();
+  join();
+  DBG("registrar client thread stopped.\n");
+}
+
+void SIPRegistrarClient::request_stop()
+{
+  stop_requested.set(true);
+  // run() blocks in waitForEvent() while it has no registration to time out:
+  // an empty post flags the queue as pending and wakes it up
+  postEvent(NULL);
+}
+
 void SIPRegistrarClient::run() {
   DBG("SIPRegistrarClient starting...\n");
   AmDynInvokeFactory* uac_auth_f = AmPlugIn::instance()->getFactory4Di("uac_auth");
@@ -80,17 +101,23 @@ void SIPRegistrarClient::run() {
   while (!stop_requested.get()) {
     if (registrations.size()) {
       unsigned int cnt = 250;
-      while (cnt > 0) {
+      // a round of polling takes half a second, so honour a stop request here
+      // as well instead of only between two rounds
+      while (cnt > 0 && !stop_requested.get()) {
 	usleep(2000); // every 2 ms
 	processEvents();
 	cnt--;
       }
+      if (stop_requested.get())
+	break;
       checkTimeouts();
     } else {
       waitForEvent();
       processEvents();
     }
   }
+
+  DBG("SIPRegistrarClient ending...\n");
 }
 
 void SIPRegistrarClient::checkTimeouts() {
@@ -144,7 +171,7 @@ void SIPRegistrarClient::onServerShutdown() {
     AmEventDispatcher::instance()->delEventQueue(it->first);
   }
 
-  stop_requested.set(true);
+  request_stop();
 //   
 //   setStopped();
 //   return;
@@ -231,7 +258,7 @@ void SIPRegistrarClient::onRemoveRegistration(SIPRemoveRegistrationEvent* new_re
 }
 
 
-void SIPRegistrarClient::on_stop() { }
+void SIPRegistrarClient::on_stop() { request_stop(); }
 
 
 bool SIPRegistrarClient::onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status) {
