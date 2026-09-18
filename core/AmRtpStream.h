@@ -38,6 +38,10 @@
 
 #include <netinet/in.h>
 
+#include "log.h"
+
+#include <atomic>
+#include <cassert>
 #include <string>
 #include <map>
 #include <queue>
@@ -67,6 +71,13 @@ class msg_logger;
 
 /**
  * This provides the memory for the receive buffer.
+ *
+ * newPacket() and freePacket() are called from two threads without a common
+ * lock: the RTP receiver allocates in AmRtpStream::recvPacket() and releases
+ * every packet it does not buffer, while the media processor releases the
+ * packets it took out of the receive buffer. The slot ownership flags and the
+ * in-use counter therefore have to be atomic, and a slot has to be claimed
+ * with a single test-and-set instead of a separate read and write.
  */
 struct PacketMem {
 #define MAX_PACKETS_BITS 5
@@ -74,17 +85,59 @@ struct PacketMem {
 #define MAX_PACKETS_MASK (MAX_PACKETS-1)
 
   AmRtpPacket packets[MAX_PACKETS];
-  bool        used[MAX_PACKETS];
 
-  PacketMem();
+  PacketMem() { clear(); }
 
-  inline AmRtpPacket* newPacket();
-  inline void freePacket(AmRtpPacket* p);
-  inline void clear();
+  /** claim a free slot, NULL if the pool is exhausted */
+  AmRtpPacket* newPacket() {
+    // Bounded scan: with concurrent alloc/free n_used is only a hint, so never
+    // loop on used[] until a slot appears - give up after one full pass. This
+    // is also why n_used is not used to decide whether the pool is full: a
+    // drifting counter must not be able to make allocation fail for good.
+    for(unsigned int i=0; i<MAX_PACKETS; i++) {
+      unsigned int idx = cur_idx.fetch_add(1) & MAX_PACKETS_MASK;
+      if(!used[idx].exchange(true)) {
+	n_used.fetch_add(1);
+	return &packets[idx];
+      }
+    }
+
+    return NULL;
+  }
+
+  void freePacket(AmRtpPacket* p) {
+    if(!p) return;
+
+    int idx = p - packets;
+    assert(idx >= 0);
+    assert(idx < MAX_PACKETS);
+
+    // exchange(), not a read followed by a write: two threads must not both
+    // see the slot as used and both decrement n_used for it
+    if(!used[idx].exchange(false)) {
+      ERROR("freePacket() double free: n_used = %u, idx = %d",
+	    n_used.load(),idx);
+      return;
+    }
+
+    n_used.fetch_sub(1);
+  }
+
+  void clear() {
+    for(unsigned int i=0; i<MAX_PACKETS; i++)
+      used[i].store(false);
+
+    n_used.store(0);
+    cur_idx.store(0);
+  }
+
+  /** number of slots currently handed out (diagnostics only) */
+  unsigned int usedCount() const { return n_used.load(); }
 
 private:
-  unsigned int cur_idx;
-  unsigned int n_used;
+  std::atomic<bool>         used[MAX_PACKETS];
+  std::atomic<unsigned int> cur_idx;
+  std::atomic<unsigned int> n_used;
 };
 
 /** \brief event fired on RTP timeout */
