@@ -211,7 +211,14 @@ bool UACAuth::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 		ri->second.method != SIP_METH_BYE) {
 	      // reset remote tag so remote party 
 	      // thinks its new dlg
-	      dlg->setRemoteTag(string());
+	      //
+	      // not for PRACK: it is sent inside an early dialog which the
+	      // peer identifies by the To-tag it handed out with the reliable
+	      // provisional response. Dropping the tag makes the re-sent PRACK
+	      // unmatchable, so it is answered 481 and the 1xx keeps being
+	      // retransmitted until the INVITE transaction fails.
+	      if (ri->second.method != SIP_METH_PRACK)
+		dlg->setRemoteTag(string());
 
 	      if (AmConfig::ProxyStickyAuth) {
 		// update remote URI to resolved IP
