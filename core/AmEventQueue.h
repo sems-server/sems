@@ -80,6 +80,8 @@ public:
   void postEvent(AmEvent*);
   void processEvents();
   void waitForEvent();
+  /** Wait for a pending event, but at most msec milliseconds. */
+  void waitForEventTimed(unsigned long msec);
   void processSingleEvent();
   bool eventPending();
 
