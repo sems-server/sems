@@ -66,6 +66,15 @@ using std::list;
 /* in seconds */
 #define DNS_CACHE_CYCLE 10L
 
+/* in seconds
+ *
+ * Minimum lifetime granted to a cached DNS record on top of the TTL the
+ * answer carries. Without it, an answer with TTL 0 is inserted into the
+ * cache already expired: dns_bucket::find() drops it on the very next
+ * lookup and every request to that destination has to run a new,
+ * synchronous DNS query. */
+#define DNS_CACHE_EXPIRE_DELAY 2L
+
 /* in us */
 #define DNS_CACHE_SINGLE_CYCLE \
   ((DNS_CACHE_CYCLE*1000000L)/DNS_CACHE_SIZE)
@@ -327,7 +336,7 @@ void dns_entry::add_rr(dns_record* rr, unsigned char* begin, unsigned char* end,
     dns_base_entry* e = get_rr(rr,begin,end);
     if(!e) return;
 
-    e->expire = rr->ttl + now;
+    e->expire = rr->ttl + now + DNS_CACHE_EXPIRE_DELAY;
     if(expire < e->expire)
 	expire = e->expire;
 
