@@ -259,12 +259,27 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
     DBG("from_time (%ld) in the past - searching load loaded from now()\n", from_time);
     from_index  = current_bucket;
   }
+
+  if (to_index < 0) {
+    // to_time is further away than the bucket array reaches, so
+    // get_bucket_index() returned -2. The scan below walks the circular array
+    // until it reaches to_index, which it never would for a negative index -
+    // it would spin forever while holding buckets_mut. Search up to the last
+    // bucket we can actually place a timer in instead.
+    ERROR("to_time (%ld) is beyond the scheduler horizon "
+	  "(current_bucket_start = %ld, %d buckets of %d sec) - "
+	  "limiting the search to the last usable bucket\n",
+	  to_time, current_bucket_start, TIMER_BUCKETS, TIMER_BUCKET_LENGTH);
+    to_index = (current_bucket + TIMER_BUCKETS - 1) % TIMER_BUCKETS;
+  }
+
   // find least loaded bucket
   int res_index = from_index;
   size_t least_load = buckets[from_index].timers.size();
 
+  // the array is circular, so never walk it more than once
   int i = from_index;
-  while  (i != to_index) {
+  for (int n = 0; n < TIMER_BUCKETS && i != to_index; n++) {
     if (buckets[i].timers.size() <= least_load) {
       least_load = buckets[i].timers.size();
       res_index = i;
