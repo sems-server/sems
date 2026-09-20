@@ -1187,6 +1187,8 @@ DBRegAgentProcessorThread::~DBRegAgentProcessorThread() {
 }
 
 void DBRegAgentProcessorThread::on_stop() {
+  DBG("removing " MOD_NAME "_processor from Event Dispatcher...\n");
+  AmEventDispatcher::instance()->delEventQueue(MOD_NAME "_processor");
 }
 
 void DBRegAgentProcessorThread::rateLimitWait() {
@@ -1244,6 +1246,10 @@ void DBRegAgentProcessorThread::run() {
       processSingleEvent();
     }
   }
+
+  DBG("DBRegAgentProcessorThread done, removing "
+      MOD_NAME "_processor from Event Dispatcher...\n");
+  AmEventDispatcher::instance()->delEventQueue(MOD_NAME "_processor");
 
   mysqlpp::Connection::thread_end();
 
