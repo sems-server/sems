@@ -54,9 +54,11 @@ AmSessionEventHandler* SessionTimerFactory::getHandler(AmSession* s)
 SessionTimer::SessionTimer(AmSession* s)
   :AmSessionEventHandler(),
    s(s),
+   remote_timer_aware(false),
    min_se(0),
    session_interval(0),
    session_refresher(refresh_remote),
+   session_refresher_role(UAS),
    accept_501_reply(true)
 {
 }
