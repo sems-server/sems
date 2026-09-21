@@ -213,14 +213,18 @@ int parse_method(int* method, const char* beg, int len)
 	break;
 
     case OPTIONS_len:
-	if(!memcmp(c+1,OPTIONSm+1,OPTIONS_len-1)){
+	// compare the whole token: the INVITE_len/ACK_len cases above only
+	// skip the first character because an enclosing switch(*c) has
+	// already matched it. Here there is no such switch, so starting at
+	// c+1 would accept any 7-character method ending in "PTIONS".
+	if(!memcmp(c,OPTIONSm,OPTIONS_len)){
 	    //DBG("Found OPTIONS\n");
 	    *method = sip_request::OPTIONS;
 	}
 	break;
 
     case REGISTER_len:
-	if(!memcmp(c+1,REGISTERm+1,REGISTER_len-1)){
+	if(!memcmp(c,REGISTERm,REGISTER_len)){
 	    //DBG("Found REGISTER\n");
 	    *method = sip_request::REGISTER;
 	}
