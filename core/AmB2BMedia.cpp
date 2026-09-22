@@ -877,19 +877,34 @@ void AmB2BMedia::updateStreamPair(AudioStreamPair &pair)
   bool have_a = have_a_leg_local_sdp && have_a_leg_remote_sdp;
   bool have_b = have_b_leg_local_sdp && have_b_leg_remote_sdp;
 
-  TRACE("updating stream in A leg\n");
-  pair.a.setDtmfSink(b);
-  if (pair.b.getInput()) pair.a.setRelayStream(NULL); // don't mix relayed RTP into the other's input
-  else pair.a.setRelayStream(pair.b.getStream());
-  if (have_a) pair.a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, pair.media_idx);
+  // AudioStreamData::initStream() -> AmRtpStream::init() -> setRAddr() throws a
+  // string when the remote c= address does not resolve (and on socket/port
+  // allocation errors). Callers wrap this in stopStreamProcessing() ...
+  // resumeStreamProcessing(), so letting the exception escape leaves every
+  // stream of this media session out of the RTP receiver for good and aborts
+  // the update loop halfway through. Contain it here, the same way
+  // AmSession::onSdpCompleted() already contains it for the non-B2B case.
+  try {
+    TRACE("updating stream in A leg\n");
+    pair.a.setDtmfSink(b);
+    if (pair.b.getInput()) pair.a.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+    else pair.a.setRelayStream(pair.b.getStream());
+    if (have_a) pair.a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, pair.media_idx);
 
-  TRACE("updating stream in B leg\n");
-  pair.b.setDtmfSink(a);
-  if (pair.a.getInput()) pair.b.setRelayStream(NULL); // don't mix relayed RTP into the other's input
-  else pair.b.setRelayStream(pair.a.getStream());
-  if (have_b) pair.b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, pair.media_idx);
+    TRACE("updating stream in B leg\n");
+    pair.b.setDtmfSink(a);
+    if (pair.a.getInput()) pair.b.setRelayStream(NULL); // don't mix relayed RTP into the other's input
+    else pair.b.setRelayStream(pair.a.getStream());
+    if (have_b) pair.b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, pair.media_idx);
 
-  TRACE("audio streams updated\n");
+    TRACE("audio streams updated\n");
+  }
+  catch (const string& s) {
+    ERROR("while updating audio stream pair: '%s'\n", s.c_str());
+  }
+  catch (...) {
+    ERROR("unknown exception while updating audio stream pair\n");
+  }
 }
 
 void AmB2BMedia::updateAudioStreams()
