@@ -1394,11 +1394,12 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    unsigned int msg_len=0;
 
 	    if(tt->_t && (method == sip_request::ACK)) {
-		// in case of ACK, p_msg gets deleted in update_uac_request
+		// over unreliable transports, update_uac_request() moved the
+		// ACK buffer into the INVITE transaction and deleted p_msg
 		msg_buffer = tt->_t->retr_buf;
 		msg_len = tt->_t->retr_len;
 	    }
-	    else {
+	    else if(p_msg) {
 		msg_buffer = p_msg->buf;
 		msg_len = p_msg->len;
 	    }
@@ -1417,6 +1418,17 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    tt->_t->dialog_id.s = new char[dialog_id.len];
 	    tt->_t->dialog_id.len = dialog_id.len;
 	    memcpy((void*)tt->_t->dialog_id.s,dialog_id.s,dialog_id.len);
+	}
+
+	// Every other request is owned by the transaction it created, but
+	// a 2xx-ACK does not get one: over unreliable transports
+	// update_uac_request() handed its buffer to the INVITE transaction
+	// (for retransmissions) and freed the message, while over reliable
+	// ones - where the ACK is never retransmitted - nothing took
+	// ownership of it. Free it here, now that it has been logged.
+	if(p_msg && (method == sip_request::ACK)) {
+	    delete p_msg;
+	    p_msg = NULL;
 	}
     }
 
@@ -1602,7 +1614,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	else {
             t->canceled = true;
 
-            if(t->logger) {
+            if(p_msg && t->logger) {
                 sockaddr_storage src_ip;
                 p_msg->local_socket->copy_addr_to(&src_ip);
                 t->logger->log(p_msg->buf,p_msg->len,&src_ip,
@@ -2126,7 +2138,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 }
 
 int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t,
-				     sip_msg* msg)
+				     sip_msg*& msg)
 {
     if(msg->u.request->method != sip_request::ACK){
 	t = bucket->add_trans(msg,TT_UAC);
@@ -2158,8 +2170,9 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t,
 	    if(t->retr_socket) dec_ref(t->retr_socket);
 	    t->retr_socket = msg->local_socket;
 
-	    // remove the message;
+	    // remove the message; the caller must not touch it anymore
 	    delete msg;
+	    msg = NULL;
 	}
 
 	return 0;

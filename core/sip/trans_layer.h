@@ -278,7 +278,7 @@ protected:
      * @return transaction state if successfull
      */
     int update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
-    int update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg* msg);
+    int update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg*& msg);
 
     /**
      * Implements the state changes for the UAS state machine
