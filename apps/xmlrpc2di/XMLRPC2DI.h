@@ -188,8 +188,12 @@ class XMLRPC2DI
   void sendRequestList(const AmArg& args, AmArg& ret);
  public:
   XMLRPC2DI(const string& mod_name);
-  ~XMLRPC2DI() { }
+  ~XMLRPC2DI();
   int onLoad();
+
+  /** stop the XMLRPC server thread, so that it is gone before the
+      module it runs in is unloaded */
+  static void dispose();
 
   // DI factory
   AmDynInvoke* getInstance() { return instance(); }
