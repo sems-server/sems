@@ -716,6 +716,14 @@ int main(int argc, char* argv[])
   while(!AmAppTimer::instance()->is_stopped())
     usleep(10000);
 
+#ifdef SESSION_THREADPOOL
+  // The session processor threads run processingCycle()/finalize() on sessions
+  // implemented by the plug-ins, so they have to be gone before the modules
+  // they call into are unloaded.
+  INFO("Stopping session processor threads\n");
+  AmSessionProcessor::stopThreads();
+#endif
+
   INFO("Disposing plug-ins\n");
   AmPlugIn::dispose();
 

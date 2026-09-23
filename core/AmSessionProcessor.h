@@ -50,6 +50,8 @@ class AmSessionProcessor {
  public: 
   static AmSessionProcessorThread* getProcessorThread();
   static void addThreads(unsigned int num_threads);
+  /** stop all processor threads and wait until they left run() */
+  static void stopThreads();
 };
 
 struct AmSessionProcessorThreadAddEvent 
