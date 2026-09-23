@@ -83,12 +83,26 @@ AmMediaProcessor* AmMediaProcessor::instance()
 void AmMediaProcessor::addSession(AmMediaSession* s, 
 				  const string& callgroup)
 {
+  group_mut.lock();
+
+  // Adding a session that is already in the processor would insert a second
+  // callgroupmembers entry for it while removeFromProcessor() only ever erases
+  // one, so the callgroup would keep a member forever and its callgroup2thread
+  // mapping would never be erased again.
+  std::map<AmMediaSession*, string>::iterator s_it = session2callgroup.find(s);
+  if (s_it != session2callgroup.end()) {
+    string old_callgroup = s_it->second;
+    group_mut.unlock();
+    DBG("session [%p] is already in the processor (callgroup '%s'), "
+	"not adding it to '%s'\n",
+	(void*)s, old_callgroup.c_str(), callgroup.c_str());
+    return;
+  }
+
   s->onMediaProcessingStarted();
  
   // evaluate correct scheduler
   unsigned int sched_thread = 0;
-  group_mut.lock();
-    
   // callgroup already in a thread? 
   std::map<std::string, unsigned int>::iterator it =
     callgroup2thread.find(callgroup);
@@ -343,9 +357,13 @@ void AmMediaProcessorThread::process(AmEvent* e)
   switch(sr->event_id){
 
   case AmMediaProcessor::InsertSession:
-    DBG("Session inserted to the scheduler\n");
-    sessions.insert(sr->s);
-    sr->s->clearRTPTimeout();
+    // a session that is already scheduled must not have its RTP timeout reset
+    if (sessions.insert(sr->s).second) {
+      DBG("Session inserted to the scheduler\n");
+      sr->s->clearRTPTimeout();
+    } else {
+      DBG("Session [%p] is already in the scheduler\n", (void*)sr->s);
+    }
     break;
 
   case AmMediaProcessor::RemoveSession:{

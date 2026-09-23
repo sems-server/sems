@@ -27,12 +27,12 @@ class FakeSession : public AmMediaSession {
 public:
   AmCondition<bool> inserted;   // the thread has taken the session
   AmCondition<bool> terminated; // onMediaProcessingTerminated() was called
-  AmSharedVar<int> reads, writes, audio_clears, terminations;
+  AmSharedVar<int> reads, writes, audio_clears, terminations, inserts;
   AmSharedVar<int> read_result, write_result;
 
   FakeSession()
       : inserted(false), terminated(false), reads(0), writes(0), audio_clears(0), terminations(0),
-        read_result(0), write_result(0) {}
+        inserts(0), read_result(0), write_result(0) {}
 
   int readStreams(unsigned long long, unsigned char *) override {
     reads.set(reads.get() + 1);
@@ -49,7 +49,10 @@ public:
   void clearAudio() override { audio_clears.set(audio_clears.get() + 1); }
 
   // called by the thread when it inserts the session
-  void clearRTPTimeout() override { inserted.set(true); }
+  void clearRTPTimeout() override {
+    inserts.set(inserts.get() + 1);
+    inserted.set(true);
+  }
 
   void onMediaProcessingTerminated() override {
     AmMediaSession::onMediaProcessingTerminated();
@@ -170,6 +173,35 @@ FCTMF_SUITE_BGN(test_mediaprocessor) {
     fct_chk_eq_int(other.terminations.get(), 1);
     fct_chk_eq_int(s.terminations.get(), 0);
     fct_chk_eq_int(s.audio_clears.get(), 0);
+  }
+  FCT_TEST_END();
+
+  // adding a session the processor already has is ignored: it neither resets
+  // the RTP timeout of the running session nor duplicates its bookkeeping, so
+  // a single removeSession() still takes it out for good
+  FCT_TEST_BGN(adding_a_session_twice_is_ignored) {
+    FakeSession s;
+    MediaThread mt;
+    processor()->addSession(&s, "call-5");
+    fct_req(s.inserted.wait_for_to(2000));
+    fct_chk_eq_int(s.inserts.get(), 1);
+
+    processor()->addSession(&s, "call-6");
+    usleep(50000);
+    fct_xchk(s.inserts.get() == 1, "the second add reset the RTP timeout (inserts=%d)",
+             s.inserts.get());
+    fct_chk_eq_int(s.terminations.get(), 0);
+    fct_chk(processor()->hasSession(&s));
+
+    processor()->removeSession(&s);
+    fct_req(s.terminated.wait_for_to(2000));
+    fct_chk(!processor()->hasSession(&s));
+    fct_chk_eq_int(s.terminations.get(), 1);
+
+    // and it is not processed any more
+    int reads = s.reads.get();
+    usleep(50000);
+    fct_chk_eq_int(s.reads.get(), reads);
   }
   FCT_TEST_END();
 }
