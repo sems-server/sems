@@ -35,6 +35,8 @@
 #include <vector>
 #include <list>
 
+#include <unistd.h>
+
 vector<AmSessionProcessorThread*> AmSessionProcessor::threads;
 AmMutex AmSessionProcessor::threads_mut;
 
@@ -69,6 +71,32 @@ void AmSessionProcessor::addThreads(unsigned int num_threads) {
   threads_it = threads.begin();
   DBG("now %zd session processor threads running\n",  threads.size());
   threads_mut.unlock();
+}
+
+void AmSessionProcessor::stopThreads() {
+  threads_mut.lock();
+  vector<AmSessionProcessorThread*> stopping;
+  stopping.swap(threads);
+  threads_it = threads.begin();
+  threads_mut.unlock();
+
+  DBG("stopping %zd session processor threads\n", stopping.size());
+
+  for (vector<AmSessionProcessorThread*>::iterator it = stopping.begin();
+       it != stopping.end(); it++) {
+    (*it)->stop();
+  }
+
+  // AmThread::stop() detaches the thread, so a following join() is a no-op:
+  // wait for run() to actually return. The loop calls processingCycle() and
+  // finalize() on sessions whose code lives in the plug-ins, so it has to be
+  // gone before those are unloaded.
+  for (vector<AmSessionProcessorThread*>::iterator it = stopping.begin();
+       it != stopping.end(); it++) {
+    while (!(*it)->is_stopped())
+      usleep(10000);
+    delete *it;
+  }
 }
 
 
