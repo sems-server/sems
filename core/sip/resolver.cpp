@@ -63,6 +63,14 @@ using std::list;
 // (the limit is the # bits in dns_handle::srv_used)
 #define MAX_SRV_RR (sizeof(unsigned int)*8)
 
+// Size of the buffer handed to res_search().
+//
+// NS_PACKETSZ (512) is the pre-EDNS0 limit for a DNS message carried over
+// UDP; answers larger than that are routine today (an SRV set with its
+// additional A/AAAA records, a name with many addresses) and are delivered
+// over TCP after the truncated UDP answer.
+#define DNS_REPLY_BUFFER_SIZE (NS_PACKETSZ*2)
+
 /* in seconds */
 #define DNS_CACHE_CYCLE 10L
 
@@ -889,17 +897,26 @@ _resolver::~_resolver()
 
 int _resolver::query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type t)
 {
-    unsigned char dns_res[NS_PACKETSZ];
+    unsigned char dns_res[DNS_REPLY_BUFFER_SIZE];
 
     if(!name) return -1;
 
     DBG("Querying '%s' (%s)...",name,dns_rr_type_str(t));
 
     int dns_res_len = res_search(name,ns_c_in,(ns_type)t,
-				 dns_res,NS_PACKETSZ);
+				 dns_res,DNS_REPLY_BUFFER_SIZE);
     if(dns_res_len < 0){
 	dns_error(h_errno,name);
 	return -1;
+    }
+
+    if(dns_res_len > (int)sizeof(dns_res)){
+	// res_search() reports the length of the whole answer, which may be
+	// larger than the part it copied into dns_res. Never let the parser
+	// walk past the buffer.
+	DBG("DNS answer for '%s' is %i bytes, buffer holds %zu: parsing the "
+	    "truncated answer",name,dns_res_len,sizeof(dns_res));
+	dns_res_len = sizeof(dns_res);
     }
 
     /*
