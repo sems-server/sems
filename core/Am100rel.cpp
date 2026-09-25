@@ -176,7 +176,14 @@ void Am100rel::onReplyOut(AmSipReply& reply)
     return;
 
   if (reply.cseq_method == SIP_METH_INVITE) {
-    if (100 < reply.code && reply.code < 200) {
+    if (reply.code == 100) {
+      // 100 Trying is hop-by-hop and carries no offer/answer or dialog
+      // state; RFC 3262 has nothing to say about it. Leave it alone -
+      // neither the reliable-1xx branch below (it must not get RSeq or
+      // Require: 100rel) nor the final-reply branch after it applies.
+      return;
+    }
+    else if (100 < reply.code && reply.code < 200) {
       switch (reliable_1xx) {
         case REL100_SUPPORTED:
           if (! key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
