@@ -35,7 +35,12 @@ bool bl_addr_less::operator() (const bl_addr& l, const bl_addr& r) const
   if(l.ss_family != r.ss_family)
     return l.ss_family < r.ss_family;
 
-  return memcmp(&l,&r,SA_len(&l));
+  // memcmp() returns <0, 0 or >0: returning it as a bool would make this
+  // comparator report "less than" for any two different addresses, in both
+  // directions, which is not a strict weak ordering. The blacklist buckets
+  // are std::maps keyed on bl_addr, so they would look up, insert and erase
+  // at random.
+  return memcmp(&l,&r,SA_len(&l)) < 0;
 }
 
 void bl_timer::fire()
