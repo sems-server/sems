@@ -521,7 +521,22 @@ SBCCallLeg::~SBCCallLeg()
 void SBCCallLeg::onBeforeDestroy()
 {
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    (*i)->onDestroyLeg(this);
+    // onBeforeDestroy() is reached from AmSession::finalize() and from the
+    // error path of AmSession::startup() - both run directly on the session
+    // (or session processor) thread, and neither AmThread::_start() nor the
+    // processor loop has a catch-all. An exception escaping a call control
+    // module here therefore unwinds out of the thread function and aborts the
+    // whole process, taking every other call with it. Contain it: this is the
+    // teardown path, there is nothing left to abort for.
+    try {
+      (*i)->onDestroyLeg(this);
+    } catch (const std::exception& e) {
+      ERROR("exception from onDestroyLeg() while destroying leg '%s': %s\n",
+	    getLocalTag().c_str(), e.what());
+    } catch (...) {
+      ERROR("unknown exception from onDestroyLeg() while destroying leg '%s'\n",
+	    getLocalTag().c_str());
+    }
   }
 }
 
