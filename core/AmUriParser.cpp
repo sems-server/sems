@@ -161,6 +161,7 @@ enum {
   uSPROT,       // protocol
   uSUSER,       // user 
   uSHOST,       // host
+  uSHOST_V6,    // host: IPv6 reference ("[...]")
   uSHOSTWSP,    // wsp after host
   uSPORT,       // port
   uSPORTWSP,    // wsp after port
@@ -215,6 +216,10 @@ bool AmUriParser::parse_uri() {
     } break;
     case uSHOST: {
       switch (c) {
+      // RFC 3261 section 19.1.1 / RFC 3986 section 3.2.2: an IPv6 address in
+      // the host part is written as a bracketed reference and its colons are
+      // part of the address, not the host:port separator.
+      case '[': { st = uSHOST_V6; } break;
       case ':': { uri_host = uri.substr(p1+1, pos-p1-1); 
 	  st = uSPORT; p1 = pos; } break;
       case '?': { uri_host = uri.substr(p1+1, pos-p1-1);
@@ -228,6 +233,12 @@ bool AmUriParser::parse_uri() {
 	  st = uSHOSTWSP; p1 = pos; } 
 	break;
       };
+    } break;
+    case uSHOST_V6: {
+      // keep the brackets in uri_host: they are how the host is written back
+      // out and how callers tell an IPv6 reference from a name.
+      if (c == ']') { uri_host = uri.substr(p1+1, pos-p1);
+	  st = uSHOSTWSP; }
     } break;
     case uSHOSTWSP: {
       switch (c) {
@@ -303,7 +314,8 @@ bool AmUriParser::parse_uri() {
   case uSHDR:   uri_headers = uri.substr(p1+1, pos-p1-1); break;
   case uSPARAM: uri_param = uri.substr(p1+1, pos-p1-1); break;
   case uS0:
-  case uSPROT: { DBG("ERROR while parsing uri\n"); return false; } break;
+  case uSPROT:
+  case uSHOST_V6: { DBG("ERROR while parsing uri\n"); return false; } break;
   };
   return true;
 }
