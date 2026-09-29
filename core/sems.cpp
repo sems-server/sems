@@ -35,6 +35,7 @@
 #include "AmEventDispatcher.h"
 #include "AmSessionProcessor.h"
 #include "AmAppTimer.h"
+#include "AmThread.h"
 
 #ifdef WITH_ZRTP
 # include "AmZRTP.h"
@@ -715,6 +716,15 @@ int main(int argc, char* argv[])
   AmAppTimer::instance()->stop();
   while(!AmAppTimer::instance()->is_stopped())
     usleep(10000);
+
+  // The thread watcher reaps AmThread objects the plug-ins hand to it
+  // (SystemDSM, the ivr script threads, RtmpConnection), so it - and
+  // everything still queued in it - has to be gone before the modules are
+  // unloaded below; its is_stopped() and destructor calls are virtual and
+  // land in the module's code. Like the timer above, it detaches on
+  // AmThread::stop(), so ask it to stop and wait for run() to return.
+  INFO("Stopping thread watcher\n");
+  AmThreadWatcher::stop_instance();
 
   INFO("Disposing plug-ins\n");
   AmPlugIn::dispose();
