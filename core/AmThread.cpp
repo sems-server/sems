@@ -33,6 +33,14 @@
 #include <string>
 using std::string;
 
+// how long the thread watcher lets the threads it got handed stop by
+// themselves before looking at them again
+#define THREAD_WATCHER_GRACE_MS     10000
+
+// how long it waits for a watched thread to leave run() after having asked
+// it to stop on shutdown, before giving up on deleting it
+#define THREAD_WATCHER_STOP_WAIT_MS  2000
+
 AmMutex::AmMutex(bool recursive)
 {
   if(recursive) {
@@ -197,7 +205,7 @@ AmThreadWatcher* AmThreadWatcher::_instance=0;
 AmMutex AmThreadWatcher::_inst_mut;
 
 AmThreadWatcher::AmThreadWatcher()
-  : _run_cond(false)
+  : _run_cond(false), _stop_requested(false)
 {
 }
 
@@ -213,28 +221,82 @@ AmThreadWatcher* AmThreadWatcher::instance()
   return _instance;
 }
 
+void AmThreadWatcher::stop_instance()
+{
+  _inst_mut.lock();
+  AmThreadWatcher* w = _instance;
+  _inst_mut.unlock();
+
+  // the watcher is only created on the first add(), so there may be none
+  if(w)
+    w->stop_and_join();
+}
+
 void AmThreadWatcher::add(AmThread* t)
 {
   DBG("trying to add thread %lu to thread watcher.\n", (unsigned long int) t->_pid);
+
   q_mut.lock();
+
+  // Past the stop request nothing reaps the queue anymore, and the caller's
+  // module may already be on its way out - queueing here would either lose
+  // the object or have it deleted after its code has been unmapped.
+  if(_stop_requested.get()){
+    q_mut.unlock();
+    WARN("thread watcher is stopped, not taking thread %lu\n",
+	 (unsigned long int) t->_pid);
+    return;
+  }
+
   thread_queue.push(t);
   _run_cond.set(true);
   q_mut.unlock();
   DBG("added thread %lu to thread watcher.\n", (unsigned long int) t->_pid);
 }
 
+void AmThreadWatcher::request_stop()
+{
+  _stop_requested.set(true);
+  // wake up run(), which is otherwise blocked in _run_cond.wait_for()
+  // with an empty queue
+  _run_cond.set(true);
+}
+
+void AmThreadWatcher::stop_and_join()
+{
+  // AmThread::stop() detaches the thread, which would turn the following
+  // join() into a no-op, so request the stop directly - the same reason
+  // the resolver's shutdown sets its flag itself.
+  request_stop();
+  join();
+}
+
+void AmThreadWatcher::wait_stopped(AmThread* t)
+{
+  for(unsigned int i=0; i<THREAD_WATCHER_STOP_WAIT_MS/10 && !t->is_stopped();
+      i++){
+    usleep(10000);
+  }
+}
+
 void AmThreadWatcher::on_stop()
 {
+  request_stop();
 }
 
 void AmThreadWatcher::run()
 {
-  for(;;){
+  bool stopping = false;
 
+  while(!stopping){
+
+    // blocks until a thread is queued; request_stop() wakes this up too
     _run_cond.wait_for();
-    // Let some time for to threads 
-    // to stop by themselves
-    sleep(10);
+
+    // Let some time for to threads
+    // to stop by themselves,
+    // but come back at once on shutdown
+    stopping = _stop_requested.wait_for_to(THREAD_WATCHER_GRACE_MS);
 
     q_mut.lock();
     DBG("Thread watcher starting its work\n");
@@ -249,9 +311,26 @@ void AmThreadWatcher::run()
 
 	q_mut.unlock();
 	DBG("thread %lu is to be processed in thread watcher.\n", (unsigned long int) cur_thread->_pid);
+
+	// On shutdown there is no later pass to put this one off to: the
+	// object has to be gone before its module is unloaded, so ask the
+	// thread to stop and wait for run() to return.
+	if(stopping && !cur_thread->is_stopped()){
+	  DBG("thread watcher requesting thread %lu to stop.\n",
+	      (unsigned long int) cur_thread->_pid);
+	  cur_thread->stop();
+	  wait_stopped(cur_thread);
+	}
+
 	if(cur_thread->is_stopped()){
 	  DBG("thread %lu has been destroyed.\n", (unsigned long int) cur_thread->_pid);
 	  delete cur_thread;
+	}
+	else if(stopping){
+	  // still in run() after being asked to stop: leaking the object at
+	  // process exit is better than freeing it under the running thread
+	  WARN("thread %lu did not stop in time, not deleting it\n",
+	       (unsigned long int) cur_thread->_pid);
 	}
 	else {
 	  DBG("thread %lu still running.\n", (unsigned long int) cur_thread->_pid);
@@ -275,5 +354,7 @@ void AmThreadWatcher::run()
     if(!more)
       _run_cond.set(false);
   }
+
+  DBG("Thread watcher stopped\n");
 }
 

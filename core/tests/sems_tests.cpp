@@ -50,6 +50,8 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_resolver_dns);
   FCTMF_SUITE_CALL(test_tcp_trsp);
   FCTMF_SUITE_CALL(test_blacklist);
+  // stops the thread watcher for good, so keep it next to last
+  FCTMF_SUITE_CALL(test_threadwatcher);
   // stops the DNS resolver for good, so keep it last
   FCTMF_SUITE_CALL(test_resolver);
 }
