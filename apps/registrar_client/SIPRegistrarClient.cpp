@@ -388,33 +388,58 @@ void SIPRegistrarClient::listRegistrations(AmArg& res) {
 }
 
 
+/* AmArg::asCStr() returns the union member without consulting the type tag, so
+   a caller that passes a non-string over the control interface has that value
+   reinterpreted as a char pointer and dereferenced. Check the type first; the
+   RPC layer maps TypeMismatchException to an "invalid params" error. */
+static string getCStrArg(const AmArg& a)
+{
+  assertArgCStr(a);
+  return a.asCStr();
+}
+
+/* An omitted optional argument may arrive as null; anything else must be a
+   string. */
+static string getOptCStrArg(const AmArg& a)
+{
+  if (isArgUndef(a))
+    return string();
+
+  return getCStrArg(a);
+}
+
 void SIPRegistrarClient::invoke(const string& method, const AmArg& args, 
 				AmArg& ret)
 {
   if(method == "createRegistration"){
     string proxy, contact, handle;
-    if (args.size() > 6)
-      proxy = args.get(6).asCStr();
-    if (args.size() > 7)
-      contact = args.get(7).asCStr();
-    if (args.size() > 8)
-      handle = args.get(8).asCStr();
 
-    ret.push(createRegistration(args.get(0).asCStr(),
-				args.get(1).asCStr(),
-				args.get(2).asCStr(),
-				args.get(3).asCStr(),
-				args.get(4).asCStr(),
-				args.get(5).asCStr(),
+    // args.get() throws OutOfBoundsException when fewer than six are given
+    string domain    = getCStrArg(args.get(0));
+    string user      = getCStrArg(args.get(1));
+    string name      = getCStrArg(args.get(2));
+    string auth_user = getCStrArg(args.get(3));
+    string pwd       = getCStrArg(args.get(4));
+    string sess_link = getCStrArg(args.get(5));
+
+    if (args.size() > 6)
+      proxy = getOptCStrArg(args.get(6));
+    if (args.size() > 7)
+      contact = getOptCStrArg(args.get(7));
+    if (args.size() > 8)
+      handle = getOptCStrArg(args.get(8));
+
+    ret.push(createRegistration(domain, user, name,
+				auth_user, pwd, sess_link,
 				proxy, contact, handle
 				).c_str());
   }
   else if(method == "removeRegistration"){
-    removeRegistration(args.get(0).asCStr());
+    removeRegistration(getCStrArg(args.get(0)));
   } else if(method == "getRegistrationState"){
     unsigned int state;
     unsigned int expires;
-    if (instance()->getRegistrationState(args.get(0).asCStr(), 
+    if (instance()->getRegistrationState(getCStrArg(args.get(0)), 
 					 state, expires)){
       ret.push(1);
       ret.push((int)state);
