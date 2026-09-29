@@ -267,14 +267,30 @@ class AmThreadWatcher: public AmThread
 
   /** the daemon only runs if this is true */
   AmCondition<bool> _run_cond;
-    
+
+  /** set by request_stop()/on_stop() to let run() return */
+  AmCondition<bool> _stop_requested;
+
   AmThreadWatcher();
   void run();
   void on_stop();
 
+  /** wait (bounded) for a watched thread to leave run() */
+  void wait_stopped(AmThread* t);
+
 public:
   static AmThreadWatcher* instance();
+
+  /** stop and wait for the watcher, if one was ever created */
+  static void stop_instance();
+
   void add(AmThread*);
+
+  /** ask run() to reap what is left and return */
+  void request_stop();
+
+  /** request the stop and wait for run() to return */
+  void stop_and_join();
 };
 
 template<class T>
