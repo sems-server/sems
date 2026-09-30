@@ -62,6 +62,8 @@ using std::list;
 #define DQUOTE    ('"')
 #define SLASH     ('/')
 #define BACKSLASH ('\\')
+#define LAQUOT    ('<')
+#define RAQUOT    ('>')
 #define HYPHEN    ('-')
 
 #define IS_ALPHA(c) (IS_IN(c,0x41,0x5a) || IS_IN(c,0x61,0x7a))

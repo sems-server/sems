@@ -256,6 +256,7 @@ static int skip_2_next_nameaddr(const char*& c,
     enum {
 	RR_BEGIN=0,
 	RR_QUOTED,
+	RR_ANGLE,    // inside '<' ... '>' (addr-spec enclosed in LAQUOT/RAQUOT)
 	RR_SWS,
 	RR_SEP_SWS,  // space(s) after ','
 	RR_NXT_NA
@@ -282,6 +283,9 @@ static int skip_2_next_nameaddr(const char*& c,
 	    case DQUOTE:
 		st = RR_QUOTED;
 		break;
+	    case LAQUOT:
+		st = RR_ANGLE;
+		break;
 	    }
 	    break;
 	case RR_QUOTED:
@@ -294,6 +298,10 @@ static int skip_2_next_nameaddr(const char*& c,
 		break;
 	    }
 	    break;
+	case RR_ANGLE:
+	    if(*c == RAQUOT)
+		st = RR_BEGIN;
+	    break;
 	case RR_SWS:
 	    switch(*c){
 	    case SP:
@@ -303,6 +311,10 @@ static int skip_2_next_nameaddr(const char*& c,
 		break;
 	    case COMMA:
 		st = RR_SEP_SWS;
+		break;
+	    case LAQUOT:
+		st = RR_ANGLE;
+		na_end = NULL;
 		break;
 	    default:
 		st = RR_BEGIN;
@@ -330,6 +342,7 @@ static int skip_2_next_nameaddr(const char*& c,
 	    
     switch(st){
     case RR_QUOTED:
+    case RR_ANGLE:
 	DBG("Malformed nameaddr\n");
 	return -1;
 
