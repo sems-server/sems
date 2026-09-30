@@ -28,6 +28,7 @@
 #include "AmEventDispatcher.h"
 #include "AmSipEvent.h"
 #include "AmConfig.h"
+#include "AmThread.h"
 #include "sip/hash.h"
 
 unsigned int AmEventDispatcher::hash(const string& s1)
@@ -59,16 +60,14 @@ bool AmEventDispatcher::addEventQueue(const string& local_tag,
 {
     unsigned int queue_bucket = hash(local_tag);
 
-    queues_mut[queue_bucket].lock();
+    AmLock queues_lock(queues_mut[queue_bucket]);
 
     if (queues[queue_bucket].find(local_tag) != queues[queue_bucket].end()) {
-      queues_mut[queue_bucket].unlock();
       return false;
     }
 
     queues[queue_bucket][local_tag] = QueueEntry(q);
-    queues_mut[queue_bucket].unlock();
-    
+
     return true;
 }
 
@@ -87,10 +86,9 @@ bool AmEventDispatcher::addEventQueue(const string& local_tag,
 
     unsigned int queue_bucket = hash(local_tag);
 
-    queues_mut[queue_bucket].lock();
+    AmLock queues_lock(queues_mut[queue_bucket]);
 
     if (queues[queue_bucket].find(local_tag) != queues[queue_bucket].end()) {
-      queues_mut[queue_bucket].unlock();
       return false;
     }
 
@@ -101,21 +99,17 @@ bool AmEventDispatcher::addEventQueue(const string& local_tag,
     }
     unsigned int id_bucket = hash(id);
 
-    id_lookup_mut[id_bucket].lock();
-    
+    // queues_mut before id_lookup_mut, as everywhere else that takes both
+    AmLock id_lookup_lock(id_lookup_mut[id_bucket]);
+
     if (id_lookup[id_bucket].find(id) != 
 	id_lookup[id_bucket].end()) {
-      id_lookup_mut[id_bucket].unlock();
-      queues_mut[queue_bucket].unlock();
       return false;
     }
 
     queues[queue_bucket][local_tag] = QueueEntry(q,id);
     id_lookup[id_bucket][id] = local_tag;
 
-    id_lookup_mut[id_bucket].unlock();
-    queues_mut[queue_bucket].unlock();
-    
     return true;
 }
 
@@ -124,8 +118,8 @@ AmEventQueueInterface* AmEventDispatcher::delEventQueue(const string& local_tag)
     AmEventQueueInterface* q = NULL;
     unsigned int queue_bucket = hash(local_tag);
 
-    queues_mut[queue_bucket].lock();
-    
+    AmLock queues_lock(queues_mut[queue_bucket]);
+
     EvQueueMapIter qi = queues[queue_bucket].find(local_tag);
     if(qi != queues[queue_bucket].end()) {
 
@@ -136,18 +130,15 @@ AmEventQueueInterface* AmEventDispatcher::delEventQueue(const string& local_tag)
       if(!qe.id.empty()) {
 	unsigned int id_bucket = hash(qe.id);
 	
-	id_lookup_mut[id_bucket].lock();
+	AmLock id_lookup_lock(id_lookup_mut[id_bucket]);
 	
 	DictIter di = id_lookup[id_bucket].find(qe.id);
 	if(di != id_lookup[id_bucket].end()) {	    
 	  id_lookup[id_bucket].erase(di);
 	}
-	
-	id_lookup_mut[id_bucket].unlock();
       }
     }
-    queues_mut[queue_bucket].unlock();
-    
+
     return q;
 }
 
@@ -156,17 +147,15 @@ bool AmEventDispatcher::post(const string& local_tag, AmEvent* ev)
     bool posted = false;
   
     unsigned int queue_bucket = hash(local_tag);
-  
-    queues_mut[queue_bucket].lock();
- 
+
+    AmLock queues_lock(queues_mut[queue_bucket]);
+
     EvQueueMapIter it = queues[queue_bucket].find(local_tag);
     if(it != queues[queue_bucket].end()){
 	it->second.q->postEvent(ev);
 	posted = true;
     }
 
-    queues_mut[queue_bucket].unlock();
-    
     return posted;
 }
 
@@ -182,16 +171,17 @@ bool AmEventDispatcher::post(const string& callid,
     }
     unsigned int id_bucket = hash(id);
 
-    id_lookup_mut[id_bucket].lock();
+    string local_tag;
+    {
+      AmLock id_lookup_lock(id_lookup_mut[id_bucket]);
 
-    DictIter di = id_lookup[id_bucket].find(id);
-    if (di == id_lookup[id_bucket].end()) {
-      id_lookup_mut[id_bucket].unlock();
-      return false;
+      DictIter di = id_lookup[id_bucket].find(id);
+      if (di == id_lookup[id_bucket].end()) {
+	return false;
+      }
+      local_tag = di->second;
     }
-    string local_tag = di->second;
-    id_lookup_mut[id_bucket].unlock();
- 
+
     return post(local_tag, ev);
 }
 
@@ -202,6 +192,9 @@ bool AmEventDispatcher::broadcast(AmEvent* ev)
 
     bool posted = false;
     for (size_t i=0;i<EVENT_DISPATCHER_BUCKETS;i++) {
+      // kept as an explicit lock/unlock pair: postEvent() is deliberately
+      // called with the bucket released, so an exception escaping from it
+      // leaves this mutex unlocked rather than held
       queues_mut[i].lock();
 
       EvQueueMapIter it = queues[i].begin(); 
@@ -224,9 +217,10 @@ bool AmEventDispatcher::broadcast(AmEvent* ev)
 bool AmEventDispatcher::empty() {
     bool res = true;
     for (size_t i=0;i<EVENT_DISPATCHER_BUCKETS;i++) {
-      queues_mut[i].lock();
-      res = res&queues[i].empty();
-      queues_mut[i].unlock();    
+      {
+	AmLock queues_lock(queues_mut[i]);
+	res = res&queues[i].empty();
+      }
       if (!res)
 	break;
     }
@@ -237,21 +231,21 @@ void AmEventDispatcher::dump()
 {
     DBG("*** dumping Event dispatcher buckets ***\n");
     for (size_t i=0;i<EVENT_DISPATCHER_BUCKETS;i++) {
-      queues_mut[i].lock();
-      if(!queues[i].empty()) {
-	DBG("queues[%zu].size() = %zu",i,queues[i].size());
-	for(EvQueueMapIter it = queues[i].begin();
-	    it != queues[i].end(); it++){
-	  DBG("\t%s -> %p\n",it->first.c_str(),it->second.q);
+      {
+	AmLock queues_lock(queues_mut[i]);
+	if(!queues[i].empty()) {
+	  DBG("queues[%zu].size() = %zu",i,queues[i].size());
+	  for(EvQueueMapIter it = queues[i].begin();
+	      it != queues[i].end(); it++){
+	    DBG("\t%s -> %p\n",it->first.c_str(),it->second.q);
+	  }
 	}
       }
-      queues_mut[i].unlock();
 
-      id_lookup_mut[i].lock();
+      AmLock id_lookup_lock(id_lookup_mut[i]);
       if(!id_lookup[i].empty()) {
 	DBG("id_lookup[%zu].size() = %zu",i,id_lookup[i].size());
       }
-      id_lookup_mut[i].unlock();
     }
     DBG("*** End of Event dispatcher bucket dump ***\n");
 }
@@ -282,28 +276,27 @@ bool AmEventDispatcher::postSipRequest(const AmSipRequest& req)
     }
     unsigned int id_bucket = hash(id);
 
-    id_lookup_mut[id_bucket].lock();
+    string local_tag;
+    {
+      AmLock id_lookup_lock(id_lookup_mut[id_bucket]);
 
-    DictIter di = id_lookup[id_bucket].find(id);
-    if (di == id_lookup[id_bucket].end()) {
-      id_lookup_mut[id_bucket].unlock();
-      return false;
+      DictIter di = id_lookup[id_bucket].find(id);
+      if (di == id_lookup[id_bucket].end()) {
+	return false;
+      }
+      local_tag = di->second;
     }
-    string local_tag = di->second;
-    id_lookup_mut[id_bucket].unlock();
- 
+
     // post(local_tag)
     unsigned int queue_bucket = hash(local_tag);
-  
-    queues_mut[queue_bucket].lock();
- 
+
+    AmLock queues_lock(queues_mut[queue_bucket]);
+
     EvQueueMapIter it = queues[queue_bucket].find(local_tag);
     if(it != queues[queue_bucket].end()){
 	it->second.q->postEvent(new AmSipRequestEvent(req));
 	posted = true;
     }
 
-    queues_mut[queue_bucket].unlock();
-    
     return posted;
 }
