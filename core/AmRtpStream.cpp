@@ -1212,8 +1212,14 @@ void AmRtpStream::recvRtcpPacket()
   if (logger)
     logger->log((const char *)buffer, recved_bytes, &recv_addr, &l_rtcp_saddr, empty);
 
-  // clear RTP timer
-  clearRTPTimeout();
+  // Deliberately NOT clearing the RTP receive timeout here: RTCP is sent on
+  // its own schedule (RFC 3550), independently of whether any media is
+  // flowing, so an RTCP report says nothing about the RTP stream being alive.
+  // Treating it as RTP activity keeps last_recv_time fresh for as long as the
+  // peer keeps reporting and the dead_rtp_time detection in nextPacket() can
+  // then never fire, which leaves a call whose media died running until
+  // signalling tears it down. The RTP path updates last_recv_time in
+  // bufferPacket(), under receive_mut - which this function does not hold.
 
   handleSymmetricRtp(&recv_addr,true);
 
