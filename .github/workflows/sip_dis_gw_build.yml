@@ -1,0 +1,48 @@
+name: SIP to DIS gateway build (RHEL10)
+
+# Run whenever the SIP to DIS gateway module, its tests or its build
+# machinery change.
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'apps/sip_dis_gw/**'
+      - 'core/tests/test_sip_dis_gw.cpp'
+      - 'Dockerfile-rhel10-sip-dis-gw'
+      - '.github/workflows/sip_dis_gw_build.yml'
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - 'apps/sip_dis_gw/**'
+      - 'core/tests/test_sip_dis_gw.cpp'
+      - 'Dockerfile-rhel10-sip-dis-gw'
+      - '.github/workflows/sip_dis_gw_build.yml'
+  # Allow manual trigger from the Actions UI for ad-hoc verification
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sip_dis_gw_rhel10:
+    name: sip_dis_gw module – RHEL10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Build, test and load-check sip_dis_gw (RHEL10)
+        run: |
+          docker build \
+            --progress=plain \
+            -t sems_sip_dis_gw_el10 \
+            -f Dockerfile-rhel10-sip-dis-gw \
+            .
+
+      - name: Confirm sip_dis_gw plugin is present inside image
+        run: |
+          docker run --rm sems_sip_dis_gw_el10 \
+            ls -al /usr/local/lib/sems/plug-in/sip_dis_gw.so
