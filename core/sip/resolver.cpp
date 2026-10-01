@@ -180,6 +180,12 @@ public:
 	    inc_ref(this);
 	    h->srv_n = 0;
 	    h->srv_used = 0;
+	    // No A/AAAA entry belongs to this SRV set yet. The branch below
+	    // takes ip_n != -1 to mean "h->ip_e holds the address list of the
+	    // target we are currently walking", so binding a new SRV entry has
+	    // to reset the marker: a freshly constructed dns_handle starts out
+	    // with ip_n == 0 and ip_e == NULL.
+	    h->ip_n = -1;
 	}
 	else if(h->ip_n != -1){
 	    if(h->port) {
@@ -196,11 +202,12 @@ public:
 	   (index >= (int)MAX_SRV_RR))
 	    return -1;
 	
-	// reset IP record
+	// reset IP record (ip_n == -1 keeps "no IP entry bound" consistent
+	// with ip_e == NULL - see the comment above)
 	if(h->ip_e){
 	    dec_ref(h->ip_e);
 	    h->ip_e = NULL;
-	    h->ip_n = 0;
+	    h->ip_n = -1;
 	}
 	
 	list<pair<unsigned int,int> > srv_lst;
@@ -933,8 +940,18 @@ int _resolver::resolve_name(const char* name,
 {
     int ret;
 
-    // already have a valid handle?
-    if(h->valid()){
+    // Already have a valid handle?
+    //
+    // A handle bound only to an SRV entry (srv_e set, ip_e still NULL) carries
+    // SRV iteration state, not an address list, so handing out "the next IP"
+    // is only right when the caller is iterating that same SRV set. The
+    // A/AAAA lookup of an SRV *target* arrives here from
+    // dns_srv_entry::next_ip() with t == dns_r_a while h->srv_e is already
+    // bound: taking the shortcut there calls dns_handle::next_ip(), which
+    // dispatches straight back into dns_srv_entry::next_ip() instead of
+    // resolving the target, and the SRV name is never translated to an
+    // address.
+    if(h->ip_e || (h->srv_e && t == dns_r_srv)){
 	if(h->eoip()) return -1;
 	return h->next_ip(sa);
     }
