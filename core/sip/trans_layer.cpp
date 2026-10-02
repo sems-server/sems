@@ -162,12 +162,17 @@ int _trans_layer::set_trsp_socket(sip_msg* msg, const cstring& next_trsp,
 	    next_trsp.len,next_trsp.s,out_interface);
 
 	prot_sock_it = transports[out_interface].find("udp");
-	
-	// if we couldn't find anything, take whatever is there...
+
 	if(prot_sock_it == transports[out_interface].end()) {
+	    // Taking "whatever is there" would send the request over a
+	    // transport the destination never asked for: a sips:/TLS target
+	    // over plain TCP, or a transport=udp target over the interface's
+	    // TLS socket. The Via and Contact we built for next_trsp would
+	    // not match the socket either. Tell the caller to move on to the
+	    // next resolved destination instead.
 	    DBG("could not find transport 'udp' in outbound interface %i",
 		out_interface);
-	    prot_sock_it = transports[out_interface].begin();
+	    return 1;
 	}
     }
 
@@ -1319,8 +1324,11 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	return 0;
     }
 
-    if(set_trsp_socket(msg,next_trsp,out_interface) < 0)
+    int trsp_res = set_trsp_socket(msg,next_trsp,out_interface);
+    if(trsp_res < 0)
 	return -1;
+    else if(trsp_res > 0)
+	goto try_next_dest; // no socket for next_trsp on this interface
 
     if((flags & TR_FLAG_NEXT_HOP_RURI) &&
        (patch_ruri_with_remote_ip(ruri,msg) < 0)) {
@@ -2741,12 +2749,17 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 
 	int out_interface = tmp_msg.local_socket->get_if();
 	tmp_msg.local_socket = NULL;
-	if(set_trsp_socket(&tmp_msg,next_trsp,out_interface) < 0) {
-	    // tmp_msg is a shallow copy of tr->msg. Returning without
+	int trsp_res = set_trsp_socket(&tmp_msg,next_trsp,out_interface);
+	if(trsp_res != 0) {
+	    // tmp_msg is a shallow copy of tr->msg. Leaving this scope without
 	    // release() would let ~sip_msg() free buf/hdrs/u.request that
-	    // are still owned by tr->msg (double-free on next access).
+	    // are still owned by tr->msg (double-free on next access) - and
+	    // the goto below leaves the scope just like the return does.
 	    tmp_msg.release();
-	    return -1;
+	    if(trsp_res < 0)
+		return -1;
+	    // no socket for next_trsp on this interface: try the next target
+	    goto try_next_dest;
 	}
 
 	if(n_tr->flags & TR_FLAG_NEXT_HOP_RURI) {
