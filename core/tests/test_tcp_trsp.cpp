@@ -29,6 +29,20 @@ namespace {
 
 bool fd_is_open(int fd) { return fcntl(fd, F_GETFD) != -1 || errno != EBADF; }
 
+// SOCK_NONBLOCK is not available everywhere (macOS)
+bool nonblocking_socketpair(int sv[2]) {
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) {
+    return false;
+  }
+  for (int i = 0; i < 2; i++) {
+    int flags = fcntl(sv[i], F_GETFL);
+    if (flags < 0 || fcntl(sv[i], F_SETFL, flags | O_NONBLOCK) < 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void pump(struct event_base *evbase) {
   for (int i = 0; i < 10; i++) {
     event_base_loop(evbase, EVLOOP_NONBLOCK);
@@ -62,8 +76,9 @@ struct alias_fixture {
     }
 
     old_conn[0] = old_conn[1] = new_conn[0] = new_conn[1] = -1;
-    socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, old_conn);
-    socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, new_conn);
+    if (!nonblocking_socketpair(old_conn) || !nonblocking_socketpair(new_conn)) {
+      ERROR("could not create the test connections: %s", strerror(errno));
+    }
 
     // same peer address twice: the second connection takes over the alias
     tcp_trsp_socket::create_connected(&server, &worker, old_conn[0], &peer, evbase);
