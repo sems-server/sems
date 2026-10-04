@@ -168,5 +168,43 @@ FCTMF_SUITE_BGN(test_uriparser) {
     fct_chk(p.params.size() == 3);
   }
   FCT_TEST_END();
+
+  FCT_TEST_BGN(uriparser_ipv6_host) {
+    AmUriParser p;
+    size_t end;
+    fct_chk(p.parse_contact("<sip:u@[2a01:ad00:2:1::19]>", 0, end));
+    fct_chk(p.uri_user == "u");
+    fct_chk(p.uri_host == "[2a01:ad00:2:1::19]");
+    fct_chk(p.uri_port.empty());
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(uriparser_ipv6_host_port) {
+    AmUriParser p;
+    size_t end;
+    fct_chk(p.parse_contact("<sip:u@[2a01:ad00:2:1::19]:60900>", 0, end));
+    fct_chk(p.uri_user == "u");
+    fct_chk(p.uri_host == "[2a01:ad00:2:1::19]");
+    fct_chk(p.uri_port == "60900");
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(uriparser_ipv6_host_no_user) {
+    AmUriParser p;
+    size_t end;
+    fct_chk(p.parse_contact("<sip:[::1]:5060;transport=tcp>", 0, end));
+    fct_chk(p.uri_user.empty());
+    fct_chk(p.uri_host == "[::1]");
+    fct_chk(p.uri_port == "5060");
+    fct_chk(p.uri_param == "transport=tcp");
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(uriparser_ipv6_host_unterminated) {
+    AmUriParser p;
+    size_t end;
+    fct_chk(!p.parse_contact("<sip:u@[2a01:ad00:2:1::19>", 0, end));
+  }
+  FCT_TEST_END();
 }
 FCTMF_SUITE_END();
