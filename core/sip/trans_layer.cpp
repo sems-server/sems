@@ -1393,15 +1393,15 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    char* msg_buffer=NULL;
 	    unsigned int msg_len=0;
 
-	    if(tt->_t && (method == sip_request::ACK)) {
-		// over unreliable transports, update_uac_request() moved the
-		// ACK buffer into the INVITE transaction and deleted p_msg
-		msg_buffer = tt->_t->retr_buf;
-		msg_len = tt->_t->retr_len;
-	    }
-	    else if(p_msg) {
+	    if(p_msg) {
 		msg_buffer = p_msg->buf;
 		msg_len = p_msg->len;
+	    }
+	    else if(tt->_t) {
+		// update_uac_request() moved the 2xx-ACK's buffer into the
+		// INVITE transaction (unreliable transports) and deleted p_msg
+		msg_buffer = tt->_t->retr_buf;
+		msg_len = tt->_t->retr_len;
 	    }
 
 	    logger->log(msg_buffer,msg_len,
