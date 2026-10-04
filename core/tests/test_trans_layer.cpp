@@ -10,6 +10,7 @@
 #include "sip/trans_table.h"
 #include "sip/transport.h"
 
+#include <ctype.h>
 #include <string.h>
 #include <string>
 
@@ -78,13 +79,20 @@ sip_msg *parse_request(const std::string &raw) {
   return msg;
 }
 
-std::string make_request(const char *method, const char *trsp) {
+// a separate call_id per test keeps any transaction state a test leaves
+// behind from matching the next test's requests
+std::string make_request(const char *method, const char *trsp, const char *call_id) {
+  std::string via_trsp(trsp);
+  for (size_t i = 0; i < via_trsp.size(); i++) {
+    via_trsp[i] = toupper(via_trsp[i]);
+  }
+
   std::string msg;
   msg += std::string(method) + " sip:bob@127.0.0.1:5099;transport=" + trsp + " SIP/2.0\r\n";
-  msg += "Via: SIP/2.0/UDP 192.0.2.1:5060;branch=z9hG4bK776asdhds\r\n";
+  msg += "Via: SIP/2.0/" + via_trsp + " 192.0.2.1:5060;branch=z9hG4bK776asdhds\r\n";
   msg += "To: <sip:bob@127.0.0.1>;tag=callee-tag\r\n";
   msg += "From: <sip:alice@192.0.2.1>;tag=caller-tag\r\n";
-  msg += "Call-ID: trans-layer-ack-test@192.0.2.1\r\n";
+  msg += std::string("Call-ID: ") + call_id + "@192.0.2.1\r\n";
   msg += std::string("CSeq: 1 ") + method + "\r\n";
   msg += "Content-Length: 0\r\n";
   msg += "\r\n";
@@ -106,7 +114,7 @@ FCTMF_SUITE_BGN(test_trans_layer) {
     capture_logger *logger = new capture_logger();
     inc_ref(logger);
 
-    sip_msg *ack = parse_request(make_request("ACK", "tcp"));
+    sip_msg *ack = parse_request(make_request("ACK", "tcp", "reliable-ack"));
     fct_req(ack != NULL);
 
     trans_ticket tt;
@@ -140,7 +148,7 @@ FCTMF_SUITE_BGN(test_trans_layer) {
 
     // the INVITE transaction the 2xx-ACK belongs to, as left behind by
     // a 200 OK with the callee's to-tag
-    sip_msg *invite = parse_request(make_request("INVITE", "udp"));
+    sip_msg *invite = parse_request(make_request("INVITE", "udp", "unreliable-ack"));
     fct_req(invite != NULL);
     trans_bucket *bucket = get_trans_bucket(invite->callid->value, get_cseq(invite)->num_str);
     bucket->lock();
@@ -150,7 +158,7 @@ FCTMF_SUITE_BGN(test_trans_layer) {
     inv_t->to_tag.len = 10;
     bucket->unlock();
 
-    sip_msg *ack = parse_request(make_request("ACK", "udp"));
+    sip_msg *ack = parse_request(make_request("ACK", "udp", "unreliable-ack"));
     fct_req(ack != NULL);
 
     trans_ticket tt;
@@ -183,7 +191,7 @@ FCTMF_SUITE_BGN(test_trans_layer) {
     inc_ref(sock);
     trans_layer::instance()->register_transport(sock);
 
-    sip_msg *ack = parse_request(make_request("ACK", "udp"));
+    sip_msg *ack = parse_request(make_request("ACK", "udp", "unmatched-ack"));
     fct_req(ack != NULL);
 
     // no INVITE transaction to hand the ACK to: send_request() fails
