@@ -45,14 +45,18 @@ int dns_msg_parse(unsigned char* msg, int len, dns_parse_fct fct, void* data);
 int dns_expand_name(unsigned char** ptr, unsigned char* begin, unsigned char* end, 
 		    unsigned char* buf, unsigned int len);
 
+// The fields of a DNS message follow variable-length names, so 'p' is not
+// necessarily aligned: assemble the value byte by byte (network byte order)
+// rather than loading it through a uint16_t/uint32_t pointer.
 inline uint16_t dns_get_16(const unsigned char* p)
 {
-  return ntohs(*(uint16_t*)p);
+  return (uint16_t)((p[0] << 8) | p[1]);
 }
 
 inline uint32_t dns_get_32(const unsigned char* p)
 {
-  return ntohl(*(uint32_t*)p);
+  return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16)
+    | ((uint32_t)p[2] << 8) | (uint32_t)p[3];
 }
 
 #endif
