@@ -387,6 +387,30 @@ FCTMF_SUITE_BGN(test_resolver_dns) {
     FakeDnsServer::restore();
   }
   FCT_TEST_END();
+
+  // An answer that does not fit into a 512 byte UDP message is fetched over
+  // TCP, and res_search() then reports the length of the whole answer even
+  // where its buffer was too small to hold it. query_dns() used to parse that
+  // many bytes out of a 512 byte stack buffer.
+  FCT_TEST_BGN(answers_larger_than_a_udp_message_are_parsed_whole) {
+    FakeDnsServer dns;
+    std::vector<std::string> expected;
+
+    // ~1.6kB of A records: more than 512 bytes, and more than 1024 as well
+    for (int i = 1; i <= 100; i++) {
+      std::string ip = "198.51.100." + int2str(i);
+      dns.zone.push_back(a_rr("big.test", ip.c_str()));
+      expected.push_back(ip + ":5060");
+    }
+    fct_req(dns.start());
+    dns.use();
+
+    std::vector<std::string> got = resolve("big.test");
+    fct_xchk(got == expected, "got %u targets: '%s'", (unsigned int)got.size(), join(got).c_str());
+
+    FakeDnsServer::restore();
+  }
+  FCT_TEST_END();
 }
 FCTMF_SUITE_END();
 

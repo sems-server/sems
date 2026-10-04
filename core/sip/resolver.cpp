@@ -48,6 +48,7 @@
 #include <arpa/nameser.h> 
 
 #include <list>
+#include <vector>
 #include <utility>
 #include <algorithm>
 
@@ -62,6 +63,18 @@ using std::list;
 //
 // (the limit is the # bits in dns_handle::srv_used)
 #define MAX_SRV_RR (sizeof(unsigned int)*8)
+
+// Size of the buffer handed to res_search(): the largest DNS message there
+// is, as its length travels in 16 bits over TCP.
+//
+// NS_PACKETSZ (512) is only the pre-EDNS0 limit for an answer carried over
+// UDP. Larger answers are routine today (an SRV set with its additional
+// A/AAAA records, a name with many addresses) and are delivered over TCP
+// after the truncated UDP answer - in full, however large they are.
+#ifndef NS_MAXMSG
+#define NS_MAXMSG 65535
+#endif
+#define DNS_REPLY_BUFFER_SIZE NS_MAXMSG
 
 /* in seconds */
 #define DNS_CACHE_CYCLE 10L
@@ -896,17 +909,28 @@ _resolver::~_resolver()
 
 int _resolver::query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type t)
 {
-    unsigned char dns_res[NS_PACKETSZ];
-
     if(!name) return -1;
+
+    // on the heap: too large for the stacks of the threads resolving names
+    std::vector<unsigned char> dns_res(DNS_REPLY_BUFFER_SIZE);
 
     DBG("Querying '%s' (%s)...",name,dns_rr_type_str(t));
 
     int dns_res_len = res_search(name,ns_c_in,(ns_type)t,
-				 dns_res,NS_PACKETSZ);
+				 &dns_res[0],dns_res.size());
     if(dns_res_len < 0){
 	dns_error(h_errno,name);
 	return -1;
+    }
+
+    if(dns_res_len > (int)dns_res.size()){
+	// res_search() reports the length of the whole answer, which may be
+	// larger than the part it copied into dns_res. The buffer holds the
+	// largest possible DNS message, so this is not expected to happen -
+	// but never let the parser walk past the buffer.
+	WARN("DNS answer for '%s' is %i bytes, buffer holds %u: parsing the "
+	     "truncated answer",name,dns_res_len,(unsigned int)dns_res.size());
+	dns_res_len = dns_res.size();
     }
 
     /*
@@ -914,7 +938,7 @@ int _resolver::query_dns(const char* name, dns_entry_map& entry_map, dns_rr_type
      * be used later to extract information from the response.
      */
     dns_search_h h;
-    if (dns_msg_parse(dns_res, dns_res_len, rr_to_dns_entry, &h) < 0) {
+    if (dns_msg_parse(&dns_res[0], dns_res_len, rr_to_dns_entry, &h) < 0) {
 	DBG("Could not parse DNS reply");
 	return -1;
     }
