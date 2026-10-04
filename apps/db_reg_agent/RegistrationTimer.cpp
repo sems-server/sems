@@ -41,17 +41,17 @@ int RegistrationTimer::get_bucket_index(time_t tv) {
   if (tv < buckets_start_time)
     return -1;
 
-  // offset
-  int bucket_index =  (tv - buckets_start_time);
-  bucket_index /= TIMER_BUCKET_LENGTH;
-  
-  if (bucket_index > TIMER_BUCKETS) { // too far in the future
-    ERROR("requested timer too far in the future (index %d vs %d TIMER_BUCKETS)\n",
-	  bucket_index, TIMER_BUCKETS);
+  // offset - in time_t, an int could wrap for times far in the future
+  time_t offset = (tv - buckets_start_time) / TIMER_BUCKET_LENGTH;
+
+  // offset TIMER_BUCKETS would wrap around to the current bucket
+  if (offset >= TIMER_BUCKETS) { // too far in the future
+    ERROR("requested timer too far in the future (index %ld vs %d TIMER_BUCKETS)\n",
+	  (long)offset, TIMER_BUCKETS);
     return -2;
   }
 
-  bucket_index += current_bucket;
+  int bucket_index = offset + current_bucket;
   bucket_index %= TIMER_BUCKETS; // circular array
 
   return bucket_index;
@@ -63,7 +63,7 @@ void RegistrationTimer::place_timer(RegTimer* timer, int bucket_index) {
     return;
   }
 
-  if (bucket_index > TIMER_BUCKETS) {
+  if (bucket_index >= TIMER_BUCKETS) {
     ERROR("trying to place_timer with too high index (%i vs %i)\n",
 	  bucket_index, TIMER_BUCKETS);
     return;
@@ -245,6 +245,24 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
   int from_index = get_bucket_index(from_time);
   int to_index = get_bucket_index(to_time);
 
+  // A time further away than the bucket array reaches (-2) is limited to the
+  // last bucket a timer can be placed in, so the timer is scheduled as far
+  // out as the scheduler can represent instead of being dropped. The scan
+  // below walks the circular array until it reaches to_index, which it never
+  // would for a negative index - it would spin forever holding buckets_mut.
+  int last_index = (current_bucket + TIMER_BUCKETS - 1) % TIMER_BUCKETS;
+  if (from_index == -2 || to_index == -2) {
+    ERROR("re-register window (%ld .. %ld) is beyond the scheduler horizon "
+	  "(current_bucket_start = %ld, %d buckets of %d sec) - "
+	  "limiting it to the last usable bucket\n",
+	  from_time, to_time, current_bucket_start,
+	  TIMER_BUCKETS, TIMER_BUCKET_LENGTH);
+    if (from_index == -2)
+      from_index = last_index;
+    if (to_index == -2)
+      to_index = last_index;
+  }
+
   if (from_index < 0 && to_index < 0) {
     ERROR("could not find timer bucket indices - "
 	  "from_index = %d, to_index = %d, from_time = %ld, to_time %ld, "
@@ -261,16 +279,10 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
   }
 
   if (to_index < 0) {
-    // to_time is further away than the bucket array reaches, so
-    // get_bucket_index() returned -2. The scan below walks the circular array
-    // until it reaches to_index, which it never would for a negative index -
-    // it would spin forever while holding buckets_mut. Search up to the last
-    // bucket we can actually place a timer in instead.
-    ERROR("to_time (%ld) is beyond the scheduler horizon "
-	  "(current_bucket_start = %ld, %d buckets of %d sec) - "
-	  "limiting the search to the last usable bucket\n",
-	  to_time, current_bucket_start, TIMER_BUCKETS, TIMER_BUCKET_LENGTH);
-    to_index = (current_bucket + TIMER_BUCKETS - 1) % TIMER_BUCKETS;
+    // to_time in the past, but from_time is not - an inverted window
+    ERROR("to_time (%ld) before from_time (%ld) - using from_time\n",
+	  to_time, from_time);
+    to_index = from_index;
   }
 
   // find least loaded bucket

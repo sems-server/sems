@@ -39,6 +39,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_rfc3261_musts);
   FCTMF_SUITE_CALL(test_reg_agent);
   FCTMF_SUITE_CALL(test_registrar_client);
+  FCTMF_SUITE_CALL(test_registration_timer);
   FCTMF_SUITE_CALL(test_extensions);
   FCTMF_SUITE_CALL(test_dtmf);
   FCTMF_SUITE_CALL(test_amconfig);
