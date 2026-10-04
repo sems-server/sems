@@ -238,11 +238,17 @@ private:
     std::string qname;
     size_t p = 12;
     while (p < len && q[p]) {
+      // plain labels only (no compression in a question we accept), and
+      // the whole label has to be inside the query
+      size_t label_len = q[p];
+      if ((label_len & 0xc0) || label_len >= len - p) {
+        return std::string();
+      }
       if (!qname.empty()) {
         qname += '.';
       }
-      qname.append((const char *)q + p + 1, q[p]);
-      p += q[p] + 1;
+      qname.append((const char *)q + p + 1, label_len);
+      p += label_len + 1;
     }
     if (p + 5 > len) {
       return std::string();
