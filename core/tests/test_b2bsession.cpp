@@ -30,6 +30,10 @@ public:
   // CallLeg::onB2BReconnect() does this: the role changes while the leg stays
   // registered in the AmB2BMedia slot it was created in
   void flipRole() { a_leg = !a_leg; }
+
+  // what CallLeg does when it lets go of its media session while it lives on
+  // (onB2BReconnect(), changeRtpMode(), onBye(), ...)
+  void releaseMedia() { clearRtpReceiverRelay(); }
 };
 
 const AmB2BSession::RTPRelayMode modes[] = {AmB2BSession::RTP_Direct, AmB2BSession::RTP_Relay,
@@ -120,8 +124,8 @@ FCTMF_SUITE_BGN(test_b2bsession) {
         delete leg;
         media->processDtmfEvents();
         fct_xchk(peer->dtmf_rounds == 1,
-                 "relay mode %d, %s leg destroyed after role change: peer called %d times",
-                 (int)modes[m], leg_is_a ? "A" : "B", peer->dtmf_rounds);
+                 "relay mode %d, %s leg destroyed after role change: peer called %d times", (int)modes[m],
+                 leg_is_a ? "A" : "B", peer->dtmf_rounds);
 
         delete peer;
         bool released = media->releaseReference();
@@ -129,6 +133,73 @@ FCTMF_SUITE_BGN(test_b2bsession) {
                  "relay mode %d, %s leg destroyed after role change: media session reference not released",
                  (int)modes[m], leg_is_a ? "A" : "B");
       }
+    }
+  }
+  FCT_TEST_END();
+
+  // The same, for a leg that stays alive: clearRtpReceiverRelay() (RTP_Relay
+  // and RTP_Transcoding only) must detach this leg and keep its peer. Nothing
+  // is freed here, so a wrongly cleared slot shows up as a failed check.
+  FCT_TEST_BGN(released_leg_is_detached_by_identity_after_a_role_change) {
+    for (int m = 0; m < nb_modes; m++) {
+      if (modes[m] == AmB2BSession::RTP_Direct) {
+        continue;
+      }
+      for (int side = 0; side < 2; side++) {
+        bool leg_is_a = side == 0;
+        TestLeg leg(leg_is_a);
+        TestLeg peer(!leg_is_a);
+        leg.setRtpRelayMode(modes[m]);
+        peer.setRtpRelayMode(modes[m]);
+        AmB2BMedia *media = new AmB2BMedia(leg_is_a ? &leg : &peer, leg_is_a ? &peer : &leg);
+        media->addReference();
+        leg.setMediaSession(media);
+        peer.setMediaSession(media);
+
+        leg.flipRole();
+        leg.releaseMedia();
+
+        media->processDtmfEvents();
+        fct_xchk(leg.dtmf_rounds == 0 && peer.dtmf_rounds == 1,
+                 "relay mode %d, %s leg released after role change: leg called %d times, peer %d times",
+                 (int)modes[m], leg_is_a ? "A" : "B", leg.dtmf_rounds, peer.dtmf_rounds);
+
+        peer.releaseMedia();
+        bool released = media->releaseReference();
+        fct_xchk(released,
+                 "relay mode %d, %s leg released after role change: media session reference not released",
+                 (int)modes[m], leg_is_a ? "A" : "B");
+      }
+    }
+  }
+  FCT_TEST_END();
+
+  // stop() must clear exactly the slots the session occupies: both of them if
+  // it holds both, none if it holds neither (whatever its a_leg flag says).
+  FCT_TEST_BGN(stop_releases_only_the_slots_a_session_occupies) {
+    for (int side = 0; side < 2; side++) {
+      bool is_a_leg = side == 0;
+
+      TestLeg both(is_a_leg);
+      AmB2BMedia *media = new AmB2BMedia(&both, &both);
+      media->addReference();
+      media->stop(&both);
+      media->processDtmfEvents();
+      fct_xchk(both.dtmf_rounds == 0, "%s leg in both slots: still called %d times after stop()",
+               is_a_leg ? "A" : "B", both.dtmf_rounds);
+      media->releaseReference();
+
+      TestLeg a(true), b(false), stranger(is_a_leg);
+      media = new AmB2BMedia(&a, &b);
+      media->addReference();
+      media->stop(&stranger);
+      media->processDtmfEvents();
+      fct_xchk(a.dtmf_rounds == 1 && b.dtmf_rounds == 1,
+               "%s leg in no slot: stop() detached A (called %d times) or B (called %d times)",
+               is_a_leg ? "A" : "B", a.dtmf_rounds, b.dtmf_rounds);
+      media->stop(&a);
+      media->stop(&b);
+      media->releaseReference();
     }
   }
   FCT_TEST_END();
