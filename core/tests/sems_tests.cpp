@@ -41,6 +41,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_dtmf);
   FCTMF_SUITE_CALL(test_amconfig);
   FCTMF_SUITE_CALL(test_amaudio);
+  FCTMF_SUITE_CALL(test_trans_layer);
   FCTMF_SUITE_CALL(test_sip_dis_gw);
   FCTMF_SUITE_CALL(test_sip_dis_gw_app);
   FCTMF_SUITE_CALL(test_resolver_dns);
