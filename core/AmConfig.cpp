@@ -944,6 +944,14 @@ static int readRTPInterface(AmConfigReader& cfg, const string& i_name)
 	    suffix.c_str(),rtp_low_port_str.c_str());
       return -1;
     }
+    // RTP_interface::getNextRtpPort() masks the port with 0xfffe to keep the
+    // RTP/RTCP pair aligned, so an odd low port would hand out the even port
+    // below it - i.e. outside the configured range.
+    if(intf.RtpLowPort % 2){
+      WARN("rtp_low_port%s (%u) must be even, increased to %u\n",
+	   suffix.c_str(),intf.RtpLowPort,intf.RtpLowPort+1);
+      intf.RtpLowPort++;
+    }
   }
 
   // rtp_high_port
@@ -955,6 +963,19 @@ static int readRTPInterface(AmConfigReader& cfg, const string& i_name)
 	    suffix.c_str(),rtp_high_port_str.c_str());
       return -1;
     }
+    // the high port is the RTCP port of the last pair, hence odd
+    if(intf.RtpHighPort % 2 == 0){
+      WARN("rtp_high_port%s (%u) must be odd, decreased to %u\n",
+	   suffix.c_str(),intf.RtpHighPort,intf.RtpHighPort-1);
+      intf.RtpHighPort--;
+    }
+  }
+
+  if(intf.RtpHighPort <= intf.RtpLowPort){
+    ERROR("invalid RTP port range [%u;%u] for interface '%s'\n",
+	  intf.RtpLowPort,intf.RtpHighPort,
+	  i_name.empty() ? "default" : i_name.c_str());
+    return -1;
   }
 
   if(!i_name.empty())
@@ -970,8 +991,10 @@ static int readInterfaces(AmConfigReader& cfg)
   if(!cfg.hasParameter("interfaces")) {
     // no interface list defined:
     // read default params
-    readSIPInterface(cfg,"");
-    readRTPInterface(cfg,"");
+    if(readSIPInterface(cfg,"") < 0)
+      return -1;
+    if(readRTPInterface(cfg,"") < 0)
+      return -1;
     return 0;
   }
 
@@ -991,8 +1014,10 @@ static int readInterfaces(AmConfigReader& cfg)
   for(vector<string>::iterator it = if_names.begin();
       it != if_names.end(); it++) {
 
-    readSIPInterface(cfg,*it);
-    readRTPInterface(cfg,*it);
+    if(readSIPInterface(cfg,*it) < 0)
+      return -1;
+    if(readRTPInterface(cfg,*it) < 0)
+      return -1;
 
     if((AmConfig::SIP_If_names.find(*it) == AmConfig::SIP_If_names.end()) &&
        (AmConfig::RTP_If_names.find(*it) == AmConfig::RTP_If_names.end())) {
