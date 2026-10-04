@@ -9,9 +9,8 @@
 
 #include <atomic>
 #include <memory>
-#include <pthread.h>
-#include <sched.h>
 #include <set>
+#include <thread>
 #include <vector>
 
 // AmRtpStream::recvDtmfPacket() decodes an RFC 4733 telephone-event payload as
@@ -64,50 +63,92 @@ void make_packet(AmRtpPacket &p, unsigned char key, unsigned int ts, unsigned in
   p.parse();
 }
 
-// PacketMem hands slots out to AmRtpStream::recvPacket() in the RTP receiver
-// thread and takes them back from both that thread and the media processor, so
-// the exerciser below claims and releases slots from several threads at once.
-// claims[] counts how many holders a slot has at any time: anything but 0 -> 1
-// -> 0 means the same AmRtpPacket was handed out twice, which used to happen
-// because the slot was claimed with a read followed by a separate write.
+// Only the RTP receiver thread takes slots out of the pool, in
+// AmRtpStream::recvPacket(). It hands back itself every packet bufferPacket()
+// does not keep, while the media processor hands back the ones it took out of
+// the receive buffer in AmRtpStream::receive(). PoolExerciser models exactly
+// that: one thread allocates and frees every other packet itself, and passes
+// the rest through a small ring to a second thread that frees them.
+//
+// The ring holds fewer packets than the pool, so the pool is never exhausted:
+// every allocation has to succeed, and once everything has been freed again
+// the in-use counter has to be back at zero. With a plain counter the
+// receiver's n_used++ and the media processor's n_used-- lost updates against
+// each other, and the counter drifted away from the real number of used slots.
 struct PoolExerciser {
-  PacketMem mem;
-  std::atomic<unsigned int> claims[MAX_PACKETS];
-  std::atomic<unsigned int> violations;
-  std::atomic<unsigned int> allocations;
+  static const unsigned int RING_SIZE = 8;
 
-  PoolExerciser() : violations(0), allocations(0) {
-    for (unsigned int i = 0; i < MAX_PACKETS; i++)
-      claims[i].store(0);
+  PacketMem mem;
+
+  // single producer (the allocator), single consumer (the freer)
+  AmRtpPacket *ring[RING_SIZE];
+  std::atomic<unsigned int> ring_head; // written by the allocator only
+  std::atomic<unsigned int> ring_tail; // written by the freer only
+  std::atomic<bool> done;
+
+  // holders of each slot: a slot handed out while still held means the same
+  // AmRtpPacket went to two owners
+  std::atomic<unsigned int> holders[MAX_PACKETS];
+  std::atomic<unsigned int> handed_out_twice;
+
+  unsigned int failed_allocations; // allocator thread only
+
+  PoolExerciser() : ring_head(0), ring_tail(0), done(false), handed_out_twice(0), failed_allocations(0) {
+    for (unsigned int i = 0; i < MAX_PACKETS; i++) {
+      holders[i].store(0);
+    }
   }
 
-  void run(unsigned int rounds) {
+  void take(AmRtpPacket *p) {
+    if (holders[p - mem.packets].fetch_add(1) != 0) {
+      handed_out_twice.fetch_add(1);
+    }
+  }
+
+  void release(AmRtpPacket *p) {
+    holders[p - mem.packets].fetch_sub(1);
+    mem.freePacket(p);
+  }
+
+  // the RTP receiver
+  void allocate(unsigned int rounds) {
     for (unsigned int i = 0; i < rounds; i++) {
       AmRtpPacket *p = mem.newPacket();
-      if (!p)
-        continue; // pool momentarily exhausted by the other threads
+      if (!p) {
+        failed_allocations++;
+        continue;
+      }
+      take(p);
 
-      allocations.fetch_add(1);
+      unsigned int head = ring_head.load(std::memory_order_relaxed);
+      if ((i & 1) || head - ring_tail.load(std::memory_order_acquire) == RING_SIZE) {
+        release(p); // dropped by the receiver itself
+        continue;
+      }
 
-      unsigned int idx = p - &mem.packets[0];
-      if (claims[idx].fetch_add(1) != 0)
-        violations.fetch_add(1);
+      ring[head % RING_SIZE] = p;
+      ring_head.store(head + 1, std::memory_order_release);
+    }
+    done.store(true);
+  }
 
-      // hold the slot for a moment so an overlapping claim has time to show up
-      sched_yield();
+  // the media processor
+  void consume() {
+    for (;;) {
+      unsigned int tail = ring_tail.load(std::memory_order_relaxed);
+      if (tail == ring_head.load(std::memory_order_acquire)) {
+        if (done.load() && tail == ring_head.load(std::memory_order_acquire)) {
+          return;
+        }
+        continue;
+      }
 
-      if (claims[idx].fetch_sub(1) != 1)
-        violations.fetch_add(1);
-
-      mem.freePacket(p);
+      AmRtpPacket *p = ring[tail % RING_SIZE];
+      ring_tail.store(tail + 1, std::memory_order_release);
+      release(p);
     }
   }
 };
-
-void *exercise_pool(void *arg) {
-  static_cast<PoolExerciser *>(arg)->run(20000);
-  return NULL;
-}
 
 } // namespace
 
@@ -134,39 +175,33 @@ FCTMF_SUITE_BGN(test_rtpstream) {
     fct_chk(mem.newPacket() == NULL);
 
     // and the counter comes back to zero, so the pool stays usable
-    for (std::set<AmRtpPacket *>::iterator it = handed_out.begin(); it != handed_out.end(); ++it)
+    for (std::set<AmRtpPacket *>::iterator it = handed_out.begin(); it != handed_out.end(); ++it) {
       mem.freePacket(*it);
+    }
     fct_chk_eq_int(mem.usedCount(), 0);
     fct_chk(mem.newPacket() != NULL);
   }
   FCT_TEST_END();
 
-  FCT_TEST_BGN(packet_pool_is_safe_against_concurrent_alloc_free) {
+  FCT_TEST_BGN(packet_pool_counts_concurrent_alloc_free) {
     PoolExerciser ex;
-    const unsigned int threads = 4;
-    pthread_t tid[threads];
-    unsigned int started = 0;
+    std::thread media_processor(&PoolExerciser::consume, &ex);
+    ex.allocate(500000);
+    media_processor.join();
 
-    for (unsigned int i = 0; i < threads; i++) {
-      if (pthread_create(&tid[i], NULL, exercise_pool, &ex) == 0)
-        started++;
-      else
-        break;
-    }
-    fct_req(started == threads);
-
-    for (unsigned int i = 0; i < started; i++)
-      pthread_join(tid[i], NULL);
-
-    fct_xchk(ex.violations.load() == 0, "%u slots were handed out more than once (%u allocations)",
-             ex.violations.load(), ex.allocations.load());
-
-    // every claim was released again, so the counter must be back to zero and
-    // the whole pool available: a counter that drifted up used to make
-    // newPacket() fail for the rest of the stream's life
+    fct_chk_eq_int(ex.failed_allocations, 0);
+    fct_chk_eq_int(ex.handed_out_twice.load(), 0);
     fct_chk_eq_int(ex.mem.usedCount(), 0);
-    for (unsigned int i = 0; i < MAX_PACKETS; i++)
-      fct_req(ex.mem.newPacket() != NULL);
+
+    // the whole pool is available again
+    std::set<AmRtpPacket *> slots;
+    for (unsigned int i = 0; i < MAX_PACKETS; i++) {
+      AmRtpPacket *p = ex.mem.newPacket();
+      fct_req(p != NULL);
+      slots.insert(p);
+    }
+    fct_chk_eq_int((int)slots.size(), MAX_PACKETS);
+    fct_chk_eq_int(ex.mem.usedCount(), MAX_PACKETS);
   }
   FCT_TEST_END();
 

@@ -76,8 +76,9 @@ class msg_logger;
  * lock: the RTP receiver allocates in AmRtpStream::recvPacket() and releases
  * every packet it does not buffer, while the media processor releases the
  * packets it took out of the receive buffer. The slot ownership flags and the
- * in-use counter therefore have to be atomic, and a slot has to be claimed
- * with a single test-and-set instead of a separate read and write.
+ * in-use counter therefore have to be atomic: a plain counter loses updates
+ * between the two threads, and a plain flag does not order the media
+ * processor's last read of a packet before the receiver refilling it.
  */
 struct PacketMem {
 #define MAX_PACKETS_BITS 5
