@@ -527,6 +527,11 @@ string ip_port_entry::to_str()
 dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, unsigned char* begin, unsigned char* end)
 {
     if(rr->type == dns_r_a) {
+	if(rr->rdata_len != sizeof(in_addr)) {
+	    DBG("A record of %u bytes ignored\n",rr->rdata_len);
+	    return NULL;
+	}
+
 	DBG("A:\tTTL=%i\t%s\t%i.%i.%i.%i\n",
 	    ns_rr_ttl(*rr),
 	    ns_rr_name(*rr),
@@ -541,6 +546,11 @@ dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, unsigned char* begin, unsig
 	return new_ip;
     }
     else if(rr->type == dns_r_aaaa) {
+	if(rr->rdata_len != sizeof(in6_addr)) {
+	    DBG("AAAA record of %u bytes ignored\n",rr->rdata_len);
+	    return NULL;
+	}
+
 	char addr_str[INET6_ADDRSTRLEN];
 	inet_ntop(AF_INET6, ns_rr_rdata(*rr), addr_str, sizeof(addr_str));
 	DBG("AAAA:\tTTL=%i\t%s\t%s\n",
@@ -561,6 +571,12 @@ dns_base_entry* dns_srv_entry::get_rr(dns_record* rr, unsigned char* begin, unsi
 {
     if(rr->type != dns_r_srv)
 	return NULL;
+
+    // priority, weight, port and at least the root label of the target
+    if(rr->rdata_len < 7) {
+	DBG("SRV record of %u bytes ignored\n",rr->rdata_len);
+	return NULL;
+    }
 
     unsigned char name_buf[NS_MAXDNAME];
     const unsigned char * rdata = ns_rr_rdata(*rr);
@@ -725,6 +741,12 @@ dns_base_entry* dns_naptr_entry::get_rr(dns_record* rr, unsigned char* begin, un
 
     if(rr->type != dns_r_naptr)
 	return NULL;
+
+    // order and preference, ahead of the length-prefixed fields
+    if(rr->rdata_len < 4) {
+	DBG("NAPTR record of %u bytes ignored\n",rr->rdata_len);
+	return NULL;
+    }
 
     const unsigned char * rdata = ns_rr_rdata(*rr);
 
