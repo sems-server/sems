@@ -46,6 +46,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_sip_dis_gw);
   FCTMF_SUITE_CALL(test_sip_dis_gw_app);
   FCTMF_SUITE_CALL(test_resolver_dns);
+  FCTMF_SUITE_CALL(test_tcp_trsp);
   // stops the DNS resolver for good, so keep it last
   FCTMF_SUITE_CALL(test_resolver);
 }

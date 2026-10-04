@@ -17,6 +17,7 @@ using std::vector;
 #include <event2/event.h>
 
 #include <map>
+#include <set>
 #include <deque>
 #include <string>
 using std::map;
@@ -192,6 +193,13 @@ class tcp_server_worker
 
   AmMutex                      connections_mut;
   map<string,tcp_trsp_socket*> connections;
+
+  /**
+   * Connections whose alias in 'connections' has been taken over by a
+   * newer connection from the same peer address. They are still open,
+   * so each keeps the reference the map held on it until it is closed.
+   */
+  std::set<tcp_trsp_socket*>   displaced;
 
 protected:
   void run();
