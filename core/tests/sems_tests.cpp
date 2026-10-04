@@ -32,6 +32,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_jsonarg);
   FCTMF_SUITE_CALL(test_replaces);
   FCTMF_SUITE_CALL(test_b2bsession);
+  FCTMF_SUITE_CALL(test_sbc_cc_destroy);
   FCTMF_SUITE_CALL(test_parser);
   FCTMF_SUITE_CALL(test_mediaprocessor);
   FCTMF_SUITE_CALL(test_rfc3261_parser);
