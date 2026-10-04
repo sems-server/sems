@@ -49,6 +49,9 @@ RUN ls -al /root/rpmbuild/RPMS
 # install SEMS from RPMs
 RUN rpm -i /root/rpmbuild/RPMS/x86_64/sems-*.rpm
 RUN /usr/sbin/sems -v
+# the SIP to DIS gateway is built and packaged by default
+RUN rpm -ql sems | grep -x /usr/lib64/sems/plug-in/sip_dis_gw.so \
+    && rpm -ql sems | grep -x /etc/sems/etc/sip_dis_gw.conf
 RUN ls -al /etc/sems/sems.conf
 
 # Run SEMS with the specified configuration

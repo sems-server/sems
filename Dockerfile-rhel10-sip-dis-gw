@@ -1,0 +1,76 @@
+FROM almalinux:10
+
+# Base build dependencies (same as Dockerfile-rhel10)
+RUN dnf install -y epel-release \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y \
+        git \
+        cmake \
+        make \
+        gcc-c++ \
+        libevent-devel \
+        libev-devel \
+        gsm-devel \
+        opus-devel \
+        speex-devel \
+        openssl-devel \
+        python3-devel \
+        hiredis-devel \
+        zlib-devel \
+        libcurl-devel \
+        libxml2-devel \
+        spandsp-devel \
+        man \
+        libsamplerate-devel \
+        libmpg123-devel \
+        lame-devel \
+        flite-devel \
+        codec2-devel \
+        rpm-build \
+        which \
+        cargo rust \
+        mariadb-connector-c-devel --nogpgcheck
+
+# -----------------------------------------------------------------------
+# Build SEMS with the sip_dis_gw module and run the unit tests, which
+# include the module's own suite (test_sip_dis_gw).
+# -----------------------------------------------------------------------
+WORKDIR /usr/src/sems
+COPY . .
+
+RUN mkdir -p build \
+    && cd build \
+    && cmake .. \
+    && make sems_tests -j$(nproc) \
+    && ./core/sems_tests \
+    && make sems_sip_dis_gw -j$(nproc)
+
+RUN ls -al /usr/src/sems/build/apps/sip_dis_gw/sip_dis_gw.so \
+    && echo "=== sip_dis_gw.so built ==="
+
+# Install everything (SEMS + sip_dis_gw plugin)
+RUN cd build && make install -j$(nproc)
+RUN /usr/local/sbin/sems -v
+
+# Runtime verification: start SEMS with sip_dis_gw loaded and require log
+# evidence that the module loaded and its DIS network thread started.
+# Note: SEMS_CFG_PREFIX defaults to empty, so the config is installed to
+# /etc/sems/sems.conf (not under /usr/local). Locate it robustly.
+# The stock config loads plug-ins this image does not build (g722, ...) and
+# SEMS exits on the first one missing, so load only what the check needs.
+RUN SEMS_CONF="$(find /etc/sems /usr/local/etc/sems -name sems.conf 2>/dev/null | head -n1)" \
+        && test -n "$SEMS_CONF" \
+        && echo "Using SEMS config: $SEMS_CONF" \
+        && grep -v -E '^(load_plugins|application)=' "$SEMS_CONF" > /tmp/sems-sip-dis-gw.conf \
+        && echo 'load_plugins=wav;sip_dis_gw' >> /tmp/sems-sip-dis-gw.conf \
+        && echo 'application=sip_dis_gw' >> /tmp/sems-sip-dis-gw.conf \
+        && (timeout 8 /usr/local/sbin/sems -E -D3 -f /tmp/sems-sip-dis-gw.conf > /tmp/sems-sip-dis-gw.log 2>&1 || true) \
+        && grep -E 'sip_dis_gw: DIS network thread started' /tmp/sems-sip-dis-gw.log \
+             || (echo '=== SEMS runtime log ===' && cat /tmp/sems-sip-dis-gw.log && false) \
+        && echo "=== sip_dis_gw module load verified at runtime ==="
+
+# Smoke-test: verify sip_dis_gw.so is installed in the plug-in directory
+RUN ls -al /usr/local/lib/sems/plug-in/sip_dis_gw.so \
+    && echo "=== sip_dis_gw plugin installed successfully ==="
+
+CMD ["/usr/local/sbin/sems", "-E", "-f", "/etc/sems/sems.conf"]

@@ -41,6 +41,8 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_dtmf);
   FCTMF_SUITE_CALL(test_amconfig);
   FCTMF_SUITE_CALL(test_amaudio);
+  FCTMF_SUITE_CALL(test_sip_dis_gw);
+  FCTMF_SUITE_CALL(test_sip_dis_gw_app);
   // stops the DNS resolver for good, so keep it last
   FCTMF_SUITE_CALL(test_resolver);
 }

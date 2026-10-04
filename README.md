@@ -161,6 +161,13 @@ The following applications are shipped with SEMS :
 
 * **xmlrpc2di** - makes DI interfaces accessible via XMLRPC, also XMLRPC client
 
+* **sip_dis_gw** - SIP to DIS radio gateway. Connects SIP calls to the radio
+  nets of a DIS 7 (IEEE 1278.1-2012) simulation: a call to
+  `sip:<radio>@<sems>` becomes a radio on that radio's frequency, hears every
+  simulated transmitter on it, and transmits the caller's voice by voice
+  activation, DTMF push-to-talk or permanently. Broadcast, multicast or
+  unicast DIS, no external dependencies.
+
 ### Monitoring and Management
 
 * **monitoring** - in-memory AVP DB for call monitoring and generic data storage
@@ -284,6 +291,7 @@ These CMake options control optional features and codec support. Pass them with 
 | `SEMS_USE_MONITORING` | `ON` | Build with monitoring support (monitoring app + mod_monitoring DSM module) |
 | `SEMS_USE_IPV6` | `ON` | Build with IPv6 support |
 | `SEMS_USE_PYTHON` | `ON` | Build Python-dependent modules (ivr, conf_auth, mailbox, pin_collect, mod_py) |
+| `SEMS_USE_SIP_DIS_GW` | `ON` | Build the sip_dis_gw SIP to DIS radio gateway |
 | `SEMS_USE_ASAN` | `OFF` | Build with AddressSanitizer (memory error detector) |
 | `SEMS_USE_UBSAN` | `OFF` | Build with UndefinedBehaviorSanitizer (fail-fast on UB) |
 | `SEMS_USE_TSAN` | `OFF` | Build with ThreadSanitizer (data race detector; mutually exclusive with `SEMS_USE_ASAN`) |
