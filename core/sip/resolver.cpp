@@ -1103,6 +1103,22 @@ int _resolver::set_destination_ip(const cstring& next_hop,
 	}
 
     no_SRV:
+	// The SRV attempt above can leave SRV state behind: an SRV entry was
+	// found and bound to the handle, h_dns->port was set from the record
+	// it picked, but the record's target did not resolve. Drop that state
+	// before resolving the next hop itself - otherwise the handle still
+	// has srv_e bound once the fallback binds ip_e, so
+	// dns_handle::next_ip() keeps dispatching through dns_srv_entry and
+	// stamps the failed SRV record's port onto every address after the
+	// first one (resolve_targets() walks the rest of the list that way).
+	if(h_dns->srv_e){
+	    dec_ref(h_dns->srv_e);
+	    h_dns->srv_e = NULL;
+	    h_dns->srv_n = 0;
+	    h_dns->srv_used = 0;
+	    h_dns->port = 0;
+	}
+
 	memset(remote_ip,0,sizeof(sockaddr_storage));
 	int err = resolver::instance()->resolve_name(nh.c_str(),
 						     h_dns,remote_ip,

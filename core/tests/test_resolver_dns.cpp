@@ -366,6 +366,27 @@ FCTMF_SUITE_BGN(test_resolver_dns) {
     FakeDnsServer::restore();
   }
   FCT_TEST_END();
+
+  // When the SRV record exists but its target does not resolve,
+  // set_destination_ip() falls back to the next hop's own A records. The
+  // failed SRV attempt must not leave its entry and port on the handle: the
+  // remaining fallback addresses used to be dispatched through the SRV entry
+  // and stamped with the failed record's port.
+  FCT_TEST_BGN(failed_srv_target_does_not_leak_into_fallback) {
+    FakeDnsServer dns;
+    dns.zone.push_back(srv_rr("_sip._udp.srv2.test", 10, 0, 5080, "nx.srv2.test"));
+    dns.zone.push_back(a_rr("srv2.test", "192.0.2.10"));
+    dns.zone.push_back(a_rr("srv2.test", "192.0.2.11"));
+    fct_req(dns.start());
+    dns.use();
+
+    std::string expected = "192.0.2.10:5060 192.0.2.11:5060";
+    std::string got = join(resolve("srv2.test"));
+    fct_xchk(got == expected, "got '%s', expected '%s'", got.c_str(), expected.c_str());
+
+    FakeDnsServer::restore();
+  }
+  FCT_TEST_END();
 }
 FCTMF_SUITE_END();
 
