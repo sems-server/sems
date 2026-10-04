@@ -537,7 +537,15 @@ void tcp_server_worker::add_connection(tcp_trsp_socket* client_sock)
   connections_mut.lock();
   map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
   if(sock_it != connections.end()) {
-    dec_ref(sock_it->second);
+    // The peer reconnected from the same address (peers that use a fixed
+    // source port reuse the very same conn_id): the alias moves over to the
+    // new connection. The old one is still open with its events armed, so
+    // it must not lose the map's reference here - that could destroy it
+    // without ever closing its socket, possibly from another thread than
+    // the one running its events. It keeps the reference until close().
+    DBG("TCP connection alias %s taken over by a newer connection",
+	conn_id.c_str());
+    displaced.insert(sock_it->second);
     sock_it->second = client_sock;
   }
   else {
@@ -556,21 +564,19 @@ void tcp_server_worker::remove_connection(tcp_trsp_socket* client_sock)
 
   connections_mut.lock();
   map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
-  if(sock_it != connections.end()) {
-    if(sock_it->second != client_sock) {
-      // add_connection() has already rebound this alias to a newer socket from
-      // the same peer address (peers that reconnect from a fixed source port
-      // reuse the very same conn_id). Releasing it here would drop the map's
-      // reference to that live socket - possibly its last one, while its read
-      // event is still armed - and would leave the peer with no alias at all.
-      DBG("TCP connection alias %s now belongs to another socket, keeping it",
-	  conn_id.c_str());
-      connections_mut.unlock();
-      return;
-    }
+  if((sock_it != connections.end()) && (sock_it->second == client_sock)) {
     dec_ref(sock_it->second);
     connections.erase(sock_it);
     DBG("TCP connection from %s removed",conn_id.c_str());
+  }
+  else if(displaced.erase(client_sock)) {
+    // add_connection() has rebound the alias to a newer connection from the
+    // same peer address. Releasing the alias here would drop that live
+    // connection's reference - destroying it with its socket left open - and
+    // leave the peer with no alias at all: only drop the reference kept for
+    // this one.
+    dec_ref(client_sock);
+    DBG("displaced TCP connection from %s removed",conn_id.c_str());
   }
   connections_mut.unlock();
 }
