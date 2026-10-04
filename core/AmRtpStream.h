@@ -124,6 +124,7 @@ struct PacketMem {
     n_used.fetch_sub(1);
   }
 
+  /** only while no slot is handed out: a holder would keep using its slot */
   void clear() {
     for(unsigned int i=0; i<MAX_PACKETS; i++)
       used[i].store(false);
@@ -351,6 +352,9 @@ protected:
   
   /** Try to reuse oldest buffered packet for newly coming packet */
   AmRtpPacket *reuseBufferedPacket();
+
+  /** Drop all packets in receive_buf and rtp_ev_qu (receive_mut held) */
+  void releaseBufferedPackets();
 
   /** handle symmetric RTP/RTCP - if in passive mode, update raddr from rp */
   void handleSymmetricRtp(struct sockaddr_storage* recv_addr, bool rtcp);
