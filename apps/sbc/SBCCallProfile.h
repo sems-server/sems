@@ -121,6 +121,12 @@ struct SBCCallProfile
     bool   hiding;
     string hiding_prefix;
     string hiding_vars;
+
+    // SBCCallProfile's own constructor does not reach into this nested
+    // struct, so without this 'hiding' stays indeterminate until
+    // readFromConfiguration() runs - and SBCCallLeg copies the profile it is
+    // handed, which loads the member. Initialise it here.
+    Contact() : hiding(false) { }
   };
   
   Contact contact;
@@ -257,7 +263,11 @@ struct SBCCallProfile
     string print() const;
 
     bool isActive() { return enabled; }
-    TranscoderSettings(): transcoder_mode(Never), enabled(false) { }
+    // dtmf_mode was left out, so a copy of a profile that has not been
+    // through readDTMFMode() loaded an indeterminate enum. DTMFNever is what
+    // readDTMFMode() itself picks for an empty setting.
+    TranscoderSettings()
+      : transcoder_mode(Never), dtmf_mode(DTMFNever), enabled(false) { }
   } transcoder;
 
   struct CodecPreferences {
