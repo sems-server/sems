@@ -388,6 +388,7 @@ getent passwd %{name} >/dev/null || \
 %config(noreplace) %{_sysconfdir}/%{name}/etc/refuse.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/replytranslate.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/sbc.conf
+%config(noreplace) %{_sysconfdir}/%{name}/etc/sip_dis_gw.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/src_ipmap.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/sst_b2b.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/%{name}/etc/symmetricrtp.sbcprofile.conf
@@ -418,6 +419,7 @@ getent passwd %{name} >/dev/null || \
 %doc doc/Readme.registrar_client.txt
 %doc doc/Readme.sst_b2b.txt
 %doc doc/Readme.sw_prepaid_sip.txt
+%doc apps/sip_dis_gw/Readme.sip_dis_gw.txt
 %doc doc/Readme.uac_auth.txt
 %doc doc/Readme.voicebox.txt
 %doc doc/Readme.voicemail.txt
@@ -564,6 +566,7 @@ getent passwd %{name} >/dev/null || \
 %{_libdir}/%{name}/plug-in/registrar_client.so
 %{_libdir}/%{name}/plug-in/sbc.so
 %{_libdir}/%{name}/plug-in/session_timer.so
+%{_libdir}/%{name}/plug-in/sip_dis_gw.so
 %{_libdir}/%{name}/plug-in/stats.so
 %{_libdir}/%{name}/plug-in/uac_auth.so
 %{_libdir}/%{name}/plug-in/voicebox.so

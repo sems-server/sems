@@ -25,6 +25,9 @@ RUN ls -al ..
 
 RUN dpkg -i ../sems_*.deb
 RUN /usr/sbin/sems -v
+# the SIP to DIS gateway is built and packaged by default
+RUN dpkg -L sems | grep -x /usr/lib/sems/plug-in/sip_dis_gw.so \
+    && dpkg -L sems | grep -x /etc/sems/etc/sip_dis_gw.conf
 
 # Run SEMS with the specified configuration
 CMD ["/usr/sbin/sems", "-E", "-f", "/etc/sems/sems.conf"]
