@@ -255,7 +255,7 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
     ERROR("re-register window (%ld .. %ld) is beyond the scheduler horizon "
 	  "(current_bucket_start = %ld, %d buckets of %d sec) - "
 	  "limiting it to the last usable bucket\n",
-	  from_time, to_time, current_bucket_start,
+	  (long)from_time, (long)to_time, (long)current_bucket_start,
 	  TIMER_BUCKETS, TIMER_BUCKET_LENGTH);
     if (from_index == -2)
       from_index = last_index;
@@ -281,7 +281,7 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
   if (to_index < 0) {
     // to_time in the past, but from_time is not - an inverted window
     ERROR("to_time (%ld) before from_time (%ld) - using from_time\n",
-	  to_time, from_time);
+	  (long)to_time, (long)from_time);
     to_index = from_index;
   }
 
