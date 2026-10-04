@@ -67,6 +67,10 @@ JsonrpcNetstringsConnection::JsonrpcNetstringsConnection(const std::string& id)
   : JsonrpcPeerConnection(id), 
     fd(0), msg_size(0), rcvd_size(0), in_msg(false), msg_recv(true)
 {
+  // the watchers are initialised once the connection enters the read loop;
+  // until then ev_is_active() has to see them as inactive
+  memset(&ev_read, 0, sizeof(ev_read));
+  memset(&ev_write, 0, sizeof(ev_write));
 }
 
 JsonrpcNetstringsConnection::~JsonrpcNetstringsConnection() {
