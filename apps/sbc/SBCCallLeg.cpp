@@ -530,6 +530,12 @@ void SBCCallLeg::onBeforeDestroy()
     // teardown path, there is nothing left to abort for.
     try {
       (*i)->onDestroyLeg(this);
+    } catch (const AmSession::Exception& e) {
+      ERROR("exception from onDestroyLeg() while destroying leg '%s': %i %s\n",
+	    getLocalTag().c_str(), e.code, e.reason.c_str());
+    } catch (const string& s) {
+      ERROR("exception from onDestroyLeg() while destroying leg '%s': %s\n",
+	    getLocalTag().c_str(), s.c_str());
     } catch (const std::exception& e) {
       ERROR("exception from onDestroyLeg() while destroying leg '%s': %s\n",
 	    getLocalTag().c_str(), e.what());
