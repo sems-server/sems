@@ -41,6 +41,18 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 #endif
 
 /*
+ * Always take the byte-wise tail of the aligned-read paths below. The
+ * word-wise one reads up to three bytes past the end of the key and masks
+ * them off - harmless on the hardware, but an out-of-bounds read all the
+ * same, which AddressSanitizer reports as soon as a key is hashed whose
+ * length is not a multiple of four (the DNS cache does that for every name
+ * it looks up). Both tails produce the same hash value.
+ */
+#ifndef VALGRIND
+# define VALGRIND
+#endif
+
+/*
  * My best guess at if you are big-endian or little-endian.  This may
  * need adjustment.
  * Update 20080211, Richard Newman: I think this fits in better with the
