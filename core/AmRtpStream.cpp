@@ -823,10 +823,7 @@ void AmRtpStream::resume()
   DBG("RTP Stream instance [%p] resuming (receiving=true, clearing biffers/TS/TO)\n", this);
   clearRTPTimeout();
   receive_mut.lock();
-  mem.clear();
-  receive_buf.clear();
-  while (!rtp_ev_qu.empty())
-    rtp_ev_qu.pop();
+  releaseBufferedPackets();
   receive_mut.unlock();
   receiving = true;
 
@@ -1100,6 +1097,24 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   return 1;
 }
 
+// receive_mut must be held. Only the queued packets go back to the pool, not
+// mem.clear(): the media processor may still be reading the packet it took
+// out with nextPacket(), and the receiver may be filling the one it just got
+// from newPacket(). Marking those slots free as well handed them out again
+// while in use; their holders free them when they are done.
+void AmRtpStream::releaseBufferedPackets()
+{
+  for (ReceiveBuffer::iterator it = receive_buf.begin();
+       it != receive_buf.end(); ++it)
+    mem.freePacket(it->second);
+  receive_buf.clear();
+
+  while (!rtp_ev_qu.empty()) {
+    mem.freePacket(rtp_ev_qu.front());
+    rtp_ev_qu.pop();
+  }
+}
+
 AmRtpPacket *AmRtpStream::reuseBufferedPacket()
 {
   AmRtpPacket *p = NULL;
@@ -1125,19 +1140,14 @@ void AmRtpStream::recvPacket(int fd, unsigned char* pkt, size_t len)
   if (!p) {
     // Last-resort recovery for issue #92. The relay-mode prevention in
     // bufferPacket() covers the common case, but packets can still get
-    // stranded in rtp_ev_qu (which reuseBufferedPacket() never recycles
-    // from) or via race conditions around SDP renegotiation. Clearing the
-    // mem pool, receive_buf and rtp_ev_qu restores the stream instead of
-    // dropping every further packet until the call ends. This mirrors the
-    // semantics of AmRtpStream::resume() which already performs the same
-    // clear under receive_mut.
+    // stranded in rtp_ev_qu, which reuseBufferedPacket() never recycles
+    // from. Dropping everything that is queued restores the stream instead
+    // of dropping every further packet until the call ends, the same way
+    // AmRtpStream::resume() does.
     WARN("out of buffers for RTP packets, clearing buffers (stream [%p])\n",
 	this);
     receive_mut.lock();
-    mem.clear();
-    receive_buf.clear();
-    while (!rtp_ev_qu.empty())
-      rtp_ev_qu.pop();
+    releaseBufferedPackets();
     receive_mut.unlock();
     p = mem.newPacket();
   }

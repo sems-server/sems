@@ -32,7 +32,24 @@ public:
     local_telephone_event_pt.reset(new SdpPayload(TE_PT, "telephone-event", 8000, 0));
   }
 
+  using AmRtpStream::nextPacket;
   using AmRtpStream::recvDtmfPacket;
+
+  // what the RTP receiver hands over for a packet with a 4 byte payload of
+  // type pt at RTP timestamp ts
+  void receive(unsigned char pt, unsigned int ts) {
+    unsigned char raw[] = {0x80, pt, 0x00, 0x01, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x01, 0x0a, 0x03, 0x20};
+    for (unsigned int i = 0; i < 4; i++) {
+      raw[4 + i] = (unsigned char)(ts >> (24 - 8 * i));
+    }
+    recvPacket(-1, raw, sizeof(raw));
+  }
+
+  // what AmRtpStream::receive() does with a packet from nextPacket() once it
+  // is done with it
+  void done(AmRtpPacket *p) { mem.freePacket(p); }
+
+  unsigned int packetsInUse() const { return mem.usedCount(); }
 };
 
 class DtmfSession : public AmSession {
@@ -202,6 +219,61 @@ FCTMF_SUITE_BGN(test_rtpstream) {
     }
     fct_chk_eq_int((int)slots.size(), MAX_PACKETS);
     fct_chk_eq_int(ex.mem.usedCount(), MAX_PACKETS);
+  }
+  FCT_TEST_END();
+
+  // resume() runs in the session's thread, e.g. when a re-INVITE re-initializes
+  // the stream, while the media processor may be in AmRtpStream::receive()
+  // reading a packet it took out with nextPacket(). It used to mark every slot
+  // free with mem.clear(), so the receiver refilled that packet underneath the
+  // media processor, which then freed the slot of a packet still buffered.
+  FCT_TEST_BGN(resume_leaves_packet_in_use_alone) {
+    DtmfSession s;
+    std::unique_ptr<TestStream> stream(new TestStream(&s));
+
+    stream->receive(0, 1000);
+    AmRtpPacket *held = NULL;
+    fct_req(stream->nextPacket(held) == 1 && held != NULL);
+    fct_req(held->timestamp == 1000);
+
+    stream->resume();
+
+    // the receiver keeps going and fills the rest of the pool
+    for (unsigned int i = 1; i < MAX_PACKETS; i++) {
+      stream->receive(0, 1000 + i * 160);
+    }
+    fct_chk_eq_int(held->timestamp, 1000);
+    fct_chk_eq_int(stream->packetsInUse(), MAX_PACKETS);
+
+    stream->done(held);
+    fct_chk_eq_int(stream->packetsInUse(), MAX_PACKETS - 1);
+  }
+  FCT_TEST_END();
+
+  // The receiver's last-resort recovery when the pool is exhausted (issue #92)
+  // runs while the media processor may hold a packet just as well. Telephone
+  // events fill the pool here, as reuseBufferedPacket() cannot recycle them.
+  FCT_TEST_BGN(out_of_buffers_recovery_leaves_packet_in_use_alone) {
+    DtmfSession s;
+    std::unique_ptr<TestStream> stream(new TestStream(&s));
+
+    stream->receive(TE_PT, 1000);
+    AmRtpPacket *held = NULL;
+    fct_req(stream->nextPacket(held) == 1 && held != NULL);
+    fct_req(held->timestamp == 1000);
+
+    for (unsigned int i = 1; i < MAX_PACKETS; i++) {
+      stream->receive(TE_PT, 1000 + i * 160);
+    }
+    fct_req(stream->packetsInUse() == MAX_PACKETS);
+
+    // no free slot left: the queued events are dropped to make room
+    stream->receive(0, 100000);
+    fct_chk_eq_int(held->timestamp, 1000);
+    fct_chk_eq_int(stream->packetsInUse(), 2);
+
+    stream->done(held);
+    fct_chk_eq_int(stream->packetsInUse(), 1);
   }
   FCT_TEST_END();
 
