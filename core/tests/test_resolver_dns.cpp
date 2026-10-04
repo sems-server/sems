@@ -411,6 +411,24 @@ FCTMF_SUITE_BGN(test_resolver_dns) {
     FakeDnsServer::restore();
   }
   FCT_TEST_END();
+
+  // An A record carries exactly four bytes of address. A shorter one used to
+  // be copied out four bytes wide anyway, taking the rest of the "address"
+  // from whatever follows it in the message, or from beyond its end.
+  FCT_TEST_BGN(address_records_of_the_wrong_size_are_ignored) {
+    FakeDnsServer dns;
+    dns.zone.push_back(FakeRR{"short.test", ns_t_a, std::string("\xc6\x33", 2)});
+    dns.zone.push_back(a_rr("short.test", "192.0.2.40"));
+    fct_req(dns.start());
+    dns.use();
+
+    std::string expected = "192.0.2.40:5060";
+    std::string got = join(resolve("short.test"));
+    fct_xchk(got == expected, "got '%s', expected '%s'", got.c_str(), expected.c_str());
+
+    FakeDnsServer::restore();
+  }
+  FCT_TEST_END();
 }
 FCTMF_SUITE_END();
 
