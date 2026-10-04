@@ -72,8 +72,8 @@ void AmSessionProcessor::addThreads(unsigned int num_threads) {
 }
 
 
-AmSessionProcessorThread::AmSessionProcessorThread() 
-  : events(this), runcond(false)
+AmSessionProcessorThread::AmSessionProcessorThread()
+  : events(this), stop_requested(false), runcond(false)
 {
 }
 
@@ -89,7 +89,10 @@ void AmSessionProcessorThread::notify(AmEventQueue* sender) {
 
 void AmSessionProcessorThread::run() {
 
-  stop_requested = false;
+  // stop_requested is initialized in the constructor and must not be reset
+  // here: stop() may already have run before this thread got scheduled, and
+  // clearing the flag at that point loses the stop request for good - the
+  // loop below then never exits and join() blocks forever on shutdown.
   while(!stop_requested.get()){
 
     runcond.wait_for();
