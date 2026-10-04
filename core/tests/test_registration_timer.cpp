@@ -5,10 +5,10 @@
 #include "../../apps/db_reg_agent/RegistrationTimer.h"
 
 #include <atomic>
+#include <chrono>
 #include <sys/time.h>
 #include <thread>
 #include <time.h>
-#include <unistd.h>
 
 // RegistrationTimer (db_reg_agent) keeps its timers in a circular array of
 // TIMER_BUCKETS buckets of TIMER_BUCKET_LENGTH seconds each, so it can only
@@ -19,7 +19,9 @@
 // a negative index the circular walk never reaches, so it spun forever while
 // holding the bucket mutex. The timers below run each insert on a worker
 // thread and give up after a deadline, so the old behaviour fails the test
-// instead of hanging the suite; the stuck worker is detached and leaked.
+// instead of hanging the suite; the stuck worker is detached and leaked,
+// together with the RegistrationTimer and RegTimer it works on (the tests
+// allocate both on the heap and only delete them once the insert returned).
 
 namespace {
 
@@ -70,8 +72,9 @@ bool leastloaded_returns(RegistrationTimer *timer, RegTimer *reg, time_t from, t
     call->done = true;
   });
 
-  for (int i = 0; i < 200 && !call->done; i++) {
-    usleep(10000);
+  std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+  while (!call->done && std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
   if (!call->done) {
@@ -95,13 +98,14 @@ FCTMF_SUITE_BGN(test_registration_timer) {
   FCT_TEST_BGN(leastloaded_in_range) {
     time_t start;
     RegistrationTimer *timer = new_timer(start);
-    RegTimer reg;
+    RegTimer *reg = new RegTimer();
 
-    fct_req(leastloaded_returns(timer, &reg, start + 100, start + 1000));
-    fct_chk(reg.expires >= start + 100);
-    fct_chk(reg.expires < start + 1000);
-    fct_chk(timer->remove_timer(&reg));
+    fct_req(leastloaded_returns(timer, reg, start + 100, start + 1000));
+    fct_chk(reg->expires >= start + 100);
+    fct_chk(reg->expires < start + 1000);
+    fct_chk(timer->remove_timer(reg));
     delete timer;
+    delete reg;
   }
   FCT_TEST_END();
 
@@ -110,13 +114,14 @@ FCTMF_SUITE_BGN(test_registration_timer) {
   FCT_TEST_BGN(leastloaded_to_beyond_horizon_returns) {
     time_t start;
     RegistrationTimer *timer = new_timer(start);
-    RegTimer reg;
+    RegTimer *reg = new RegTimer();
 
-    fct_req(leastloaded_returns(timer, &reg, start + 100, start + HORIZON + 3600));
-    fct_chk(reg.expires >= start + 100);
-    fct_chk(reg.expires < start + HORIZON);
-    fct_chk(timer->remove_timer(&reg));
+    fct_req(leastloaded_returns(timer, reg, start + 100, start + HORIZON + 3600));
+    fct_chk(reg->expires >= start + 100);
+    fct_chk(reg->expires < start + HORIZON);
+    fct_chk(timer->remove_timer(reg));
     delete timer;
+    delete reg;
   }
   FCT_TEST_END();
 
@@ -124,13 +129,14 @@ FCTMF_SUITE_BGN(test_registration_timer) {
   FCT_TEST_BGN(leastloaded_from_past_to_beyond_horizon_returns) {
     time_t start;
     RegistrationTimer *timer = new_timer(start);
-    RegTimer reg;
+    RegTimer *reg = new RegTimer();
 
-    fct_req(leastloaded_returns(timer, &reg, start - 100, start + 2 * HORIZON));
-    fct_chk(reg.expires >= start);
-    fct_chk(reg.expires < start + HORIZON);
-    fct_chk(timer->remove_timer(&reg));
+    fct_req(leastloaded_returns(timer, reg, start - 100, start + 2 * HORIZON));
+    fct_chk(reg->expires >= start);
+    fct_chk(reg->expires < start + HORIZON);
+    fct_chk(timer->remove_timer(reg));
     delete timer;
+    delete reg;
   }
   FCT_TEST_END();
 
@@ -141,20 +147,21 @@ FCTMF_SUITE_BGN(test_registration_timer) {
     if (sizeof(time_t) > 4) {
       time_t start;
       RegistrationTimer *timer = new_timer(start);
-      RegTimer reg;
+      RegTimer *reg = new RegTimer();
 
       // 2^31 + 10 s: truncated to int this is negative
       time_t far = start + (time_t)0x7fffffff + 11;
-      fct_req(leastloaded_returns(timer, &reg, start + 100, far));
-      fct_chk(reg.expires >= start + 100);
-      fct_chk(timer->remove_timer(&reg));
+      fct_req(leastloaded_returns(timer, reg, start + 100, far));
+      fct_chk(reg->expires >= start + 100);
+      fct_chk(timer->remove_timer(reg));
 
       // 2^32 + 1000 s: truncated to int this is 1000 s
       far = start + (time_t)0xffffffff + 1001;
-      fct_req(leastloaded_returns(timer, &reg, start + 100, far));
-      fct_chk(reg.expires >= start + 100);
-      fct_chk(timer->remove_timer(&reg));
+      fct_req(leastloaded_returns(timer, reg, start + 100, far));
+      fct_chk(reg->expires >= start + 100);
+      fct_chk(timer->remove_timer(reg));
       delete timer;
+      delete reg;
     }
   }
   FCT_TEST_END();
@@ -164,13 +171,14 @@ FCTMF_SUITE_BGN(test_registration_timer) {
   FCT_TEST_BGN(leastloaded_window_beyond_horizon_uses_last_bucket) {
     time_t start;
     RegistrationTimer *timer = new_timer(start);
-    RegTimer reg;
+    RegTimer *reg = new RegTimer();
 
-    fct_req(leastloaded_returns(timer, &reg, start + HORIZON + 3600, start + HORIZON + 7200));
-    fct_chk(reg.expires >= start + HORIZON - TIMER_BUCKET_LENGTH);
-    fct_chk(reg.expires < start + HORIZON);
-    fct_chk(timer->remove_timer(&reg));
+    fct_req(leastloaded_returns(timer, reg, start + HORIZON + 3600, start + HORIZON + 7200));
+    fct_chk(reg->expires >= start + HORIZON - TIMER_BUCKET_LENGTH);
+    fct_chk(reg->expires < start + HORIZON);
+    fct_chk(timer->remove_timer(reg));
     delete timer;
+    delete reg;
   }
   FCT_TEST_END();
 
@@ -179,13 +187,14 @@ FCTMF_SUITE_BGN(test_registration_timer) {
   FCT_TEST_BGN(leastloaded_window_at_horizon_edge_uses_last_bucket) {
     time_t start;
     RegistrationTimer *timer = new_timer(start);
-    RegTimer reg;
+    RegTimer *reg = new RegTimer();
 
-    fct_req(leastloaded_returns(timer, &reg, start + HORIZON, start + HORIZON + 5));
-    fct_chk(reg.expires >= start + HORIZON - TIMER_BUCKET_LENGTH);
-    fct_chk(reg.expires < start + HORIZON);
-    fct_chk(timer->remove_timer(&reg));
+    fct_req(leastloaded_returns(timer, reg, start + HORIZON, start + HORIZON + 5));
+    fct_chk(reg->expires >= start + HORIZON - TIMER_BUCKET_LENGTH);
+    fct_chk(reg->expires < start + HORIZON);
+    fct_chk(timer->remove_timer(reg));
     delete timer;
+    delete reg;
   }
   FCT_TEST_END();
 
@@ -194,13 +203,14 @@ FCTMF_SUITE_BGN(test_registration_timer) {
   FCT_TEST_BGN(leastloaded_inverted_window_uses_from_bucket) {
     time_t start;
     RegistrationTimer *timer = new_timer(start);
-    RegTimer reg;
+    RegTimer *reg = new RegTimer();
 
-    fct_req(leastloaded_returns(timer, &reg, start + 1000, start - 100));
-    fct_chk(reg.expires >= start + 1000);
-    fct_chk(reg.expires < start + 1000 + TIMER_BUCKET_LENGTH);
-    fct_chk(timer->remove_timer(&reg));
+    fct_req(leastloaded_returns(timer, reg, start + 1000, start - 100));
+    fct_chk(reg->expires >= start + 1000);
+    fct_chk(reg->expires < start + 1000 + TIMER_BUCKET_LENGTH);
+    fct_chk(timer->remove_timer(reg));
     delete timer;
+    delete reg;
   }
   FCT_TEST_END();
 
