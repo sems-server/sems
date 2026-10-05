@@ -893,6 +893,13 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     }
   }
 
+  if (!logger && call_profile.get_logger_path().compare(0, 6, "hep://") == 0) {
+    // without call control modules CCStart() did not open it; limited to
+    // HEP so that pcap logging keeps its behaviour
+    msg_logger *l = call_profile.get_logger(req);
+    if (l) setLogger(l);
+  }
+
   call_profile.sst_aleg_enabled = 
     ctx.replaceParameters(call_profile.sst_aleg_enabled,
 			  "enable_aleg_session_timer", req);
