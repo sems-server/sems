@@ -81,6 +81,17 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
 	  ref_ts, mapped_ts);
       recv_offset = rtp_ts - ref_ts;
       mapped_ts = r_ts = w_ts = ref_ts;
+
+      // The write pointer has just jumped back onto the local reference
+      // clock, but the sample array still remembers the old (far ahead)
+      // timeline in its own last_ts. SampleArray::put() only ever raises
+      // last_ts and silently drops anything older than
+      // last_ts - SIZE_MIX_BUFFER, so without resetting it here every
+      // subsequent packet of this stream is discarded for the rest of the
+      // call. Resync is triggered once mapped_ts is MAX_DELAY (= one
+      // second of samples) ahead of ref_ts, which already exceeds
+      // SIZE_MIX_BUFFER at 16 kHz and above.
+      buffer.last_ts = ref_ts;
     }
   }
 
