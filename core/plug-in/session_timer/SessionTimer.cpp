@@ -177,6 +177,19 @@ bool SessionTimer::onSendRequest(AmSipRequest& req, int& flags)
   if  ((req.method != SIP_METH_INVITE) && (req.method != SIP_METH_UPDATE))
     return false; // session-expires / min-se only in INV/UPD
 
+  // RFC 4028 Section 7.1: when a request carries a Min-SE header field, the
+  // value of Session-Expires MUST be greater than or equal to it. Both values
+  // are set independently (session_expires / minimum_timer from the config,
+  // min_se additionally raised from a peer's Min-SE in updateTimer(), and
+  // session_interval lowered to a peer's Min-SE when retrying after a 422), so
+  // nothing guarantees the ordering at this point: clamp it here instead of
+  // emitting a request that contradicts its own Min-SE.
+  if (session_interval < min_se) {
+    DBG("session interval %u is below Min-SE %u: using %u\n",
+	session_interval, min_se, min_se);
+    session_interval = min_se;
+  }
+
   removeHeader(req.hdrs, SIP_HDR_SESSION_EXPIRES);
   removeHeader(req.hdrs, SIP_HDR_MIN_SE);
   if (req.to_tag.empty()) {
