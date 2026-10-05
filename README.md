@@ -176,6 +176,21 @@ The following applications are shipped with SEMS :
 
 * **mwi** - Message Waiting Indication (MWI) support
 
+* **HEP capture** (SBC) - sends a copy of every SIP message of a call to a
+  HEPv3 capture server such as Homer or heplify-server. Enabled per SBC
+  profile:
+
+  ```
+  msg_logger_path="hep://10.0.0.5:9060;id=2001"
+  ```
+
+  `id` is the HEP capture ID (default 0), an IPv6 collector is written as
+  `hep://[2001:db8::5]:9060`. Both call legs carry the A leg Call-ID as HEP
+  correlation ID, so the capture server can tie them together. SIP only:
+  RTP and RTCP are not sent. The collector is given by IP address, and the
+  packets go over UDP without authentication, so keep it on a trusted
+  network.
+
 ### Recording
 
 * **siprec_srs** - minimal SIPREC Session Recording Server (RFC 7865/7866).
