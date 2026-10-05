@@ -849,6 +849,32 @@ static char* parse_sdp_connection(AmSdp* sdp_msg, char* s, char t)
 }
 
 
+/**
+ * Parse one <fmt> token of an RTP based m= line into an RTP payload type.
+ *
+ * str2i() leaves its out-parameter untouched when the token is not a plain
+ * number, so its return value must be checked: otherwise a malformed token
+ * silently reuses whatever payload_type happened to hold before. RFC 3551
+ * limits the payload type to 7 bit, and SdpPayload::payload_type is a signed
+ * int, so out-of-range values are rejected here as well.
+ *
+ * @return true if the token is a usable payload type
+ */
+static bool parse_sdp_payload_type(const string& value, unsigned int& payload_type)
+{
+  if(str2i(value, payload_type)){ // str2i() returns true on failure
+    DBG("SDP: ignoring non-numeric payload type '%s' in m= line\n", value.c_str());
+    return false;
+  }
+
+  if(payload_type > 127){
+    DBG("SDP: ignoring out of range payload type '%u' in m= line\n", payload_type);
+    return false;
+  }
+
+  return true;
+}
+
 static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 {
   SdpMedia m;
@@ -861,7 +887,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
   char* line_end=0;
   line_end = get_next_line(media_line);
   SdpPayload payload;
-  unsigned int payload_type;
+  unsigned int payload_type = 0;
 
   //DBG("parse_sdp_line_ex: parse_sdp_media: parsing media description...\n");
   m.dir = SdpMedia::DirBoth;
@@ -940,9 +966,8 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 	    if (next > media_line)
 	      value = string(media_line, int(next-media_line)-1);
 
-	    if (!value.empty()) {
+	    if (!value.empty() && parse_sdp_payload_type(value, payload_type)) {
 	      payload.type = m.type;
-	      str2i(value, payload_type);
 	      payload.payload_type = payload_type;
 	      m.payloads.push_back(payload);
 	    }
@@ -957,9 +982,8 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 		last_value = string(media_line, int(line_end-media_line)-1);
 	      }
 	    }
-	    if (!last_value.empty()) {
+	    if (!last_value.empty() && parse_sdp_payload_type(last_value, payload_type)) {
 	      payload.type = m.type;
-	      str2i(last_value, payload_type);
 	      payload.payload_type = payload_type;
 	      m.payloads.push_back(payload);
 	    }
