@@ -250,6 +250,8 @@ SEMS server hes been build-tested with the following:
 * RHEL 10 with Python 3
 * Debian 12 with Python 3
 * Debian 13 with Python 3
+* Ubuntu 24.04 with Python 3
+* Ubuntu 26.04 with Python 3
 
 Please see appropriate Dockerfiles for reference.
 

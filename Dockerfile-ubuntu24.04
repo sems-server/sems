@@ -1,0 +1,34 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update
+RUN apt install -y \
+         git debhelper g++ make libspandsp-dev flite1-dev \
+         libspeex-dev libgsm1-dev libopus-dev libssl-dev python3-dev \
+         python3.12-dev libev-dev \
+         python3-sip-dev openssl libev-dev libmysqlcppconn-dev libevent-dev \
+         libxml2-dev libcurl4-openssl-dev libhiredis-dev \
+         libsamplerate-dev libmp3lame-dev libcodec2-dev \
+         cmake dh-cmake dh-cmake-compat dh-sequence-cmake \
+         cargo rustc
+
+RUN apt install -y \
+         devscripts libbcg729-dev
+COPY . /sems
+WORKDIR /sems
+
+RUN mkdir -p build && cd build && cmake .. && make sems_tests && ./core/sems_tests
+# noble is close to Debian 12, so it reuses the bookworm packaging
+RUN ln -s pkg/deb/bookworm ./debian
+RUN dpkg-buildpackage -rfakeroot -us -uc
+RUN ls -al ..
+
+RUN dpkg -i ../sems_*.deb
+RUN /usr/sbin/sems -v
+# the SIP to DIS gateway is built and packaged by default
+RUN dpkg -L sems | grep -x /usr/lib/sems/plug-in/sip_dis_gw.so \
+    && dpkg -L sems | grep -x /etc/sems/etc/sip_dis_gw.conf
+
+# Run SEMS with the specified configuration
+CMD ["/usr/sbin/sems", "-E", "-f", "/etc/sems/sems.conf"]

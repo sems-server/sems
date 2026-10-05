@@ -44,6 +44,12 @@ jobs:
       - name: Build image based on Debian 13
         run: docker build -t sems_deb13 -f Dockerfile-debian13 .
 
+      - name: Build image based on Ubuntu 24.04
+        run: docker build -t sems_ubuntu2404 -f Dockerfile-ubuntu24.04 .
+
+      - name: Build image based on Ubuntu 26.04
+        run: docker build -t sems_ubuntu2604 -f Dockerfile-ubuntu26.04 .
+
   hardened_builds:
     runs-on: ubuntu-latest
     name: Hardened build (${{ matrix.flavor }})
