@@ -81,6 +81,16 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
 	  ref_ts, mapped_ts);
       recv_offset = rtp_ts - ref_ts;
       mapped_ts = r_ts = w_ts = ref_ts;
+
+      // r_ts/w_ts have just been moved onto the reference clock, so the
+      // sample array's own write head has to follow: it is w_ts that indexes
+      // the array (see write_buffer()/buffer_put()). SampleArray::put() only
+      // ever raises last_ts and drops anything older than
+      // last_ts - SIZE_MIX_BUFFER, so leaving a stale last_ts behind makes
+      // every later packet of this stream "too old" with no way back, and a
+      // smaller backwards jump makes get() return samples of the timeline we
+      // just left.
+      buffer.last_ts = ref_ts;
     }
   }
 
