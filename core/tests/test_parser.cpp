@@ -6,6 +6,7 @@
 #include "sip/parse_100rel.h"
 #include "sip/parse_common.h"
 #include "sip/parse_cseq.h"
+#include "sip/parse_nameaddr.h"
 
 #include <string.h>
 #include <string>
@@ -294,6 +295,63 @@ FCTMF_SUITE_BGN(test_parser) {
     int rc = try_parse(overlarge.c_str(), overlarge.length(), msg, err_msg);
     fct_chk(rc == MALFORMED_SIP_MSG);
     fct_chk(err_msg && !strcmp(err_msg, "could not parse RAck hf"));
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(nameaddr_list_keeps_angle_quoted_comma) {
+    // A comma inside <...> belongs to the addr-spec, it does not separate
+    // name-addrs. Splitting there hands the caller truncated URIs plus a
+    // bogus extra entry.
+    const char *hf = "<sip:a@example.com;p=x,y>, <sip:b@example.com>";
+    list<cstring> nas;
+    fct_chk(parse_nameaddr_list(nas, hf, strlen(hf)) == 0);
+    fct_chk(nas.size() == 2);
+    if(nas.size() == 2) {
+      list<cstring>::iterator it = nas.begin();
+      fct_chk(string(it->s, it->len) == "<sip:a@example.com;p=x,y>");
+      ++it;
+      fct_chk(string(it->s, it->len) == "<sip:b@example.com>");
+    }
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(nameaddr_list_keeps_angle_quoted_comma_after_display_name) {
+    // Same, with a display name in front: the '<' is reached from the
+    // whitespace state, not from the initial one.
+    const char *hf = "Alice <sip:a@example.com;p=x,y>, Bob <sip:b@example.com>";
+    list<cstring> nas;
+    fct_chk(parse_nameaddr_list(nas, hf, strlen(hf)) == 0);
+    fct_chk(nas.size() == 2);
+    if(nas.size() == 2) {
+      list<cstring>::iterator it = nas.begin();
+      fct_chk(string(it->s, it->len) == "Alice <sip:a@example.com;p=x,y>");
+      ++it;
+      fct_chk(string(it->s, it->len) == "Bob <sip:b@example.com>");
+    }
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(nameaddr_list_plain_list_unchanged) {
+    const char *hf = "<sip:a@example.com>, <sip:b@example.com>, <sip:c@example.com>";
+    list<cstring> nas;
+    fct_chk(parse_nameaddr_list(nas, hf, strlen(hf)) == 0);
+    fct_chk(nas.size() == 3);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(nameaddr_list_quoted_comma_unchanged) {
+    // A comma inside a quoted display name was already handled.
+    const char *hf = "\"Doe, John\" <sip:a@example.com>, <sip:b@example.com>";
+    list<cstring> nas;
+    fct_chk(parse_nameaddr_list(nas, hf, strlen(hf)) == 0);
+    fct_chk(nas.size() == 2);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(nameaddr_list_unterminated_angle_is_an_error) {
+    const char *hf = "<sip:a@example.com";
+    list<cstring> nas;
+    fct_chk(parse_nameaddr_list(nas, hf, strlen(hf)) == -1);
   }
   FCT_TEST_END();
 }
