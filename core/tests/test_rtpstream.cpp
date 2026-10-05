@@ -6,12 +6,17 @@
 #include "AmRtpStream.h"
 #include "AmSdp.h"
 #include "AmSession.h"
+#include "AmConfig.h"
 
 #include <atomic>
 #include <memory>
 #include <set>
 #include <thread>
 #include <vector>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
 // AmRtpStream::recvDtmfPacket() decodes an RFC 4733 telephone-event payload as
 // a 4 byte dtmf_payload_t. A packet with a shorter payload has to be ignored:
@@ -51,6 +56,60 @@ public:
 
   unsigned int packetsInUse() const { return mem.usedCount(); }
 };
+
+// A stream whose RTCP socket is a plain UDP socket the test writes to, so
+// recvRtcpPacket() can be driven without a negotiated session. It also lets
+// the test age the last-RTP-received timestamp that the dead_rtp_time check
+// in nextPacket() looks at.
+class RtcpStream : public AmRtpStream {
+public:
+  explicit RtcpStream(AmSession *s) : AmRtpStream(s, 0) {}
+
+  ~RtcpStream() {
+    if (l_rtcp_sd > 0) {
+      close(l_rtcp_sd);
+      l_rtcp_sd = 0;
+    }
+  }
+
+  // binds the RTCP socket to the loopback interface and returns the address
+  // to send reports to
+  bool openRtcpSocket(sockaddr_in &to) {
+    l_rtcp_sd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (l_rtcp_sd < 0) return false;
+
+    sockaddr_in sa = {};
+    sa.sin_family = AF_INET;
+    sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    sa.sin_port = 0; // any free port
+    if (bind(l_rtcp_sd, (sockaddr *)&sa, sizeof(sa)) < 0) return false;
+
+    socklen_t len = sizeof(to);
+    return getsockname(l_rtcp_sd, (sockaddr *)&to, &len) == 0;
+  }
+
+  void ageLastRecvTime(unsigned int secs) {
+    gettimeofday(&last_recv_time, NULL);
+    last_recv_time.tv_sec -= secs;
+  }
+
+  using AmRtpStream::nextPacket;
+};
+
+// sends a minimal RTCP receiver report to addr and lets the stream pick it up
+bool feed_rtcp(RtcpStream &stream, const sockaddr_in &addr) {
+  const unsigned char rr[] = {
+      0x80, 0xc9, 0x00, 0x01,  // V=2, PT=201 (RR), length
+      0x12, 0x34, 0x56, 0x78   // SSRC of packet sender
+  };
+  int s = socket(AF_INET, SOCK_DGRAM, 0);
+  if (s < 0) return false;
+  bool sent = sendto(s, rr, sizeof(rr), 0, (const sockaddr *)&addr, sizeof(addr)) == (ssize_t)sizeof(rr);
+  close(s);
+  if (!sent) return false;
+  stream.recvRtcpPacket();
+  return true;
+}
 
 class DtmfSession : public AmSession {
 public:
@@ -315,6 +374,39 @@ FCTMF_SUITE_BGN(test_rtpstream) {
       fct_xchk(s.keys.size() == 1 && s.keys[0] == 5, "%u byte payload: %d keys reported, the first %d", size,
                (int)s.keys.size(), s.keys.empty() ? -1 : s.keys[0]);
     }
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(rtcp_does_not_hold_off_the_rtp_timeout) {
+    // A peer that keeps sending RTCP while its RTP has stopped must still run
+    // into dead_rtp_time: RTCP has its own schedule and says nothing about the
+    // media stream being alive.
+    fct_req(AmConfig::DeadRtpTime > 0);
+
+    AmSession s;
+    RtcpStream stream(&s);
+    sockaddr_in rtcp_addr;
+    fct_req(stream.openRtcpSocket(rtcp_addr));
+
+    stream.ageLastRecvTime(AmConfig::DeadRtpTime + 5);
+    fct_req(feed_rtcp(stream, rtcp_addr));
+
+    AmRtpPacket *p = NULL;
+    fct_chk_eq_int(stream.nextPacket(p), RTP_TIMEOUT);
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(received_rtp_does_hold_off_the_rtp_timeout) {
+    // Counterpart: the RTP path is what keeps a stream alive.
+    fct_req(AmConfig::DeadRtpTime > 0);
+
+    AmSession s;
+    RtcpStream stream(&s);
+    stream.ageLastRecvTime(AmConfig::DeadRtpTime + 5);
+    stream.clearRTPTimeout();
+
+    AmRtpPacket *p = NULL;
+    fct_chk_eq_int(stream.nextPacket(p), RTP_EMPTY);
   }
   FCT_TEST_END();
 }
