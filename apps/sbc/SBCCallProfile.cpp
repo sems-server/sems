@@ -38,6 +38,7 @@
 #include "RegisterCache.h"
 
 #include "sip/pcap_logger.h"
+#include "sip/hep_logger.h"
 
 typedef vector<SdpPayload>::iterator PayloadIterator;
 static string payload2str(const SdpPayload &p);
@@ -1689,6 +1690,17 @@ void SBCCallProfile::create_logger(const AmSipRequest& req)
   ParamReplacerCtx ctx(this);
   string log_path = ctx.replaceParameters(msg_logger_path, "msg_logger_path", req);
   if (log_path.empty()) return;
+
+  if (log_path.compare(0, 6, "hep://") == 0) {
+    hep_logger *hep = new hep_logger();
+    // the A leg Call-ID ties both legs together in the capture server
+    if (hep->init(log_path.substr(6), req.callid) != 0) {
+      delete hep;
+      return;
+    }
+    logger.reset(hep);
+    return;
+  }
 
   file_msg_logger *log = new pcap_logger();
 
