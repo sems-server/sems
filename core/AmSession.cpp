@@ -88,7 +88,16 @@ AmSession::AmSession(AmSipDialog* p_dlg)
 {
   DBG("dlg = %p",dlg);
   if(!dlg) dlg = new AmSipDialog(this);
-  else dlg->setEventhandler(this);
+  else {
+    // The dialog was built by the caller, possibly with no handler at all
+    // (apps/sbc does `new SBCCallLeg(profile, new AmSipDialog())`). Its
+    // Am100rel took its handler from that construction, so setting only the
+    // dialog's handler would leave the reliable-1xx callbacks pointing
+    // elsewhere - with a NULL handler they are skipped outright and no PRACK
+    // is ever sent. Re-point both.
+    dlg->setEventhandler(this);
+    dlg->setRel100Handler(this);
+  }
 }
 
 AmSession::~AmSession()
