@@ -207,9 +207,19 @@ int parse_headers_async(parser_state* pst, char* end)
     int err = parse_header_async(hdr, pst, end);
     if(err) return err;
 
-    if(hdr->name.len && hdr->value.len) {
+    if(hdr->name.len) {
       int type = parse_header_type(hdr);
       if(type == sip_header::H_CONTENT_LENGTH) {
+	// RFC 3261 20.14: Content-Length = ... HCOLON 1*DIGIT. Unlike an
+	// ordinary header field it has no empty form, and the framing of
+	// everything that follows on this connection depends on it. Letting an
+	// empty value through would leave content_len at 0, so the body bytes
+	// after this message would be read as the start of the next one and
+	// desynchronise the stream.
+	if(!hdr->value.len) {
+	  DBG("Empty Content-Length header\n");
+	  return MALFORMED_SIP_MSG;
+	}
 	str2int(c2stlstr(hdr->value),pst->content_len);
 	if(pst->content_len < 0) {
 	  DBG("Negative Content-Length: %d\n",pst->content_len);
