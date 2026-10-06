@@ -137,8 +137,17 @@ static int parse_header_async(sip_header* hdr, parser_state* pst, char* end)
 
 	    case H_VALUE_SWS:
 		if(!IS_WSP(**c)){
-		    DBG("Malformed header: <%.*s>\n",(int)(*c-begin),begin);
-		    return MALFORMED_SIP_MSG;
+		    // RFC 3261 7.3.1: header-value may be empty, so
+		    // "Name:" followed by CRLF is a complete, legal header.
+		    // The synchronous parser (parse_header()) accepts it, and
+		    // this one must too: returning MALFORMED_SIP_MSG makes
+		    // tcp_trsp_socket::parse_input() close the connection,
+		    // taking down every transaction and dialog multiplexed on
+		    // it. Finish the header with a zero-length value instead.
+		    // hdr->name.len stays non-zero, so parse_headers_async()
+		    // does not mistake it for the end-of-headers marker.
+		    hdr->value.set(*c,0);
+		    return 0;
 		}
 		break;
 
