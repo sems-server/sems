@@ -21,7 +21,16 @@ public:
   };
   
 private:
-  State reliable_1xx;
+  /* The 100rel state is per role. onRequestIn()/onReplyIn() promote
+     REL100_SUPPORTED to REL100_REQUIRE when the peer asks for it, and that
+     decision only binds the role it was taken for: a UAS that requires
+     reliable 1xx from us says nothing about what we may require from the
+     peer's own requests, and vice versa. One shared field let either
+     promotion leak into the other direction. */
+  // governs the replies we send (requests arriving at us)
+  State uas_state;
+  // governs the requests we send (replies arriving at us)
+  State uac_state;
 
   // UAS
   unsigned rseq;          // RSeq for next request
@@ -36,8 +45,9 @@ private:
 public:
   Am100rel(AmSipDialog* dlg, AmSipDialogEventHandler* hdl);
 
-  void setState(State s) { reliable_1xx = s; }
-  State getState() { return reliable_1xx; }
+  void setState(State s) { uas_state = uac_state = s; }
+  State getUasState() { return uas_state; }
+  State getUacState() { return uac_state; }
 
   int  onRequestIn(const AmSipRequest& req);
   int  onReplyIn(const AmSipReply& reply);

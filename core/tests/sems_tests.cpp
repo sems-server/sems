@@ -41,6 +41,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_registrar_client);
   FCTMF_SUITE_CALL(test_extensions);
   FCTMF_SUITE_CALL(test_dtmf);
+  FCTMF_SUITE_CALL(test_rel100_state);
   FCTMF_SUITE_CALL(test_registration_timer);
   FCTMF_SUITE_CALL(test_amconfig);
   FCTMF_SUITE_CALL(test_amaudio);
