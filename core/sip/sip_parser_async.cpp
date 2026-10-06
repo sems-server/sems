@@ -137,8 +137,17 @@ static int parse_header_async(sip_header* hdr, parser_state* pst, char* end)
 
 	    case H_VALUE_SWS:
 		if(!IS_WSP(**c)){
-		    DBG("Malformed header: <%.*s>\n",(int)(*c-begin),begin);
-		    return MALFORMED_SIP_MSG;
+		    // RFC 3261 7.3.1: header-value may be empty, so
+		    // "Name:" followed by CRLF is a complete, legal header.
+		    // The synchronous parser (parse_header()) accepts it, and
+		    // this one must too: returning MALFORMED_SIP_MSG makes
+		    // tcp_trsp_socket::parse_input() close the connection,
+		    // taking down every transaction and dialog multiplexed on
+		    // it. Finish the header with a zero-length value instead.
+		    // hdr->name.len stays non-zero, so parse_headers_async()
+		    // does not mistake it for the end-of-headers marker.
+		    hdr->value.set(*c,0);
+		    return 0;
 		}
 		break;
 
@@ -198,9 +207,19 @@ int parse_headers_async(parser_state* pst, char* end)
     int err = parse_header_async(hdr, pst, end);
     if(err) return err;
 
-    if(hdr->name.len && hdr->value.len) {
+    if(hdr->name.len) {
       int type = parse_header_type(hdr);
       if(type == sip_header::H_CONTENT_LENGTH) {
+	// RFC 3261 20.14: Content-Length = ... HCOLON 1*DIGIT. Unlike an
+	// ordinary header field it has no empty form, and the framing of
+	// everything that follows on this connection depends on it. Letting an
+	// empty value through would leave content_len at 0, so the body bytes
+	// after this message would be read as the start of the next one and
+	// desynchronise the stream.
+	if(!hdr->value.len) {
+	  DBG("Empty Content-Length header\n");
+	  return MALFORMED_SIP_MSG;
+	}
 	str2int(c2stlstr(hdr->value),pst->content_len);
 	if(pst->content_len < 0) {
 	  DBG("Negative Content-Length: %d\n",pst->content_len);

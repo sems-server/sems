@@ -6,6 +6,7 @@
 #include "sip/parse_100rel.h"
 #include "sip/parse_common.h"
 #include "sip/parse_cseq.h"
+#include "sip/sip_parser_async.h"
 
 #include <string.h>
 #include <string>
@@ -24,6 +25,21 @@ using std::string;
 static int try_parse(const char *raw, int len, sip_msg &msg, char *&err_msg) {
   msg.copy_msg_buf(raw, len);
   return parse_sip_msg(&msg, err_msg);
+}
+
+// Runs the stream framer (used by the TCP/TLS transports) over a whole
+// message, the way tcp_trsp_socket::parse_input() does.
+static int try_skip_async(const char *raw, int len) {
+  // skip_sip_msg_async() walks a writable buffer and needs a NUL terminator.
+  static char buf[8192];
+  if (len < 0 || len >= (int)sizeof(buf))
+    return -1;
+  memcpy(buf, raw, len);
+  buf[len] = '\0';
+
+  parser_state pst;
+  pst.reset(buf);
+  return skip_sip_msg_async(&pst, buf + len);
 }
 
 FCTMF_SUITE_BGN(test_parser) {
@@ -294,6 +310,98 @@ FCTMF_SUITE_BGN(test_parser) {
     int rc = try_parse(overlarge.c_str(), overlarge.length(), msg, err_msg);
     fct_chk(rc == MALFORMED_SIP_MSG);
     fct_chk(err_msg && !strcmp(err_msg, "could not parse RAck hf"));
+  }
+  FCT_TEST_END();
+
+  // An empty header field value is legal (RFC 3261 7.3.1: header-value may
+  // expand to nothing). The stream framer used to report MALFORMED_SIP_MSG
+  // for it, which makes tcp_trsp_socket::parse_input() drop the connection
+  // and with it every transaction multiplexed on that connection.
+  FCT_TEST_BGN(async_empty_header_value_is_accepted) {
+    const char *raw = SIP_REQ_PREFIX "Subject:\r\n"
+                                     "Content-Length: 0\r\n"
+                                     "\r\n";
+    fct_chk(try_skip_async(raw, strlen(raw)) == 0);
+  }
+  FCT_TEST_END();
+
+  // Same, with the empty value as the last header before end-of-headers.
+  FCT_TEST_BGN(async_empty_header_value_last_is_accepted) {
+    const char *raw = SIP_REQ_PREFIX "Subject:\r\n"
+                                     "\r\n";
+    fct_chk(try_skip_async(raw, strlen(raw)) == 0);
+  }
+  FCT_TEST_END();
+
+  // An empty value must not swallow the headers that follow it: the framer
+  // still has to pick up the Content-Length and frame the body.
+  FCT_TEST_BGN(async_empty_header_value_keeps_following_headers) {
+    const char *raw = SIP_REQ_PREFIX "Subject:\r\n"
+                                     "Content-Length: 4\r\n"
+                                     "\r\n"
+                                     "test";
+    fct_chk(try_skip_async(raw, strlen(raw)) == 0);
+
+    // One body byte short: the framer must ask for more data rather than
+    // declare the message complete.
+    const char *trunc = SIP_REQ_PREFIX "Subject:\r\n"
+                                       "Content-Length: 4\r\n"
+                                       "\r\n"
+                                       "tes";
+    fct_chk(try_skip_async(trunc, strlen(trunc)) == UNEXPECTED_EOT);
+  }
+  FCT_TEST_END();
+
+  // A folded (multi-line) value still has to be read as one value.
+  FCT_TEST_BGN(async_folded_header_value_is_accepted) {
+    const char *raw = SIP_REQ_PREFIX "Subject:\r\n"
+                                     " folded continuation\r\n"
+                                     "Content-Length: 0\r\n"
+                                     "\r\n";
+    fct_chk(try_skip_async(raw, strlen(raw)) == 0);
+  }
+  FCT_TEST_END();
+
+  // Content-Length is the one header an empty value may not be accepted for
+  // (RFC 3261 20.14: HCOLON 1*DIGIT). Treating it as absent would frame the
+  // message with no body, leaving the body bytes to be read as the start of
+  // the next message - a desynchronised stream, where closing the connection
+  // is the safe answer.
+  FCT_TEST_BGN(async_empty_content_length_is_rejected) {
+    const char *raw = SIP_REQ_PREFIX "Content-Length:\r\n"
+                                     "\r\n"
+                                     "smuggled";
+    fct_chk(try_skip_async(raw, strlen(raw)) == MALFORMED_SIP_MSG);
+  }
+  FCT_TEST_END();
+
+  // ... including through its compact form.
+  FCT_TEST_BGN(async_empty_compact_content_length_is_rejected) {
+    const char *raw = SIP_REQ_PREFIX "l:\r\n"
+                                     "\r\n"
+                                     "smuggled";
+    fct_chk(try_skip_async(raw, strlen(raw)) == MALFORMED_SIP_MSG);
+  }
+  FCT_TEST_END();
+
+  // A header name with no colon at all is still malformed.
+  FCT_TEST_BGN(async_header_without_colon_is_rejected) {
+    const char *raw = SIP_REQ_PREFIX "Subject\r\n"
+                                     "Content-Length: 0\r\n"
+                                     "\r\n";
+    fct_chk(try_skip_async(raw, strlen(raw)) == MALFORMED_SIP_MSG);
+  }
+  FCT_TEST_END();
+
+  // The synchronous parser has always accepted an empty header value; the
+  // two parsers must agree on what is a valid message.
+  FCT_TEST_BGN(empty_header_value_is_accepted) {
+    const char *raw = SIP_REQ_PREFIX "Subject:\r\n"
+                                     "Content-Length: 0\r\n"
+                                     "\r\n";
+    sip_msg msg;
+    char *err_msg = NULL;
+    fct_chk(try_parse(raw, strlen(raw), msg, err_msg) == 0);
   }
   FCT_TEST_END();
 }
