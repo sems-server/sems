@@ -8,27 +8,26 @@
 #include "log.h"
 
 Am100rel::Am100rel(AmSipDialog* dlg, AmSipDialogEventHandler* hdl)
-  : reliable_1xx(AmConfig::rel100), rseq(0), rseq_confirmed(false),
+  : uas_state(AmConfig::rel100), uac_state(AmConfig::rel100),
+    rseq(0), rseq_confirmed(false),
     rseq_1st(0), rseq_last(0), dlg(dlg), hdl(hdl)
 {
-  // if (reliable_1xx)
-  //   rseq = 0;
 }
 
 int  Am100rel::onRequestIn(const AmSipRequest& req)
 {
-  if (reliable_1xx == REL100_IGNORED)
+  if (uas_state == REL100_IGNORED)
     return 1;
 
   /* activate the 100rel, if needed */
   if (req.method == SIP_METH_INVITE) {
-    switch(reliable_1xx) {
+    switch(uas_state) {
       case REL100_SUPPORTED: /* if support is on, enforce if asked by UAC */
         if (key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED, SIP_HDR_SUPPORTED_COMPACT),
               SIP_EXT_100REL) ||
             key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), 
               SIP_EXT_100REL)) {
-          reliable_1xx = REL100_REQUIRE;
+          uas_state = REL100_REQUIRE;
           DBG(SIP_EXT_100REL " now active.\n");
         }
         break;
@@ -61,13 +60,13 @@ int  Am100rel::onRequestIn(const AmSipRequest& req)
 
       default:
         ERROR("BUG: unexpected value `%d' for '" SIP_EXT_100REL "' switch.", 
-          reliable_1xx);
+          uas_state);
 #ifndef NDEBUG
         abort();
 #endif
-    } // switch reliable_1xx
+    } // switch uas_state
   } else if (req.method == SIP_METH_PRACK) {
-    if (reliable_1xx != REL100_REQUIRE) {
+    if (uas_state != REL100_REQUIRE) {
       WARN("unexpected PRACK received while " SIP_EXT_100REL " not active.\n");
       // let if float up
     } else if (rseq_1st<=req.rseq && req.rseq<=rseq) {
@@ -84,7 +83,7 @@ int  Am100rel::onRequestIn(const AmSipRequest& req)
 
 int  Am100rel::onReplyIn(const AmSipReply& reply)
 {
-  if (reliable_1xx == REL100_IGNORED)
+  if (uac_state == REL100_IGNORED)
     return 1;
 
   if (dlg->getStatus() != AmSipDialog::Trying && 
@@ -94,11 +93,11 @@ int  Am100rel::onReplyIn(const AmSipReply& reply)
     return 1;
 
   if (100<reply.code && reply.code<200 && reply.cseq_method==SIP_METH_INVITE) {
-    switch (reliable_1xx) {
+    switch (uac_state) {
     case REL100_SUPPORTED:
       if (key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
           SIP_EXT_100REL))
-        reliable_1xx = REL100_REQUIRE;
+        uac_state = REL100_REQUIRE;
         // no break!
       else
         break;
@@ -125,12 +124,12 @@ int  Am100rel::onReplyIn(const AmSipReply& reply)
       break;
     default:
       ERROR("BUG: unexpected value `%d' for " SIP_EXT_100REL " switch.", 
-          reliable_1xx);
+          uac_state);
 #ifndef NDEBUG
       abort();
 #endif
     } // switch reliable 1xx
-  } else if (reliable_1xx && reply.cseq_method==SIP_METH_PRACK) {
+  } else if (uac_state && reply.cseq_method==SIP_METH_PRACK) {
     if (300 <= reply.code) {
       // if PRACK fails, tear down session
       dlg->bye();
@@ -150,10 +149,10 @@ int  Am100rel::onReplyIn(const AmSipReply& reply)
 
 void Am100rel::onRequestOut(AmSipRequest& req)
 {
-  if (reliable_1xx == REL100_IGNORED || req.method!=SIP_METH_INVITE)
+  if (uac_state == REL100_IGNORED || req.method!=SIP_METH_INVITE)
     return;
 
-  switch(reliable_1xx) {
+  switch(uac_state) {
     case REL100_SUPPORTED:
       if (! key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), SIP_EXT_100REL))
         req.hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
@@ -164,7 +163,7 @@ void Am100rel::onRequestOut(AmSipRequest& req)
       break;
     default:
       ERROR("BUG: unexpected reliability switch value of '%d'.\n",
-          reliable_1xx);
+          uac_state);
     case 0:
       break;
   }
@@ -172,12 +171,12 @@ void Am100rel::onRequestOut(AmSipRequest& req)
 
 void Am100rel::onReplyOut(AmSipReply& reply)
 {
-  if (reliable_1xx == REL100_IGNORED)
+  if (uas_state == REL100_IGNORED)
     return;
 
   if (reply.cseq_method == SIP_METH_INVITE) {
     if (100 < reply.code && reply.code < 200) {
-      switch (reliable_1xx) {
+      switch (uas_state) {
         case REL100_SUPPORTED:
           if (! key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
 			    SIP_EXT_100REL))
@@ -208,7 +207,7 @@ void Am100rel::onReplyOut(AmSipReply& reply)
         default:
           break;
       }
-    } else if (reply.code < 300 && reliable_1xx == REL100_REQUIRE) { //code = 2xx
+    } else if (reply.code < 300 && uas_state == REL100_REQUIRE) { //code = 2xx
       if (rseq && !rseq_confirmed) 
         // reliable 1xx is pending, 2xx'ing not allowed yet
         throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");
@@ -218,11 +217,11 @@ void Am100rel::onReplyOut(AmSipReply& reply)
 
 void Am100rel::onTimeout(const AmSipRequest& req, const AmSipReply& rpl)
 {
-  if (reliable_1xx == REL100_IGNORED)
+  if (uas_state == REL100_IGNORED)
     return;
 
   INFO("reply <%s> timed out (not PRACKed).\n", rpl.print().c_str());
-  if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
+  if (100 < rpl.code && rpl.code < 200 && uas_state == REL100_REQUIRE &&
       rseq == rpl.rseq && rpl.cseq_method == SIP_METH_INVITE) {
     INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
     if(hdl) hdl->onNoPrack(req, rpl);
