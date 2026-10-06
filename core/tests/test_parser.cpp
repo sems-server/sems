@@ -362,6 +362,28 @@ FCTMF_SUITE_BGN(test_parser) {
   }
   FCT_TEST_END();
 
+  // Content-Length is the one header an empty value may not be accepted for
+  // (RFC 3261 20.14: HCOLON 1*DIGIT). Treating it as absent would frame the
+  // message with no body, leaving the body bytes to be read as the start of
+  // the next message - a desynchronised stream, where closing the connection
+  // is the safe answer.
+  FCT_TEST_BGN(async_empty_content_length_is_rejected) {
+    const char *raw = SIP_REQ_PREFIX "Content-Length:\r\n"
+                                     "\r\n"
+                                     "smuggled";
+    fct_chk(try_skip_async(raw, strlen(raw)) == MALFORMED_SIP_MSG);
+  }
+  FCT_TEST_END();
+
+  // ... including through its compact form.
+  FCT_TEST_BGN(async_empty_compact_content_length_is_rejected) {
+    const char *raw = SIP_REQ_PREFIX "l:\r\n"
+                                     "\r\n"
+                                     "smuggled";
+    fct_chk(try_skip_async(raw, strlen(raw)) == MALFORMED_SIP_MSG);
+  }
+  FCT_TEST_END();
+
   // A header name with no colon at all is still malformed.
   FCT_TEST_BGN(async_header_without_colon_is_rejected) {
     const char *raw = SIP_REQ_PREFIX "Subject\r\n"
