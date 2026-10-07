@@ -172,6 +172,27 @@ public:
     pthread_mutex_unlock(&m);
     return val;
   }
+
+  /** Set the condition's value and return the value it had before.
+   *
+   * get() and set() each take the mutex on their own, so a
+   * "if(!get()) set(newval);" sequence built from them is not atomic: two
+   * threads can both read the old value and both conclude that they are the
+   * one that changed it. Callers that need to know whether *they* made the
+   * transition have to do the read and the write under one lock, which is
+   * what this does.
+   */
+  T test_and_set(const T& newval)
+  {
+    T oldval;
+    pthread_mutex_lock(&m);
+    oldval = t;
+    t = newval;
+    if(t)
+      pthread_cond_broadcast(&cond);
+    pthread_mutex_unlock(&m);
+    return oldval;
+  }
     
   /** Waits for the condition to be true. */
   void wait_for()
