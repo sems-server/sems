@@ -33,6 +33,14 @@
  * Centralized definition of all codec IDs.
  * Look at the source file for declarations.
  * they just need to be different from each other.
+ *
+ * The values themselves carry no meaning - they are only the keys under
+ * which AmPlugIn registers codecs - but they do have to stay unique:
+ * AmPlugIn::addCodec() refuses an id it already holds, and
+ * AmPlugIn::loadAudioPlugIn() abandons the whole plug-in when one of its
+ * codecs is refused. Two plug-ins sharing an id therefore cost whichever of
+ * them the module directory happens to be read second all of its codecs,
+ * payloads and file formats.
  */
 
 #define CODEC_PCM16   0
@@ -57,15 +65,6 @@
 
 #define CODEC_G729    14
 
-#define CODEC_ULAW16 14
-#define CODEC_ALAW16 15
-
-#define CODEC_ULAW32 16
-#define CODEC_ALAW32 17
-
-#define CODEC_ULAW48 18
-#define CODEC_ALAW48 19
-
 #define CODEC_CELT32 20
 #define CODEC_CELT44 21
 #define CODEC_CELT48 22
@@ -84,6 +83,16 @@
 #define CODEC_SILK_UB 33
 
 #define CODEC_iSAC_WB 40
+
+/* wideband G.711: these started at 14, where they shadowed CODEC_G729 */
+#define CODEC_ULAW16 41
+#define CODEC_ALAW16 42
+
+#define CODEC_ULAW32 43
+#define CODEC_ALAW32 44
+
+#define CODEC_ULAW48 45
+#define CODEC_ALAW48 46
 
 #define CODEC_OPUS 50
 

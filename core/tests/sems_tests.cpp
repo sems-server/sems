@@ -44,6 +44,7 @@ FCT_BGN() {
   FCTMF_SUITE_CALL(test_registration_timer);
   FCTMF_SUITE_CALL(test_amconfig);
   FCTMF_SUITE_CALL(test_amaudio);
+  FCTMF_SUITE_CALL(test_codec_ids);
   FCTMF_SUITE_CALL(test_trans_layer);
   FCTMF_SUITE_CALL(test_sip_dis_gw);
   FCTMF_SUITE_CALL(test_sip_dis_gw_app);
