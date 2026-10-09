@@ -307,7 +307,10 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
     AmAppTimer::instance()->removeTimer(&timer_n);
 
     sub_state_txt = strip_header_params(sub_state_txt);
-    if(notify_expire && (sub_state_txt == "active")) {
+    // the 'expires' parameter of Subscription-State is optional
+    // (RFC 6665): a notifier may say 'active' without it, and that
+    // still means the subscription is active
+    if(sub_state_txt == "active") {
       setState(SubState_active);
     }
     else if(notify_expire && (sub_state_txt == "pending")){
@@ -318,11 +321,16 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
       //subs->onFailureReply(reply,this);
       return;
     }
-    
-    // reset expire timer
-    DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->getLocalTag().c_str());
-    AmAppTimer::instance()->setTimer(&timer_expires,(double)notify_expire);
-    expires = notify_expire + AmAppTimer::instance()->unix_clock.get();
+
+    // reset expire timer, but only when the NOTIFY actually carried a
+    // duration: arming it with 0 fires SUBSCRIPTION_EXPIRE on the next tick
+    // and tears the subscription down anyway. Without an 'expires' parameter
+    // the duration negotiated on the SUBSCRIBE stands.
+    if(notify_expire) {
+      DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->getLocalTag().c_str());
+      AmAppTimer::instance()->setTimer(&timer_expires,(double)notify_expire);
+      expires = notify_expire + AmAppTimer::instance()->unix_clock.get();
+    }
   }
 
   return;
