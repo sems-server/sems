@@ -29,12 +29,14 @@ public:
   AmCondition<bool> terminated; // onMediaProcessingTerminated() was called
   AmSharedVar<int> reads, writes, audio_clears, terminations, inserts;
   AmSharedVar<int> read_result, write_result;
+  AmSharedVar<unsigned long> thread_id; // the media thread that processes it
 
   FakeSession()
       : inserted(false), terminated(false), reads(0), writes(0), audio_clears(0), terminations(0),
-        inserts(0), read_result(0), write_result(0) {}
+        inserts(0), read_result(0), write_result(0), thread_id(0) {}
 
   int readStreams(unsigned long long, unsigned char *) override {
+    thread_id.set((unsigned long)pthread_self());
     reads.set(reads.get() + 1);
     return read_result.get();
   }
@@ -61,17 +63,28 @@ public:
   }
 };
 
-// runs one media thread for a test and stops it at the end
+// runs the media thread(s) for a test and stops them at the end
 struct MediaThread {
-  MediaThread() {
-    AmConfig::MediaProcessorThreads = 1;
+  MediaThread(unsigned int threads = 1) {
+    AmConfig::MediaProcessorThreads = threads;
     AmMediaProcessor::instance()->init();
   }
 
-  ~MediaThread() { AmMediaProcessor::dispose(); }
+  ~MediaThread() {
+    AmMediaProcessor::dispose();
+    AmConfig::MediaProcessorThreads = 1;
+  }
 };
 
 AmMediaProcessor *processor() { return AmMediaProcessor::instance(); }
+
+// waits until a media thread has processed s at least once
+bool processed(FakeSession &s) {
+  for (int i = 0; i < 200 && !s.reads.get(); i++) {
+    usleep(10000);
+  }
+  return s.reads.get() > 0;
+}
 
 } // namespace
 
@@ -202,6 +215,46 @@ FCTMF_SUITE_BGN(test_mediaprocessor) {
     int reads = s.reads.get();
     usleep(50000);
     fct_chk_eq_int(s.reads.get(), reads);
+  }
+  FCT_TEST_END();
+
+  // A second add into the same callgroup must not leave a member behind once
+  // the session is removed: the callgroup would otherwise stay pinned to its
+  // media thread for the life of the process (callgroup2thread is only
+  // erased once the callgroup has no member left), and every later session
+  // of that callgroup would go there however loaded that thread is. With two
+  // threads that shows up as the next session of the callgroup being put on
+  // the busy thread instead of the idle one.
+  FCT_TEST_BGN(adding_a_session_twice_does_not_pin_its_callgroup) {
+    MediaThread mt(2);
+    FakeSession a, busy, b;
+
+    processor()->addSession(&a, "call-7");
+    fct_req(a.inserted.wait_for_to(2000));
+    processor()->addSession(&a, "call-7");
+    usleep(20000);
+
+    processor()->removeSession(&a);
+    fct_req(a.terminated.wait_for_to(2000));
+    fct_chk(!processor()->hasSession(&a));
+
+    // both threads are idle now, so this lands on the first one - the one
+    // call-7 was on
+    processor()->addSession(&busy, "call-8");
+    fct_req(busy.inserted.wait_for_to(2000));
+    fct_req(processed(busy));
+
+    // call-7 has no member left, so its next session goes to the idle thread
+    processor()->addSession(&b, "call-7");
+    fct_req(b.inserted.wait_for_to(2000));
+    fct_req(processed(b));
+    fct_xchk(b.thread_id.get() != busy.thread_id.get(),
+             "call-7 is still pinned to the busy media thread");
+
+    processor()->removeSession(&b);
+    processor()->removeSession(&busy);
+    fct_chk(b.terminated.wait_for_to(2000));
+    fct_chk(busy.terminated.wait_for_to(2000));
   }
   FCT_TEST_END();
 }
