@@ -90,13 +90,12 @@ AmThread::~AmThread()
 void * AmThread::_start(void * _t)
 {
   AmThread* _this = (AmThread*)_t;
-  // not _this->_td: pthread_create() may still be writing that in the
-  // thread that started this one
-  _this->_pid = (unsigned long) pthread_self();
-  DBG("Thread %lu is starting.\n", (unsigned long) _this->_pid);
+  // _pid and _td belong to the thread that called start(), which may still
+  // be writing them: this thread goes by pthread_self()
+  DBG("Thread %lu is starting.\n", (unsigned long) pthread_self());
   _this->run();
 
-  DBG("Thread %lu is ending.\n", (unsigned long) _this->_pid);
+  DBG("Thread %lu is ending.\n", (unsigned long) pthread_self());
   _this->_stopped.set(true);
     
   return NULL;
@@ -131,6 +130,8 @@ void AmThread::start()
   }
   res = pthread_create(&_td,&attr,_start,this);
   _joinable = (res == 0);
+  if(_joinable)
+    _pid = (unsigned long) _td;
   _m_td.unlock();
   pthread_attr_destroy(&attr);
   if (res != 0) {
