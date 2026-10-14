@@ -71,14 +71,28 @@ void AmMutex::unlock()
 }
 
 AmThread::AmThread()
-  : _stopped(true), _pid(0)
+  : _joinable(false), _stopped(true), _pid(0)
 {
+}
+
+AmThread::~AmThread()
+{
+  // A thread that ended by itself and was neither joined nor stopped would
+  // keep its stack and descriptor until the process exits.
+  _m_td.lock();
+  if(_joinable) {
+    pthread_detach(_td);
+    _joinable = false;
+  }
+  _m_td.unlock();
 }
 
 void * AmThread::_start(void * _t)
 {
   AmThread* _this = (AmThread*)_t;
-  _this->_pid = (unsigned long) _this->_td;
+  // not _this->_td: pthread_create() may still be writing that in the
+  // thread that started this one
+  _this->_pid = (unsigned long) pthread_self();
   DBG("Thread %lu is starting.\n", (unsigned long) _this->_pid);
   _this->run();
 
@@ -108,7 +122,16 @@ void AmThread::start()
   this->_stopped.unsafe_set(false);
   this->_stopped.unlock();
 
+  _m_td.lock();
+  // a previous run of this thread that nobody joined: it has left run()
+  // already, release it before _td is overwritten
+  if(_joinable) {
+    pthread_join(_td,NULL);
+    _joinable = false;
+  }
   res = pthread_create(&_td,&attr,_start,this);
+  _joinable = (res == 0);
+  _m_td.unlock();
   pthread_attr_destroy(&attr);
   if (res != 0) {
     // thread was never created; restore the "stopped" flag so a later
@@ -135,8 +158,8 @@ void AmThread::stop()
 
   try { on_stop(); } catch(...) {}
 
-  int res;
-  if ((res = pthread_detach(_td)) != 0) {
+  int res = 0;
+  if (_joinable && (res = pthread_detach(_td)) != 0) {
     if (res == EINVAL) {
       WARN("pthread_detach failed with code EINVAL: thread already in detached state.\n");
     } else if (res == ESRCH) {
@@ -146,6 +169,7 @@ void AmThread::stop()
     }
   }
 
+  _joinable = false;
   DBG("Thread %lu (%lu) finished detach.\n", (unsigned long int) _pid, (unsigned long int) _td);
 
   //pthread_cancel(_td);
@@ -169,8 +193,19 @@ void AmThread::cancel() {
 
 void AmThread::join()
 {
-  if(!is_stopped())
-    pthread_join(_td,NULL);
+  // Join whenever the thread has not been joined or detached yet, also if it
+  // already left run(): skipping it then would leave the thread's stack and
+  // descriptor allocated for good.
+  _m_td.lock();
+  if(!_joinable) {
+    _m_td.unlock();
+    return;
+  }
+  pthread_t td = _td;
+  _joinable = false;
+  _m_td.unlock();
+
+  pthread_join(td,NULL);
 }
 
 
