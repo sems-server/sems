@@ -878,6 +878,8 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
 
   req.max_forwards = inv_it->second.max_forwards;
 
+  req.hdrs = hdrs;
+
   if(body != NULL)
     req.body = *body;
 
