@@ -6,6 +6,7 @@
 
 #include <arpa/inet.h>
 #include <map>
+#include <stdio.h>
 #include <string.h>
 
 // bl_addr_less is the comparator of the std::maps that hold the transport
@@ -38,6 +39,31 @@ static bl_addr bl_addr_v6(const char* ip, unsigned short port)
   inet_pton(AF_INET6, ip, &sin6->sin6_addr);
 
   return bl_addr(&ss);
+}
+
+// The real bucket, with its element count exposed. insert() and remove() are
+// the ones the blacklist itself runs, timers included.
+struct counting_bucket : public blacklist_bucket
+{
+  counting_bucket() : blacklist_bucket(0) {}
+  size_t count() { return elmts.size(); }
+};
+
+// Up to n IPv4 addresses that all hash into the same blacklist bucket, the
+// way _tr_blacklist picks it. The table has 64 buckets, so a few blacklisted
+// destinations already share one.
+static int colliding_addrs(bl_addr* out, int n)
+{
+  unsigned int bucket = bl_addr_v4("10.1.0.1", 5060).hash();
+  int found = 0;
+  for (unsigned int i = 1; i < 65536 && found < n; i++) {
+    char ip[32];
+    snprintf(ip, sizeof(ip), "10.1.%u.%u", i >> 8, i & 0xff);
+    bl_addr a = bl_addr_v4(ip, 5060);
+    if (a.hash() == bucket)
+      out[found++] = a;
+  }
+  return found;
 }
 
 FCTMF_SUITE_BGN(test_blacklist) {
@@ -103,6 +129,63 @@ FCTMF_SUITE_BGN(test_blacklist) {
       fct_chk_eq_int(erased, 1);
     }
     fct_chk(m.empty());
+  }
+  FCT_TEST_END();
+
+  // The same through the bucket the blacklist actually uses: a blacklisted
+  // destination has to be found again, a second failure must not add another
+  // entry (and another timer), and the expiry has to take it out - otherwise
+  // the entries and their timers pile up for as long as the process runs.
+  FCT_TEST_BGN(blacklist_bucket_finds_dedups_and_removes) {
+    const int N = 6;
+    bl_addr addrs[N];
+    fct_req(colliding_addrs(addrs, N) == N);
+
+    counting_bucket b;
+    b.lock();
+
+    for (int i = 0; i < N; i++)
+      fct_chk(b.insert(addrs[i], 3600 * 1000, "test"));
+    fct_chk_eq_int((int)b.count(), N);
+
+    for (int i = 0; i < N; i++)
+      fct_xchk(b.exist(addrs[i]), "blacklisted address #%d not found", i);
+
+    // what _tr_blacklist::insert() does on every further failure
+    for (int i = 0; i < N; i++) {
+      if (!b.exist(addrs[i]))
+        b.insert(addrs[i], 3600 * 1000, "test");
+    }
+    fct_chk_eq_int((int)b.count(), N);
+
+    // what bl_timer::fire() does once the TTL is over
+    for (int i = 0; i < N; i++)
+      fct_xchk(b.remove(addrs[i]), "blacklisted address #%d not removed", i);
+    fct_chk_eq_int((int)b.count(), 0);
+
+    b.unlock();
+  }
+  FCT_TEST_END();
+
+  // End to end through the singleton the transaction layer consults.
+  FCT_TEST_BGN(tr_blacklist_colliding_addresses) {
+    const int N = 6;
+    bl_addr addrs[N];
+    fct_req(colliding_addrs(addrs, N) == N);
+
+    for (int i = 0; i < N; i++)
+      tr_blacklist::instance()->insert(&addrs[i], 3600 * 1000, "test");
+
+    for (int i = 0; i < N; i++)
+      fct_xchk(tr_blacklist::instance()->exist(&addrs[i]),
+               "blacklisted address #%d not found", i);
+
+    for (int i = 0; i < N; i++)
+      tr_blacklist::instance()->remove(&addrs[i]);
+
+    for (int i = 0; i < N; i++)
+      fct_xchk(!tr_blacklist::instance()->exist(&addrs[i]),
+               "address #%d still blacklisted after its removal", i);
   }
   FCT_TEST_END();
 
