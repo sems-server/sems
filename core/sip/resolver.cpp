@@ -1086,7 +1086,24 @@ int _resolver::str2ip(const char* name,
     }
     
     if(types & IPv6){
-	int ret = inet_pton(AF_INET6,name,&((sockaddr_in6*)sa)->sin6_addr);
+	// Anything taken verbatim out of a SIP message carries an IPv6 address
+	// in the reference form '[addr]' (RFC 3261 25.1 'host', via RFC 2732):
+	// the Via 'sent-by' host is stored with the brackets by parse_via(), and
+	// so are URI hosts. inet_pton() rejects the brackets, so strip them off
+	// before handing the address over.
+	const char* addr = name;
+	char unref[INET6_ADDRSTRLEN];
+	size_t name_len = strlen(name);
+
+	if((name_len >= 2) && (name[0] == '[') && (name[name_len-1] == ']')) {
+	    if(name_len-2 >= sizeof(unref))
+		return 0; // too long to be an IPv6 address
+	    memcpy(unref,name+1,name_len-2);
+	    unref[name_len-2] = '\0';
+	    addr = unref;
+	}
+
+	int ret = inet_pton(AF_INET6,addr,&((sockaddr_in6*)sa)->sin6_addr);
 	if(ret==1) {
 	    ((sockaddr_in6*)sa)->sin6_family = AF_INET6;
 	    return 1;
