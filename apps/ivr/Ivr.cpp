@@ -274,17 +274,6 @@ extern "C" {
   };
 }
 
-void PythonScriptThread::run() {
-  PYLOCK;
-  DBG("PythonScriptThread - calling python function.\n");
-  PyObject_CallObject(py_thread_object, NULL);
-  DBG("PythonScriptThread - thread finished..\n");
-}
-
-void PythonScriptThread::on_stop() {
-  DBG("PythonScriptThread::on_stop.\n");
-}
-
 IvrFactory::IvrFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {
