@@ -50,16 +50,21 @@ void fail_premature_exit() {
   }
 }
 
-const char *script = "import sys, time\n"
+const char *script = "import sys, threading, time\n"
                      "ran = False\n"
+                     "mark_ident = 0\n"
+                     "spin_ident = 0\n"
                      "def spin():\n"
+                     "    global spin_ident\n"
+                     "    spin_ident = threading.get_ident()\n"
                      "    while True:\n"
                      "        pass\n"
                      "def nap():\n"
                      "    while True:\n"
                      "        time.sleep(0.01)\n"
                      "def mark():\n"
-                     "    global ran\n"
+                     "    global ran, mark_ident\n"
+                     "    mark_ident = threading.get_ident()\n"
                      "    ran = True\n"
                      "def leave():\n"
                      "    sys.exit(3)\n"
@@ -92,6 +97,16 @@ bool script_ran() {
   PyGILState_STATE gst = PyGILState_Ensure();
   PyObject *ran = PyDict_GetItemString(script_globals, "ran");
   bool res = ran && PyObject_IsTrue(ran);
+  PyGILState_Release(gst);
+  return res;
+}
+
+// The thread ident a script recorded, read under the GIL - that is the
+// synchronisation with the script's thread. It is the thread's pthread_t.
+unsigned long script_ident(const char *name) {
+  PyGILState_STATE gst = PyGILState_Ensure();
+  PyObject *ident = PyDict_GetItemString(script_globals, name);
+  unsigned long res = ident ? PyLong_AsUnsignedLong(ident) : 0;
   PyGILState_Release(gst);
   return res;
 }
@@ -169,15 +184,16 @@ FCT_BGN() {
 
     // A stop that comes after the script returned must not raise anything
     // anywhere: the thread id the script ran under may already belong to
-    // another script thread. The finished thread is detached here, as
-    // AmThread::stop() does, so that the next thread started gets its id.
+    // another script thread. The finished thread is joined here, which
+    // releases its id, so that the next thread started gets it.
     FCT_TEST_BGN(late_stop_leaves_other_scripts_alone) {
       TestScriptThread *done = new TestScriptThread(script_function("mark"));
       done->start();
       fct_req(stops_within(done, 2000));
       fct_chk(script_ran());
-      unsigned long done_id = done->_pid;
-      pthread_detach((pthread_t)done_id);
+      unsigned long done_id = script_ident("mark_ident");
+      fct_req(done_id != 0);
+      done->join();
       usleep(50000);
 
       PythonScriptThread *other = new PythonScriptThread(script_function("spin"));
@@ -185,7 +201,7 @@ FCT_BGN() {
       usleep(100000);
       fct_req(!other->is_stopped());
       // the case this is about; with glibc the id is handed out again
-      fct_xchk(other->_pid == done_id, "the thread id was not reused, the test proves little");
+      fct_xchk(script_ident("spin_ident") == done_id, "the thread id was not reused, the test proves little");
 
       done->request_stop();
       usleep(200000);
