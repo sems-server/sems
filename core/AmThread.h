@@ -219,6 +219,9 @@ class AmThread
   pthread_t _td;
   AmMutex   _m_td;
 
+  /** _td still has to be joined or detached; guarded by _m_td */
+  bool      _joinable;
+
   AmSharedVar<bool> _stopped;
 
   static void* _start(void*);
@@ -230,7 +233,7 @@ protected:
 public:
   unsigned long _pid;
   AmThread();
-  virtual ~AmThread() {}
+  virtual ~AmThread();
 
   virtual void onIdle() {}
 
@@ -240,7 +243,8 @@ public:
   void stop();
   /** @return true if this thread doesn't run. */
   bool is_stopped() { return _stopped.get(); }
-  /** Wait for this thread to finish */
+  /** Wait for this thread to finish, and release it; a no-op once
+      stop() has detached it */
   void join();
   /** kill the thread (if pthread_setcancelstate(PTHREAD_CANCEL_ENABLED) has been set) **/ 
   void cancel();
