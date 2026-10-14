@@ -56,13 +56,16 @@ ev_io ev_accept;
 ev_async JsonRPCServerLoop::async_w;
 struct ev_loop* JsonRPCServerLoop::loop = 0;
 JsonRPCServerLoop* JsonRPCServerLoop::_instance = NULL;
-RpcServerThreadpool JsonRPCServerLoop::threadpool;
 
 std::map<string, JsonrpcPeerConnection*> JsonRPCServerLoop::connections;
 AmMutex JsonRPCServerLoop::connections_mut;
 
 vector<JsonServerEvent*> JsonRPCServerLoop::pending_events;
 AmMutex JsonRPCServerLoop::pending_events_mut;
+
+// defined after the statics above so that it is destroyed before them: its
+// destructor stops and joins server threads, which use them
+RpcServerThreadpool JsonRPCServerLoop::threadpool;
 
 JsonRPCServerLoop* JsonRPCServerLoop::instance() {
   if (_instance == NULL) {
@@ -183,6 +186,21 @@ static void async_cb (EV_P_ ev_async *w, int revents)
   JsonRPCServerLoop::_processEvents();
 }
 
+static ev_async async_stop;
+
+static void async_stop_cb (EV_P_ ev_async *w, int revents)
+{
+  // runs inside the event loop, so leaving it is safe from here
+  JsonRPCServerLoop::stopWatchers();
+  ev_break(EV_A_ EVBREAK_ALL);
+}
+
+void JsonRPCServerLoop::stopWatchers() {
+  ev_async_stop(loop, &async_stop);
+  ev_async_stop(loop, &async_w);
+  ev_io_stop(loop, &ev_accept);
+}
+
 void JsonRPCServerLoop::_processEvents() {
   instance()->processEvents();
 }
@@ -281,7 +299,7 @@ void JsonRPCServerLoop::process(AmEvent* ev) {
 }
 
 JsonRPCServerLoop::JsonRPCServerLoop()
-  : AmEventQueue(this)
+  : AmEventQueue(this), stop_requested(false)
 {
   loop = ev_default_loop (0);
 }
@@ -313,17 +331,23 @@ void JsonRPCServerLoop::run() {
   if (bind(listen_fd, (struct sockaddr *)&listen_addr,
 	   sizeof(listen_addr)) < 0) {
     ERROR("bind failed\n");
+    ::close(listen_fd);
+    threadpool.cleanup();
     return;
   }
   if (listen(listen_fd,5) < 0) {
     ERROR("listen failed\n");
+    ::close(listen_fd);
+    threadpool.cleanup();
     return;
   }
   if (setnonblock(listen_fd) < 0) {
     ERROR("failed to set server socket to non-blocking\n");
+    ::close(listen_fd);
+    threadpool.cleanup();
     return;
   }
-	 
+
   ev_io_init(&ev_accept,accept_cb,listen_fd,EV_READ);
   ev_io_start(loop,&ev_accept);
 
@@ -331,13 +355,73 @@ void JsonRPCServerLoop::run() {
   ev_async_init (&async_w, async_cb);
   ev_async_start (EV_A_ &async_w);
 
-  INFO("running event loop\n");
-  ev_loop (loop, 0);
-  INFO("event loop finished\n");
+  // async watcher used by request_stop() to break out of the event loop.
+  // Registered here because only ev_async_send() may be called from another
+  // thread while the loop is running.
+  ev_async_init (&async_stop, async_stop_cb);
+  ev_async_start (EV_A_ &async_stop);
+
+  // A request_stop() from before this point was not delivered: ev_async_init()
+  // resets the watcher it wrote to. From here on the watcher is live, and such
+  // an early request has left stop_requested set.
+  if (stop_requested.get()) {
+    INFO("stop requested before the event loop was started\n");
+    stopWatchers();
+  } else {
+    INFO("running event loop\n");
+    ev_loop (loop, 0);
+    INFO("event loop finished\n");
+  }
+
+  // stopped: no new connection is accepted and no event is dispatched to the
+  // server threads any more, so they can be shut down and joined now, and
+  // what they leave behind can be closed
+  threadpool.cleanup();
+  closeConnections();
+  ::close(listen_fd);
+}
+
+void JsonRPCServerLoop::closeConnections() {
+  // the event loop has returned and the server threads are joined: nothing
+  // uses the connections any more
+  std::map<string, JsonrpcPeerConnection*> conns;
+  connections_mut.lock();
+  conns.swap(connections);
+  connections_mut.unlock();
+
+  DBG("closing %zu connections\n", conns.size());
+  for (std::map<string, JsonrpcPeerConnection*>::iterator it = conns.begin();
+       it != conns.end(); it++) {
+    JsonrpcNetstringsConnection* conn =
+      dynamic_cast<JsonrpcNetstringsConnection*>(it->second);
+    if (conn != NULL) {
+      if (ev_is_active(&conn->ev_read))
+        ev_io_stop(loop, &conn->ev_read);
+      conn->close();
+    }
+    delete it->second;
+  }
+
+  pending_events_mut.lock();
+  for (vector<JsonServerEvent*>::iterator it = pending_events.begin();
+       it != pending_events.end(); it++) {
+    delete *it;
+  }
+  pending_events.clear();
+  pending_events_mut.unlock();
+}
+
+void JsonRPCServerLoop::request_stop() {
+  // The flag first: run() checks it once the async watcher is live, which
+  // covers a request from before that. ev_break() must not be called from
+  // another thread while the loop is running; ev_async_send() may, so let
+  // the loop leave ev_loop() itself.
+  stop_requested.set(true);
+  ev_async_send (loop, &async_stop);
 }
 
 void JsonRPCServerLoop::on_stop() {
-  INFO("todo\n");
+  request_stop();
 }
 
 void JsonRPCServerLoop::returnConnection(JsonrpcNetstringsConnection* conn) {
