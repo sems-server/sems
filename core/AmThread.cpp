@@ -256,10 +256,15 @@ void AmThreadWatcher::add(AmThread* t)
 
 void AmThreadWatcher::request_stop()
 {
+  // under q_mut, like the point where run() clears _run_cond after a sweep:
+  // otherwise a request landing during a sweep could have its wakeup cleared
+  // again, leaving run() blocked below with the stop flag set
+  q_mut.lock();
   _stop_requested.set(true);
   // wake up run(), which is otherwise blocked in _run_cond.wait_for()
   // with an empty queue
   _run_cond.set(true);
+  q_mut.unlock();
 }
 
 void AmThreadWatcher::stop_and_join()
@@ -347,12 +352,15 @@ void AmThreadWatcher::run()
       ERROR("unexpected exception, state may be invalid!\n");
     }
 
-    bool more = !thread_queue.empty();
+    // Only go idle with the queue empty and no stop pending, and decide that
+    // under q_mut: add() and request_stop() set _run_cond under it, so neither
+    // a thread queued nor a stop requested during this sweep can have its
+    // wakeup cleared here.
+    if(thread_queue.empty() && !_stop_requested.get())
+      _run_cond.set(false);
     q_mut.unlock();
 
     DBG("Thread watcher finished\n");
-    if(!more)
-      _run_cond.set(false);
   }
 
   DBG("Thread watcher stopped\n");
