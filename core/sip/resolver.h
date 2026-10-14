@@ -295,6 +295,10 @@ public:
      */
     void stop_and_join();
 
+    /** starts the cache maintenance thread; called by singleton<> once the
+	instance is fully constructed */
+    void on_singleton_created() { start(); }
+
 protected:
     _resolver();
     ~_resolver();
