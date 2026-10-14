@@ -25,6 +25,7 @@
 #include <Python.h>
 
 #include "AmB2BSession.h"
+#include "PythonScriptThread.h"
 #include "AmPlaylist.h"
 
 #ifdef IVR_WITH_TTS
@@ -37,17 +38,6 @@ using std::string;
 using std::map;
 
 class IvrDialog;
-
-/** \brief C++ wrapper for extra thread created by Python IVR script */
-class PythonScriptThread : public AmThread {
-  PyObject* py_thread_object;
- protected:
-  void run();
-  void on_stop();
- public:
- PythonScriptThread(PyObject* py_thread_object_) 
-   : py_thread_object(py_thread_object_) { }
-};
 
 /** \brief binds a script module and the python dialog class */
 struct IvrScriptDesc
