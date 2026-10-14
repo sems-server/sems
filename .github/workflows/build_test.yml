@@ -83,7 +83,7 @@ jobs:
           # baseline is clean on main.
           - flavor: tsan
             cmake_flags: "-DSEMS_USE_TSAN=ON -DCMAKE_BUILD_TYPE=Debug"
-            ctest_env: "TSAN_OPTIONS=suppressions=${{ github.workspace }}/cmake/tsan.supp:halt_on_error=1:second_deadlock_stack=1:history_size=7:abort_on_error=0"
+            ctest_env: "TSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/cmake/tsan.supp:halt_on_error=1:second_deadlock_stack=1:history_size=7:abort_on_error=0"
             tests_must_pass: false
 
     steps:
