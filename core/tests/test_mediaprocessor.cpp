@@ -226,8 +226,11 @@ FCTMF_SUITE_BGN(test_mediaprocessor) {
   // threads that shows up as the next session of the callgroup being put on
   // the busy thread instead of the idle one.
   FCT_TEST_BGN(adding_a_session_twice_does_not_pin_its_callgroup) {
-    MediaThread mt(2);
+    // the sessions outlive the media threads, as in the other tests: should
+    // an fct_req() end the test early, the threads must not be left holding
+    // destroyed sessions
     FakeSession a, busy, b;
+    MediaThread mt(2);
 
     processor()->addSession(&a, "call-7");
     fct_req(a.inserted.wait_for_to(2000));
