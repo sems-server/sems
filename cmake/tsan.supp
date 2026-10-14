@@ -19,7 +19,11 @@ called_from_lib:libpython*
 # libevent is initialized with evthread_use_pthreads() in core/sems.cpp before
 # any threads are spawned. Its internal locking is correct but TSan sometimes
 # misses the happens-before edge through event_base_loop.
-called_from_lib:libevent*
+# One entry per library: TSan refuses to start when a called_from_lib
+# pattern matches more than one loaded library, and libevent* matched both
+# of these.
+called_from_lib:libevent-
+called_from_lib:libevent_pthreads
 
 # glibc DNS resolver keeps process-global cached state (res_state) guarded by
 # its own lock; TSan occasionally flags cache reads.
