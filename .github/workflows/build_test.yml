@@ -63,28 +63,20 @@ jobs:
           - flavor: asan
             cmake_flags: "-DSEMS_USE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug"
             ctest_env: "ASAN_OPTIONS=detect_leaks=1:halt_on_error=0:abort_on_error=0"
-            tests_must_pass: false
           # UBSan: undefined behavior. halt_on_error=1 + no-sanitize-recover
           # together make the process abort on the first violation (fail-fast).
           - flavor: ubsan
             cmake_flags: "-DSEMS_USE_UBSAN=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
             ctest_env: "UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1"
-            tests_must_pass: true
           # Hardened release: what production binaries should look like.
           # RelWithDebInfo keeps optimization >= 1 so FORTIFY_SOURCE is active.
           - flavor: hardened
             cmake_flags: "-DSEMS_HARDEN=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
             ctest_env: ""
-            tests_must_pass: true
           # ThreadSanitizer: data races and lock-order inversions.
-          # ctest only exercises parser tests today, so this job acts mostly
-          # as a startup/shutdown smoke test against the sems_tests binary.
-          # Non-blocking initially; flip tests_must_pass to true once the
-          # baseline is clean on main.
           - flavor: tsan
             cmake_flags: "-DSEMS_USE_TSAN=ON -DCMAKE_BUILD_TYPE=Debug"
             ctest_env: "TSAN_OPTIONS=suppressions=$GITHUB_WORKSPACE/cmake/tsan.supp:halt_on_error=1:second_deadlock_stack=1:history_size=7:abort_on_error=0"
-            tests_must_pass: false
 
     steps:
       - name: Checkout code
@@ -149,4 +141,3 @@ jobs:
         env:
           CTEST_OUTPUT_ON_FAILURE: "1"
         run: ${{ matrix.ctest_env }} ctest --test-dir build -V
-        continue-on-error: ${{ !matrix.tests_must_pass }}
