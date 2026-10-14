@@ -921,7 +921,8 @@ bool _resolver::disable_srv = false;
 _resolver::_resolver()
     : cache(DNS_CACHE_SIZE)
 {
-    start();
+    // the thread is started by on_singleton_created(), once the
+    // singleton<_resolver> around this is constructed as well
 }
 
 _resolver::~_resolver()
