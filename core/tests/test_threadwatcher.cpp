@@ -29,14 +29,53 @@ public:
   void on_stop() { stop_flag.set(true); }
 };
 
+// A thread that has already left run() by the time the watcher looks at it.
+static volatile bool finished_destroyed = false;
+
+class FinishedThread : public AmThread
+{
+public:
+  ~FinishedThread() { finished_destroyed = true; }
+
+  void run() {}
+  void on_stop() {}
+};
+
+// A thread that does not react to stop(): it only leaves run() once the test
+// lets it. On shutdown the watcher must not delete it while it is still in
+// run() - that would be a use-after-free under a live thread.
+static volatile bool stubborn_destroyed = false;
+static AmCondition<bool> stubborn_release(false);
+
+class StubbornThread : public AmThread
+{
+public:
+  ~StubbornThread() { stubborn_destroyed = true; }
+
+  void run() { while(!stubborn_release.wait_for_to(20)) {} }
+  void on_stop() {}
+};
+
 FCTMF_SUITE_BGN(test_threadwatcher) {
 
   FCT_TEST_BGN(watcher_stops_and_reaps_what_is_queued) {
     WatchedThread* t = new WatchedThread();
     t->start();
 
+    FinishedThread* f = new FinishedThread();
+    f->start();
+    for (int i = 0; i < 100 && !f->is_stopped(); i++) {
+      usleep(10000);
+    }
+    fct_req(f->is_stopped());
+
+    StubbornThread* st = new StubbornThread();
+    st->start();
+
     AmThreadWatcher* w = AmThreadWatcher::instance(); // instance() start()s it
     w->add(t);
+    w->add(f);
+    w->add(st);
     fct_chk(!w->is_stopped());
 
     // the watched thread is still in run(): the watcher has to ask it to
@@ -47,11 +86,28 @@ FCTMF_SUITE_BGN(test_threadwatcher) {
     // a stop is honoured at once, well inside the 10s the watcher otherwise
     // lets the threads have. Without a stop flag in run() the watcher never
     // leaves it and the loop below runs out.
-    for (int i = 0; i < 200 && !w->is_stopped(); i++) {
+    // The stubborn thread costs the watcher its bounded 2s wait, so allow for
+    // that on top.
+    for (int i = 0; i < 300 && !w->is_stopped(); i++) {
       usleep(20000);
     }
     fct_chk(w->is_stopped());
     fct_chk(watched_destroyed);
+    fct_chk(finished_destroyed);
+
+    // still in run(): asked to stop, but left alone rather than freed
+    fct_chk(!st->is_stopped());
+    fct_chk(!stubborn_destroyed);
+
+    // let it go and clean up after it; the watcher's stop() detached it
+    stubborn_release.set(true);
+    for (int i = 0; i < 100 && !st->is_stopped(); i++) {
+      usleep(10000);
+    }
+    fct_chk(st->is_stopped());
+    if (st->is_stopped()) {
+      delete st;
+    }
 
     // join() only once we know run() returned: on a regression it would
     // block forever and hang the suite instead of failing it
