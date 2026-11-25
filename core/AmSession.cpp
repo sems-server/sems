@@ -471,11 +471,18 @@ void AmSession::finalize()
 }
 
 void AmSession::setStopped(bool wakeup) {
-  if (!sess_stopped.get()) {
-    sess_stopped.set(true); 
+  // Flip the flag and find out whether this call is the one that flipped it,
+  // in a single step: setStopped() is reached from other threads than the
+  // session's own (the media processor, a B2B peer leg, the DI/RPC
+  // interfaces, app-side threads), and a get()-then-set() pair lets two of
+  // them both see "not stopped yet" and both run onStop(). Running it twice
+  // repeats the application's teardown - SBCCallLeg::onStop() for one calls
+  // CCEnd() again, so every call control module sees a second "end" for the
+  // same call.
+  if (!sess_stopped.test_and_set(true)) {
     onStop();
   }
-  if (wakeup) 
+  if (wakeup)
     AmSessionContainer::instance()->postEvent(getLocalTag(), 
 					      new AmEvent(0));
 }
