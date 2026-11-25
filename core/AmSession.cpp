@@ -982,6 +982,12 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
       answer_media.transport = m_it->transport;
       answer_media.send = false;
       answer_media.recv = false;
+      // For non-RTP transports the format list lives in SdpMedia::fmt, not
+      // in payloads (see parse_sdp_media()), and AmSdp::print() emits fmt
+      // for those m= lines. Without carrying it over, a rejected stream is
+      // printed as "m=image 0 udptl " with an empty format list, which is
+      // not a valid m= line (RFC 4566 section 5.14 requires at least one fmt).
+      answer_media.fmt = m_it->fmt;
       answer_media.payloads.clear();
       if(!m_it->payloads.empty()) {
 	SdpPayload dummy_pl = m_it->payloads.front();

@@ -23,6 +23,7 @@ FCT_BGN() {
   log_level = 3;
 
   FCTMF_SUITE_CALL(test_sdp);
+  FCTMF_SUITE_CALL(test_sdpanswer);
   FCTMF_SUITE_CALL(test_rtpstream);
   FCTMF_SUITE_CALL(test_auth);
   FCTMF_SUITE_CALL(test_headers);
