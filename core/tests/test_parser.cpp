@@ -230,6 +230,45 @@ FCTMF_SUITE_BGN(test_parser) {
   }
   FCT_TEST_END();
 
+  // A method followed by whitespace used to return before the method was
+  // parsed, leaving sip_cseq::method uninitialised (issue #655).
+  FCT_TEST_BGN(cseq_method_trailing_whitespace) {
+    const char *values[] = {"1 INVITE ", "1 INVITE\t", "1 INVITE \r\n", "1 INVITE\r\n "};
+    for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
+      sip_cseq cseq;
+      cseq.method = -1;
+      int rc = parse_cseq(&cseq, values[i], strlen(values[i]));
+      fct_xchk(rc == 0 && cseq.method == sip_request::INVITE && cseq.method_str.len == 6,
+               "CSeq '%s': rc=%d method=%d method_len=%d", values[i], rc, cseq.method, cseq.method_str.len);
+    }
+  }
+  FCT_TEST_END();
+
+  FCT_TEST_BGN(cseq_method_is_initialised) {
+    sip_cseq cseq;
+    fct_chk_eq_int(cseq.method, sip_request::OTHER_METHOD);
+  }
+  FCT_TEST_END();
+
+  // Whitespace between a parameter name and '=' used to fall through into
+  // the value state, so "tag = abc" got the value "= abc" (issue #655).
+  FCT_TEST_BGN(gen_params_whitespace_before_equals) {
+    const char *value = "tag = abc;branch  =z9hG4bK776";
+    const char *c = value;
+    list<sip_avp *> params;
+    int rc = parse_gen_params(&params, &c, strlen(value), '\0');
+    fct_req(rc == 0);
+    fct_req(params.size() == 2);
+    sip_avp *tag = params.front();
+    sip_avp *branch = params.back();
+    fct_chk(string(tag->name.s, tag->name.len) == "tag");
+    fct_chk(string(tag->value.s, tag->value.len) == "abc");
+    fct_chk(string(branch->name.s, branch->name.len) == "branch");
+    fct_chk(string(branch->value.s, branch->value.len) == "z9hG4bK776");
+    free_gen_params(&params);
+  }
+  FCT_TEST_END();
+
   // The CSeq number has to fit in 32 bits (RFC 3261 section 8.1.1.5); a
   // larger one must not wrap into a different, valid looking number.
 
