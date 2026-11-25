@@ -70,7 +70,11 @@ int JsonRPCServerModule::load() {
   DBG("using %d server threads\n", threads);
 
   DBG("starting server loop thread\n");
-  server_loop = new JsonRPCServerLoop();
+  // must be the singleton: everything that feeds the loop - returnConnection(),
+  // sendMessage(), the async watcher callback - reaches it through
+  // JsonRPCServerLoop::instance(), and instance() is created here, on the
+  // single-threaded module load path, rather than racily from those callers.
+  server_loop = JsonRPCServerLoop::instance();
   server_loop->start();
   
   return 0;
