@@ -102,6 +102,11 @@ void AmEventQueue::waitForEvent()
   ev_pending.wait_for();
 }
 
+void AmEventQueue::waitForEventTimed(unsigned long msec)
+{
+  ev_pending.wait_for_to(msec);
+}
+
 void AmEventQueue::processSingleEvent()
 {
   m_queue.lock();

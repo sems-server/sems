@@ -899,9 +899,13 @@ void DBRegAgent::run() {
   DBG("running DBRegAgent thread...\n");
   shutdown_finished = false;
   while (running) {
+    // Block until an event is posted instead of spinning: postEvent() raises
+    // the queue's pending flag and signals the condition, so a waiting thread
+    // is woken immediately. The timeout only bounds how long it takes to
+    // notice 'running' being cleared by on_stop()/onUnload(), which polls for
+    // at most 800ms.
+    waitForEventTimed(100);
     processEvents();
-
-    usleep(1000); // 1ms
   }
 
   DBG("DBRegAgent done, removing all registrations from Event Dispatcher...\n");
