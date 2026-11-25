@@ -50,11 +50,16 @@ Several CC modules are implemented
   o cc_call_timer     - call timer (maximum call duration)
   o cc_prepaid        - prepaid billing with storing balances in memory
   o cc_prepaid_xmlrpc - prepaid billing querying balances from external server with XMLRPC
+                        (not built by default)
   o cc_ctl            - control SBC profile options through headers
   o cc_rest           - query REST/http API and use response for retargeting etc
+                        (not built by default)
   o cc_syslog_cdr     - write CDRs to syslog
   o cc_bl_redis       - check blacklist from REDIS (redis.io)
   o cc_registrar      - local registrar (REGISTER handling, lookup on INVITEs) 
+  o cc_dsm            - call control with DSM scripts (see doc/dsm/dsm_sbc_syntax.txt)
+  o cc_siprec         - call recording to a SIPREC recording server
+                        (see apps/sbc/call_control/siprec/Readme.cc_siprec.txt)
   
 See their respective documentation in the doc/sbc/ directory for details.
 
@@ -106,6 +111,8 @@ The CC modules must implement a DI API, which must implement at least the functi
                SBC_CC_REFUSE_ACTION                     refuse the call with code and reason
                   Parameters: int    code
                               string reason
+                              Array of string headers  (optional) headers to add
+                                                       to the reply
 
                SBC_CC_SET_CALL_TIMER_ACTION             set a timer; the id of the first
                                                         timer will be timer_id
@@ -127,6 +134,27 @@ The CC modules must implement a DI API, which must implement at least the functi
               SBCCallProfile Object   call_profile     used call profile instance
               Array of int            timestamps       start/connect/end timestamp
 
+
+  function: route
+  Called for out-of-dialog (non-INVITE) requests, e.g. REGISTER, SUBSCRIBE, OPTIONS.
+  If the function is not implemented by the CC module, the request is replied with 500.
+  Parameters: string                  cc_namespace     name of call control section
+              string                  ltag             empty
+              SBCCallProfile Object   call_profile     used call profile instance
+              AmSipRequest Object     request          the request to be routed
+              Array of int            timestamps       not used
+              ValueStruct             values           configured values
+                                                       (struct of key:string value)
+              int                     timer_id         not used
+
+  Return values
+              Array of actions as in the start function. With SBC_CC_DROP_ACTION
+              the request is dropped, with SBC_CC_REFUSE_ACTION it is replied with
+              code and reason; SBC_CC_SET_CALL_TIMER_ACTION is ignored.
+
+  The parameter indices are defined in SBCCallControlAPI.h (CC_API_PARAMS_*). In the
+  start, connect and end functions, the request (start) or NULL is passed at index
+  CC_API_PARAMS_SIP_MSG as well.
 
   timestamps Array of int
   -----------------------
@@ -164,6 +192,39 @@ If several invocations of the same call control module should be independent fro
 CC variables should be prefixed by the CC namespace
 (e.g. args[CC_API_PARAMS_CC_NAMESPACE + "::" + var_name).
 
+
+Extended call control API
+-------------------------
+
+For call flows which need more control than the functions above can give, a CC module can
+additionally implement the extended call control interface (class ExtendedCCInterface in
+apps/sbc/ExtendedCCInterface.h). The module returns a pointer to its ExtendedCCInterface
+implementation from the DI function "getExtendedInterfaceHandler".
+
+The interface contains hooks which are called by the SBC call leg, among others:
+
+  init                   the call leg is initialized with the CC module's configured values
+  onInitialInvite        initial INVITE is processed
+  onInDialogRequest      in-dialog request received
+  onInDialogReply        in-dialog reply received
+  onBLegRefused          the B leg was refused
+  onStateChange          call leg state changed
+  onDestroyLeg           call leg is destroyed
+  onEvent                event received by the call leg
+  onDtmf                 DTMF detected (see rtprelay_dtmf_detection)
+  holdRequested, holdAccepted, holdRejected,
+  resumeRequested, resumeAccepted, resumeRejected
+                         hold/resume handling
+  onAfterRTPRelay        RTP packet was relayed
+  relayEvent             event is relayed to the other leg
+
+and a separate set of hooks for relayed out-of-dialog requests (init, initUAC, initUAS,
+onSipRequest, onSipReply, onB2BRequest, onB2BReply, finalize).
+
+Hooks returning CCChainProcessing may return StopProcessing, in which case neither the
+following CC modules nor the SBC itself process the request, reply or event any further.
+
+This interface is used for example by the cc_dsm and cc_siprec modules.
 
 Verifying correct configuration
 -------------------------------

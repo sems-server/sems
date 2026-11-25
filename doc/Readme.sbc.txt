@@ -37,7 +37,7 @@ SBC Profiles
 ------------ 
 All features are set in an SBC profile, which is configured in a
 separate configuration file with the extension .sbcprofile.conf. Several
-SBC profiles may be loaded at startup (load_profiles), and can be
+SBC profiles may be loaded at startup (profiles), and can be
 selected with the active_profile configuration option. The
 active_profile option is a comma-separated list, the first profile that
 matches, i.e. is non-empty, will be used.
@@ -124,6 +124,26 @@ are in a dictionary with
 Return code is [200, "OK", <result dictionary>] on success, or 
 [<error code>, <error reason>] on failure.
 
+The DI functions exported by the sbc module are:
+
+  listProfiles                             list loaded profiles
+  reloadProfiles                           reload all profiles
+  reloadProfile          {name}            reload a profile
+  loadProfile            {name, path}      load a profile from a file
+  getActiveProfile                         get active_profile
+  setActiveProfile       {active_profile}  set active_profile
+  getRegexMapNames                         list regex map names
+  setRegexMap            {name, file}      load a regex map from a file
+  loadCallcontrolModules <modules>         load call control modules
+                                           (';' separated list of plug-ins)
+  postControlCmd         <ltag> <cmd> [<params>]
+                                           post a control command to a call;
+                                           the sbc itself handles the command
+                                           "teardown", other commands may be
+                                           handled by call control modules
+  printCallStats                           print media (relay/transcoder)
+                                           statistics
+
 Replacement patterns - active_profile, RURI, From, To, Contact, etc
 -------------------------------------------------------------------
 In SBC profile the appearance of the outgoing INVITE request can be set,
@@ -142,7 +162,7 @@ The patterns which can be used are the following:
   $f (or $f. if something follows) - From
   $t (or $t. if something follows) - To
   $a (or $a. if something follows) - P-Asserted-Identity
-  $p (or $p. if something follows) - P-Preferref-Identity
+  $p (or $p. if something follows) - P-Preferred-Identity
 
   $fu  - From URI
   $fU  - From User
@@ -156,7 +176,7 @@ The patterns which can be used are the following:
   $fn  - From display name
 
   $tu  - To URI
-  $fU  - To User
+  $tU  - To User
   ...
 
   $ru  - R-URI URI
@@ -178,6 +198,11 @@ The patterns which can be used are the following:
 
   $si  - source (remote) IP address
   $sp  - source (remote) port
+
+  $di  - destination IP address/host (first next_hop entry if next_hop is
+         set, R-URI host otherwise)
+  $dp  - destination port (first next_hop entry if next_hop is set, R-URI
+         port otherwise)
 
   $Ri  - destination (local/received) IP address
   $Rp  - destination (local/received) port
@@ -216,6 +241,19 @@ The patterns which can be used are the following:
       next_hop=$Hh(P-SomeNH-URI):
 
 
+  $V(varname) - call control variable <varname> (set by call control modules,
+                see Readme.sbc_call_control.txt)
+  $V(varname.member) - member of a call control variable which is a struct
+
+  Registration cache lookups (see "Registration caching" below):
+  $uc  - cached contact URI for the alias in the R-URI user
+  $us  - source address (ip[:port]) the alias in the R-URI user registered from
+  $ui  - name of the interface the alias in the R-URI user registered on
+  $Ua  - AoR of the registered originating user (looked up by From URI and
+         source address)
+  $UA  - alias of the registered originating user (looked up by From URI and
+         source address)
+
   $M(value=>regexmap) - map a value (any pattern) to a regexmap (see below)
     Example: $M($fU=>usermap)
 
@@ -224,6 +262,11 @@ The patterns which can be used are the following:
    $_l(value)   - value to lowercase (e.g.: $_l($fh) From host in lowercase)
    $_s(value)   - length of value (e.g.: $_s($fU) string length of From user)
    $_5(value)   - MD5 of value
+   $_t(value)   - last three characters of value (e.g. to get the transport
+                  from a string that ends with it)
+   $_r(value)   - random number between 0 and value-1
+
+  $#(value) - URL-encoded value (e.g.: $#($fu))
 
   \\  -> \
   \$  -> $
@@ -267,6 +310,15 @@ setRegexMap DI function or the included sems-sbc-*-regex-* scripts:
    ^frank=>frankmajer
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Setting the RURI host
+---------------------
+If only the host part of the request URI of the outgoing INVITE should be
+changed, the RURI_host option can be used. The host is replaced after RURI has
+been applied, and the port is removed from the request URI.
+
+Example:
+  RURI_host=$th
+
 Setting Call-ID
 ---------------
 For debugging purposes, the call-id of the outgoing leg can be set to depend on
@@ -280,6 +332,12 @@ Example:
 
 If Call-ID is not set, a standard unique ID is generated by SEMS, of the form
 UUID@host-ip.
+
+Transparent dialog IDs
+----------------------
+With transparent_dlg_id=yes, the outgoing leg uses the same Call-ID as the
+incoming leg, and the From tag of the caller is used as From tag on the outgoing
+leg. This way the dialog identifiers are the same on both sides of the SBC.
 
 Outbound proxy and next hop
 ---------------------------
@@ -298,16 +356,34 @@ empty. Multiple alternatives for the next hop can be set, also with their
 respective transports, e.g.
  next_hop=1.2.3.4/TCP,1.2.3.4:5060/UDP
 
-Usually, replies are sent back to where the request came from
-(honoring rport), but if next_hop should be used nevertheless,
-next_hop_for_replies profile option can be set to "yes".
-
 patch_ruri_next_hop=yes sets the option to overwrite RURI in the
 outgoing request with the selected next hop (whether set through
 next_hop or determined otherwise).
 
+If next_hop_1st_req=yes is set, the next hop is used only for the first
+request of the dialog; subsequent requests are routed normally, based on the
+route set learned from the reply to the initial request.
+
+The signaling interface which is used for sending the requests can be set with
+the outbound_interface option. The value is the name of an interface as
+configured in sems.conf, or 'default'.
+
+Example:
+  outbound_interface=extern
+
 These settings apply only for the UAC side, i.e. the outgoing side of
 the initial INVITE.
+
+For requests that are sent in the A leg (towards the caller), the corresponding
+options are
+
+  aleg_outbound_proxy        outbound proxy for the A leg
+  aleg_force_outbound_proxy  "yes" or "no", see force_outbound_proxy
+  aleg_next_hop              next hop for the A leg
+  aleg_outbound_interface    signaling interface for the A leg
+
+If aleg_next_hop is not set and dlg_nat_handling is enabled, requests in the
+A leg are sent to the address the initial request was received from.
 
 Registration caching
 --------------------
@@ -336,6 +412,16 @@ doc/sbc/sample_config_regcache
 For a local registrar (i.e. operation without an upstream registrar), see the 'registrar'
 call control module.
 
+If registration caching is not used, the Contact of relayed REGISTER requests
+can be changed with the options
+
+  contact_displayname   display name
+  contact_user          user part of the contact URI
+  contact_host          host part of the contact URI
+  contact_port          port of the contact URI
+
+Parts which are not set are left untouched.
+
 Filters
 -------
 Headers and messages may be filtered. A filter can be set to 
@@ -345,6 +431,20 @@ Headers and messages may be filtered. A filter can be set to
  o blacklist - filter out items that are in the filter list
 
 Note that ACK messages should not be filtered.
+
+The header filter is configured with the header_filter and header_list
+options, the message filter with message_filter and message_list. The list
+is comma-separated, the items are case-insensitive.
+
+In-dialog requests which are filtered out by the message filter are replied with
+405 Method Not Allowed.
+
+Examples:
+  header_filter=blacklist
+  header_list=P-App-Param,P-App-Name
+
+  message_filter=whitelist
+  message_list=INVITE,ACK,BYE,CANCEL,PRACK,UPDATE
 
 Codec filter
 ------------
@@ -361,6 +461,27 @@ both call legs.
   
 The s, u and o-lines of the SDP can be anonymized with the setting
 sdp_anonymize=yes.
+
+Media filter
+------------
+Media streams can be filtered by their media type (e.g. audio, video) with the
+media_filter and mediafilter_list options. A media stream that is filtered out
+is disabled by setting its port to 0. If all media streams of an SDP are
+filtered out, the request is refused with 488.
+
+Example:
+  media_filter=whitelist
+  mediafilter_list=audio
+
+SDP attribute filter
+--------------------
+Attribute lines (a=...) of the SDP can be filtered by attribute name with the
+sdp_alines_filter and sdp_alinesfilter_list options, both on session level and
+in the media streams. The attribute names in the list are case-insensitive.
+
+Example:
+  sdp_alines_filter=blacklist
+  sdp_alinesfilter_list=crypto,x-cap
 
 Codec preference
 ----------------
@@ -456,6 +577,20 @@ the SBC honors this and sets symmetric RTP accordingly.
 With the option rtprelay_dtmf_filtering=yes the SBC filters out RTP DTMF
 (RFC2833 / RFC4733) packets in relayed streams.
 
+The media interface used for the RTP relay can be selected for each leg with
+the rtprelay_interface (B leg) and aleg_rtprelay_interface (A leg) options. The
+value is the name of an interface as configured in sems.conf, or 'default'.
+This way media can be bridged between interfaces.
+
+Example:
+  aleg_rtprelay_interface=intern
+  rtprelay_interface=extern
+
+By default, the RTP sequence numbers and the SSRC of relayed packets are passed
+through unchanged. With rtprelay_transparent_seqno=no and
+rtprelay_transparent_ssrc=no the SBC uses its own sequence numbers and SSRC
+in the relayed streams.
+
 If rtprelay_dtmf_detection=yes is set, DTMF from RTP packets is detected
 and can be used to control applications, e.g. special call flows, implemented with
 the extended call control API. Note that the call needs to be added to
@@ -541,6 +676,32 @@ Transcoding related call profile options:
     If this parameter is set to something else, transcoder codecs are
     added BEFORE ordering using codec_preference_aleg is done and thus
     may become preferred ones. 
+
+  prefer_transcoding_for_codecs
+
+    List of codecs which should not be relayed if another codec which can be
+    transcoded is available in the SDP from callee, i.e. transcoding is
+    preferred to relaying of these codecs. If only codecs from this list are
+    available, they are relayed.
+
+  prefer_transcoding_for_codecs_aleg
+
+    The same as prefer_transcoding_for_codecs for the SDP from caller.
+
+  dtmf_transcoding
+
+    Possible values: always, never, lowfi_codec
+
+    Describes whether DTMF is transcoded when the transcoder is active, i.e.
+    whether DTMF tones in the received audio are detected and passed on as
+    DTMF events. With "lowfi_codec", DTMF is transcoded only if the codec
+    used in the stream is one of those listed in lowfi_codecs. Default: never
+
+  lowfi_codecs
+
+    List of codecs for which DTMF is transcoded if dtmf_transcoding is set to
+    "lowfi_codec". These are usually codecs which do not transport inband DTMF
+    tones properly.
 
 Use sdp_filter and aleg_sdp_filter together with the transcoder settings
 to force use of transcoded codecs.
@@ -638,6 +799,15 @@ Examples:
  append_headers="P-Source-IP: $si\r\nP-Source-Port: $sp\r\n"
  append_headers="P-Original-URI: $r"
 
+Headers can also be added to all requests that are sent in a call leg (in-dialog
+requests as well) and to relayed out-of-dialog requests, by using the options
+append_headers_req for the B leg (callee leg) and aleg_append_headers_req for
+the A leg (caller leg).
+
+Example:
+ append_headers_req="P-Leg: B\r\n"
+ aleg_append_headers_req="P-Leg: A\r\n"
+
 Contact header rewriting
 ------------------------
 SBC can add/alter Contact header parts for both legs.
@@ -729,6 +899,15 @@ Example:
   auth_aleg_pwd=$H(P-Auth-A-Pwd)
 
 
+Requests received in the B leg (from the callee) can be authenticated by the
+SBC, i.e. the SBC challenges the request with the given realm, and checks the
+credentials. Here as well, the uac_auth module needs to be loaded.
+
+   enable_bleg_uas_auth  "yes" or "no"
+   uas_auth_bleg_realm   authentication realm
+   uas_auth_bleg_user    authentication user
+   uas_auth_bleg_pwd     authentication password
+
 NOTIFY pass-through
 -------------------
 If in-dialog NOTIFY messages which do not belong to an established subscription
@@ -739,7 +918,7 @@ may be set. This defaults to yes.
 SIP Session Timer configuration
 -------------------------------
 If SIP Session Timers are enabled for a profile, the session timers values
-(session_refresh, minimum_timer etc) can be configured either in sbc.conf
+(session_expires, minimum_timer etc) can be configured either in sbc.conf
 or in the profile configuration, which overrides the sbc.conf configuration.
 
 SIP Session Timers may be configured for each leg individually.
@@ -754,6 +933,18 @@ To enable session timers on A leg only:
   enable_aleg_session_timer=yes
 To disable session timers on both legs:
   enable_session_timer=no
+
+The session timer options are
+
+  session_expires          session expiration (seconds)
+  minimum_timer            minimum session expiration that is accepted (seconds)
+  maximum_timer            maximum session expiration that is accepted (seconds)
+  session_refresh_method   UPDATE, INVITE or UPDATE_FALLBACK_INVITE
+  accept_501_reply         "yes" or "no": accept a 501 reply to a session
+                           refresh as successful refresh (default: yes)
+
+and aleg_session_expires, aleg_minimum_timer, aleg_maximum_timer,
+aleg_session_refresh_method and aleg_accept_501_reply for the A leg.
 
 enable_session_timer defines bleg value and the default aleg value if
 enable_aleg_session_timer is not set. Likewise, if aleg_session_expires etc. is
@@ -789,6 +980,45 @@ hold_activity_aleg / hold_activity_bleg
   Possible values: sendrecv, sendonly, recvonly, inactive
 
 
+Request retry on 491
+--------------------
+If a session update (re-INVITE/UPDATE) which the SBC sent is replied with
+491 Request Pending, the SBC retries it after a random time. The maximum of
+this time can be set with the max_491_retry_time option in milliseconds
+(default: 2000).
+
+Logging of SIP messages and RTP
+-------------------------------
+The SIP messages and optionally the RTP packets of a call can be written to a
+file in pcap format, e.g. for debugging. The file is set with the
+msg_logger_path option, which may contain replacement patterns.
+
+  msg_logger_path   path of the pcap file. If empty, nothing is logged.
+  log_sip           "yes" or "no": log SIP messages (default: yes)
+  log_rtp           "yes" or "no": log RTP packets (default: no)
+
+Example:
+  msg_logger_path=/var/log/sems/$ci.pcap
+  log_rtp=yes
+
+Out-of-dialog requests
+----------------------
+Requests other than INVITE which are received outside of a dialog (e.g.
+REGISTER, SUBSCRIBE, REFER, OPTIONS, MESSAGE) are relayed by the SBC as well.
+The profile is selected in the same way as for calls, and the routing options,
+header filter, append_headers_req, reply translations, authentication, the
+registration cache and refuse_with apply. Call control modules are asked to
+route the request (see Readme.sbc_call_control.txt).
+
+Requests with Max-Forwards: 0 are refused with 483 Too Many Hops.
+
+If core_options_handling=yes is set in sbc.conf, out-of-dialog OPTIONS requests
+are not relayed but replied by the SEMS core.
+
+The number of threads which process the out-of-dialog requests and their
+replies can be set with the out_of_dialog_threads option in sbc.conf
+(default: 1).
+
 Call control modules
 --------------------
 Call control (CC) modules for the sbc application implement business
@@ -798,7 +1028,7 @@ policies, or implement routing logic.
 
 Call control (CC) modules should be loaded using the load_cc_plugins
 option in sbc.conf, or loaded later into the server by the
-sems-sbc-loadcallcontrol-modules script (loadCallcontrolModules DI function).
+sems-sbc-load-callcontrol-modules script (loadCallcontrolModules DI function).
 
 Multiple CC modules may be applied for one call. The data that the CC
 modules get from the call may be freely configured. Call control modules
@@ -896,7 +1126,7 @@ by standard syslog utils, e.g. syslog-ng.
   cdr_Called-Station-Id=$tU
   cdr_Sip-From-Tag=$ft
 
-See also cc_syslog_cdr module documentation.
+See also doc/sbc/Readme.cc_syslog_cdr.txt.
 
 Refusing calls
 --------------
