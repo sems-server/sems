@@ -491,7 +491,15 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 {
     list<sip_header*> hdrs;
     int err = parse_headers(hdrs,c,end);
-    if(!err) {
+    if(err) {
+	// The headers parsed before the error are still in the local list and
+	// nothing else refers to them: free them here, or every well-formed
+	// line in front of a malformed one is leaked.
+	free_headers(hdrs);
+	return err;
+    }
+
+    {
 	for(list<sip_header*>::iterator it = hdrs.begin();
 	    it != hdrs.end(); ++it) {
 
