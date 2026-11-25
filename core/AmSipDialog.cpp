@@ -120,12 +120,18 @@ bool AmSipDialog::onRxReqSanity(const AmSipRequest& req)
 		  + int2str(get_random() % 10) + CRLF);
       return false;
     }
-
-    if (invite)
-      pending_invites++;
   }
 
-  return rel100.onRequestIn(req);
+  // The 100rel check may reject the request with a stateless reply that does
+  // not pass through onReplyTxed(), so only count the INVITE as pending once
+  // it has been accepted; otherwise pending_invites would never drop back.
+  if (!rel100.onRequestIn(req))
+    return false;
+
+  if (invite)
+    pending_invites++;
+
+  return true;
 }
 
 bool AmSipDialog::onRxReqStatus(const AmSipRequest& req)
