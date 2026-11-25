@@ -386,6 +386,13 @@ sip_trans* trans_bucket::match_1xx_prack(sip_msg* msg)
 	}
 	sip_trans* t = *it;
 
+	// RFC 3262: only provisional replies to an INVITE are sent
+	// reliably, so a PRACK can only match an INVITE server transaction.
+	if( (t->type != TT_UAS) ||
+	    (t->msg->u.request->method != sip_request::INVITE) ){
+	    continue;
+	}
+
 	/* first, check quickly if lenghts match (From tag, To tag, Call-ID) */
 
 	sip_from_to* from = dynamic_cast<sip_from_to*>(msg->from->p);
