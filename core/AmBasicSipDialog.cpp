@@ -149,7 +149,17 @@ string AmBasicSipDialog::getRoute()
 {
   string res;
 
-  if(!outbound_proxy.empty() && (force_outbound_proxy || remote_tag.empty())){
+  // The route set may already start with the outbound proxy, e.g. when it was
+  // learned from a request that was itself sent through that proxy. Prepending
+  // it again yields two identical top-most Route entries, and a loose router
+  // only strips the first one, so it would route the request back to itself.
+  string first_route;
+  if(!route.empty()) {
+    first_route = route.substr(0, route.find(','));
+  }
+
+  if(!outbound_proxy.empty() && (force_outbound_proxy || remote_tag.empty())
+     && (first_route.find(outbound_proxy) == string::npos)){
     res += "<" + outbound_proxy + ";lr>";
 
     if(!route.empty()) {
