@@ -42,12 +42,22 @@ JsonRPCServerModule* JsonRPCServerModule::instance()
   return _instance;
 }
 
-JsonRPCServerModule::JsonRPCServerModule(const string& mod_name) 
-  : AmDynInvokeFactory(mod_name)
+JsonRPCServerModule::JsonRPCServerModule(const string& mod_name)
+  : AmDynInvokeFactory(mod_name), server_loop(NULL)
 {
 }
 
 JsonRPCServerModule::~JsonRPCServerModule() {
+  // AmPlugIn deletes the plug-in factories and then dlclose()s the modules, so
+  // the server loop and its worker threads - which run code from this very
+  // module and hand connections around - have to be gone before we return.
+  // The factory exported to AmPlugIn is not the singleton that owns the loop.
+  if (_instance != NULL && _instance->server_loop != NULL) {
+    DBG("requesting the JSON-RPC server loop to stop...\n");
+    _instance->server_loop->request_stop();
+    _instance->server_loop->join();
+    DBG("JSON-RPC server loop stopped.\n");
+  }
 }
 
 int JsonRPCServerModule::onLoad() {

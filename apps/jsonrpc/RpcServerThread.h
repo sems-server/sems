@@ -39,12 +39,18 @@ class RpcServerThread
 
   char rcvbuf[MAX_RPC_MSG_SIZE];
 
+  AmCondition<bool> stop_requested;
+
  public:
   RpcServerThread();
   ~RpcServerThread();
 
   void run();
   void on_stop();
+
+  /** ask run() to return; unlike stop() it does not detach the thread,
+      so the caller can still join() it */
+  void request_stop();
 
   void process(AmEvent* event);
 };
@@ -61,6 +67,8 @@ class RpcServerThreadpool
   
   void dispatch(AmEvent* ev);
   void addThreads(unsigned int cnt);
+  /** stop, join and destroy all server threads */
+  void cleanup();
 };
 
 #endif
