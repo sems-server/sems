@@ -543,6 +543,21 @@ int _SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
 }
 
 
+// RFC 3261 7.3.1: a header value may be folded over several lines, and a fold
+// (CRLF followed by WSP) is equivalent to the WSP alone. AmSipRequest::hdrs and
+// AmSipReply::hdrs are flat, line-oriented strings, so a value copied over with
+// its folds intact no longer means what it did in the message: getHeader() stops
+// at the first CR and hands the caller a truncated value, while the remainder
+// sits in hdrs looking like a header of its own. Unfold before storing.
+static string unfold_hdr_value(const cstring& value)
+{
+    string v = c2stlstr(value);
+    string::size_type pos;
+    while((pos = v.find_first_of("\r\n")) != string::npos)
+	v.erase(pos,1);
+    return v;
+}
+
 inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg, 
 						 const trans_ticket& tt,
 						 AmSipRequest &req)
@@ -652,8 +667,8 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	switch((*it)->type) {
 	case sip_header::H_OTHER:
 	case sip_header::H_REQUIRE:
-	    req.hdrs += c2stlstr((*it)->name) + ": " 
-		+ c2stlstr((*it)->value) + CRLF;
+	    req.hdrs += c2stlstr((*it)->name) + ": "
+		+ unfold_hdr_value((*it)->value) + CRLF;
 	    break;
 	case sip_header::H_VIA:
 	    req.vias += c2stlstr((*it)->name) + ": " 
@@ -807,8 +822,8 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
         switch ((*it)->type) {
           case sip_header::H_OTHER:
           case sip_header::H_REQUIRE:
-	      reply.hdrs += c2stlstr((*it)->name) + ": " 
-                  + c2stlstr((*it)->value) + CRLF;
+	      reply.hdrs += c2stlstr((*it)->name) + ": "
+                  + unfold_hdr_value((*it)->value) + CRLF;
               break;
           case sip_header::H_RSEQ:
               if (! parse_rseq(&rseq, (*it)->value.s, (*it)->value.len)) {
