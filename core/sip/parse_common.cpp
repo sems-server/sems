@@ -189,6 +189,7 @@ static int _parse_gen_params(list<sip_avp*>* params, const char** c,
 		DBG("'=' expected\n");
 		return MALFORMED_SIP_MSG;
 	    }
+	    break;
 
 	case VP_PNAME_EQU_SWS:
 	    switch(**c){

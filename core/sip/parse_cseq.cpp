@@ -104,7 +104,7 @@ int parse_cseq(sip_cseq* cseq, const char* beg, int len)
 	    case SP:
 	    case HTAB:
 		cseq->method_str.set(beg,c-beg);
-		return 0;
+		goto method;
 	    }
 	    break;
 
@@ -117,8 +117,8 @@ int parse_cseq(sip_cseq* cseq, const char* beg, int len)
 		cseq->num_str.set(beg,c-(st==ST_CRLF?2:1)-beg);
 		break;
 	    case C_METHOD:
-		cseq->method_str.set(beg,c-beg);
-		return 0;
+		cseq->method_str.set(beg,c-(st==ST_CRLF?2:1)-beg);
+		goto method;
 	    }
 	    st = saved_st;
 	    break;
@@ -130,6 +130,8 @@ int parse_cseq(sip_cseq* cseq, const char* beg, int len)
     }
 
     cseq->method_str.set(beg,c-beg);
+
+ method:
     if(parse_method(&cseq->method, cseq->method_str.s, cseq->method_str.len) < 0){
 	
 	DBG("Cseq method parsing failed\n");

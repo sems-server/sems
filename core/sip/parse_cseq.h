@@ -43,7 +43,8 @@ struct sip_cseq: public sip_parsed_hdr
 
     sip_cseq()
 	: sip_parsed_hdr(),
-	  num(0)
+	  num(0),
+	  method(0)
     {}
 };
 
