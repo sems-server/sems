@@ -35,6 +35,7 @@
 #include "TOXmlRpcClient.h"
 
 #include <exception>
+#include <unistd.h>
 
 #define MOD_NAME "xmlrpc2di"
 
@@ -60,8 +61,38 @@ XMLRPC2DI* XMLRPC2DI::instance()
 }
 
 XMLRPC2DI::XMLRPC2DI(const string& mod_name) 
-  : AmDynInvokeFactory(mod_name), configured(false)
+  : AmDynInvokeFactory(mod_name), server(NULL), configured(false)
 {
+}
+
+XMLRPC2DI::~XMLRPC2DI()
+{
+  // The plug-in loader hands AmPlugIn its own factory object, while the
+  // server thread hangs off the singleton created by instance(). Only the
+  // loader's object is destroyed on unload, so shut the singleton's thread
+  // down from here.
+  dispose();
+}
+
+void XMLRPC2DI::dispose()
+{
+  if(!_instance || !_instance->server)
+    return;
+
+  XMLRPC2DIServer* srv = _instance->server;
+  _instance->server = NULL;
+
+  DBG("stopping the XMLRPC2DI server thread...\n");
+
+  // AmThread::stop() detaches the thread, so a join() afterwards would
+  // return immediately. Poll the thread's own "stopped" flag instead,
+  // which _start() only raises once run() has returned - and only by then
+  // has run() unregistered its event queue and left this module's code.
+  srv->stop();
+  while(!srv->is_stopped())
+    usleep(10000);
+
+  DBG("XMLRPC2DI server thread stopped.\n");
 }
 
 int XMLRPC2DI::onLoad() {
