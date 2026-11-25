@@ -323,9 +323,22 @@ void AmSIPRegistration::onSipReply(const AmSipRequest& req,
 	    DBG("contact found\n");
 	    found = active = true;
 
-	    if (str2i(server_contact.params["expires"], reg_expires)) {
-	      ERROR("could not extract expires value, default to 300.\n");
-	      reg_expires = 300;
+	    // RFC 3261 10.2.4: the granted binding lifetime is the 'expires'
+	    // parameter of the matched Contact; when that parameter is absent
+	    // the Expires header field of the 2xx applies. Only if neither is
+	    // present fall back to the interval we asked for - defaulting to a
+	    // hardcoded 300 made us re-register long after a shorter binding
+	    // granted through the Expires header had already expired.
+	    map<string, string>::const_iterator exp_it =
+	      server_contact.params.find("expires");
+	    string expires_str = (exp_it != server_contact.params.end()) ?
+	      exp_it->second : getHeader(reply.hdrs, SIP_HDR_EXPIRES, true);
+
+	    if (expires_str.empty() || str2i(expires_str, reg_expires)) {
+	      WARN("no usable expires value in reply (no 'expires' contact "
+		   "parameter and no valid " SIP_HDR_EXPIRES " header), "
+		   "using the requested interval %u\n", expires_interval);
+	      reg_expires = expires_interval;
 	    }
 	    DBG("got an expires of %d\n", reg_expires);
 	    // save TS
