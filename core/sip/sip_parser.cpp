@@ -136,6 +136,13 @@ void sip_msg::release()
     buf = NULL;
     hdrs.clear();
     u.request = NULL;
+
+    // release() only detaches the shallow-copied members another sip_msg still
+    // owns. local_socket is not one of them: set_trsp_socket() takes a
+    // reference of its own for this message, so dropping the pointer without
+    // dec_ref() leaks it.
+    if(local_socket)
+	dec_ref(local_socket);
     local_socket = NULL;
 }
 
