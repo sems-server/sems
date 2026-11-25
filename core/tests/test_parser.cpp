@@ -12,6 +12,24 @@
 #include <string>
 using std::string;
 
+// LeakSanitizer can be asked for a leak check in the middle of a run, which
+// lets a test point at the exact parse that leaked instead of leaving it to
+// the report at process exit.
+#if defined(__SANITIZE_ADDRESS__)
+#define SEMS_TEST_ASAN 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define SEMS_TEST_ASAN 1
+#endif
+#endif
+
+#if defined(SEMS_TEST_ASAN) && defined(__linux__)
+#include <sanitizer/lsan_interface.h>
+static bool leaks_found() { return __lsan_do_recoverable_leak_check() != 0; }
+#else
+static bool leaks_found() { return false; }
+#endif
+
 // Minimal valid SIP request prefix (all mandatory headers)
 // Via, To, From, Call-ID, CSeq
 #define SIP_REQ_PREFIX                                                                                       \
@@ -402,6 +420,103 @@ FCTMF_SUITE_BGN(test_parser) {
     sip_msg msg;
     char *err_msg = NULL;
     fct_chk(try_parse(raw, strlen(raw), msg, err_msg) == 0);
+  }
+  FCT_TEST_END();
+
+  /* parse_headers(sip_msg*, ...) collects the headers in a local list and
+     hands them to the message only when the whole block parsed. A header
+     block that goes wrong part-way used to drop the headers collected up to
+     there without freeing them: a remote sender could leak one sip_header
+     per well-formed line in front of a single bad one. */
+
+  // Nothing of a rejected header block may stay attached to the message.
+  FCT_TEST_BGN(malformed_header_leaves_no_headers_on_msg) {
+    const char *raw = SIP_REQ_PREFIX "Subject\r\n"
+                                     "Content-Length: 0\r\n"
+                                     "\r\n";
+    sip_msg msg;
+    char *err_msg = NULL;
+    fct_chk(try_parse(raw, strlen(raw), msg, err_msg) == MALFORMED_SIP_MSG);
+    fct_chk(msg.hdrs.empty());
+    fct_chk(msg.vias.empty());
+    fct_chk(msg.via1 == NULL);
+    fct_chk(msg.to == NULL);
+    fct_chk(msg.from == NULL);
+    fct_chk(msg.callid == NULL);
+    fct_chk(msg.cseq == NULL);
+  }
+  FCT_TEST_END();
+
+  // The headers in front of a malformed one are freed.
+  FCT_TEST_BGN(malformed_header_does_not_leak_parsed_headers) {
+    string raw = SIP_REQ_PREFIX;
+    for (int i = 0; i < 500; i++)
+      raw += "X: y\r\n";
+    raw += "Subject\r\n\r\n"; // header name with no colon
+
+    fct_chk(!leaks_found());
+    {
+      sip_msg msg;
+      char *err_msg = NULL;
+      fct_chk(try_parse(raw.c_str(), raw.length(), msg, err_msg) == MALFORMED_SIP_MSG);
+    }
+    fct_chk(!leaks_found());
+  }
+  FCT_TEST_END();
+
+  // The same for a header block cut off in the middle of a header name.
+  FCT_TEST_BGN(truncated_header_does_not_leak_parsed_headers) {
+    string raw = SIP_REQ_PREFIX;
+    for (int i = 0; i < 500; i++)
+      raw += "X: y\r\n";
+    raw += "Subj";
+
+    fct_chk(!leaks_found());
+    {
+      sip_msg msg;
+      char *err_msg = NULL;
+      fct_chk(try_parse(raw.c_str(), raw.length(), msg, err_msg) == UNEXPECTED_EOT);
+      fct_chk(msg.hdrs.empty());
+    }
+    fct_chk(!leaks_found());
+  }
+  FCT_TEST_END();
+
+  // An unsupported SIP version still has its headers parsed (for the 505);
+  // the result of that parse is ignored, so it must clean up after itself.
+  FCT_TEST_BGN(bad_version_malformed_header_does_not_leak) {
+    string raw = "INVITE sip:bob@example.com SIP/3.0\r\n"
+                 "Via: SIP/2.0/UDP 192.0.2.1;branch=z9hG4bK776\r\n";
+    for (int i = 0; i < 500; i++)
+      raw += "X: y\r\n";
+    raw += "Subject\r\n\r\n";
+
+    fct_chk(!leaks_found());
+    {
+      sip_msg msg;
+      char *err_msg = NULL;
+      fct_chk(try_parse(raw.c_str(), raw.length(), msg, err_msg) == MALFORMED_SIP_VERSION);
+      fct_chk(msg.hdrs.empty());
+    }
+    fct_chk(!leaks_found());
+  }
+  FCT_TEST_END();
+
+  // A duplicated singleton header is rejected after the block has parsed, so
+  // its headers belong to the message by then and go away with it.
+  FCT_TEST_BGN(duplicate_singleton_header_does_not_leak) {
+    string raw = SIP_REQ_PREFIX;
+    for (int i = 0; i < 500; i++)
+      raw += "X: y\r\n";
+    raw += "Call-ID: second@192.0.2.1\r\n\r\n";
+
+    fct_chk(!leaks_found());
+    {
+      sip_msg msg;
+      char *err_msg = NULL;
+      fct_chk(try_parse(raw.c_str(), raw.length(), msg, err_msg) == MALFORMED_SIP_MSG);
+    }
+    fct_chk(!leaks_found());
   }
   FCT_TEST_END();
 }
