@@ -82,21 +82,12 @@ int XMLRPC2DI::load() {
   DebugServerResult = cfg.getParameter("debug_server_result", "no") == "yes";
   DebugServerParams = cfg.getParameter("debug_server_params", "no") == "yes";
 
-  XmlRpcServer* s;
   unsigned int threads = 0;
   if (multithreaded == "yes") {
     if (!cfg.getParameter("threads").length())
       threads = 5;
     else 
       threads = cfg.getParameterInt("threads", 5);
-
-    DBG("Running multi-threaded XMLRPC server with %u threads\n", threads);
-    MultithreadXmlRpcServer* mt_s = new MultithreadXmlRpcServer();
-    mt_s->createThreads(threads);    
-    s = mt_s;
-  } else {
-    DBG("Running single-threaded XMLRPC server\n");
-    s = new XmlRpcServer();
   }
 
   ServerRetryAfter = cfg.getParameterInt("server_retry_after", 10);
@@ -156,6 +147,19 @@ int XMLRPC2DI::load() {
   
   INFO("XMLRPC Server: %snabling builtin method 'di'.\n", export_di?"E":"Not e");
 
+  // create the XmlRpcServer only now: every return above would leave it -
+  // and, in the multi-threaded case, its already started worker threads -
+  // behind with no owner.
+  XmlRpcServer* s;
+  if (multithreaded == "yes") {
+    DBG("Running multi-threaded XMLRPC server with %u threads\n", threads);
+    MultithreadXmlRpcServer* mt_s = new MultithreadXmlRpcServer();
+    mt_s->createThreads(threads);
+    s = mt_s;
+  } else {
+    DBG("Running single-threaded XMLRPC server\n");
+    s = new XmlRpcServer();
+  }
 
   server = new XMLRPC2DIServer(XMLRPCPort, bind_ip, export_di, direct_export, s);
   if (!server->initialize()) {
