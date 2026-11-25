@@ -353,7 +353,7 @@ int AmSdp::parse(const char* _sdp_msg)
 void AmSdp::print(string& body) const
 {
   string out_buf = "v="+int2str(version)+"\r\n"
-    "o="+origin.user+" "+int2str(origin.sessId)+" "+
+    "o="+origin.user+" "+ulonglong2str(origin.sessId)+" "+
     ulonglong2str(origin.sessV)+" IN ";
 
   if (!origin.conn.address.empty())
@@ -1275,7 +1275,11 @@ static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
 	    break;
 	  }
 	  string id(origin_line, int(next-origin_line)-1);
-	  str2i(id, origin.sessId);
+	  // RFC 4566 recommends an NTP timestamp as sess-id, which does not
+	  // fit in 32 bits: str2i() rejects anything longer than 10 digits
+	  // and left sessId at its previous value without telling anybody.
+	  if (!str2ulonglong(id, origin.sessId))
+	    { WARN("could not parse o= sess-id '%s'\n", id.c_str()); }
 	  origin_line = next;
 	  origin_st = VERSION_ST;
 	  break;
