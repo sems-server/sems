@@ -465,7 +465,7 @@ loglevel=2
 
 # optional parameter: use_default_signature={yes|no}
 #
-# - use a Server/User-Agent header with the SEMS server 
+# - use a Server/User-Agent header with the SEMS server
 #   signature and version.
 #
 #   default=no

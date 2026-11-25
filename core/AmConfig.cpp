@@ -471,10 +471,10 @@ int AmConfig::readConfiguration()
   if (cfg.hasParameter("exclude_payloads"))
     ExcludePayloads = cfg.getParameter("exclude_payloads");
 
-  // user_agent
+  // user_agent / server identity
   if (cfg.getParameter("use_default_signature")=="yes")
     Signature = DEFAULT_SIGNATURE;
-  else 
+  else
     Signature = cfg.getParameter("signature");
 
   if (cfg.hasParameter("max_forwards")) {
