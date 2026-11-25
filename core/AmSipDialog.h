@@ -99,6 +99,7 @@ protected:
   const AmSdp& getRemoteSdp() { return oa.getRemoteSdp(); }
 
   void setRel100State(Am100rel::State rel100_state);
+  void setRel100Handler(AmSipDialogEventHandler* h);
 
   void uasTimeout(AmSipTimeoutEvent* to_ev);
 

@@ -210,6 +210,11 @@ void AmSipDialog::setOAState(AmOfferAnswer::OAState n_st) {
   oa.setState(n_st);
 }
 
+void AmSipDialog::setRel100Handler(AmSipDialogEventHandler* h)
+{
+  rel100.setHandler(h);
+}
+
 void AmSipDialog::setRel100State(Am100rel::State rel100_state) {
   DBG("setting 100rel state for '%s' to %i\n", local_tag.c_str(), rel100_state);
   rel100.setState(rel100_state);

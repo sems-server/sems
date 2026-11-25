@@ -39,6 +39,11 @@ public:
   void setState(State s) { reliable_1xx = s; }
   State getState() { return reliable_1xx; }
 
+  /** The handler the reliable-1xx callbacks are dispatched to. It is taken
+      from the dialog at construction time, so it has to be re-pointed when
+      the dialog's event handler changes afterwards. */
+  void setHandler(AmSipDialogEventHandler* h) { hdl = h; }
+
   int  onRequestIn(const AmSipRequest& req);
   int  onReplyIn(const AmSipReply& reply);
   void onRequestOut(AmSipRequest& req);
