@@ -74,10 +74,10 @@
 /** @see trsp_socket */
 int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 {
-    if(sd){
+    if(sd != -1){
 	WARN("re-binding socket\n");
 	close(sd);
-	sd = 0;
+	sd = -1;
     }
     
     if(am_inet_pton(bind_ip.c_str(),&addr) == 0){
@@ -99,7 +99,7 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 
     if((sd = socket(addr.ss_family,SOCK_DGRAM,0)) == -1){
 	ERROR("socket: %s\n",strerror(errno));
-	sd = 0;
+	sd = -1;
 	return -1;
     }
     
@@ -111,7 +111,7 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 
 	ERROR("bind: %s\n",strerror(errno));
 	close(sd);
-	sd = 0;
+	sd = -1;
 	return -1;
     }
     
@@ -123,7 +123,7 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 
 	    ERROR("%s\n",strerror(errno));
 	    close(sd);
-	    sd = 0;
+	    sd = -1;
 	    return -1;
 	}
     } else {
@@ -132,7 +132,7 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 
 	    ERROR("%s\n",strerror(errno));
 	    close(sd);
-	    sd = 0;
+	    sd = -1;
 	    return -1;
 	}
     }
@@ -319,7 +319,7 @@ void udp_trsp::run()
     msg.msg_control    = ctrl_buf;
     msg.msg_controllen = DSTADDR_DATASIZE;
 
-    if(sock->get_sd()<=0){
+    if(sock->get_sd() == -1){
 	ERROR("Transport instance not bound\n");
 	return;
     }
@@ -415,7 +415,7 @@ void udp_trsp::on_stop()
     // so other threads sharing this socket also get unblocked.
     if(sock) {
 	int sd = sock->get_sd();
-	if(sd > 0) {
+	if(sd != -1) {
 	    shutdown(sd, SHUT_RDWR);
 	}
     }
